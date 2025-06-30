@@ -190,6 +190,7 @@ secrets.json
 api-tokens.json
 
 # Documentation artifacts (user-generated)
+docs/
 docs/screenshots/
 docs/demo/
 docs/user-generated/
