@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import api from '../../services/api';
+import { fetchArticles as apiFetchArticles } from '../../services/api';
 
 export interface Article {
   id: string;
@@ -21,8 +21,8 @@ const initialState: ArticlesState = {
 };
 
 export const fetchArticles = createAsyncThunk('articles/fetchArticles', async () => {
-  const response = await api.fetchArticles();
-  return response.data;
+  const response = await apiFetchArticles();
+  return response;
 });
 
 const articlesSlice = createSlice({
