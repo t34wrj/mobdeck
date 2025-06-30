@@ -1,0 +1,244 @@
+# Mobdeck Mobile App - React Native .gitignore
+# Generated for React Native project with Android/iOS, SQLite, Redux, and GitHub Actions deployment
+
+# React Native and Metro
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+.bundle/
+
+# Metro bundler
+.metro-health-check*
+.metro/
+
+# React Native build outputs
+android/app/build/
+android/build/
+android/.gradle/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/keystore.properties
+ios/build/
+ios/Pods/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+ios/Podfile.lock
+
+# Android signing and keystore files
+*.keystore
+*.jks
+mobdeck-release-key.keystore
+android/app/mobdeck-release-key.keystore
+android/app/release.keystore
+android/app/debug.keystore
+
+# iOS specific
+ios/Podfile.lock
+*.ipa
+*.dSYM.zip
+*.dSYM/
+
+# APK outputs
+*.apk
+*.aab
+android/app/build/outputs/
+android/app/build/intermediates/
+
+# React Native debugging
+.flipper/
+flipper-server-state.json
+
+# TypeScript
+*.tsbuildinfo
+.prettiercache
+
+# Testing and coverage
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+junit.xml
+__tests__/coverage/
+jest-coverage/
+
+# SQLite databases (local development)
+*.db
+*.sqlite
+*.sqlite3
+articles.db
+mobdeck.db
+database.db
+
+# API and configuration
+.env
+.env.*
+.env.local
+.env.development
+.env.test
+.env.production
+config.local.*
+readeck-config.json
+
+# Redux DevTools
+.redux-devtools/
+
+# React Native specific
+.bundle
+.watchman-config
+
+# Gradle wrapper
+gradle/wrapper/gradle-wrapper.properties
+
+# Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+.gradle/
+local.properties
+
+# Xcode
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+*.xcworkspace/*
+!*.xcworkspace/contents.xcworkspacedata
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+react-native-*.log
+flipper-*.log
+metro-*.log
+
+# Dependencies and package managers
+node_modules/
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+.yarn-integrity
+.pnp
+.pnp.js
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+
+# Deployment and CI/CD artifacts
+release/
+android/app/build/outputs/apk/
+github-release/
+deployment-artifacts/
+
+# GitHub Actions specific
+.github/workflows/build-cache/
+
+# Obtainium configuration (user-specific)
+obtainium-user-config.json
+
+# Background sync and cache
+sync-cache/
+article-cache/
+offline-articles/
+
+# React Native asset bundles
+android/app/src/main/assets/index.android.bundle
+ios/main.jsbundle
+
+# Fastlane (if used in future)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Security and sensitive files
+*.pem
+*.key
+*.p12
+*.crt
+*.cer
+secrets.json
+api-tokens.json
+
+# Documentation artifacts (user-generated)
+docs/screenshots/
+docs/demo/
+docs/user-generated/
+
+# Performance and profiling
+*.trace
+*.prof
+*.hprof
+performance-logs/
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# React Native specific debugging
+*.jsc
+*.map
+index.android.bundle*
+index.ios.bundle*
+
+# Hermes specific
+*.hbc
+
+# Development tools
+.watchman-config
+buck-out/
+\.buckd/
+
+# CocoaPods
+ios/Podfile.lock
+
+# React Native Debugger
+.vscode-react-native
+
+# Task completion summaries (keep structure, ignore temp files)
+docs/task_completion_summaries/*.tmp
+docs/task_completion_summaries/temp/
+
+# AI and development assistance (project-specific)
+.claude-temp/
+copilot-cache/
+
+# Mobdeck specific cache and data
+mobdeck-cache/
+readeck-sync-data/
