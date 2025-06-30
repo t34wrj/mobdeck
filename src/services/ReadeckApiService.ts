@@ -399,6 +399,84 @@ class ReadeckApiService implements IReadeckApiService {
     });
   }
 
+  // Labels methods
+  async getLabels(filters?: any): Promise<ReadeckApiResponse<any>> {
+    return this.makeRequest<any>({
+      method: 'GET',
+      url: '/labels',
+      params: filters,
+    });
+  }
+
+  async createLabel(label: any): Promise<ReadeckApiResponse<any>> {
+    return this.makeRequest<any>({
+      method: 'POST',
+      url: '/labels',
+      data: label,
+    });
+  }
+
+  async updateLabel(id: string, updates: any): Promise<ReadeckApiResponse<any>> {
+    return this.makeRequest<any>({
+      method: 'PATCH',
+      url: `/labels/${id}`,
+      data: updates,
+    });
+  }
+
+  async deleteLabel(id: string, params?: any): Promise<ReadeckApiResponse<void>> {
+    return this.makeRequest<void>({
+      method: 'DELETE',
+      url: `/labels/${id}`,
+      params,
+    });
+  }
+
+  async getLabel(id: string): Promise<ReadeckApiResponse<any>> {
+    return this.makeRequest<any>({
+      method: 'GET',
+      url: `/labels/${id}`,
+    });
+  }
+
+  async assignLabel(data: any): Promise<ReadeckApiResponse<void>> {
+    return this.makeRequest<void>({
+      method: 'POST',
+      url: '/labels/assign',
+      data,
+    });
+  }
+
+  async removeLabel(data: any): Promise<ReadeckApiResponse<void>> {
+    return this.makeRequest<void>({
+      method: 'POST',
+      url: '/labels/remove',
+      data,
+    });
+  }
+
+  async batchLabels(data: any): Promise<ReadeckApiResponse<any>> {
+    return this.makeRequest<any>({
+      method: 'POST',
+      url: '/labels/batch',
+      data,
+    });
+  }
+
+  async getLabelStats(): Promise<ReadeckApiResponse<any>> {
+    return this.makeRequest<any>({
+      method: 'GET',
+      url: '/labels/stats',
+    });
+  }
+
+  async getArticleLabels(articleId: string): Promise<ReadeckApiResponse<any>> {
+    return this.makeRequest<any>({
+      method: 'GET',
+      url: `/articles/${articleId}/labels`,
+    });
+  }
+
   // Configuration methods
   updateConfig(config: Partial<ReadeckApiConfig>): void {
     this.config = { ...this.config, ...config };

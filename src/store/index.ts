@@ -2,12 +2,14 @@ import { configureStore, ConfigureStoreOptions } from '@reduxjs/toolkit';
 import { useDispatch, TypedUseSelectorHook, useSelector } from 'react-redux';
 import articlesReducer from './slices/articlesSlice';
 import authReducer from './slices/authSlice';
+import syncReducer from './slices/syncSlice';
 import { loggerMiddleware, errorHandlerMiddleware, performanceMiddleware } from './middleware';
 
 // Root reducer configuration
 const rootReducer = {
   articles: articlesReducer,
   auth: authReducer,
+  sync: syncReducer,
 };
 
 // Store configuration

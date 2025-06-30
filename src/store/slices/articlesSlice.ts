@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction, createEntityAdapter } from '@reduxjs/toolkit';
 import { Article, PaginatedResponse, ApiResponse } from '../../types';
 import { RootState } from '../index';
+import { articlesApiService } from '../../services/ArticlesApiService';
 
 // Entity adapter for normalized state management
 const articlesAdapter = createEntityAdapter<Article>({
@@ -136,56 +137,6 @@ interface SyncArticlesParams {
   articlesOnly?: boolean;
 }
 
-// Mock API service - would be replaced with actual API calls
-const mockApiService = {
-  fetchArticles: async (params: FetchArticlesParams): Promise<PaginatedResponse<Article>> => {
-    // Mock implementation - replace with actual API call
-    await new Promise<void>(resolve => setTimeout(() => resolve(), 1000));
-    return {
-      items: [],
-      page: params.page || 1,
-      totalPages: 0,
-      totalItems: 0,
-    };
-  },
-  
-  createArticle: async (params: CreateArticleParams): Promise<Article> => {
-    await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
-    return {
-      id: Date.now().toString(),
-      title: params.title,
-      summary: params.summary || '',
-      content: params.content || '',
-      url: params.url,
-      imageUrl: undefined,
-      readTime: undefined,
-      isArchived: false,
-      isFavorite: false,
-      isRead: false,
-      tags: params.tags || [],
-      sourceUrl: params.url,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      syncedAt: new Date().toISOString(),
-    };
-  },
-  
-  updateArticle: async (_params: UpdateArticleParams): Promise<Article> => {
-    await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
-    // Mock implementation - replace with actual API call
-    throw new Error('Not implemented');
-  },
-  
-  deleteArticle: async (_params: DeleteArticleParams): Promise<void> => {
-    await new Promise<void>(resolve => setTimeout(() => resolve(), 500));
-    // Mock implementation - replace with actual API call
-  },
-  
-  syncArticles: async (_params: SyncArticlesParams): Promise<{ syncedCount: number; conflictCount: number }> => {
-    await new Promise<void>(resolve => setTimeout(() => resolve(), 2000));
-    return { syncedCount: 0, conflictCount: 0 };
-  },
-};
 
 // Async thunk actions
 export const fetchArticles = createAsyncThunk<
@@ -197,7 +148,7 @@ export const fetchArticles = createAsyncThunk<
     const state = getState();
     const currentPage = params.page || state.articles.pagination.page;
     
-    const response = await mockApiService.fetchArticles({
+    const response = await articlesApiService.fetchArticles({
       ...params,
       page: currentPage,
       limit: params.limit || state.articles.pagination.limit,
@@ -216,7 +167,7 @@ export const createArticle = createAsyncThunk<
   { rejectValue: string }
 >('articles/createArticle', async (params, { rejectWithValue }) => {
   try {
-    const article = await mockApiService.createArticle(params);
+    const article = await articlesApiService.createArticle(params);
     return article;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to create article';
@@ -230,7 +181,7 @@ export const updateArticle = createAsyncThunk<
   { rejectValue: string }
 >('articles/updateArticle', async (params, { rejectWithValue }) => {
   try {
-    const article = await mockApiService.updateArticle(params);
+    const article = await articlesApiService.updateArticle(params);
     return article;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to update article';
@@ -244,7 +195,7 @@ export const deleteArticle = createAsyncThunk<
   { rejectValue: string }
 >('articles/deleteArticle', async (params, { rejectWithValue }) => {
   try {
-    await mockApiService.deleteArticle(params);
+    await articlesApiService.deleteArticle(params);
     return params.id;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to delete article';
@@ -258,7 +209,7 @@ export const syncArticles = createAsyncThunk<
   { rejectValue: string }
 >('articles/syncArticles', async (params, { rejectWithValue }) => {
   try {
-    const result = await mockApiService.syncArticles(params);
+    const result = await articlesApiService.syncArticles(params);
     return result;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Failed to sync articles';
