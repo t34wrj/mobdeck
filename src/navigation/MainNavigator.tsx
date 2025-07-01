@@ -2,7 +2,7 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { ArticlesListScreen } from '../screens/main/ArticlesListScreen';
 import { ArticleDetailScreen } from '../screens/main/ArticleDetailScreen';
-import SettingsScreen from '../screens/SettingsScreen';
+import { SettingsScreen } from '../screens/main/SettingsScreen';
 import { MainStackParamList } from './types';
 
 const Stack = createStackNavigator<MainStackParamList>();

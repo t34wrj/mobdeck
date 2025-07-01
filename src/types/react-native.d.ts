@@ -2,6 +2,17 @@
 
 declare module 'react-native' {
   export * from '@types/react-native';
+  
+  interface NativeModulesStatic {
+    ShareModule: {
+      getSharedData(): Promise<{
+        text: string;
+        subject?: string;
+        timestamp: number;
+      } | null>;
+      clearSharedData(): Promise<boolean>;
+    };
+  }
 }
 
 // SQLite type declarations

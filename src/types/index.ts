@@ -177,3 +177,15 @@ export type AsyncAction<T> = {
     error: string | null;
     data: T | null;
 };
+
+// Share Intent Types
+export interface SharedData {
+    text: string;
+    subject?: string;
+    timestamp: number;
+}
+
+export interface ShareModuleInterface {
+    getSharedData(): Promise<SharedData | null>;
+    clearSharedData(): Promise<boolean>;
+}
