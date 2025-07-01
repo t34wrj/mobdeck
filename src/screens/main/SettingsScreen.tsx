@@ -15,7 +15,10 @@ import { Button } from '../../components/ui/Button';
 import { theme } from '../../components/ui/theme';
 import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
-import { updateSyncConfig, resetSyncConfig } from '../../store/slices/syncSlice';
+import {
+  updateSyncConfig,
+  resetSyncConfig,
+} from '../../store/slices/syncSlice';
 import { logoutUser } from '../../store/slices/authSlice';
 import { SyncSettings } from '../../components/SyncSettings';
 
@@ -26,14 +29,15 @@ interface SettingsSectionProps {
   children: React.ReactNode;
 }
 
-const SettingsSection: React.FC<SettingsSectionProps> = ({ title, children }) => (
+const SettingsSection: React.FC<SettingsSectionProps> = ({
+  title,
+  children,
+}) => (
   <View style={styles.section}>
-    <Text variant="h5" style={styles.sectionTitle}>
+    <Text variant='h5' style={styles.sectionTitle}>
       {title}
     </Text>
-    <View style={styles.sectionContent}>
-      {children}
-    </View>
+    <View style={styles.sectionContent}>{children}</View>
   </View>
 );
 
@@ -44,72 +48,103 @@ interface SettingsRowProps {
   onPress?: () => void;
 }
 
-const SettingsRow: React.FC<SettingsRowProps> = ({ label, value, children, onPress }) => (
-  <TouchableOpacity 
-    style={styles.settingsRow} 
+const SettingsRow: React.FC<SettingsRowProps> = ({
+  label,
+  value,
+  children,
+  onPress,
+}) => (
+  <TouchableOpacity
+    style={styles.settingsRow}
     onPress={onPress}
     disabled={!onPress}
     activeOpacity={onPress ? 0.7 : 1}
   >
     <View style={styles.settingsRowContent}>
-      <Text variant="body1" style={styles.settingsLabel}>
+      <Text variant='body1' style={styles.settingsLabel}>
         {label}
       </Text>
       {value && (
-        <Text variant="body2" style={styles.settingsValue}>
+        <Text variant='body2' style={styles.settingsValue}>
           {value}
         </Text>
       )}
     </View>
-    {children && (
-      <View style={styles.settingsControl}>
-        {children}
-      </View>
-    )}
+    {children && <View style={styles.settingsControl}>{children}</View>}
   </TouchableOpacity>
 );
 
-export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
+export const SettingsScreen: React.FC<SettingsScreenProps> = ({
+  navigation,
+}) => {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
-  
-  const { user, loading: authLoading } = useSelector((state: RootState) => state.auth);
-  const { config: syncConfig, stats } = useSelector((state: RootState) => state.sync);
-  
-  const [customSyncInterval, setCustomSyncInterval] = useState(syncConfig.syncInterval.toString());
+
+  const { user, loading: authLoading } = useSelector(
+    (state: RootState) => state.auth
+  );
+  const { config: syncConfig, stats } = useSelector(
+    (state: RootState) => state.sync
+  );
+
+  const [customSyncInterval, setCustomSyncInterval] = useState(
+    syncConfig.syncInterval.toString()
+  );
   const [showAdvancedSync, setShowAdvancedSync] = useState(false);
 
   // Sync configuration handlers
-  const handleBackgroundSyncToggle = useCallback((value: boolean) => {
-    dispatch(updateSyncConfig({ config: { backgroundSyncEnabled: value } }));
-  }, [dispatch]);
+  const handleBackgroundSyncToggle = useCallback(
+    (value: boolean) => {
+      dispatch(updateSyncConfig({ config: { backgroundSyncEnabled: value } }));
+    },
+    [dispatch]
+  );
 
-  const handleWifiOnlyToggle = useCallback((value: boolean) => {
-    dispatch(updateSyncConfig({ config: { syncOnWifiOnly: value, syncOnCellular: !value } }));
-  }, [dispatch]);
+  const handleWifiOnlyToggle = useCallback(
+    (value: boolean) => {
+      dispatch(
+        updateSyncConfig({
+          config: { syncOnWifiOnly: value, syncOnCellular: !value },
+        })
+      );
+    },
+    [dispatch]
+  );
 
-  const handleDownloadImagesToggle = useCallback((value: boolean) => {
-    dispatch(updateSyncConfig({ config: { downloadImages: value } }));
-  }, [dispatch]);
+  const handleDownloadImagesToggle = useCallback(
+    (value: boolean) => {
+      dispatch(updateSyncConfig({ config: { downloadImages: value } }));
+    },
+    [dispatch]
+  );
 
-  const handleFullTextSyncToggle = useCallback((value: boolean) => {
-    dispatch(updateSyncConfig({ config: { fullTextSync: value } }));
-  }, [dispatch]);
+  const handleFullTextSyncToggle = useCallback(
+    (value: boolean) => {
+      dispatch(updateSyncConfig({ config: { fullTextSync: value } }));
+    },
+    [dispatch]
+  );
 
   const handleSyncIntervalChange = useCallback(() => {
     const interval = parseInt(customSyncInterval, 10);
     if (isNaN(interval) || interval < 1) {
-      Alert.alert('Invalid Interval', 'Please enter a valid sync interval (minimum 1 minute)');
+      Alert.alert(
+        'Invalid Interval',
+        'Please enter a valid sync interval (minimum 1 minute)'
+      );
       setCustomSyncInterval(syncConfig.syncInterval.toString());
       return;
     }
-    
+
     if (interval > 1440) {
-      Alert.alert('Invalid Interval', 'Sync interval cannot exceed 24 hours (1440 minutes)');
+      Alert.alert(
+        'Invalid Interval',
+        'Sync interval cannot exceed 24 hours (1440 minutes)'
+      );
       setCustomSyncInterval(syncConfig.syncInterval.toString());
       return;
     }
-    
+
     dispatch(updateSyncConfig({ config: { syncInterval: interval } }));
   }, [customSyncInterval, dispatch, syncConfig.syncInterval]);
 
@@ -161,28 +196,32 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Account Information */}
-        <SettingsSection title="Account">
-          <SettingsRow 
-            label="Server URL" 
+        <SettingsSection title='Account'>
+          <SettingsRow
+            label='Server URL'
             value={user?.serverUrl || 'Not connected'}
           />
-          <SettingsRow 
-            label="Username" 
+          <SettingsRow
+            label='Username'
             value={user?.username || 'Not logged in'}
           />
-          <SettingsRow 
-            label="Last Login" 
-            value={user?.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}
+          <SettingsRow
+            label='Last Login'
+            value={
+              user?.lastLoginAt
+                ? new Date(user.lastLoginAt).toLocaleDateString()
+                : 'Never'
+            }
           />
           <View style={styles.buttonContainer}>
             <Button
-              variant="destructive"
+              variant='destructive'
               onPress={handleLogout}
               loading={authLoading}
               fullWidth
@@ -193,47 +232,75 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         </SettingsSection>
 
         {/* Sync Settings */}
-        <SettingsSection title="Sync Settings">
+        <SettingsSection title='Sync Settings'>
           <SyncSettings />
-          
-          <SettingsRow label="Background Sync">
+
+          <SettingsRow label='Background Sync'>
             <Switch
               value={syncConfig.backgroundSyncEnabled}
               onValueChange={handleBackgroundSyncToggle}
-              trackColor={{ false: theme.colors.neutral[300], true: theme.colors.primary[200] }}
-              thumbColor={syncConfig.backgroundSyncEnabled ? theme.colors.primary[500] : theme.colors.neutral[400]}
+              trackColor={{
+                false: theme.colors.neutral[300],
+                true: theme.colors.primary[200],
+              }}
+              thumbColor={
+                syncConfig.backgroundSyncEnabled
+                  ? theme.colors.primary[500]
+                  : theme.colors.neutral[400]
+              }
             />
           </SettingsRow>
-          
-          <SettingsRow label="WiFi Only">
+
+          <SettingsRow label='WiFi Only'>
             <Switch
               value={syncConfig.syncOnWifiOnly}
               onValueChange={handleWifiOnlyToggle}
-              trackColor={{ false: theme.colors.neutral[300], true: theme.colors.primary[200] }}
-              thumbColor={syncConfig.syncOnWifiOnly ? theme.colors.primary[500] : theme.colors.neutral[400]}
+              trackColor={{
+                false: theme.colors.neutral[300],
+                true: theme.colors.primary[200],
+              }}
+              thumbColor={
+                syncConfig.syncOnWifiOnly
+                  ? theme.colors.primary[500]
+                  : theme.colors.neutral[400]
+              }
             />
           </SettingsRow>
-          
-          <SettingsRow label="Download Images">
+
+          <SettingsRow label='Download Images'>
             <Switch
               value={syncConfig.downloadImages}
               onValueChange={handleDownloadImagesToggle}
-              trackColor={{ false: theme.colors.neutral[300], true: theme.colors.primary[200] }}
-              thumbColor={syncConfig.downloadImages ? theme.colors.primary[500] : theme.colors.neutral[400]}
+              trackColor={{
+                false: theme.colors.neutral[300],
+                true: theme.colors.primary[200],
+              }}
+              thumbColor={
+                syncConfig.downloadImages
+                  ? theme.colors.primary[500]
+                  : theme.colors.neutral[400]
+              }
             />
           </SettingsRow>
-          
-          <SettingsRow label="Full Text Sync">
+
+          <SettingsRow label='Full Text Sync'>
             <Switch
               value={syncConfig.fullTextSync}
               onValueChange={handleFullTextSyncToggle}
-              trackColor={{ false: theme.colors.neutral[300], true: theme.colors.primary[200] }}
-              thumbColor={syncConfig.fullTextSync ? theme.colors.primary[500] : theme.colors.neutral[400]}
+              trackColor={{
+                false: theme.colors.neutral[300],
+                true: theme.colors.primary[200],
+              }}
+              thumbColor={
+                syncConfig.fullTextSync
+                  ? theme.colors.primary[500]
+                  : theme.colors.neutral[400]
+              }
             />
           </SettingsRow>
 
           <View style={styles.syncIntervalContainer}>
-            <Text variant="body1" style={styles.settingsLabel}>
+            <Text variant='body1' style={styles.settingsLabel}>
               Sync Interval (minutes)
             </Text>
             <View style={styles.syncIntervalInput}>
@@ -242,35 +309,37 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
                 value={customSyncInterval}
                 onChangeText={setCustomSyncInterval}
                 onBlur={handleSyncIntervalChange}
-                keyboardType="numeric"
-                placeholder="15"
+                keyboardType='numeric'
+                placeholder='15'
                 maxLength={4}
               />
             </View>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.advancedToggle}
             onPress={() => setShowAdvancedSync(!showAdvancedSync)}
           >
-            <Text variant="body2" style={styles.advancedToggleText}>
+            <Text variant='body2' style={styles.advancedToggleText}>
               {showAdvancedSync ? 'Hide' : 'Show'} Advanced Settings
             </Text>
           </TouchableOpacity>
 
           {showAdvancedSync && (
             <View style={styles.advancedSettings}>
-              <SettingsRow 
-                label="Batch Size" 
+              <SettingsRow
+                label='Batch Size'
                 value={`${syncConfig.batchSize} articles`}
               />
-              <SettingsRow 
-                label="Conflict Resolution" 
-                value={syncConfig.conflictResolutionStrategy.replace('_', ' ').toLowerCase()}
+              <SettingsRow
+                label='Conflict Resolution'
+                value={syncConfig.conflictResolutionStrategy
+                  .replace('_', ' ')
+                  .toLowerCase()}
               />
               <View style={styles.buttonContainer}>
                 <Button
-                  variant="outline"
+                  variant='outline'
                   onPress={handleResetSyncSettings}
                   fullWidth
                 >
@@ -282,43 +351,31 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) =>
         </SettingsSection>
 
         {/* Sync Statistics */}
-        <SettingsSection title="Sync Statistics">
-          <SettingsRow 
-            label="Total Syncs" 
+        <SettingsSection title='Sync Statistics'>
+          <SettingsRow
+            label='Total Syncs'
             value={stats.totalSyncs.toString()}
           />
-          <SettingsRow 
-            label="Successful Syncs" 
+          <SettingsRow
+            label='Successful Syncs'
             value={stats.successfulSyncs.toString()}
           />
-          <SettingsRow 
-            label="Failed Syncs" 
+          <SettingsRow
+            label='Failed Syncs'
             value={stats.failedSyncs.toString()}
           />
-          <SettingsRow 
-            label="Last Sync" 
-            value={formatLastSync()}
-          />
-          <SettingsRow 
-            label="Data Transferred" 
-            value={formatDataTransfer()}
-          />
-          <SettingsRow 
-            label="Articles Synced" 
+          <SettingsRow label='Last Sync' value={formatLastSync()} />
+          <SettingsRow label='Data Transferred' value={formatDataTransfer()} />
+          <SettingsRow
+            label='Articles Synced'
             value={`${stats.itemsSynced.articlesCreated + stats.itemsSynced.articlesUpdated} total`}
           />
         </SettingsSection>
 
         {/* App Information */}
-        <SettingsSection title="About">
-          <SettingsRow 
-            label="App Version" 
-            value="1.0.0"
-          />
-          <SettingsRow 
-            label="Build" 
-            value="Development"
-          />
+        <SettingsSection title='About'>
+          <SettingsRow label='App Version' value='1.0.0' />
+          <SettingsRow label='Build' value='Development' />
         </SettingsSection>
       </ScrollView>
     </View>

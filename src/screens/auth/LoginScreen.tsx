@@ -21,7 +21,7 @@ import { authStorageService } from '../../services/AuthStorageService';
 const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { loading, error } = useSelector((state: RootState) => state.auth);
-  
+
   const [serverUrl, setServerUrl] = useState('');
   const [bearerToken, setBearerToken] = useState('');
   const [urlError, setUrlError] = useState('');
@@ -37,7 +37,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
       setUrlError('Server URL is required');
       return false;
     }
-    
+
     try {
       const urlObj = new URL(url);
       if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
@@ -57,12 +57,12 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
       setTokenError('Bearer token is required');
       return false;
     }
-    
+
     if (token.length < 10) {
       setTokenError('Token seems too short');
       return false;
     }
-    
+
     setTokenError('');
     return true;
   };
@@ -70,13 +70,13 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
   const handleLogin = useCallback(async () => {
     const isUrlValid = validateUrl(serverUrl);
     const isTokenValid = validateToken(bearerToken);
-    
+
     if (!isUrlValid || !isTokenValid) {
       return;
     }
 
     setIsValidating(true);
-    
+
     try {
       // Store the token securely first
       const tokenStored = await authStorageService.storeToken(bearerToken);
@@ -93,7 +93,9 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
         email: 'user@readeck.local',
         serverUrl: serverUrl.trim(),
         lastLoginAt: new Date().toISOString(),
-        tokenExpiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
+        tokenExpiresAt: new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(), // 30 days
       };
 
       // Dispatch success action manually since we're using Bearer tokens
@@ -101,11 +103,12 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
         type: 'auth/setUser',
         payload: mockUser,
       });
-
     } catch (err) {
       Alert.alert(
         'Login Failed',
-        err instanceof Error ? err.message : 'Failed to authenticate with the server'
+        err instanceof Error
+          ? err.message
+          : 'Failed to authenticate with the server'
       );
     } finally {
       setIsValidating(false);
@@ -123,67 +126,75 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps='handled'
       >
         <View style={styles.headerContainer}>
-          <Text variant="h1" align="center" style={styles.title}>
+          <Text variant='h1' align='center' style={styles.title}>
             Mobdeck
           </Text>
-          <Text variant="body1" align="center" color="neutral.600">
+          <Text variant='body1' align='center' color='neutral.600'>
             Connect to your Readeck server
           </Text>
         </View>
 
         <View style={styles.formContainer}>
           <View style={styles.inputGroup}>
-            <Text variant="body2" weight="medium" style={styles.label}>
+            <Text variant='body2' weight='medium' style={styles.label}>
               Server URL
             </Text>
             <TextInput
               style={[styles.input, urlError ? styles.inputError : null]}
-              placeholder="https://readeck.example.com"
+              placeholder='https://readeck.example.com'
               placeholderTextColor={theme.colors.neutral[400]}
               value={serverUrl}
-              onChangeText={(text) => {
+              onChangeText={text => {
                 setServerUrl(text);
                 if (urlError) validateUrl(text);
               }}
-              autoCapitalize="none"
+              autoCapitalize='none'
               autoCorrect={false}
-              keyboardType="url"
-              textContentType="URL"
-              accessibilityLabel="Server URL input"
-              accessibilityHint="Enter your Readeck server URL"
+              keyboardType='url'
+              textContentType='URL'
+              accessibilityLabel='Server URL input'
+              accessibilityHint='Enter your Readeck server URL'
             />
             {urlError ? (
-              <Text variant="caption" color="error.500" style={styles.errorText}>
+              <Text
+                variant='caption'
+                color='error.500'
+                style={styles.errorText}
+              >
                 {urlError}
               </Text>
             ) : null}
           </View>
 
           <View style={styles.inputGroup}>
-            <Text variant="body2" weight="medium" style={styles.label}>
+            <Text variant='body2' weight='medium' style={styles.label}>
               Bearer Token
             </Text>
             <TextInput
               style={[styles.input, tokenError ? styles.inputError : null]}
-              placeholder="Enter your API token"
+              placeholder='Enter your API token'
               placeholderTextColor={theme.colors.neutral[400]}
               value={bearerToken}
-              onChangeText={(text) => {
+              onChangeText={text => {
                 setBearerToken(text);
                 if (tokenError) validateToken(text);
               }}
               secureTextEntry
-              autoCapitalize="none"
+              autoCapitalize='none'
               autoCorrect={false}
-              textContentType="password"
-              accessibilityLabel="Bearer token input"
-              accessibilityHint="Enter your Readeck API bearer token"
+              textContentType='password'
+              accessibilityLabel='Bearer token input'
+              accessibilityHint='Enter your Readeck API bearer token'
             />
             {tokenError ? (
-              <Text variant="caption" color="error.500" style={styles.errorText}>
+              <Text
+                variant='caption'
+                color='error.500'
+                style={styles.errorText}
+              >
                 {tokenError}
               </Text>
             ) : null}
@@ -191,42 +202,46 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 
           {error ? (
             <View style={styles.errorContainer}>
-              <Text variant="body2" color="error.600" align="center">
+              <Text variant='body2' color='error.600' align='center'>
                 {error}
               </Text>
             </View>
           ) : null}
 
           <Button
-            variant="primary"
-            size="lg"
+            variant='primary'
+            size='lg'
             fullWidth
             onPress={handleLogin}
             loading={loading || isValidating}
             disabled={loading || isValidating}
             style={styles.loginButton}
-            accessibilityLabel="Login button"
-            accessibilityHint="Tap to connect to your Readeck server"
+            accessibilityLabel='Login button'
+            accessibilityHint='Tap to connect to your Readeck server'
           >
             Connect to Server
           </Button>
 
           <View style={styles.divider}>
             <View style={styles.dividerLine} />
-            <Text variant="caption" color="neutral.500" style={styles.dividerText}>
+            <Text
+              variant='caption'
+              color='neutral.500'
+              style={styles.dividerText}
+            >
               OR
             </Text>
             <View style={styles.dividerLine} />
           </View>
 
           <Button
-            variant="outline"
-            size="md"
+            variant='outline'
+            size='md'
             fullWidth
             onPress={handleSetupPress}
             disabled={loading || isValidating}
-            accessibilityLabel="Setup button"
-            accessibilityHint="Tap to get help setting up your Bearer token"
+            accessibilityLabel='Setup button'
+            accessibilityHint='Tap to get help setting up your Bearer token'
           >
             Need help? Setup Guide
           </Button>
@@ -234,8 +249,12 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 
         {loading || isValidating ? (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={theme.colors.primary[500]} />
-            <Text variant="body2" color="neutral.600" style={styles.loadingText}>
+            <ActivityIndicator size='large' color={theme.colors.primary[500]} />
+            <Text
+              variant='body2'
+              color='neutral.600'
+              style={styles.loadingText}
+            >
               Validating connection...
             </Text>
           </View>

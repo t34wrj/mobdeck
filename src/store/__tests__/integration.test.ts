@@ -3,7 +3,13 @@
  * This test validates that the store is properly configured and exports work correctly
  */
 
-import { store, RootState, AppDispatch, useAppDispatch, useAppSelector } from '../index';
+import {
+  store,
+  RootState,
+  AppDispatch,
+  useAppDispatch,
+  useAppSelector,
+} from '../index';
 
 describe('Redux Store Integration', () => {
   it('should export store instance', () => {
@@ -18,7 +24,7 @@ describe('Redux Store Integration', () => {
     const state: RootState = store.getState();
     expect(state).toHaveProperty('auth');
     expect(state).toHaveProperty('articles');
-    
+
     // Test that AppDispatch type works
     const dispatch: AppDispatch = store.dispatch;
     expect(typeof dispatch).toBe('function');
@@ -33,13 +39,13 @@ describe('Redux Store Integration', () => {
 
   it('should have correct initial state structure', () => {
     const state = store.getState();
-    
+
     // Verify auth state structure
     expect(state.auth).toEqual({
       isAuthenticated: false,
       user: null,
     });
-    
+
     // Verify articles state structure
     expect(state.articles).toEqual({
       articles: [],

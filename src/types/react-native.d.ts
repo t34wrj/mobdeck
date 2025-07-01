@@ -2,7 +2,7 @@
 
 declare module 'react-native' {
   export * from '@types/react-native';
-  
+
   interface NativeModulesStatic {
     ShareModule: {
       getSharedData(): Promise<{
@@ -37,17 +37,14 @@ declare module 'react-native-sqlite-storage' {
   }
 
   export interface Database {
-    executeSql: (
-      sql: string,
-      params?: any[]
-    ) => Promise<[ResultSet]>;
-    
+    executeSql: (sql: string, params?: any[]) => Promise<[ResultSet]>;
+
     transaction: (
       callback: (tx: Transaction) => void,
       errorCallback?: (error: any) => void,
       successCallback?: () => void
     ) => void;
-    
+
     close: () => Promise<void>;
   }
 

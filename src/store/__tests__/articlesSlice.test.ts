@@ -48,7 +48,7 @@ describe('Articles Slice', () => {
   describe('Initial State', () => {
     it('should have correct initial state', () => {
       const state = store.getState().articles;
-      
+
       expect(state.ids).toEqual([]);
       expect(state.entities).toEqual({});
       expect(state.loading).toEqual({
@@ -86,7 +86,7 @@ describe('Articles Slice', () => {
     it('should handle setFilters', () => {
       const filters = { searchQuery: 'test', isFavorite: true };
       store.dispatch(setFilters(filters));
-      
+
       const state = store.getState().articles;
       expect(state.filters.searchQuery).toBe('test');
       expect(state.filters.isFavorite).toBe(true);
@@ -97,10 +97,10 @@ describe('Articles Slice', () => {
       // First set some filters
       store.dispatch(setFilters({ searchQuery: 'test', isFavorite: true }));
       store.dispatch(setPage(3));
-      
+
       // Then clear them
       store.dispatch(clearFilters());
-      
+
       const state = store.getState().articles;
       expect(state.filters.searchQuery).toBe('');
       expect(state.filters.isFavorite).toBeUndefined();
@@ -109,7 +109,7 @@ describe('Articles Slice', () => {
 
     it('should handle setPage', () => {
       store.dispatch(setPage(5));
-      
+
       const state = store.getState().articles;
       expect(state.pagination.page).toBe(5);
     });
@@ -166,10 +166,12 @@ describe('Articles Slice', () => {
       });
 
       // Update the article
-      storeWithData.dispatch(updateArticleLocal({
-        id: '1',
-        updates: { title: 'Updated Title', isFavorite: true }
-      }));
+      storeWithData.dispatch(
+        updateArticleLocal({
+          id: '1',
+          updates: { title: 'Updated Title', isFavorite: true },
+        })
+      );
 
       const state = storeWithData.getState().articles;
       expect(state.entities['1']?.title).toBe('Updated Title');
@@ -181,7 +183,7 @@ describe('Articles Slice', () => {
   describe('Async Thunks', () => {
     it('should handle fetchArticles.pending', () => {
       store.dispatch(fetchArticles.pending('test-request-id', {}));
-      
+
       const state = store.getState().articles;
       expect(state.loading.fetch).toBe(true);
       expect(state.error.fetch).toBe(null);
@@ -194,9 +196,9 @@ describe('Articles Slice', () => {
         totalPages: 1,
         totalItems: 1,
       };
-      
+
       store.dispatch(fetchArticles.fulfilled(payload, 'test-request-id', {}));
-      
+
       const state = store.getState().articles;
       expect(state.loading.fetch).toBe(false);
       expect(state.error.fetch).toBe(null);
@@ -207,24 +209,23 @@ describe('Articles Slice', () => {
 
     it('should handle fetchArticles.rejected', () => {
       const error = 'Network error';
-      store.dispatch(fetchArticles.rejected(
-        new Error(error),
-        'test-request-id',
-        {},
-        error
-      ));
-      
+      store.dispatch(
+        fetchArticles.rejected(new Error(error), 'test-request-id', {}, error)
+      );
+
       const state = store.getState().articles;
       expect(state.loading.fetch).toBe(false);
       expect(state.error.fetch).toBe(error);
     });
 
     it('should handle createArticle.fulfilled', () => {
-      store.dispatch(createArticle.fulfilled(mockArticle, 'test-request-id', {
-        title: mockArticle.title,
-        url: mockArticle.url,
-      }));
-      
+      store.dispatch(
+        createArticle.fulfilled(mockArticle, 'test-request-id', {
+          title: mockArticle.title,
+          url: mockArticle.url,
+        })
+      );
+
       const state = store.getState().articles;
       expect(state.loading.create).toBe(false);
       expect(state.error.create).toBe(null);
@@ -241,16 +242,18 @@ import { selectAllArticles } from '../selectors/articlesSelectors';
 describe('Articles Integration', () => {
   it('should work with selectors', () => {
     const store = createTestStore();
-    
+
     // Add an article
-    store.dispatch(createArticle.fulfilled(mockArticle, 'test-request-id', {
-      title: mockArticle.title,
-      url: mockArticle.url,
-    }));
-    
+    store.dispatch(
+      createArticle.fulfilled(mockArticle, 'test-request-id', {
+        title: mockArticle.title,
+        url: mockArticle.url,
+      })
+    );
+
     const state = store.getState();
     const articles = selectAllArticles(state);
-    
+
     expect(articles).toHaveLength(1);
     expect(articles[0]).toEqual(mockArticle);
   });

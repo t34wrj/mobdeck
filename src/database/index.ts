@@ -11,5 +11,5 @@ export type {
   DBLabel,
   DBSyncMetadata,
   ArticleFilters,
-  DatabaseStats
+  DatabaseStats,
 } from '../types';

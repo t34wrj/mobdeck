@@ -16,24 +16,32 @@ export type MainStackParamList = {
   Settings: undefined;
 };
 
-export type AuthNavigationProp<T extends keyof AuthStackParamList = keyof AuthStackParamList> =
-  StackNavigationProp<AuthStackParamList, T>;
+export type AuthNavigationProp<
+  T extends keyof AuthStackParamList = keyof AuthStackParamList,
+> = StackNavigationProp<AuthStackParamList, T>;
 
-export type MainNavigationProp<T extends keyof MainStackParamList = keyof MainStackParamList> =
-  StackNavigationProp<MainStackParamList, T>;
+export type MainNavigationProp<
+  T extends keyof MainStackParamList = keyof MainStackParamList,
+> = StackNavigationProp<MainStackParamList, T>;
 
-export type AuthRouteProp<T extends keyof AuthStackParamList = keyof AuthStackParamList> =
-  RouteProp<AuthStackParamList, T>;
+export type AuthRouteProp<
+  T extends keyof AuthStackParamList = keyof AuthStackParamList,
+> = RouteProp<AuthStackParamList, T>;
 
-export type MainRouteProp<T extends keyof MainStackParamList = keyof MainStackParamList> =
-  RouteProp<MainStackParamList, T>;
+export type MainRouteProp<
+  T extends keyof MainStackParamList = keyof MainStackParamList,
+> = RouteProp<MainStackParamList, T>;
 
-export interface AuthScreenProps<T extends keyof AuthStackParamList = keyof AuthStackParamList> {
+export interface AuthScreenProps<
+  T extends keyof AuthStackParamList = keyof AuthStackParamList,
+> {
   navigation: AuthNavigationProp<T>;
   route: AuthRouteProp<T>;
 }
 
-export interface MainScreenProps<T extends keyof MainStackParamList = keyof MainStackParamList> {
+export interface MainScreenProps<
+  T extends keyof MainStackParamList = keyof MainStackParamList,
+> {
   navigation: MainNavigationProp<T>;
   route: MainRouteProp<T>;
 }

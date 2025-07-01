@@ -76,20 +76,21 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
 
     // Split into paragraphs and render
     const paragraphs = processedContent.split(/\n\s*\n/).filter(p => p.trim());
-    
+
     return paragraphs.map((paragraph, index) => {
       // Check if it's likely a heading (short line followed by content)
-      const isHeading = paragraph.length < 100 && 
-                       index < paragraphs.length - 1 &&
-                       !paragraph.endsWith('.') &&
-                       !paragraph.endsWith('!') &&
-                       !paragraph.endsWith('?');
+      const isHeading =
+        paragraph.length < 100 &&
+        index < paragraphs.length - 1 &&
+        !paragraph.endsWith('.') &&
+        !paragraph.endsWith('!') &&
+        !paragraph.endsWith('?');
 
       if (isHeading) {
         return (
           <Text
             key={index}
-            variant="h6"
+            variant='h6'
             style={[
               styles.heading,
               {
@@ -107,7 +108,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
       return (
         <Text
           key={index}
-          variant="body1"
+          variant='body1'
           style={[styles.paragraph, contentStyles]}
         >
           {paragraph}
@@ -160,13 +161,10 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
       {/* Summary */}
       {summary && (
         <View style={styles.summaryContainer}>
-          <Text variant="h6" style={styles.summaryTitle}>
+          <Text variant='h6' style={styles.summaryTitle}>
             Summary
           </Text>
-          <Text
-            variant="body1"
-            style={[styles.summary, contentStyles]}
-          >
+          <Text variant='body1' style={[styles.summary, contentStyles]}>
             {summary}
           </Text>
         </View>
@@ -177,10 +175,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
         {content ? (
           parseContent(content)
         ) : (
-          <Text
-            variant="body1"
-            style={[styles.noContent, contentStyles]}
-          >
+          <Text variant='body1' style={[styles.noContent, contentStyles]}>
             No content available for this article.
           </Text>
         )}
@@ -190,7 +185,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
       <Modal
         visible={imageModalVisible}
         transparent={true}
-        animationType="fade"
+        animationType='fade'
         onRequestClose={() => setImageModalVisible(false)}
       >
         <View style={styles.modalContainer}>
@@ -209,7 +204,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
               >
                 {renderImage(styles.modalImage, 'contain')}
               </RNScrollView>
-              
+
               <TouchableOpacity
                 style={styles.closeButton}
                 onPress={() => setImageModalVisible(false)}

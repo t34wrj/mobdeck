@@ -4,7 +4,12 @@
  */
 
 import { articlesApiService, CreateArticleParams } from './ArticlesApiService';
-import { validateUrl, extractUrlFromText, isLikelyArticleUrl, UrlValidationOptions } from '../utils/urlValidation';
+import {
+  validateUrl,
+  extractUrlFromText,
+  isLikelyArticleUrl,
+  UrlValidationOptions,
+} from '../utils/urlValidation';
 import { SharedData, ShareModuleInterface } from '../types';
 import { Article, AppError, ErrorCode } from '../types';
 import { NativeModules } from 'react-native';
@@ -40,7 +45,7 @@ export enum ShareErrorCode {
   QUOTA_EXCEEDED = 'QUOTA_EXCEEDED',
   SHARE_MODULE_ERROR = 'SHARE_MODULE_ERROR',
   PROCESSING_ERROR = 'PROCESSING_ERROR',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 
 export interface ShareHandlerConfig {
@@ -90,7 +95,7 @@ const DEFAULT_CONFIG: ShareHandlerConfig = {
 
 /**
  * ShareHandlerService - Processes shared URLs and adds them to Readeck
- * 
+ *
  * Features:
  * - URL extraction from shared text
  * - Comprehensive URL validation and security checks
@@ -116,12 +121,19 @@ class ShareHandlerService {
       const { ShareModule } = NativeModules;
       if (ShareModule && typeof ShareModule.getSharedData === 'function') {
         this.shareModule = ShareModule as ShareModuleInterface;
-        console.log('[ShareHandlerService] Share module initialized successfully');
+        console.log(
+          '[ShareHandlerService] Share module initialized successfully'
+        );
       } else {
-        console.warn('[ShareHandlerService] Share module not available - running in simulator or module not linked');
+        console.warn(
+          '[ShareHandlerService] Share module not available - running in simulator or module not linked'
+        );
       }
     } catch (error) {
-      console.error('[ShareHandlerService] Failed to initialize share module:', error);
+      console.error(
+        '[ShareHandlerService] Failed to initialize share module:',
+        error
+      );
     }
   }
 
@@ -135,16 +147,21 @@ class ShareHandlerService {
       // Get shared data from native module
       const sharedData = await this.getSharedData();
       if (!sharedData) {
-        return this.createErrorResult(ShareErrorCode.NO_SHARED_DATA, 'No shared data available');
+        return this.createErrorResult(
+          ShareErrorCode.NO_SHARED_DATA,
+          'No shared data available'
+        );
       }
 
-      console.log('[ShareHandlerService] Received shared data:', { 
+      console.log('[ShareHandlerService] Received shared data:', {
         textLength: sharedData.text?.length || 0,
-        timestamp: sharedData.timestamp 
+        timestamp: sharedData.timestamp,
       });
 
       // Extract and validate URL
-      const urlExtractionResult = await this.extractAndValidateUrl(sharedData.text);
+      const urlExtractionResult = await this.extractAndValidateUrl(
+        sharedData.text
+      );
       if (!urlExtractionResult.success) {
         return {
           success: false,
@@ -172,15 +189,21 @@ class ShareHandlerService {
       // Clear shared data after successful processing
       await this.clearSharedData();
 
-      console.log('[ShareHandlerService] Successfully processed shared URL:', url);
-      
+      console.log(
+        '[ShareHandlerService] Successfully processed shared URL:',
+        url
+      );
+
       return {
         success: true,
         article: articleResult.article,
         validationResult,
       };
     } catch (error) {
-      console.error('[ShareHandlerService] Unexpected error processing shared data:', error);
+      console.error(
+        '[ShareHandlerService] Unexpected error processing shared data:',
+        error
+      );
       return this.createErrorResult(
         ShareErrorCode.PROCESSING_ERROR,
         'Unexpected error occurred while processing shared data',
@@ -219,10 +242,15 @@ class ShareHandlerService {
           url = extractedUrl;
           validationResult.extractedUrl = extractedUrl;
         } else if (!text.match(/^https?:\/\//i)) {
-          validationResult.validationErrors.push('No valid URL found in shared text');
+          validationResult.validationErrors.push(
+            'No valid URL found in shared text'
+          );
           return {
             success: false,
-            error: this.createError(ShareErrorCode.NO_URL_FOUND, 'No valid URL found in shared text'),
+            error: this.createError(
+              ShareErrorCode.NO_URL_FOUND,
+              'No valid URL found in shared text'
+            ),
             validationResult,
           };
         }
@@ -232,7 +260,10 @@ class ShareHandlerService {
         validationResult.validationErrors.push('Empty URL provided');
         return {
           success: false,
-          error: this.createError(ShareErrorCode.INVALID_URL, 'Empty URL provided'),
+          error: this.createError(
+            ShareErrorCode.INVALID_URL,
+            'Empty URL provided'
+          ),
           validationResult,
         };
       }
@@ -243,7 +274,10 @@ class ShareHandlerService {
       validationResult.validationWarnings = validation.warnings;
 
       if (!validation.isValid) {
-        console.log('[ShareHandlerService] URL validation failed:', validation.errors);
+        console.log(
+          '[ShareHandlerService] URL validation failed:',
+          validation.errors
+        );
         return {
           success: false,
           error: this.createError(
@@ -258,10 +292,16 @@ class ShareHandlerService {
       const normalizedUrl = validation.normalizedUrl || url;
 
       // Check if URL looks like an article (if enabled)
-      if (this.config.processing.validateArticleUrl && this.config.autoProcessing.skipNonArticleUrls) {
+      if (
+        this.config.processing.validateArticleUrl &&
+        this.config.autoProcessing.skipNonArticleUrls
+      ) {
         if (!isLikelyArticleUrl(normalizedUrl)) {
           validationResult.validationWarnings.push('URL may not be an article');
-          console.log('[ShareHandlerService] URL may not be an article, but processing anyway:', normalizedUrl);
+          console.log(
+            '[ShareHandlerService] URL may not be an article, but processing anyway:',
+            normalizedUrl
+          );
         }
       }
 
@@ -271,8 +311,13 @@ class ShareHandlerService {
         validationResult,
       };
     } catch (error) {
-      console.error('[ShareHandlerService] Error during URL extraction/validation:', error);
-      validationResult.validationErrors.push('Unexpected error during URL processing');
+      console.error(
+        '[ShareHandlerService] Error during URL extraction/validation:',
+        error
+      );
+      validationResult.validationErrors.push(
+        'Unexpected error during URL processing'
+      );
       return {
         success: false,
         error: this.createError(
@@ -294,32 +339,51 @@ class ShareHandlerService {
     error?: ShareHandlerError;
   }> {
     let lastError: any;
-    
-    for (let attempt = 1; attempt <= this.config.networking.retryAttempts; attempt++) {
+
+    for (
+      let attempt = 1;
+      attempt <= this.config.networking.retryAttempts;
+      attempt++
+    ) {
       try {
-        console.log(`[ShareHandlerService] Creating article (attempt ${attempt}/${this.config.networking.retryAttempts}):`, params.url);
-        
+        console.log(
+          `[ShareHandlerService] Creating article (attempt ${attempt}/${this.config.networking.retryAttempts}):`,
+          params.url
+        );
+
         const article = await articlesApiService.createArticle(params);
-        
-        console.log('[ShareHandlerService] Article created successfully:', article.id);
+
+        console.log(
+          '[ShareHandlerService] Article created successfully:',
+          article.id
+        );
         return {
           success: true,
           article,
         };
       } catch (error: any) {
         lastError = error;
-        
-        console.error(`[ShareHandlerService] Article creation failed (attempt ${attempt}):`, error);
-        
+
+        console.error(
+          `[ShareHandlerService] Article creation failed (attempt ${attempt}):`,
+          error
+        );
+
         // Check if error is retryable
-        if (!this.isRetryableError(error) || attempt === this.config.networking.retryAttempts) {
+        if (
+          !this.isRetryableError(error) ||
+          attempt === this.config.networking.retryAttempts
+        ) {
           break;
         }
-        
+
         // Wait before retry
         if (attempt < this.config.networking.retryAttempts) {
-          const delay = this.config.networking.retryDelay * Math.pow(2, attempt - 1);
-          console.log(`[ShareHandlerService] Waiting ${delay}ms before retry...`);
+          const delay =
+            this.config.networking.retryDelay * Math.pow(2, attempt - 1);
+          console.log(
+            `[ShareHandlerService] Waiting ${delay}ms before retry...`
+          );
           await this.delay(delay);
         }
       }
@@ -418,29 +482,52 @@ class ShareHandlerService {
    */
   private convertApiErrorToShareError(error: any): ShareHandlerError {
     if (error.message && error.message.includes('duplicate')) {
-      return this.createError(ShareErrorCode.DUPLICATE_ARTICLE, 'Article already exists in Readeck', error);
+      return this.createError(
+        ShareErrorCode.DUPLICATE_ARTICLE,
+        'Article already exists in Readeck',
+        error
+      );
     }
 
     if (error.statusCode === 429 || error.message?.includes('quota')) {
-      return this.createError(ShareErrorCode.QUOTA_EXCEEDED, 'API quota exceeded', error);
+      return this.createError(
+        ShareErrorCode.QUOTA_EXCEEDED,
+        'API quota exceeded',
+        error
+      );
     }
 
     if (error.code === 'NETWORK_ERROR' || error.message?.includes('network')) {
-      return this.createError(ShareErrorCode.NETWORK_ERROR, 'Network error occurred', error);
+      return this.createError(
+        ShareErrorCode.NETWORK_ERROR,
+        'Network error occurred',
+        error
+      );
     }
 
-    return this.createError(ShareErrorCode.API_ERROR, error.message || 'API error occurred', error);
+    return this.createError(
+      ShareErrorCode.API_ERROR,
+      error.message || 'API error occurred',
+      error
+    );
   }
 
   /**
    * Create ShareHandlerError
    */
-  private createError(code: ShareErrorCode, message: string, details?: any): ShareHandlerError {
+  private createError(
+    code: ShareErrorCode,
+    message: string,
+    details?: any
+  ): ShareHandlerError {
     return {
       code,
       message,
       details,
-      retryable: this.isRetryableError({ code, statusCode: details?.statusCode }),
+      retryable: this.isRetryableError({
+        code,
+        statusCode: details?.statusCode,
+      }),
       timestamp: new Date().toISOString(),
     };
   }
@@ -448,7 +535,11 @@ class ShareHandlerService {
   /**
    * Create error result
    */
-  private createErrorResult(code: ShareErrorCode, message: string, details?: any): ShareProcessingResult {
+  private createErrorResult(
+    code: ShareErrorCode,
+    message: string,
+    details?: any
+  ): ShareProcessingResult {
     return {
       success: false,
       error: this.createError(code, message, details),
@@ -487,7 +578,10 @@ class ShareHandlerService {
   /**
    * Process URL directly (useful for testing or manual URL processing)
    */
-  async processUrl(url: string, title?: string): Promise<ShareProcessingResult> {
+  async processUrl(
+    url: string,
+    title?: string
+  ): Promise<ShareProcessingResult> {
     try {
       console.log('[ShareHandlerService] Processing URL directly:', url);
 
@@ -521,7 +615,10 @@ class ShareHandlerService {
         validationResult,
       };
     } catch (error) {
-      console.error('[ShareHandlerService] Unexpected error processing URL:', error);
+      console.error(
+        '[ShareHandlerService] Unexpected error processing URL:',
+        error
+      );
       return this.createErrorResult(
         ShareErrorCode.PROCESSING_ERROR,
         'Unexpected error occurred while processing URL',

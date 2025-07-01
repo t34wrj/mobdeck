@@ -6,17 +6,18 @@ import ArticleCard from '../components/ArticleCard';
 import SearchBar from '../components/SearchBar';
 import { MainScreenProps } from '../navigation/types';
 
-const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({ navigation, route }) => {
+const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
+  navigation,
+  route,
+}) => {
   const dispatch = useDispatch();
-  const articles = useSelector((state) => state.articles.items);
-  
+  const articles = useSelector(state => state.articles.items);
+
   useEffect(() => {
     dispatch(fetchArticles());
   }, [dispatch]);
 
-  const renderItem = ({ item }) => (
-    <ArticleCard article={item} />
-  );
+  const renderItem = ({ item }) => <ArticleCard article={item} />;
 
   return (
     <View style={styles.container}>
@@ -24,7 +25,7 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({ navigation, rou
       <FlatList
         data={articles}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => item.id.toString()}
       />
     </View>
   );

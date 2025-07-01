@@ -1,12 +1,15 @@
 /**
  * BackgroundSyncUsage - Example implementation of background sync integration
- * 
+ *
  * This file demonstrates how to integrate the BackgroundSyncService
  * into your React Native app lifecycle and components.
  */
 
 import { AppState, AppStateStatus } from 'react-native';
-import { backgroundSyncService, SYNC_INTERVALS } from '../services/BackgroundSyncService';
+import {
+  backgroundSyncService,
+  SYNC_INTERVALS,
+} from '../services/BackgroundSyncService';
 
 /**
  * Example: App.tsx integration
@@ -22,13 +25,13 @@ export class BackgroundSyncAppIntegration {
   async initializeBackgroundSync() {
     try {
       console.log('Initializing background sync...');
-      
+
       // Initialize the background sync service
       await backgroundSyncService.initialize();
-      
+
       // Set up app state monitoring
       this.setupAppStateMonitoring();
-      
+
       console.log('Background sync initialized successfully');
     } catch (error) {
       console.error('Failed to initialize background sync:', error);
@@ -50,7 +53,7 @@ export class BackgroundSyncAppIntegration {
    */
   private handleAppStateChange(nextAppState: AppStateStatus) {
     console.log(`App state changed to: ${nextAppState}`);
-    
+
     if (nextAppState === 'background') {
       // App is going to background - no specific action needed
       // Background sync will continue based on configured intervals
@@ -68,16 +71,18 @@ export class BackgroundSyncAppIntegration {
     try {
       // Get sync status
       const status = await backgroundSyncService.getStatus();
-      
+
       // Check if it's been a while since last sync
       if (status.lastSyncTime) {
         const lastSyncTime = new Date(status.lastSyncTime).getTime();
         const now = Date.now();
         const timeSinceLastSync = now - lastSyncTime;
-        
+
         // If more than 10 minutes since last sync, trigger manual sync
         if (timeSinceLastSync > 10 * 60 * 1000) {
-          console.log('Triggering foreground sync - been a while since last sync');
+          console.log(
+            'Triggering foreground sync - been a while since last sync'
+          );
           await backgroundSyncService.triggerManualSync();
         }
       } else {
@@ -98,7 +103,7 @@ export class BackgroundSyncAppIntegration {
     if (this.appStateSubscription) {
       this.appStateSubscription.remove();
     }
-    
+
     backgroundSyncService.cleanup();
   }
 }
@@ -107,11 +112,12 @@ export class BackgroundSyncAppIntegration {
  * Example: Settings configuration helper
  */
 export class BackgroundSyncConfigHelper {
-  
   /**
    * Configure background sync with common presets
    */
-  static async configurePreset(preset: 'aggressive' | 'balanced' | 'conservative' | 'manual') {
+  static async configurePreset(
+    preset: 'aggressive' | 'balanced' | 'conservative' | 'manual'
+  ) {
     const configurations = {
       aggressive: {
         enabled: true,
@@ -145,7 +151,7 @@ export class BackgroundSyncConfigHelper {
 
     const config = configurations[preset];
     await backgroundSyncService.updatePreferences(config);
-    
+
     console.log(`Background sync configured with ${preset} preset`);
   }
 
@@ -154,7 +160,7 @@ export class BackgroundSyncConfigHelper {
    */
   static async getCurrentConfiguration() {
     const status = await backgroundSyncService.getStatus();
-    
+
     return {
       isEnabled: true, // Get from Redux store
       intervalLabel: this.getIntervalLabel(15), // Get from Redux store
@@ -190,20 +196,21 @@ export class BackgroundSyncConfigHelper {
  * Example: Monitoring and debugging helper
  */
 export class BackgroundSyncMonitor {
-  
   /**
    * Get comprehensive sync statistics
    */
   static async getSyncStatistics() {
     const status = await backgroundSyncService.getStatus();
-    
+
     const stats = {
       totalSyncs: status.syncHistory.length,
       successfulSyncs: status.syncHistory.filter(s => s.success).length,
       failedSyncs: status.syncHistory.filter(s => !s.success).length,
       averageDuration: this.calculateAverageDuration(status.syncHistory),
       averageItemsSynced: this.calculateAverageItems(status.syncHistory),
-      networkDistribution: this.calculateNetworkDistribution(status.syncHistory),
+      networkDistribution: this.calculateNetworkDistribution(
+        status.syncHistory
+      ),
       lastWeekSyncs: this.getLastWeekSyncs(status.syncHistory),
     };
 
@@ -216,8 +223,11 @@ export class BackgroundSyncMonitor {
   private static calculateAverageDuration(history: any[]): number {
     const successfulSyncs = history.filter(s => s.success && s.duration);
     if (successfulSyncs.length === 0) return 0;
-    
-    const totalDuration = successfulSyncs.reduce((sum, sync) => sum + sync.duration, 0);
+
+    const totalDuration = successfulSyncs.reduce(
+      (sum, sync) => sum + sync.duration,
+      0
+    );
     return Math.round(totalDuration / successfulSyncs.length);
   }
 
@@ -225,10 +235,15 @@ export class BackgroundSyncMonitor {
    * Calculate average items synced
    */
   private static calculateAverageItems(history: any[]): number {
-    const successfulSyncs = history.filter(s => s.success && s.itemsSynced !== undefined);
+    const successfulSyncs = history.filter(
+      s => s.success && s.itemsSynced !== undefined
+    );
     if (successfulSyncs.length === 0) return 0;
-    
-    const totalItems = successfulSyncs.reduce((sum, sync) => sum + sync.itemsSynced, 0);
+
+    const totalItems = successfulSyncs.reduce(
+      (sum, sync) => sum + sync.itemsSynced,
+      0
+    );
     return Math.round(totalItems / successfulSyncs.length);
   }
 
@@ -249,8 +264,8 @@ export class BackgroundSyncMonitor {
    * Get syncs from the last week
    */
   private static getLastWeekSyncs(history: any[]): any[] {
-    const oneWeekAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-    
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
     return history.filter(sync => {
       const syncTime = new Date(sync.timestamp).getTime();
       return syncTime >= oneWeekAgo;
@@ -263,7 +278,7 @@ export class BackgroundSyncMonitor {
   static async exportSyncData() {
     const status = await backgroundSyncService.getStatus();
     const stats = await this.getSyncStatistics();
-    
+
     const exportData = {
       timestamp: new Date().toISOString(),
       currentStatus: status,
@@ -271,27 +286,30 @@ export class BackgroundSyncMonitor {
       configuration: await BackgroundSyncConfigHelper.getCurrentConfiguration(),
     };
 
-    console.log('Background Sync Export Data:', JSON.stringify(exportData, null, 2));
+    console.log(
+      'Background Sync Export Data:',
+      JSON.stringify(exportData, null, 2)
+    );
     return exportData;
   }
 }
 
 /**
  * Example usage in App.tsx:
- * 
+ *
  * import { BackgroundSyncAppIntegration } from './src/examples/BackgroundSyncUsage';
- * 
+ *
  * function App() {
  *   const syncIntegration = useRef(new BackgroundSyncAppIntegration());
- * 
+ *
  *   useEffect(() => {
  *     syncIntegration.current.initializeBackgroundSync();
- * 
+ *
  *     return () => {
  *       syncIntegration.current.cleanup();
  *     };
  *   }, []);
- * 
+ *
  *   // ... rest of your app
  * }
  */

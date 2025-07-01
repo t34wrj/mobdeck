@@ -21,21 +21,21 @@ const MainNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen
-        name="ArticlesList"
+        name='ArticlesList'
         component={ArticlesListScreen}
         options={{
           title: 'Articles',
         }}
       />
       <Stack.Screen
-        name="ArticleDetail"
+        name='ArticleDetail'
         component={ArticleDetailScreen}
         options={({ route }) => ({
           title: route.params?.title || 'Article',
         })}
       />
       <Stack.Screen
-        name="Settings"
+        name='Settings'
         component={SettingsScreen}
         options={{
           title: 'Settings',

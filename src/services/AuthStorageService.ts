@@ -15,7 +15,7 @@ import {
 
 /**
  * AuthStorageService - Secure token management using device keychain
- * 
+ *
  * Features:
  * - Encrypted token storage using react-native-keychain
  * - Comprehensive error handling and recovery
@@ -25,7 +25,7 @@ import {
 class AuthStorageService implements IAuthStorageService {
   private readonly SERVICE_NAME = 'mobdeck_auth_tokens';
   private readonly USERNAME_KEY = 'bearer_token';
-  
+
   private readonly keychainOptions: KeychainOptions = {
     service: this.SERVICE_NAME,
     touchID: false, // Disable biometric for basic auth
@@ -41,7 +41,9 @@ class AuthStorageService implements IAuthStorageService {
   storeToken = async (token: string): Promise<boolean> => {
     try {
       if (!token || typeof token !== 'string' || token.trim().length === 0) {
-        console.error('[AuthStorageService] Invalid token provided for storage');
+        console.error(
+          '[AuthStorageService] Invalid token provided for storage'
+        );
         return false;
       }
 
@@ -68,7 +70,10 @@ class AuthStorageService implements IAuthStorageService {
         return false;
       }
     } catch (error) {
-      const storageError = this.handleStorageError(error, StorageErrorCode.STORAGE_FAILED);
+      const storageError = this.handleStorageError(
+        error,
+        StorageErrorCode.STORAGE_FAILED
+      );
       console.error('[AuthStorageService] Token storage failed:', storageError);
       return false;
     }
@@ -80,12 +85,14 @@ class AuthStorageService implements IAuthStorageService {
    */
   retrieveToken = async (): Promise<string | null> => {
     try {
-      const credentials = await Keychain.getInternetCredentials(this.SERVICE_NAME);
-      
+      const credentials = await Keychain.getInternetCredentials(
+        this.SERVICE_NAME
+      );
+
       if (credentials && credentials.password) {
         try {
           const tokenData: AuthToken = JSON.parse(credentials.password);
-          
+
           // Validate token structure
           if (this.isValidTokenData(tokenData)) {
             console.log('[AuthStorageService] Token retrieved successfully');
@@ -96,7 +103,10 @@ class AuthStorageService implements IAuthStorageService {
             return null;
           }
         } catch (parseError) {
-          console.error('[AuthStorageService] Failed to parse stored token data:', parseError);
+          console.error(
+            '[AuthStorageService] Failed to parse stored token data:',
+            parseError
+          );
           await this.deleteToken(); // Clean up corrupted data
           return null;
         }
@@ -105,8 +115,14 @@ class AuthStorageService implements IAuthStorageService {
         return null;
       }
     } catch (error) {
-      const storageError = this.handleStorageError(error, StorageErrorCode.RETRIEVAL_FAILED);
-      console.error('[AuthStorageService] Token retrieval failed:', storageError);
+      const storageError = this.handleStorageError(
+        error,
+        StorageErrorCode.RETRIEVAL_FAILED
+      );
+      console.error(
+        '[AuthStorageService] Token retrieval failed:',
+        storageError
+      );
       return null;
     }
   };
@@ -118,17 +134,25 @@ class AuthStorageService implements IAuthStorageService {
   deleteToken = async (): Promise<boolean> => {
     try {
       const result = await Keychain.resetInternetCredentials(this.SERVICE_NAME);
-      
+
       if (result) {
         console.log('[AuthStorageService] Token deleted successfully');
         return true;
       } else {
-        console.warn('[AuthStorageService] Token deletion completed (may not have existed)');
+        console.warn(
+          '[AuthStorageService] Token deletion completed (may not have existed)'
+        );
         return true; // Consider success if no token to delete
       }
     } catch (error) {
-      const storageError = this.handleStorageError(error, StorageErrorCode.DELETION_FAILED);
-      console.error('[AuthStorageService] Token deletion failed:', storageError);
+      const storageError = this.handleStorageError(
+        error,
+        StorageErrorCode.DELETION_FAILED
+      );
+      console.error(
+        '[AuthStorageService] Token deletion failed:',
+        storageError
+      );
       return false;
     }
   };
@@ -139,13 +163,18 @@ class AuthStorageService implements IAuthStorageService {
    */
   isTokenStored = async (): Promise<boolean> => {
     try {
-      const credentials = await Keychain.getInternetCredentials(this.SERVICE_NAME);
+      const credentials = await Keychain.getInternetCredentials(
+        this.SERVICE_NAME
+      );
       const hasToken = !!(credentials && credentials.password);
-      
+
       console.log(`[AuthStorageService] Token existence check: ${hasToken}`);
       return hasToken;
     } catch (error) {
-      console.error('[AuthStorageService] Token existence check failed:', error);
+      console.error(
+        '[AuthStorageService] Token existence check failed:',
+        error
+      );
       return false;
     }
   };
@@ -156,8 +185,10 @@ class AuthStorageService implements IAuthStorageService {
    */
   validateStoredToken = async (): Promise<TokenValidationResult> => {
     try {
-      const credentials = await Keychain.getInternetCredentials(this.SERVICE_NAME);
-      
+      const credentials = await Keychain.getInternetCredentials(
+        this.SERVICE_NAME
+      );
+
       if (!credentials || !credentials.password) {
         return {
           isValid: false,
@@ -167,7 +198,7 @@ class AuthStorageService implements IAuthStorageService {
       }
 
       const tokenData: AuthToken = JSON.parse(credentials.password);
-      
+
       if (!this.isValidTokenData(tokenData)) {
         return {
           isValid: false,
@@ -179,7 +210,9 @@ class AuthStorageService implements IAuthStorageService {
       const expirationDate = new Date(tokenData.expiresAt);
       const currentDate = new Date();
       const isExpired = expirationDate <= currentDate;
-      const expiresIn = isExpired ? 0 : Math.floor((expirationDate.getTime() - currentDate.getTime()) / 1000);
+      const expiresIn = isExpired
+        ? 0
+        : Math.floor((expirationDate.getTime() - currentDate.getTime()) / 1000);
 
       return {
         isValid: !isExpired,
@@ -200,14 +233,17 @@ class AuthStorageService implements IAuthStorageService {
    * Handle storage errors with proper categorization
    * @private
    */
-  private handleStorageError = (error: any, defaultCode: StorageErrorCode): StorageError => {
+  private handleStorageError = (
+    error: any,
+    defaultCode: StorageErrorCode
+  ): StorageError => {
     let code = defaultCode;
     let message = 'Unknown storage error occurred';
     let details = '';
 
     if (error) {
       details = error.message || String(error);
-      
+
       // Categorize specific keychain errors
       if (details.includes('UserCancel')) {
         code = StorageErrorCode.USER_CANCELLED;

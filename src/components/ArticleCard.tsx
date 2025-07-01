@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-} from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { Text } from './ui/Text';
 import { theme } from './ui/theme';
@@ -28,13 +23,16 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+    const diffInHours = Math.floor(
+      (now.getTime() - date.getTime()) / (1000 * 60 * 60)
+    );
+
     if (diffInHours < 1) {
       return 'Just now';
     } else if (diffInHours < 24) {
       return `${diffInHours}h ago`;
-    } else if (diffInHours < 168) { // 7 days
+    } else if (diffInHours < 168) {
+      // 7 days
       return `${Math.floor(diffInHours / 24)}d ago`;
     } else {
       return date.toLocaleDateString();
@@ -52,116 +50,112 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
       onPress={onPress}
       onLongPress={onLongPress}
       activeOpacity={0.7}
-      accessibilityRole="button"
+      accessibilityRole='button'
       accessibilityLabel={`Article: ${article.title}`}
-      accessibilityHint="Tap to read article"
+      accessibilityHint='Tap to read article'
     >
       <View style={styles.content}>
         {article.imageUrl && (
           <Image
             source={{ uri: article.imageUrl }}
             style={styles.image}
-            resizeMode="cover"
+            resizeMode='cover'
           />
         )}
-        
+
         <View style={styles.textContent}>
           <Text
-            variant="h6"
+            variant='h6'
             numberOfLines={2}
-            ellipsizeMode="tail"
-            style={[
-              styles.title,
-              article.isRead && styles.readTitle,
-            ]}
+            ellipsizeMode='tail'
+            style={[styles.title, article.isRead && styles.readTitle]}
           >
             {article.title}
           </Text>
-          
+
           {article.summary && (
             <Text
-              variant="body2"
+              variant='body2'
               numberOfLines={3}
-              ellipsizeMode="tail"
+              ellipsizeMode='tail'
               style={styles.summary}
             >
               {article.summary}
             </Text>
           )}
-          
+
           <View style={styles.metadata}>
-            <Text variant="caption" style={styles.date}>
+            <Text variant='caption' style={styles.date}>
               {formatDate(article.createdAt)}
             </Text>
-            
+
             {article.readTime && (
               <>
-                <Text variant="caption" style={styles.separator}>
+                <Text variant='caption' style={styles.separator}>
                   •
                 </Text>
-                <Text variant="caption" style={styles.readTime}>
+                <Text variant='caption' style={styles.readTime}>
                   {formatReadTime(article.readTime)}
                 </Text>
               </>
             )}
-            
+
             {article.sourceUrl && (
               <>
-                <Text variant="caption" style={styles.separator}>
+                <Text variant='caption' style={styles.separator}>
                   •
                 </Text>
                 <Text
-                  variant="caption"
+                  variant='caption'
                   numberOfLines={1}
-                  ellipsizeMode="tail"
+                  ellipsizeMode='tail'
                   style={styles.source}
                 >
-                  {article.sourceUrl && (() => {
-                    try {
-                      return new URL(article.sourceUrl).hostname;
-                    } catch {
-                      return article.sourceUrl;
-                    }
-                  })()}
+                  {article.sourceUrl &&
+                    (() => {
+                      try {
+                        return new URL(article.sourceUrl).hostname;
+                      } catch {
+                        return article.sourceUrl;
+                      }
+                    })()}
                 </Text>
               </>
             )}
           </View>
-          
+
           {article.tags && article.tags.length > 0 && (
             <View style={styles.tagsContainer}>
-              {article.tags.slice(0, 3).map((tag) => (
+              {article.tags.slice(0, 3).map(tag => (
                 <View key={tag} style={styles.tag}>
-                  <Text variant="caption" style={styles.tagText}>
+                  <Text variant='caption' style={styles.tagText}>
                     {tag}
                   </Text>
                 </View>
               ))}
               {article.tags.length > 3 && (
-                <Text variant="caption" style={styles.moreTagsText}>
+                <Text variant='caption' style={styles.moreTagsText}>
                   +{article.tags.length - 3}
                 </Text>
               )}
             </View>
           )}
         </View>
-        
+
         <View style={styles.statusIndicators}>
           {article.isFavorite && (
             <View style={styles.favoriteIndicator}>
               <Text style={styles.favoriteIcon}>♥</Text>
             </View>
           )}
-          
+
           {article.isArchived && (
             <View style={styles.archivedIndicator}>
               <Text style={styles.archivedIcon}>📦</Text>
             </View>
           )}
-          
-          {article.isRead && (
-            <View style={styles.readIndicator} />
-          )}
+
+          {article.isRead && <View style={styles.readIndicator} />}
         </View>
       </View>
     </TouchableOpacity>

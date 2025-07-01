@@ -3,7 +3,12 @@
  * Comprehensive HTTP client with error handling, retry logic, and network resilience
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  AxiosError,
+} from 'axios';
 import { authStorageService } from './AuthStorageService';
 import {
   IReadeckApiService,
@@ -31,7 +36,7 @@ import {
 
 /**
  * ReadeckApiService - Production-ready API client for Readeck servers
- * 
+ *
  * Features:
  * - Bearer token authentication with automatic retrieval from secure storage
  * - Intelligent retry logic with exponential backoff
@@ -86,7 +91,7 @@ class ReadeckApiService implements IReadeckApiService {
       timeout: this.config.timeout,
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'User-Agent': 'Mobdeck-Mobile-Client/1.0.0',
       },
     });
@@ -101,7 +106,7 @@ class ReadeckApiService implements IReadeckApiService {
   private setupInterceptors(): void {
     // Request interceptor for Bearer token injection
     this.client.interceptors.request.use(
-      async (config) => {
+      async config => {
         // Skip auth for login endpoint
         if (config.url?.includes('/auth/login')) {
           return config;
@@ -113,10 +118,15 @@ class ReadeckApiService implements IReadeckApiService {
             config.headers.Authorization = `Bearer ${token}`;
             console.log('[ReadeckApiService] Bearer token attached to request');
           } else {
-            console.warn('[ReadeckApiService] No Bearer token available for request');
+            console.warn(
+              '[ReadeckApiService] No Bearer token available for request'
+            );
           }
         } catch (error) {
-          console.error('[ReadeckApiService] Failed to retrieve Bearer token:', error);
+          console.error(
+            '[ReadeckApiService] Failed to retrieve Bearer token:',
+            error
+          );
         }
 
         // Log request details (excluding sensitive data)
@@ -126,22 +136,26 @@ class ReadeckApiService implements IReadeckApiService {
             ...logConfig,
             headers: {
               ...headers,
-              Authorization: headers.Authorization ? '[BEARER_TOKEN]' : undefined,
+              Authorization: headers.Authorization
+                ? '[BEARER_TOKEN]'
+                : undefined,
             },
           });
         }
 
         return config;
       },
-      (error) => {
+      error => {
         console.error('[ReadeckApiService] Request interceptor error:', error);
-        return Promise.reject(this.createApiError(error, ReadeckErrorCode.UNKNOWN_ERROR));
+        return Promise.reject(
+          this.createApiError(error, ReadeckErrorCode.UNKNOWN_ERROR)
+        );
       }
     );
 
     // Response interceptor for error handling
     this.client.interceptors.response.use(
-      (response) => {
+      response => {
         if (__DEV__) {
           console.log('[ReadeckApiService] Response received:', {
             status: response.status,
@@ -151,7 +165,7 @@ class ReadeckApiService implements IReadeckApiService {
         }
         return response;
       },
-      (error) => {
+      error => {
         const apiError = this.handleResponseError(error);
         console.error('[ReadeckApiService] Response error:', apiError);
         return Promise.reject(apiError);
@@ -198,8 +212,10 @@ class ReadeckApiService implements IReadeckApiService {
     const message = this.getErrorMessage(error, code);
     const statusCode = error.response?.status;
     const details = error.message || String(error);
-    const retryable = this.retryConfig.retryableErrorCodes.includes(code) ||
-                      (statusCode && this.retryConfig.retryableStatusCodes.includes(statusCode));
+    const retryable =
+      this.retryConfig.retryableErrorCodes.includes(code) ||
+      (statusCode &&
+        this.retryConfig.retryableStatusCodes.includes(statusCode));
 
     return {
       code,
@@ -234,7 +250,11 @@ class ReadeckApiService implements IReadeckApiService {
       case ReadeckErrorCode.CONNECTION_ERROR:
         return 'Unable to connect to server. Please check your internet connection.';
       default:
-        return error.response?.data?.message || error.message || 'An unexpected error occurred.';
+        return (
+          error.response?.data?.message ||
+          error.message ||
+          'An unexpected error occurred.'
+        );
     }
   }
 
@@ -248,13 +268,13 @@ class ReadeckApiService implements IReadeckApiService {
   ): Promise<ReadeckApiResponse<T>> {
     const attempts = config?.retryAttempts ?? this.retryConfig.attempts;
     const skipRetry = config?.skipRetry ?? false;
-    
+
     let lastError: ReadeckApiError;
-    
+
     for (let attempt = 1; attempt <= attempts; attempt++) {
       try {
         const response = await requestFn();
-        
+
         return {
           data: response.data,
           status: response.status,
@@ -263,22 +283,25 @@ class ReadeckApiService implements IReadeckApiService {
         };
       } catch (error) {
         lastError = error as ReadeckApiError;
-        
+
         // Don't retry if configured to skip, on last attempt, or if error is not retryable
         if (skipRetry || attempt === attempts || !lastError.retryable) {
           break;
         }
-        
+
         const delay = Math.min(
-          this.retryConfig.delay * Math.pow(this.retryConfig.backoffMultiplier, attempt - 1),
+          this.retryConfig.delay *
+            Math.pow(this.retryConfig.backoffMultiplier, attempt - 1),
           this.retryConfig.maxDelay
         );
-        
-        console.log(`[ReadeckApiService] Retry attempt ${attempt}/${attempts} after ${delay}ms`);
+
+        console.log(
+          `[ReadeckApiService] Retry attempt ${attempt}/${attempts} after ${delay}ms`
+        );
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
-    
+
     throw lastError!;
   }
 
@@ -286,7 +309,9 @@ class ReadeckApiService implements IReadeckApiService {
    * Make HTTP request with proper error handling
    * @private
    */
-  private async makeRequest<T>(options: ApiRequestOptions): Promise<ReadeckApiResponse<T>> {
+  private async makeRequest<T>(
+    options: ApiRequestOptions
+  ): Promise<ReadeckApiResponse<T>> {
     const requestConfig: AxiosRequestConfig = {
       method: options.method,
       url: options.url,
@@ -303,7 +328,9 @@ class ReadeckApiService implements IReadeckApiService {
   }
 
   // Authentication methods
-  async login(credentials: ReadeckLoginRequest): Promise<ReadeckApiResponse<ReadeckLoginResponse>> {
+  async login(
+    credentials: ReadeckLoginRequest
+  ): Promise<ReadeckApiResponse<ReadeckLoginResponse>> {
     return this.makeRequest<ReadeckLoginResponse>({
       method: 'POST',
       url: '/auth/login',
@@ -327,7 +354,9 @@ class ReadeckApiService implements IReadeckApiService {
   }
 
   // Article methods
-  async getArticles(filters?: ArticleFilters): Promise<ReadeckApiResponse<ReadeckArticleList>> {
+  async getArticles(
+    filters?: ArticleFilters
+  ): Promise<ReadeckApiResponse<ReadeckArticleList>> {
     return this.makeRequest<ReadeckArticleList>({
       method: 'GET',
       url: '/articles',
@@ -342,7 +371,9 @@ class ReadeckApiService implements IReadeckApiService {
     });
   }
 
-  async createArticle(article: CreateArticleRequest): Promise<ReadeckApiResponse<ReadeckArticle>> {
+  async createArticle(
+    article: CreateArticleRequest
+  ): Promise<ReadeckApiResponse<ReadeckArticle>> {
     return this.makeRequest<ReadeckArticle>({
       method: 'POST',
       url: '/articles',
@@ -350,7 +381,10 @@ class ReadeckApiService implements IReadeckApiService {
     });
   }
 
-  async updateArticle(id: string, updates: UpdateArticleRequest): Promise<ReadeckApiResponse<ReadeckArticle>> {
+  async updateArticle(
+    id: string,
+    updates: UpdateArticleRequest
+  ): Promise<ReadeckApiResponse<ReadeckArticle>> {
     return this.makeRequest<ReadeckArticle>({
       method: 'PATCH',
       url: `/articles/${id}`,
@@ -373,7 +407,9 @@ class ReadeckApiService implements IReadeckApiService {
     });
   }
 
-  async updateUserProfile(updates: Partial<ReadeckUserProfile>): Promise<ReadeckApiResponse<ReadeckUserProfile>> {
+  async updateUserProfile(
+    updates: Partial<ReadeckUserProfile>
+  ): Promise<ReadeckApiResponse<ReadeckUserProfile>> {
     return this.makeRequest<ReadeckUserProfile>({
       method: 'PATCH',
       url: '/user/profile',
@@ -391,7 +427,9 @@ class ReadeckApiService implements IReadeckApiService {
   }
 
   // Sync methods
-  async syncArticles(request?: SyncRequest): Promise<ReadeckApiResponse<ReadeckSyncResponse>> {
+  async syncArticles(
+    request?: SyncRequest
+  ): Promise<ReadeckApiResponse<ReadeckSyncResponse>> {
     return this.makeRequest<ReadeckSyncResponse>({
       method: 'GET',
       url: '/sync/articles',
@@ -416,7 +454,10 @@ class ReadeckApiService implements IReadeckApiService {
     });
   }
 
-  async updateLabel(id: string, updates: any): Promise<ReadeckApiResponse<any>> {
+  async updateLabel(
+    id: string,
+    updates: any
+  ): Promise<ReadeckApiResponse<any>> {
     return this.makeRequest<any>({
       method: 'PATCH',
       url: `/labels/${id}`,
@@ -424,7 +465,10 @@ class ReadeckApiService implements IReadeckApiService {
     });
   }
 
-  async deleteLabel(id: string, params?: any): Promise<ReadeckApiResponse<void>> {
+  async deleteLabel(
+    id: string,
+    params?: any
+  ): Promise<ReadeckApiResponse<void>> {
     return this.makeRequest<void>({
       method: 'DELETE',
       url: `/labels/${id}`,
@@ -480,15 +524,15 @@ class ReadeckApiService implements IReadeckApiService {
   // Configuration methods
   updateConfig(config: Partial<ReadeckApiConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     // Update axios instance configuration
     this.client.defaults.baseURL = this.config.baseUrl;
     this.client.defaults.timeout = this.config.timeout;
-    
+
     // Update retry configuration
     this.retryConfig.attempts = this.config.retryAttempts;
     this.retryConfig.delay = this.config.retryDelay;
-    
+
     console.log('[ReadeckApiService] Configuration updated:', this.config);
   }
 
@@ -502,7 +546,10 @@ class ReadeckApiService implements IReadeckApiService {
    */
   updateNetworkState(state: Partial<NetworkState>): void {
     this.networkState = { ...this.networkState, ...state };
-    console.log('[ReadeckApiService] Network state updated:', this.networkState);
+    console.log(
+      '[ReadeckApiService] Network state updated:',
+      this.networkState
+    );
   }
 
   /**

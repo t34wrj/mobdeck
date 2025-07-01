@@ -1,6 +1,6 @@
 /**
  * BackgroundSyncService - Enhanced Background Synchronization Service
- * 
+ *
  * Features:
  * - Configurable sync intervals (15min, 30min, 1hr, 2hr, manual)
  * - Network-aware sync with WiFi/cellular preferences
@@ -21,11 +21,7 @@ import {
   updateNetworkStatus,
   syncError,
 } from '../store/slices/syncSlice';
-import {
-  SyncConfiguration,
-  NetworkType,
-  SyncStatus,
-} from '../types/sync';
+import { SyncConfiguration, NetworkType, SyncStatus } from '../types/sync';
 
 // Constants
 const BACKGROUND_SYNC_JOB_KEY = 'mobdeck-background-sync';
@@ -144,19 +140,24 @@ class BackgroundSyncService {
       const savedPreferences = await AsyncStorage.getItem(SYNC_PREFERENCES_KEY);
       if (savedPreferences) {
         this.syncPreferences = JSON.parse(savedPreferences);
-        
+
         // Update Redux store with loaded configuration
-        store.dispatch(updateSyncConfig({
-          config: {
-            backgroundSyncEnabled: this.syncPreferences.enabled,
-            syncInterval: this.syncPreferences.interval,
-            syncOnWifiOnly: this.syncPreferences.wifiOnly,
-            syncOnCellular: this.syncPreferences.allowCellular,
-          },
-        }));
+        store.dispatch(
+          updateSyncConfig({
+            config: {
+              backgroundSyncEnabled: this.syncPreferences.enabled,
+              syncInterval: this.syncPreferences.interval,
+              syncOnWifiOnly: this.syncPreferences.wifiOnly,
+              syncOnCellular: this.syncPreferences.allowCellular,
+            },
+          })
+        );
       }
     } catch (error) {
-      console.error('[BackgroundSyncService] Failed to load preferences:', error);
+      console.error(
+        '[BackgroundSyncService] Failed to load preferences:',
+        error
+      );
     }
   }
 
@@ -170,7 +171,10 @@ class BackgroundSyncService {
         JSON.stringify(this.syncPreferences)
       );
     } catch (error) {
-      console.error('[BackgroundSyncService] Failed to save preferences:', error);
+      console.error(
+        '[BackgroundSyncService] Failed to save preferences:',
+        error
+      );
     }
   }
 
@@ -179,12 +183,12 @@ class BackgroundSyncService {
    */
   private setupNetworkMonitoring(): void {
     // Subscribe to network state changes
-    this.unsubscribeNetInfo = NetInfo.addEventListener((state) => {
+    this.unsubscribeNetInfo = NetInfo.addEventListener(state => {
       this.handleNetworkChange(state);
     });
 
     // Get initial network state
-    NetInfo.fetch().then((state) => {
+    NetInfo.fetch().then(state => {
       this.handleNetworkChange(state);
     });
   }
@@ -196,7 +200,7 @@ class BackgroundSyncService {
     // Listen for boot completion events
     const bootSubscription = DeviceEventEmitter.addListener(
       'DeviceBootCompleted',
-      (data) => {
+      data => {
         console.log('[BackgroundSyncService] Device boot completed:', data);
         this.handleDeviceBootCompleted();
       }
@@ -205,7 +209,7 @@ class BackgroundSyncService {
     // Listen for background sync job events
     const syncJobSubscription = DeviceEventEmitter.addListener(
       'BackgroundSyncEvent',
-      (data) => {
+      data => {
         console.log('[BackgroundSyncService] Background sync event:', data);
         this.handleBackgroundSyncEvent(data);
       }
@@ -220,18 +224,21 @@ class BackgroundSyncService {
   private async handleDeviceBootCompleted(): Promise<void> {
     try {
       console.log('[BackgroundSyncService] Handling device boot completion');
-      
+
       // Reload preferences
       await this.loadPreferences();
-      
+
       // Reschedule sync if enabled
       if (this.syncPreferences.enabled) {
         await this.scheduleSync();
       }
-      
+
       console.log('[BackgroundSyncService] Sync rescheduled after boot');
     } catch (error) {
-      console.error('[BackgroundSyncService] Failed to handle boot completion:', error);
+      console.error(
+        '[BackgroundSyncService] Failed to handle boot completion:',
+        error
+      );
     }
   }
 
@@ -248,7 +255,10 @@ class BackgroundSyncService {
         console.log('[BackgroundSyncService] Android background job stopped');
         break;
       default:
-        console.log('[BackgroundSyncService] Unknown background sync event:', eventType);
+        console.log(
+          '[BackgroundSyncService] Unknown background sync event:',
+          eventType
+        );
     }
   }
 
@@ -271,12 +281,16 @@ class BackgroundSyncService {
     }
 
     // Update Redux store
-    store.dispatch(updateNetworkStatus({
-      isOnline: state.isConnected || false,
-      networkType,
-    }));
+    store.dispatch(
+      updateNetworkStatus({
+        isOnline: state.isConnected || false,
+        networkType,
+      })
+    );
 
-    console.log(`[BackgroundSyncService] Network state changed: ${state.type}, Connected: ${state.isConnected}`);
+    console.log(
+      `[BackgroundSyncService] Network state changed: ${state.type}, Connected: ${state.isConnected}`
+    );
 
     // Check if we should trigger a sync based on network conditions
     if (this.shouldSyncOnCurrentNetwork()) {
@@ -293,19 +307,30 @@ class BackgroundSyncService {
     }
 
     // Check WiFi-only preference
-    if (this.syncPreferences.wifiOnly && this.currentNetworkState.type !== 'wifi') {
-      console.log('[BackgroundSyncService] Sync requires WiFi, current network is not WiFi');
+    if (
+      this.syncPreferences.wifiOnly &&
+      this.currentNetworkState.type !== 'wifi'
+    ) {
+      console.log(
+        '[BackgroundSyncService] Sync requires WiFi, current network is not WiFi'
+      );
       return false;
     }
 
     // Check cellular preference
-    if (!this.syncPreferences.allowCellular && this.currentNetworkState.type === 'cellular') {
+    if (
+      !this.syncPreferences.allowCellular &&
+      this.currentNetworkState.type === 'cellular'
+    ) {
       console.log('[BackgroundSyncService] Cellular sync disabled');
       return false;
     }
 
     // Check metered connection preference
-    if (!this.syncPreferences.allowMetered && this.currentNetworkState.details?.isConnectionExpensive) {
+    if (
+      !this.syncPreferences.allowMetered &&
+      this.currentNetworkState.details?.isConnectionExpensive
+    ) {
       console.log('[BackgroundSyncService] Metered connection sync disabled');
       return false;
     }
@@ -331,7 +356,10 @@ class BackgroundSyncService {
    */
   public async scheduleSync(): Promise<void> {
     try {
-      if (!this.syncPreferences.enabled || this.syncPreferences.interval === SYNC_INTERVALS.MANUAL) {
+      if (
+        !this.syncPreferences.enabled ||
+        this.syncPreferences.interval === SYNC_INTERVALS.MANUAL
+      ) {
         await this.cancelSync();
         return;
       }
@@ -347,12 +375,17 @@ class BackgroundSyncService {
       };
 
       await BackgroundJob.schedule(syncOptions);
-      
+
       const nextSyncTime = new Date(Date.now() + syncOptions.period);
-      console.log(`[BackgroundSyncService] Sync scheduled for ${nextSyncTime.toISOString()}`);
-      
+      console.log(
+        `[BackgroundSyncService] Sync scheduled for ${nextSyncTime.toISOString()}`
+      );
+
       // Save next sync time
-      await AsyncStorage.setItem('@mobdeck/next_sync_time', nextSyncTime.toISOString());
+      await AsyncStorage.setItem(
+        '@mobdeck/next_sync_time',
+        nextSyncTime.toISOString()
+      );
     } catch (error) {
       console.error('[BackgroundSyncService] Failed to schedule sync:', error);
       throw error;
@@ -377,7 +410,7 @@ class BackgroundSyncService {
    */
   private async performBackgroundSync(): Promise<void> {
     console.log('[BackgroundSyncService] Starting background sync...');
-    
+
     const startTime = Date.now();
     const syncHistory: SyncHistoryEntry = {
       timestamp: new Date().toISOString(),
@@ -390,42 +423,50 @@ class BackgroundSyncService {
     try {
       // Check network conditions
       if (!this.shouldSyncOnCurrentNetwork()) {
-        console.log('[BackgroundSyncService] Network conditions not met for sync');
+        console.log(
+          '[BackgroundSyncService] Network conditions not met for sync'
+        );
         return;
       }
 
       // Check if sync is already running
       const state = store.getState();
       if (state.sync.status === SyncStatus.SYNCING) {
-        console.log('[BackgroundSyncService] Sync already in progress, skipping');
+        console.log(
+          '[BackgroundSyncService] Sync already in progress, skipping'
+        );
         return;
       }
 
       // Perform sync using existing SyncService
       const result = await syncService.startFullSync();
-      
+
       syncHistory.success = result.success;
       syncHistory.itemsSynced = result.syncedCount;
       syncHistory.duration = Date.now() - startTime;
-      
+
       if (!result.success) {
         syncHistory.error = result.errors[0]?.error || 'Unknown error';
       }
 
       // Save last sync time
       await AsyncStorage.setItem(LAST_SYNC_KEY, new Date().toISOString());
-      
-      console.log(`[BackgroundSyncService] Background sync completed in ${syncHistory.duration}ms`);
+
+      console.log(
+        `[BackgroundSyncService] Background sync completed in ${syncHistory.duration}ms`
+      );
     } catch (error) {
       console.error('[BackgroundSyncService] Background sync failed:', error);
       syncHistory.error = error.message;
-      
+
       // Dispatch error to Redux store
-      store.dispatch(syncError({
-        error: error.message,
-        errorCode: 'BACKGROUND_SYNC_FAILED',
-        retryable: true,
-      }));
+      store.dispatch(
+        syncError({
+          error: error.message,
+          errorCode: 'BACKGROUND_SYNC_FAILED',
+          retryable: true,
+        })
+      );
     } finally {
       // Save sync history
       await this.saveSyncHistory(syncHistory);
@@ -439,17 +480,22 @@ class BackgroundSyncService {
     try {
       const historyKey = '@mobdeck/sync_history';
       const existingHistory = await AsyncStorage.getItem(historyKey);
-      const history: SyncHistoryEntry[] = existingHistory ? JSON.parse(existingHistory) : [];
-      
+      const history: SyncHistoryEntry[] = existingHistory
+        ? JSON.parse(existingHistory)
+        : [];
+
       // Add new entry and keep last 20 entries
       history.unshift(entry);
       if (history.length > 20) {
         history.pop();
       }
-      
+
       await AsyncStorage.setItem(historyKey, JSON.stringify(history));
     } catch (error) {
-      console.error('[BackgroundSyncService] Failed to save sync history:', error);
+      console.error(
+        '[BackgroundSyncService] Failed to save sync history:',
+        error
+      );
     }
   }
 
@@ -482,10 +528,15 @@ class BackgroundSyncService {
       const lastSyncTime = await AsyncStorage.getItem(LAST_SYNC_KEY);
       if (lastSyncTime) {
         const timeSinceLastSync = Date.now() - new Date(lastSyncTime).getTime();
-        const minInterval = Math.min(this.syncPreferences.interval * 60 * 1000, 5 * 60 * 1000); // At least 5 minutes
-        
+        const minInterval = Math.min(
+          this.syncPreferences.interval * 60 * 1000,
+          5 * 60 * 1000
+        ); // At least 5 minutes
+
         if (timeSinceLastSync < minInterval) {
-          console.log('[BackgroundSyncService] Too soon since last sync, skipping');
+          console.log(
+            '[BackgroundSyncService] Too soon since last sync, skipping'
+          );
           return;
         }
       }
@@ -493,26 +544,33 @@ class BackgroundSyncService {
       // Trigger sync
       await this.performBackgroundSync();
     } catch (error) {
-      console.error('[BackgroundSyncService] Failed to check and trigger sync:', error);
+      console.error(
+        '[BackgroundSyncService] Failed to check and trigger sync:',
+        error
+      );
     }
   }
 
   /**
    * Update sync preferences
    */
-  public async updatePreferences(preferences: Partial<BackgroundSyncPreferences>): Promise<void> {
+  public async updatePreferences(
+    preferences: Partial<BackgroundSyncPreferences>
+  ): Promise<void> {
     this.syncPreferences = { ...this.syncPreferences, ...preferences };
     await this.savePreferences();
 
     // Update Redux store
-    store.dispatch(updateSyncConfig({
-      config: {
-        backgroundSyncEnabled: this.syncPreferences.enabled,
-        syncInterval: this.syncPreferences.interval,
-        syncOnWifiOnly: this.syncPreferences.wifiOnly,
-        syncOnCellular: this.syncPreferences.allowCellular,
-      },
-    }));
+    store.dispatch(
+      updateSyncConfig({
+        config: {
+          backgroundSyncEnabled: this.syncPreferences.enabled,
+          syncInterval: this.syncPreferences.interval,
+          syncOnWifiOnly: this.syncPreferences.wifiOnly,
+          syncOnCellular: this.syncPreferences.allowCellular,
+        },
+      })
+    );
 
     // Reschedule sync if needed
     if (this.syncPreferences.enabled) {
@@ -529,7 +587,9 @@ class BackgroundSyncService {
     const lastSyncTime = await AsyncStorage.getItem(LAST_SYNC_KEY);
     const nextSyncTime = await AsyncStorage.getItem('@mobdeck/next_sync_time');
     const historyData = await AsyncStorage.getItem('@mobdeck/sync_history');
-    const history: SyncHistoryEntry[] = historyData ? JSON.parse(historyData) : [];
+    const history: SyncHistoryEntry[] = historyData
+      ? JSON.parse(historyData)
+      : [];
 
     return {
       isRunning: store.getState().sync.status === SyncStatus.SYNCING,
@@ -566,7 +626,10 @@ class BackgroundSyncService {
 
     // Cancel background sync
     this.cancelSync().catch(error => {
-      console.error('[BackgroundSyncService] Failed to cancel sync during cleanup:', error);
+      console.error(
+        '[BackgroundSyncService] Failed to cancel sync during cleanup:',
+        error
+      );
     });
 
     this.isInitialized = false;

@@ -7,7 +7,9 @@ import { Article, PaginatedResponse } from './index';
 
 // API Service interfaces
 export interface IArticlesApiService {
-  fetchArticles(params: FetchArticlesParams): Promise<PaginatedResponse<Article>>;
+  fetchArticles(
+    params: FetchArticlesParams
+  ): Promise<PaginatedResponse<Article>>;
   createArticle(params: CreateArticleParams): Promise<Article>;
   updateArticle(params: UpdateArticleParams): Promise<Article>;
   deleteArticle(params: DeleteArticleParams): Promise<void>;
@@ -123,7 +125,7 @@ export enum ArticleErrorCode {
   SYNC_CONFLICT = 'SYNC_CONFLICT',
   OFFLINE_ERROR = 'OFFLINE_ERROR',
   QUOTA_EXCEEDED = 'QUOTA_EXCEEDED',
-  UNKNOWN_ARTICLE_ERROR = 'UNKNOWN_ARTICLE_ERROR'
+  UNKNOWN_ARTICLE_ERROR = 'UNKNOWN_ARTICLE_ERROR',
 }
 
 export interface ArticleSyncError {
@@ -148,7 +150,14 @@ export interface OptimisticUpdate {
 
 // Bulk operations
 export interface BulkOperationRequest {
-  operation: 'archive' | 'unarchive' | 'favorite' | 'unfavorite' | 'read' | 'unread' | 'delete';
+  operation:
+    | 'archive'
+    | 'unarchive'
+    | 'favorite'
+    | 'unfavorite'
+    | 'read'
+    | 'unread'
+    | 'delete';
   articleIds: string[];
   options?: {
     permanent?: boolean; // for delete operation
@@ -407,8 +416,16 @@ export interface SyncStatusEvent {
 
 // Type guards and utility types
 export type ArticleField = keyof Article;
-export type RequiredArticleFields = 'id' | 'title' | 'url' | 'createdAt' | 'updatedAt';
-export type OptionalArticleFields = Exclude<ArticleField, RequiredArticleFields>;
+export type RequiredArticleFields =
+  | 'id'
+  | 'title'
+  | 'url'
+  | 'createdAt'
+  | 'updatedAt';
+export type OptionalArticleFields = Exclude<
+  ArticleField,
+  RequiredArticleFields
+>;
 
 export interface CreateArticleDTO extends Pick<Article, 'title' | 'url'> {
   summary?: string;
@@ -417,7 +434,8 @@ export interface CreateArticleDTO extends Pick<Article, 'title' | 'url'> {
   isFavorite?: boolean;
 }
 
-export interface UpdateArticleDTO extends Partial<Omit<Article, RequiredArticleFields>> {}
+export interface UpdateArticleDTO
+  extends Partial<Omit<Article, RequiredArticleFields>> {}
 
 // Re-export commonly used types from main types file
 export type { Article, PaginatedResponse, ApiResponse } from './index';

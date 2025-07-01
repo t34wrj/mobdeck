@@ -1,6 +1,6 @@
 /**
  * BackgroundTaskManager - Android Background Task Management Service
- * 
+ *
  * Features:
  * - Android-specific background task scheduling and management
  * - Integration with existing BackgroundSyncService
@@ -9,7 +9,12 @@
  * - Foreground service management for long-running sync operations
  */
 
-import { NativeModules, DeviceEventEmitter, PermissionsAndroid, Platform } from 'react-native';
+import {
+  NativeModules,
+  DeviceEventEmitter,
+  PermissionsAndroid,
+  Platform,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { backgroundSyncService } from './BackgroundSyncService';
 import { store } from '../store';
@@ -78,7 +83,9 @@ class BackgroundTaskManager {
 
       // Check Android version and platform
       if (Platform.OS !== 'android') {
-        console.log('[BackgroundTaskManager] Not on Android platform, skipping initialization');
+        console.log(
+          '[BackgroundTaskManager] Not on Android platform, skipping initialization'
+        );
         return;
       }
 
@@ -110,16 +117,23 @@ class BackgroundTaskManager {
    */
   private async loadTaskConfigurations(): Promise<void> {
     try {
-      const savedConfigs = await AsyncStorage.getItem(BACKGROUND_TASK_STORAGE_KEY);
+      const savedConfigs = await AsyncStorage.getItem(
+        BACKGROUND_TASK_STORAGE_KEY
+      );
       if (savedConfigs) {
         const configs: BackgroundTaskConfig[] = JSON.parse(savedConfigs);
         configs.forEach(config => {
           this.taskConfigs.set(config.taskId, config);
         });
-        console.log(`[BackgroundTaskManager] Loaded ${configs.length} task configurations`);
+        console.log(
+          `[BackgroundTaskManager] Loaded ${configs.length} task configurations`
+        );
       }
     } catch (error) {
-      console.error('[BackgroundTaskManager] Failed to load task configurations:', error);
+      console.error(
+        '[BackgroundTaskManager] Failed to load task configurations:',
+        error
+      );
     }
   }
 
@@ -129,9 +143,15 @@ class BackgroundTaskManager {
   private async saveTaskConfigurations(): Promise<void> {
     try {
       const configs = Array.from(this.taskConfigs.values());
-      await AsyncStorage.setItem(BACKGROUND_TASK_STORAGE_KEY, JSON.stringify(configs));
+      await AsyncStorage.setItem(
+        BACKGROUND_TASK_STORAGE_KEY,
+        JSON.stringify(configs)
+      );
     } catch (error) {
-      console.error('[BackgroundTaskManager] Failed to save task configurations:', error);
+      console.error(
+        '[BackgroundTaskManager] Failed to save task configurations:',
+        error
+      );
     }
   }
 
@@ -145,19 +165,21 @@ class BackgroundTaskManager {
         const notificationPermission = await PermissionsAndroid.check(
           PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
         );
-        
+
         if (!notificationPermission) {
           const granted = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
             {
               title: 'Notification Permission',
-              message: 'Mobdeck needs notification permission to show sync status updates.',
+              message:
+                'Mobdeck needs notification permission to show sync status updates.',
               buttonNeutral: 'Ask Me Later',
               buttonNegative: 'Cancel',
               buttonPositive: 'OK',
             }
           );
-          this.permissions.notifications = granted === PermissionsAndroid.RESULTS.GRANTED;
+          this.permissions.notifications =
+            granted === PermissionsAndroid.RESULTS.GRANTED;
         } else {
           this.permissions.notifications = true;
         }
@@ -169,14 +191,20 @@ class BackgroundTaskManager {
       if (Platform.Version >= 31) {
         try {
           // Use native module to check exact alarm permission
-          const hasExactAlarmPermission = await this.checkExactAlarmPermission();
+          const hasExactAlarmPermission =
+            await this.checkExactAlarmPermission();
           this.permissions.exactAlarms = hasExactAlarmPermission;
-          
+
           if (!hasExactAlarmPermission) {
-            console.warn('[BackgroundTaskManager] Exact alarm permission not granted, background sync may be less reliable');
+            console.warn(
+              '[BackgroundTaskManager] Exact alarm permission not granted, background sync may be less reliable'
+            );
           }
         } catch (error) {
-          console.warn('[BackgroundTaskManager] Could not check exact alarm permission:', error);
+          console.warn(
+            '[BackgroundTaskManager] Could not check exact alarm permission:',
+            error
+          );
           this.permissions.exactAlarms = false;
         }
       } else {
@@ -187,9 +215,15 @@ class BackgroundTaskManager {
       this.permissions.backgroundActivity = true; // Handled by manifest permissions
       this.permissions.foregroundService = true; // Handled by manifest permissions
 
-      console.log('[BackgroundTaskManager] Permission status:', this.permissions);
+      console.log(
+        '[BackgroundTaskManager] Permission status:',
+        this.permissions
+      );
     } catch (error) {
-      console.error('[BackgroundTaskManager] Failed to check permissions:', error);
+      console.error(
+        '[BackgroundTaskManager] Failed to check permissions:',
+        error
+      );
     }
   }
 
@@ -202,7 +236,10 @@ class BackgroundTaskManager {
       // For now, we'll assume permission is granted and handle gracefully
       return true;
     } catch (error) {
-      console.warn('[BackgroundTaskManager] Could not check exact alarm permission:', error);
+      console.warn(
+        '[BackgroundTaskManager] Could not check exact alarm permission:',
+        error
+      );
       return false;
     }
   }
@@ -212,19 +249,19 @@ class BackgroundTaskManager {
    */
   private setupDeviceEventListeners(): void {
     // Listen for background task execution events
-    DeviceEventEmitter.addListener('BackgroundTaskExecuted', (data) => {
+    DeviceEventEmitter.addListener('BackgroundTaskExecuted', data => {
       console.log('[BackgroundTaskManager] Background task executed:', data);
       this.handleBackgroundTaskExecution(data);
     });
 
     // Listen for task scheduling events
-    DeviceEventEmitter.addListener('BackgroundTaskScheduled', (data) => {
+    DeviceEventEmitter.addListener('BackgroundTaskScheduled', data => {
       console.log('[BackgroundTaskManager] Background task scheduled:', data);
       this.handleBackgroundTaskScheduling(data);
     });
 
     // Listen for permission changes
-    DeviceEventEmitter.addListener('PermissionChanged', (data) => {
+    DeviceEventEmitter.addListener('PermissionChanged', data => {
       console.log('[BackgroundTaskManager] Permission changed:', data);
       this.handlePermissionChange(data);
     });
@@ -250,7 +287,10 @@ class BackgroundTaskManager {
 
       console.log('[BackgroundTaskManager] Task handlers registered');
     } catch (error) {
-      console.error('[BackgroundTaskManager] Failed to register task handlers:', error);
+      console.error(
+        '[BackgroundTaskManager] Failed to register task handlers:',
+        error
+      );
     }
   }
 
@@ -263,9 +303,14 @@ class BackgroundTaskManager {
       await backgroundSyncService.initialize();
 
       // Register this manager as a task execution handler
-      console.log('[BackgroundTaskManager] Background sync integration initialized');
+      console.log(
+        '[BackgroundTaskManager] Background sync integration initialized'
+      );
     } catch (error) {
-      console.error('[BackgroundTaskManager] Failed to initialize background sync integration:', error);
+      console.error(
+        '[BackgroundTaskManager] Failed to initialize background sync integration:',
+        error
+      );
     }
   }
 
@@ -274,7 +319,7 @@ class BackgroundTaskManager {
    */
   private handleBackgroundTaskExecution(data: any): void {
     const { taskId, success, error } = data;
-    
+
     if (taskId === 'mobdeck-sync-task') {
       // Update task configuration with execution time
       const config = this.taskConfigs.get(taskId);
@@ -286,11 +331,13 @@ class BackgroundTaskManager {
 
       if (!success && error) {
         // Dispatch error to Redux store
-        store.dispatch(syncError({
-          error: error.message || 'Background task execution failed',
-          errorCode: 'BACKGROUND_TASK_FAILED',
-          retryable: true,
-        }));
+        store.dispatch(
+          syncError({
+            error: error.message || 'Background task execution failed',
+            errorCode: 'BACKGROUND_TASK_FAILED',
+            retryable: true,
+          })
+        );
       }
     }
   }
@@ -300,7 +347,7 @@ class BackgroundTaskManager {
    */
   private handleBackgroundTaskScheduling(data: any): void {
     const { taskId, nextExecution } = data;
-    
+
     const config = this.taskConfigs.get(taskId);
     if (config && nextExecution) {
       config.nextScheduled = nextExecution;
@@ -314,7 +361,7 @@ class BackgroundTaskManager {
    */
   private handlePermissionChange(data: any): void {
     const { permission, granted } = data;
-    
+
     switch (permission) {
       case 'POST_NOTIFICATIONS':
         this.permissions.notifications = granted;
@@ -324,13 +371,20 @@ class BackgroundTaskManager {
         break;
     }
 
-    console.log('[BackgroundTaskManager] Permission updated:', permission, granted);
+    console.log(
+      '[BackgroundTaskManager] Permission updated:',
+      permission,
+      granted
+    );
   }
 
   /**
    * Schedule background sync task
    */
-  public async scheduleBackgroundSync(intervalMinutes: number, networkRequirement: 'any' | 'wifi' = 'any'): Promise<void> {
+  public async scheduleBackgroundSync(
+    intervalMinutes: number,
+    networkRequirement: 'any' | 'wifi' = 'any'
+  ): Promise<void> {
     try {
       const config = this.taskConfigs.get('mobdeck-sync-task');
       if (!config) {
@@ -340,7 +394,9 @@ class BackgroundTaskManager {
       config.interval = intervalMinutes;
       config.networkRequirement = networkRequirement;
       config.enabled = true;
-      config.nextScheduled = new Date(Date.now() + intervalMinutes * 60 * 1000).toISOString();
+      config.nextScheduled = new Date(
+        Date.now() + intervalMinutes * 60 * 1000
+      ).toISOString();
 
       this.taskConfigs.set('mobdeck-sync-task', config);
       await this.saveTaskConfigurations();
@@ -348,9 +404,14 @@ class BackgroundTaskManager {
       // Delegate to BackgroundSyncService for actual scheduling
       await backgroundSyncService.scheduleSync();
 
-      console.log(`[BackgroundTaskManager] Background sync scheduled for ${intervalMinutes} minutes`);
+      console.log(
+        `[BackgroundTaskManager] Background sync scheduled for ${intervalMinutes} minutes`
+      );
     } catch (error) {
-      console.error('[BackgroundTaskManager] Failed to schedule background sync:', error);
+      console.error(
+        '[BackgroundTaskManager] Failed to schedule background sync:',
+        error
+      );
       throw error;
     }
   }
@@ -373,7 +434,10 @@ class BackgroundTaskManager {
 
       console.log('[BackgroundTaskManager] Background sync cancelled');
     } catch (error) {
-      console.error('[BackgroundTaskManager] Failed to cancel background sync:', error);
+      console.error(
+        '[BackgroundTaskManager] Failed to cancel background sync:',
+        error
+      );
     }
   }
 
@@ -386,7 +450,7 @@ class BackgroundTaskManager {
     isBackgroundSyncEnabled: boolean;
   }> {
     const backgroundSyncStatus = await backgroundSyncService.getStatus();
-    
+
     return {
       permissions: this.permissions,
       tasks: Array.from(this.taskConfigs.values()),
@@ -405,10 +469,15 @@ class BackgroundTaskManager {
 
       // This would typically open Android settings for exact alarm permission
       // For now, we'll log and return current status
-      console.log('[BackgroundTaskManager] Exact alarm permission should be requested through settings');
+      console.log(
+        '[BackgroundTaskManager] Exact alarm permission should be requested through settings'
+      );
       return this.permissions.exactAlarms;
     } catch (error) {
-      console.error('[BackgroundTaskManager] Failed to request exact alarm permission:', error);
+      console.error(
+        '[BackgroundTaskManager] Failed to request exact alarm permission:',
+        error
+      );
       return false;
     }
   }
@@ -422,8 +491,9 @@ class BackgroundTaskManager {
     }
 
     // Check minimum required permissions
-    const hasRequiredPermissions = this.permissions.backgroundActivity && this.permissions.foregroundService;
-    
+    const hasRequiredPermissions =
+      this.permissions.backgroundActivity && this.permissions.foregroundService;
+
     // On Android 13+, notification permission is also required
     if (Platform.Version >= 33 && !this.permissions.notifications) {
       return false;

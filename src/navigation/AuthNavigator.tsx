@@ -20,7 +20,7 @@ const AuthNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen
-        name="Login"
+        name='Login'
         component={LoginScreen}
         options={{
           title: 'Login to Readeck',
@@ -28,7 +28,7 @@ const AuthNavigator: React.FC = () => {
         }}
       />
       <Stack.Screen
-        name="Setup"
+        name='Setup'
         component={SetupScreen}
         options={{
           title: 'Setup',

@@ -2,23 +2,23 @@ export interface SyncState {
   // Sync status tracking
   status: SyncStatus;
   lastSyncTime: string | null;
-  
+
   // Progress tracking
   progress: SyncProgress;
-  
+
   // Network and connectivity
   isOnline: boolean;
   networkType: NetworkType | null;
-  
+
   // Configuration
   config: SyncConfiguration;
-  
+
   // Conflict resolution
   conflicts: ConflictResolution[];
-  
+
   // Error handling
   error: string | null;
-  
+
   // Statistics
   stats: SyncStatistics;
 }
@@ -58,18 +58,18 @@ export interface SyncConfiguration {
   // Background sync settings
   backgroundSyncEnabled: boolean;
   syncInterval: number; // minutes
-  
+
   // Network preferences
   syncOnWifiOnly: boolean;
   syncOnCellular: boolean;
-  
+
   // Data preferences
   downloadImages: boolean;
   fullTextSync: boolean;
-  
+
   // Conflict resolution strategy
   conflictResolutionStrategy: ConflictResolutionStrategy;
-  
+
   // Batch size
   batchSize: number;
 }

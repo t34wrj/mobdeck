@@ -6,11 +6,15 @@ import { validator } from '../validate';
 jest.mock('react-native-sqlite-storage', () => ({
   DEBUG: jest.fn(),
   enablePromise: jest.fn(),
-  openDatabase: jest.fn(() => Promise.resolve({
-    executeSql: jest.fn(() => Promise.resolve([{ rows: { length: 0, item: jest.fn() } }])),
-    transaction: jest.fn(),
-    close: jest.fn(() => Promise.resolve()),
-  })),
+  openDatabase: jest.fn(() =>
+    Promise.resolve({
+      executeSql: jest.fn(() =>
+        Promise.resolve([{ rows: { length: 0, item: jest.fn() } }])
+      ),
+      transaction: jest.fn(),
+      close: jest.fn(() => Promise.resolve()),
+    })
+  ),
 }));
 
 describe('Database Schema', () => {
@@ -45,11 +49,11 @@ describe('Database Schema', () => {
     const expectedTables = [
       'articles',
       'labels',
-      'article_labels', 
+      'article_labels',
       'sync_metadata',
-      'schema_version'
+      'schema_version',
     ];
-    
+
     // This is a basic structural test
     expectedTables.forEach(table => {
       expect(typeof table).toBe('string');

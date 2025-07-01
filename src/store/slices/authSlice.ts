@@ -39,43 +39,48 @@ export const loginUser = createAsyncThunk<
     }
 
     const loginResponse: LoginResponse = await response.json();
-    
+
     const user: AuthenticatedUser = {
       id: loginResponse.user.id,
       username: loginResponse.user.username,
       email: loginResponse.user.email,
       serverUrl: credentials.serverUrl,
       lastLoginAt: new Date().toISOString(),
-      tokenExpiresAt: new Date(Date.now() + loginResponse.expiresIn * 1000).toISOString(),
+      tokenExpiresAt: new Date(
+        Date.now() + loginResponse.expiresIn * 1000
+      ).toISOString(),
     };
 
-    const tokenStored = await authStorageService.storeToken(loginResponse.token);
+    const tokenStored = await authStorageService.storeToken(
+      loginResponse.token
+    );
     if (!tokenStored) {
       console.warn('[AuthSlice] Failed to store token securely');
     }
 
     return { user, token: loginResponse.token };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Login failed';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Login failed';
     return rejectWithValue(errorMessage);
   }
 });
 
-export const logoutUser = createAsyncThunk<
-  void,
-  void,
-  { rejectValue: string }
->('auth/logoutUser', async (_, { rejectWithValue }) => {
-  try {
-    const tokenDeleted = await authStorageService.deleteToken();
-    if (!tokenDeleted) {
-      console.warn('[AuthSlice] Failed to delete token from secure storage');
+export const logoutUser = createAsyncThunk<void, void, { rejectValue: string }>(
+  'auth/logoutUser',
+  async (_, { rejectWithValue }) => {
+    try {
+      const tokenDeleted = await authStorageService.deleteToken();
+      if (!tokenDeleted) {
+        console.warn('[AuthSlice] Failed to delete token from secure storage');
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Logout failed';
+      return rejectWithValue(errorMessage);
     }
-  } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Logout failed';
-    return rejectWithValue(errorMessage);
   }
-});
+);
 
 export const initializeAuth = createAsyncThunk<
   { token: string } | null,
@@ -84,10 +89,10 @@ export const initializeAuth = createAsyncThunk<
 >('auth/initializeAuth', async (_, { rejectWithValue }) => {
   try {
     const token = await authStorageService.retrieveToken();
-    
+
     if (token) {
       const validation = await authStorageService.validateStoredToken();
-      
+
       if (validation.isValid && !validation.isExpired) {
         return { token };
       } else {
@@ -95,10 +100,11 @@ export const initializeAuth = createAsyncThunk<
         return null;
       }
     }
-    
+
     return null;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Auth initialization failed';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Auth initialization failed';
     return rejectWithValue(errorMessage);
   }
 });
@@ -110,7 +116,7 @@ export const refreshToken = createAsyncThunk<
 >('auth/refreshToken', async (serverUrl, { rejectWithValue }) => {
   try {
     const currentToken = await authStorageService.retrieveToken();
-    
+
     if (!currentToken) {
       throw new Error('No token available for refresh');
     }
@@ -118,7 +124,7 @@ export const refreshToken = createAsyncThunk<
     const response = await fetch(`${serverUrl}/api/auth/refresh`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${currentToken}`,
+        Authorization: `Bearer ${currentToken}`,
         'Content-Type': 'application/json',
       },
     });
@@ -128,15 +134,18 @@ export const refreshToken = createAsyncThunk<
     }
 
     const refreshResponse = await response.json();
-    
-    const tokenStored = await authStorageService.storeToken(refreshResponse.token);
+
+    const tokenStored = await authStorageService.storeToken(
+      refreshResponse.token
+    );
     if (!tokenStored) {
       console.warn('[AuthSlice] Failed to store refreshed token securely');
     }
 
     return { token: refreshResponse.token };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Token refresh failed';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Token refresh failed';
     return rejectWithValue(errorMessage);
   }
 });
@@ -145,14 +154,14 @@ const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    clearError: (state) => {
+    clearError: state => {
       state.error = null;
     },
     setUser: (state, action: PayloadAction<AuthenticatedUser>) => {
       state.user = action.payload;
       state.isAuthenticated = true;
     },
-    clearAuth: (state) => {
+    clearAuth: state => {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
@@ -160,9 +169,9 @@ const authSlice = createSlice({
       state.lastTokenRefresh = undefined;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     builder
-      .addCase(loginUser.pending, (state) => {
+      .addCase(loginUser.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -180,11 +189,11 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = action.payload || 'Login failed';
       })
-      .addCase(logoutUser.pending, (state) => {
+      .addCase(logoutUser.pending, state => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(logoutUser.fulfilled, (state) => {
+      .addCase(logoutUser.fulfilled, state => {
         state.loading = false;
         state.user = null;
         state.token = null;
@@ -200,7 +209,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.lastTokenRefresh = undefined;
       })
-      .addCase(initializeAuth.pending, (state) => {
+      .addCase(initializeAuth.pending, state => {
         state.loading = true;
         state.error = null;
       })
@@ -218,7 +227,7 @@ const authSlice = createSlice({
         state.error = action.payload || 'Auth initialization failed';
         state.isAuthenticated = false;
       })
-      .addCase(refreshToken.pending, (state) => {
+      .addCase(refreshToken.pending, state => {
         state.loading = true;
         state.error = null;
       })

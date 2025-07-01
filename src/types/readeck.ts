@@ -32,7 +32,7 @@ export enum ReadeckErrorCode {
   RATE_LIMITED = 'RATE_LIMITED',
   SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
   CONNECTION_ERROR = 'CONNECTION_ERROR',
-  UNKNOWN_ERROR = 'UNKNOWN_ERROR'
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 
 // Generic API response wrapper
@@ -190,27 +190,40 @@ export interface RetryConfig {
 // Service interface for dependency injection
 export interface IReadeckApiService {
   // Authentication
-  login(credentials: ReadeckLoginRequest): Promise<ReadeckApiResponse<ReadeckLoginResponse>>;
+  login(
+    credentials: ReadeckLoginRequest
+  ): Promise<ReadeckApiResponse<ReadeckLoginResponse>>;
   validateToken(): Promise<ReadeckApiResponse<ReadeckUser>>;
   refreshToken(): Promise<ReadeckApiResponse<ReadeckLoginResponse>>;
-  
+
   // Articles
-  getArticles(filters?: ArticleFilters): Promise<ReadeckApiResponse<ReadeckArticleList>>;
+  getArticles(
+    filters?: ArticleFilters
+  ): Promise<ReadeckApiResponse<ReadeckArticleList>>;
   getArticle(id: string): Promise<ReadeckApiResponse<ReadeckArticle>>;
-  createArticle(article: CreateArticleRequest): Promise<ReadeckApiResponse<ReadeckArticle>>;
-  updateArticle(id: string, updates: UpdateArticleRequest): Promise<ReadeckApiResponse<ReadeckArticle>>;
+  createArticle(
+    article: CreateArticleRequest
+  ): Promise<ReadeckApiResponse<ReadeckArticle>>;
+  updateArticle(
+    id: string,
+    updates: UpdateArticleRequest
+  ): Promise<ReadeckApiResponse<ReadeckArticle>>;
   deleteArticle(id: string): Promise<ReadeckApiResponse<void>>;
-  
+
   // User
   getUserProfile(): Promise<ReadeckApiResponse<ReadeckUserProfile>>;
-  updateUserProfile(updates: Partial<ReadeckUserProfile>): Promise<ReadeckApiResponse<ReadeckUserProfile>>;
-  
+  updateUserProfile(
+    updates: Partial<ReadeckUserProfile>
+  ): Promise<ReadeckApiResponse<ReadeckUserProfile>>;
+
   // System
   getSystemInfo(): Promise<ReadeckApiResponse<ReadeckSystemInfo>>;
-  
+
   // Sync
-  syncArticles(request?: SyncRequest): Promise<ReadeckApiResponse<ReadeckSyncResponse>>;
-  
+  syncArticles(
+    request?: SyncRequest
+  ): Promise<ReadeckApiResponse<ReadeckSyncResponse>>;
+
   // Configuration
   updateConfig(config: Partial<ReadeckApiConfig>): void;
   getNetworkState(): NetworkState;

@@ -12,7 +12,7 @@ export const colors = {
     800: '#1565c0',
     900: '#0d47a1',
   },
-  
+
   // Secondary colors
   secondary: {
     50: '#f3e5f5',
@@ -26,7 +26,7 @@ export const colors = {
     800: '#6a1b9a',
     900: '#4a148c',
   },
-  
+
   // Neutral colors
   neutral: {
     50: '#fafafa',
@@ -40,7 +40,7 @@ export const colors = {
     800: '#424242',
     900: '#212121',
   },
-  
+
   // Semantic colors
   success: {
     50: '#e8f5e8',
@@ -54,7 +54,7 @@ export const colors = {
     800: '#2e7d32',
     900: '#1b5e20',
   },
-  
+
   error: {
     50: '#ffebee',
     100: '#ffcdd2',
@@ -67,7 +67,7 @@ export const colors = {
     800: '#c62828',
     900: '#b71c1c',
   },
-  
+
   warning: {
     50: '#fff8e1',
     100: '#ffecb3',
@@ -80,7 +80,7 @@ export const colors = {
     800: '#ff8f00',
     900: '#ff6f00',
   },
-  
+
   info: {
     50: '#e1f5fe',
     100: '#b3e5fc',
@@ -101,7 +101,7 @@ export const typography = {
     medium: 'System',
     bold: 'System',
   },
-  
+
   fontSize: {
     xs: 12,
     sm: 14,
@@ -113,7 +113,7 @@ export const typography = {
     '4xl': 36,
     '5xl': 48,
   },
-  
+
   lineHeight: {
     xs: 16,
     sm: 20,
@@ -125,7 +125,7 @@ export const typography = {
     '4xl': 44,
     '5xl': 56,
   },
-  
+
   fontWeight: {
     normal: '400' as const,
     medium: '500' as const,
@@ -195,7 +195,7 @@ export const shadows = {
       width: 0,
       height: 4,
     },
-    shadowOpacity: 0.30,
+    shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
   },

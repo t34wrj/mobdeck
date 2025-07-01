@@ -32,7 +32,7 @@ export class DatabaseManager {
       }
 
       console.log('Initializing SQLite database...');
-      
+
       this.db = await SQLite.openDatabase({
         name: this.DB_NAME,
         location: 'default',
@@ -77,15 +77,17 @@ export class DatabaseManager {
       const versionResult = await this.db.executeSql(
         'SELECT version FROM schema_version ORDER BY version DESC LIMIT 1'
       );
-      
+
       const currentVersion = versionResult[0]?.rows?.item(0)?.version || 0;
-      
+
       if (currentVersion < this.DB_VERSION) {
-        console.log(`Running migrations from version ${currentVersion} to ${this.DB_VERSION}`);
-        
+        console.log(
+          `Running migrations from version ${currentVersion} to ${this.DB_VERSION}`
+        );
+
         // Read and execute schema
         const schemaSQL = await this.loadSchemaSQL();
-        
+
         // Split by semicolon and execute each statement
         const statements = schemaSQL
           .split(';')
@@ -197,12 +199,14 @@ export class DatabaseManager {
   }
 
   // Utility methods for common database operations
-  async transaction<T>(operation: (tx: SQLite.Transaction) => Promise<T>): Promise<T> {
+  async transaction<T>(
+    operation: (tx: SQLite.Transaction) => Promise<T>
+  ): Promise<T> {
     const db = this.getDatabase();
-    
+
     return new Promise((resolve, reject) => {
       db.transaction(
-        async (tx) => {
+        async tx => {
           try {
             const result = await operation(tx);
             resolve(result);
@@ -210,13 +214,15 @@ export class DatabaseManager {
             reject(error);
           }
         },
-        (error) => {
+        error => {
           console.error('Transaction failed:', error);
-          reject(new AppError({
-            code: ErrorCode.DATABASE_ERROR,
-            message: 'Database transaction failed',
-            details: error,
-          }));
+          reject(
+            new AppError({
+              code: ErrorCode.DATABASE_ERROR,
+              message: 'Database transaction failed',
+              details: error,
+            })
+          );
         }
       );
     });
@@ -257,9 +263,13 @@ export class DatabaseManager {
   }> {
     try {
       const [articlesResult, labelsResult, syncResult] = await Promise.all([
-        this.executeSql('SELECT COUNT(*) as count FROM articles WHERE deleted_at IS NULL'),
+        this.executeSql(
+          'SELECT COUNT(*) as count FROM articles WHERE deleted_at IS NULL'
+        ),
         this.executeSql('SELECT COUNT(*) as count FROM labels'),
-        this.executeSql('SELECT COUNT(*) as count FROM sync_metadata WHERE sync_status = "pending"')
+        this.executeSql(
+          'SELECT COUNT(*) as count FROM sync_metadata WHERE sync_status = "pending"'
+        ),
       ]);
 
       return {
@@ -279,8 +289,8 @@ export class DatabaseManager {
 
   // Clean up old sync metadata
   async cleanupSyncMetadata(olderThanDays: number = 30): Promise<void> {
-    const cutoffTimestamp = Date.now() - (olderThanDays * 24 * 60 * 60 * 1000);
-    
+    const cutoffTimestamp = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
+
     try {
       await this.executeSql(
         'DELETE FROM sync_metadata WHERE sync_status = "completed" AND updated_at < ?',

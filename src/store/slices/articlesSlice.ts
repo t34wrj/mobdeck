@@ -1,16 +1,23 @@
-import { createSlice, createAsyncThunk, PayloadAction, createEntityAdapter } from '@reduxjs/toolkit';
+import {
+  createSlice,
+  createAsyncThunk,
+  PayloadAction,
+  createEntityAdapter,
+} from '@reduxjs/toolkit';
 import { Article, PaginatedResponse, ApiResponse } from '../../types';
 import { RootState } from '../index';
 import { articlesApiService } from '../../services/ArticlesApiService';
 
 // Entity adapter for normalized state management
 const articlesAdapter = createEntityAdapter<Article>({
-  selectId: (article) => article.id,
-  sortComparer: (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  selectId: article => article.id,
+  sortComparer: (a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 });
 
 // Enhanced state interface with sync state and pagination
-export interface ArticlesState extends ReturnType<typeof articlesAdapter.getInitialState> {
+export interface ArticlesState
+  extends ReturnType<typeof articlesAdapter.getInitialState> {
   // Loading states
   loading: {
     fetch: boolean;
@@ -19,7 +26,7 @@ export interface ArticlesState extends ReturnType<typeof articlesAdapter.getInit
     delete: boolean;
     sync: boolean;
   };
-  
+
   // Error states
   error: {
     fetch: string | null;
@@ -28,7 +35,7 @@ export interface ArticlesState extends ReturnType<typeof articlesAdapter.getInit
     delete: string | null;
     sync: string | null;
   };
-  
+
   // Pagination state
   pagination: {
     page: number;
@@ -37,7 +44,7 @@ export interface ArticlesState extends ReturnType<typeof articlesAdapter.getInit
     totalItems: number;
     hasMore: boolean;
   };
-  
+
   // Search and filtering
   filters: {
     searchQuery: string;
@@ -46,7 +53,7 @@ export interface ArticlesState extends ReturnType<typeof articlesAdapter.getInit
     isRead?: boolean;
     tags?: string[];
   };
-  
+
   // Sync state management
   sync: {
     lastSyncTime: string | null;
@@ -55,7 +62,7 @@ export interface ArticlesState extends ReturnType<typeof articlesAdapter.getInit
     conflicts: string[]; // Article IDs with sync conflicts
     syncError: string | null;
   };
-  
+
   // UI state
   selectedArticleId: string | null;
   multiSelectMode: boolean;
@@ -137,7 +144,6 @@ interface SyncArticlesParams {
   articlesOnly?: boolean;
 }
 
-
 // Async thunk actions
 export const fetchArticles = createAsyncThunk<
   PaginatedResponse<Article>,
@@ -147,16 +153,17 @@ export const fetchArticles = createAsyncThunk<
   try {
     const state = getState();
     const currentPage = params.page || state.articles.pagination.page;
-    
+
     const response = await articlesApiService.fetchArticles({
       ...params,
       page: currentPage,
       limit: params.limit || state.articles.pagination.limit,
     });
-    
+
     return response;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch articles';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to fetch articles';
     return rejectWithValue(errorMessage);
   }
 });
@@ -170,7 +177,8 @@ export const createArticle = createAsyncThunk<
     const article = await articlesApiService.createArticle(params);
     return article;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create article';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to create article';
     return rejectWithValue(errorMessage);
   }
 });
@@ -184,7 +192,8 @@ export const updateArticle = createAsyncThunk<
     const article = await articlesApiService.updateArticle(params);
     return article;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to update article';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to update article';
     return rejectWithValue(errorMessage);
   }
 });
@@ -198,7 +207,8 @@ export const deleteArticle = createAsyncThunk<
     await articlesApiService.deleteArticle(params);
     return params.id;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to delete article';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to delete article';
     return rejectWithValue(errorMessage);
   }
 });
@@ -212,7 +222,8 @@ export const syncArticles = createAsyncThunk<
     const result = await articlesApiService.syncArticles(params);
     return result;
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Failed to sync articles';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Failed to sync articles';
     return rejectWithValue(errorMessage);
   }
 });
@@ -223,48 +234,54 @@ const articlesSlice = createSlice({
   initialState,
   reducers: {
     // Clear errors
-    clearError: (state, action: PayloadAction<keyof ArticlesState['error'] | 'all'>) => {
+    clearError: (
+      state,
+      action: PayloadAction<keyof ArticlesState['error'] | 'all'>
+    ) => {
       if (action.payload === 'all') {
         state.error = initialState.error;
       } else {
         state.error[action.payload] = null;
       }
     },
-    
+
     // Update filters
-    setFilters: (state, action: PayloadAction<Partial<ArticlesState['filters']>>) => {
+    setFilters: (
+      state,
+      action: PayloadAction<Partial<ArticlesState['filters']>>
+    ) => {
       state.filters = { ...state.filters, ...action.payload };
       // Reset pagination when filters change
       state.pagination.page = 1;
     },
-    
-    clearFilters: (state) => {
+
+    clearFilters: state => {
       state.filters = initialState.filters;
       state.pagination.page = 1;
     },
-    
+
     // Pagination
     setPage: (state, action: PayloadAction<number>) => {
       state.pagination.page = action.payload;
     },
-    
+
     setPageSize: (state, action: PayloadAction<number>) => {
       state.pagination.limit = action.payload;
       state.pagination.page = 1; // Reset to first page
     },
-    
+
     // Article selection
     setSelectedArticle: (state, action: PayloadAction<string | null>) => {
       state.selectedArticleId = action.payload;
     },
-    
-    toggleMultiSelectMode: (state) => {
+
+    toggleMultiSelectMode: state => {
       state.multiSelectMode = !state.multiSelectMode;
       if (!state.multiSelectMode) {
         state.selectedArticleIds = [];
       }
     },
-    
+
     toggleArticleSelection: (state, action: PayloadAction<string>) => {
       const articleId = action.payload;
       const index = state.selectedArticleIds.indexOf(articleId);
@@ -274,14 +291,17 @@ const articlesSlice = createSlice({
         state.selectedArticleIds.push(articleId);
       }
     },
-    
-    clearSelection: (state) => {
+
+    clearSelection: state => {
       state.selectedArticleIds = [];
       state.multiSelectMode = false;
     },
-    
+
     // Local article updates (for optimistic updates)
-    updateArticleLocal: (state, action: PayloadAction<{ id: string; updates: Partial<Article> }>) => {
+    updateArticleLocal: (
+      state,
+      action: PayloadAction<{ id: string; updates: Partial<Article> }>
+    ) => {
       const { id, updates } = action.payload;
       const existingArticle = state.entities[id];
       if (existingArticle) {
@@ -292,14 +312,14 @@ const articlesSlice = createSlice({
             updatedAt: new Date().toISOString(),
           },
         });
-        
+
         // Mark as having pending changes for sync
         if (!state.sync.pendingChanges.includes(id)) {
           state.sync.pendingChanges.push(id);
         }
       }
     },
-    
+
     // Sync state management
     markSyncConflict: (state, action: PayloadAction<string>) => {
       const articleId = action.payload;
@@ -307,31 +327,35 @@ const articlesSlice = createSlice({
         state.sync.conflicts.push(articleId);
       }
     },
-    
+
     resolveSyncConflict: (state, action: PayloadAction<string>) => {
       const articleId = action.payload;
-      state.sync.conflicts = state.sync.conflicts.filter(id => id !== articleId);
-      state.sync.pendingChanges = state.sync.pendingChanges.filter(id => id !== articleId);
+      state.sync.conflicts = state.sync.conflicts.filter(
+        id => id !== articleId
+      );
+      state.sync.pendingChanges = state.sync.pendingChanges.filter(
+        id => id !== articleId
+      );
     },
-    
-    clearSyncError: (state) => {
+
+    clearSyncError: state => {
       state.sync.syncError = null;
     },
   },
-  
-  extraReducers: (builder) => {
+
+  extraReducers: builder => {
     builder
       // Fetch articles
-      .addCase(fetchArticles.pending, (state) => {
+      .addCase(fetchArticles.pending, state => {
         state.loading.fetch = true;
         state.error.fetch = null;
       })
       .addCase(fetchArticles.fulfilled, (state, action) => {
         state.loading.fetch = false;
         state.error.fetch = null;
-        
+
         const { items, page, totalPages, totalItems } = action.payload;
-        
+
         // Update pagination
         state.pagination = {
           page,
@@ -340,7 +364,7 @@ const articlesSlice = createSlice({
           limit: state.pagination.limit,
           hasMore: page < totalPages,
         };
-        
+
         // Handle pagination: replace for page 1, append for subsequent pages
         if (page === 1) {
           articlesAdapter.setAll(state, items);
@@ -352,9 +376,9 @@ const articlesSlice = createSlice({
         state.loading.fetch = false;
         state.error.fetch = action.payload || 'Failed to fetch articles';
       })
-      
+
       // Create article
-      .addCase(createArticle.pending, (state) => {
+      .addCase(createArticle.pending, state => {
         state.loading.create = true;
         state.error.create = null;
       })
@@ -368,9 +392,9 @@ const articlesSlice = createSlice({
         state.loading.create = false;
         state.error.create = action.payload || 'Failed to create article';
       })
-      
+
       // Update article
-      .addCase(updateArticle.pending, (state) => {
+      .addCase(updateArticle.pending, state => {
         state.loading.update = true;
         state.error.update = null;
       })
@@ -390,9 +414,9 @@ const articlesSlice = createSlice({
         state.loading.update = false;
         state.error.update = action.payload || 'Failed to update article';
       })
-      
+
       // Delete article
-      .addCase(deleteArticle.pending, (state) => {
+      .addCase(deleteArticle.pending, state => {
         state.loading.delete = true;
         state.error.delete = null;
       })
@@ -400,13 +424,22 @@ const articlesSlice = createSlice({
         state.loading.delete = false;
         state.error.delete = null;
         articlesAdapter.removeOne(state, action.payload);
-        state.pagination.totalItems = Math.max(0, state.pagination.totalItems - 1);
-        
+        state.pagination.totalItems = Math.max(
+          0,
+          state.pagination.totalItems - 1
+        );
+
         // Clean up selection and sync state
-        state.selectedArticleIds = state.selectedArticleIds.filter(id => id !== action.payload);
-        state.sync.pendingChanges = state.sync.pendingChanges.filter(id => id !== action.payload);
-        state.sync.conflicts = state.sync.conflicts.filter(id => id !== action.payload);
-        
+        state.selectedArticleIds = state.selectedArticleIds.filter(
+          id => id !== action.payload
+        );
+        state.sync.pendingChanges = state.sync.pendingChanges.filter(
+          id => id !== action.payload
+        );
+        state.sync.conflicts = state.sync.conflicts.filter(
+          id => id !== action.payload
+        );
+
         if (state.selectedArticleId === action.payload) {
           state.selectedArticleId = null;
         }
@@ -415,9 +448,9 @@ const articlesSlice = createSlice({
         state.loading.delete = false;
         state.error.delete = action.payload || 'Failed to delete article';
       })
-      
+
       // Sync articles
-      .addCase(syncArticles.pending, (state) => {
+      .addCase(syncArticles.pending, state => {
         state.loading.sync = true;
         state.sync.isSyncing = true;
         state.sync.syncError = null;
@@ -427,9 +460,9 @@ const articlesSlice = createSlice({
         state.sync.isSyncing = false;
         state.sync.lastSyncTime = new Date().toISOString();
         state.sync.syncError = null;
-        
+
         const { conflictCount } = action.payload;
-        
+
         // Clear pending changes for successfully synced articles
         // This would be more sophisticated in a real implementation
         if (conflictCount === 0) {

@@ -19,7 +19,7 @@ const initialState: SyncState = {
   // Sync status tracking
   status: SyncStatus.IDLE,
   lastSyncTime: null,
-  
+
   // Progress tracking
   progress: {
     phase: SyncPhase.INITIALIZING,
@@ -28,11 +28,11 @@ const initialState: SyncState = {
     currentItem: null,
     estimatedTimeRemaining: null,
   },
-  
+
   // Network and connectivity
   isOnline: true,
   networkType: null,
-  
+
   // Configuration
   config: {
     backgroundSyncEnabled: true,
@@ -44,13 +44,13 @@ const initialState: SyncState = {
     conflictResolutionStrategy: ConflictResolutionStrategy.LAST_WRITE_WINS,
     batchSize: 50,
   },
-  
+
   // Conflict resolution
   conflicts: [],
-  
+
   // Error handling
   error: null,
-  
+
   // Statistics
   stats: {
     totalSyncs: 0,
@@ -88,16 +88,16 @@ const syncSlice = createSlice({
         currentItem: null,
         estimatedTimeRemaining: null,
       };
-      
+
       // Apply any sync options
       if (action.payload.syncOptions) {
         state.config = { ...state.config, ...action.payload.syncOptions };
       }
-      
+
       // Increment total sync count
       state.stats.totalSyncs += 1;
     },
-    
+
     syncProgress: (state, action: PayloadAction<SyncProgressPayload>) => {
       if (state.status === SyncStatus.SYNCING) {
         state.progress = {
@@ -106,20 +106,24 @@ const syncSlice = createSlice({
         };
       }
     },
-    
+
     syncSuccess: (state, action: PayloadAction<SyncSuccessPayload>) => {
       state.status = SyncStatus.SUCCESS;
       state.error = null;
       state.lastSyncTime = action.payload.syncTime;
-      
+
       // Update statistics
       state.stats.successfulSyncs += 1;
       state.stats.lastSyncDuration = action.payload.syncDuration;
-      
+
       // Calculate average sync duration
-      const totalDuration = (state.stats.averageSyncDuration || 0) * (state.stats.successfulSyncs - 1) + action.payload.syncDuration;
-      state.stats.averageSyncDuration = totalDuration / state.stats.successfulSyncs;
-      
+      const totalDuration =
+        (state.stats.averageSyncDuration || 0) *
+          (state.stats.successfulSyncs - 1) +
+        action.payload.syncDuration;
+      state.stats.averageSyncDuration =
+        totalDuration / state.stats.successfulSyncs;
+
       // Reset progress
       state.progress = {
         phase: SyncPhase.FINALIZING,
@@ -129,12 +133,12 @@ const syncSlice = createSlice({
         estimatedTimeRemaining: 0,
       };
     },
-    
+
     syncError: (state, action: PayloadAction<SyncErrorPayload>) => {
       state.status = SyncStatus.ERROR;
       state.error = action.payload.error;
       state.stats.failedSyncs += 1;
-      
+
       // Reset progress on error
       state.progress = {
         ...state.progress,
@@ -142,19 +146,19 @@ const syncSlice = createSlice({
         estimatedTimeRemaining: null,
       };
     },
-    
-    pauseSync: (state) => {
+
+    pauseSync: state => {
       if (state.status === SyncStatus.SYNCING) {
         state.status = SyncStatus.PAUSED;
       }
     },
-    
-    resumeSync: (state) => {
+
+    resumeSync: state => {
       if (state.status === SyncStatus.PAUSED) {
         state.status = SyncStatus.SYNCING;
       }
     },
-    
+
     // Conflict resolution actions
     addConflict: (state, action: PayloadAction<AddConflictPayload>) => {
       const conflictId = `${action.payload.articleId}_${Date.now()}`;
@@ -168,55 +172,61 @@ const syncSlice = createSlice({
         resolvedAt: null,
         resolution: null,
       };
-      
+
       state.conflicts.push(conflict);
     },
-    
+
     resolveConflict: (state, action: PayloadAction<ResolveConflictPayload>) => {
       const conflictIndex = state.conflicts.findIndex(
         conflict => conflict.id === action.payload.conflictId
       );
-      
+
       if (conflictIndex !== -1) {
         state.conflicts[conflictIndex] = {
           ...state.conflicts[conflictIndex],
           resolvedAt: new Date().toISOString(),
           resolution: action.payload.resolution,
         };
-        
+
         // Remove resolved conflict after a short delay (handled by middleware)
         // For now, we'll remove it immediately
         state.conflicts.splice(conflictIndex, 1);
         state.stats.itemsSynced.conflictsResolved += 1;
       }
     },
-    
-    clearConflicts: (state) => {
+
+    clearConflicts: state => {
       state.conflicts = [];
     },
-    
+
     // Configuration actions
-    updateSyncConfig: (state, action: PayloadAction<UpdateSyncConfigPayload>) => {
+    updateSyncConfig: (
+      state,
+      action: PayloadAction<UpdateSyncConfigPayload>
+    ) => {
       state.config = { ...state.config, ...action.payload.config };
     },
-    
-    resetSyncConfig: (state) => {
+
+    resetSyncConfig: state => {
       state.config = initialState.config;
     },
-    
+
     // Network status actions
-    updateNetworkStatus: (state, action: PayloadAction<NetworkStatusPayload>) => {
+    updateNetworkStatus: (
+      state,
+      action: PayloadAction<NetworkStatusPayload>
+    ) => {
       state.isOnline = action.payload.isOnline;
       state.networkType = action.payload.networkType;
-      
+
       // Pause sync if offline
       if (!action.payload.isOnline && state.status === SyncStatus.SYNCING) {
         state.status = SyncStatus.PAUSED;
       }
     },
-    
+
     // State management actions
-    resetSyncState: (state) => {
+    resetSyncState: state => {
       return {
         ...initialState,
         // Preserve configuration and statistics across resets
@@ -224,26 +234,29 @@ const syncSlice = createSlice({
         stats: state.stats,
       };
     },
-    
-    clearSyncError: (state) => {
+
+    clearSyncError: state => {
       state.error = null;
       if (state.status === SyncStatus.ERROR) {
         state.status = SyncStatus.IDLE;
       }
     },
-    
+
     // Statistics actions
-    updateSyncStats: (state, action: PayloadAction<{
-      articlesCreated?: number;
-      articlesUpdated?: number;
-      articlesDeleted?: number;
-      bytesUploaded?: number;
-      bytesDownloaded?: number;
-      requestCount?: number;
-      cacheHits?: number;
-    }>) => {
+    updateSyncStats: (
+      state,
+      action: PayloadAction<{
+        articlesCreated?: number;
+        articlesUpdated?: number;
+        articlesDeleted?: number;
+        bytesUploaded?: number;
+        bytesDownloaded?: number;
+        requestCount?: number;
+        cacheHits?: number;
+      }>
+    ) => {
       const { payload } = action;
-      
+
       if (payload.articlesCreated !== undefined) {
         state.stats.itemsSynced.articlesCreated += payload.articlesCreated;
       }
@@ -266,8 +279,8 @@ const syncSlice = createSlice({
         state.stats.dataTransfer.cacheHits += payload.cacheHits;
       }
     },
-    
-    resetSyncStats: (state) => {
+
+    resetSyncStats: state => {
       state.stats = initialState.stats;
     },
   },

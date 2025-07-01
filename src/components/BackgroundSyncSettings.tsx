@@ -1,6 +1,6 @@
 /**
  * BackgroundSyncSettings - Settings Component for Background Sync
- * 
+ *
  * Provides UI controls for configuring background sync preferences
  */
 
@@ -104,7 +104,9 @@ export default function BackgroundSyncSettings() {
   };
 
   const getCurrentIntervalLabel = () => {
-    const option = SYNC_INTERVAL_OPTIONS.find(opt => opt.value === syncInterval);
+    const option = SYNC_INTERVAL_OPTIONS.find(
+      opt => opt.value === syncInterval
+    );
     return option?.label || 'Unknown';
   };
 
@@ -131,7 +133,7 @@ export default function BackgroundSyncSettings() {
       {/* Sync Interval Options */}
       {isEnabled && (
         <View style={styles.intervalOptions}>
-          {SYNC_INTERVAL_OPTIONS.map((option) => (
+          {SYNC_INTERVAL_OPTIONS.map(option => (
             <TouchableOpacity
               key={option.value}
               style={[
@@ -167,7 +169,7 @@ export default function BackgroundSyncSettings() {
       {/* Sync Status */}
       <View style={styles.statusSection}>
         <Text style={styles.sectionTitle}>Sync Status</Text>
-        
+
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>Currently Syncing:</Text>
           <Text style={styles.statusValue}>{isSyncing ? 'Yes' : 'No'}</Text>
@@ -181,10 +183,9 @@ export default function BackgroundSyncSettings() {
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>Next Sync:</Text>
           <Text style={styles.statusValue}>
-            {syncInterval === SYNC_INTERVALS.MANUAL 
-              ? 'Manual Only' 
-              : formatTime(nextSyncTime)
-            }
+            {syncInterval === SYNC_INTERVALS.MANUAL
+              ? 'Manual Only'
+              : formatTime(nextSyncTime)}
           </Text>
         </View>
       </View>
@@ -204,7 +205,10 @@ export default function BackgroundSyncSettings() {
       <View style={styles.historySection}>
         <View style={styles.historyHeader}>
           <Text style={styles.sectionTitle}>Recent Sync History</Text>
-          <TouchableOpacity onPress={loadSyncHistory} disabled={isLoadingHistory}>
+          <TouchableOpacity
+            onPress={loadSyncHistory}
+            disabled={isLoadingHistory}
+          >
             <Text style={styles.refreshButton}>
               {isLoadingHistory ? 'Loading...' : 'Refresh'}
             </Text>
@@ -216,17 +220,18 @@ export default function BackgroundSyncSettings() {
             <Text style={styles.historyTime}>
               {formatTime(entry.timestamp)}
             </Text>
-            <Text style={[
-              styles.historyStatus,
-              entry.success ? styles.successStatus : styles.errorStatus,
-            ]}>
+            <Text
+              style={[
+                styles.historyStatus,
+                entry.success ? styles.successStatus : styles.errorStatus,
+              ]}
+            >
               {entry.success ? '✓ Success' : '✗ Failed'}
             </Text>
             <Text style={styles.historyDetails}>
-              {entry.success 
+              {entry.success
                 ? `${entry.itemsSynced} items in ${entry.duration}ms`
-                : entry.error || 'Unknown error'
-              }
+                : entry.error || 'Unknown error'}
             </Text>
           </View>
         ))}

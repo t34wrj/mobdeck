@@ -1,9 +1,23 @@
 import React from 'react';
-import { Text as RNText, TextProps as RNTextProps, TextStyle } from 'react-native';
+import {
+  Text as RNText,
+  TextProps as RNTextProps,
+  TextStyle,
+} from 'react-native';
 import { theme } from './theme';
 
 export interface TextProps extends Omit<RNTextProps, 'style'> {
-  variant?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'body1' | 'body2' | 'caption' | 'overline';
+  variant?:
+    | 'h1'
+    | 'h2'
+    | 'h3'
+    | 'h4'
+    | 'h5'
+    | 'h6'
+    | 'body1'
+    | 'body2'
+    | 'caption'
+    | 'overline';
   color?: keyof typeof theme.colors | string;
   size?: keyof typeof theme.typography.fontSize;
   weight?: keyof typeof theme.typography.fontWeight;
@@ -87,7 +101,7 @@ const getColorValue = (color: string): string => {
       return (colorGroup as any)[shade] || color;
     }
   }
-  
+
   // Check if it's a direct theme color reference
   if (theme.colors[color as keyof typeof theme.colors]) {
     const colorValue = theme.colors[color as keyof typeof theme.colors];
@@ -99,7 +113,7 @@ const getColorValue = (color: string): string => {
       return (colorValue as any)[500];
     }
   }
-  
+
   // Return as-is (could be a hex color, etc.)
   return color;
 };
@@ -119,7 +133,7 @@ export const Text: React.FC<TextProps> = ({
   ...props
 }) => {
   const variantStyle = variantStyles[variant];
-  
+
   const textStyle: TextStyle = {
     ...variantStyle,
     ...(size && { fontSize: theme.typography.fontSize[size] }),
@@ -133,9 +147,12 @@ export const Text: React.FC<TextProps> = ({
   return (
     <RNText
       style={combinedStyle}
-      accessibilityLabel={accessibilityLabel || (typeof children === 'string' ? children : undefined)}
+      accessibilityLabel={
+        accessibilityLabel ||
+        (typeof children === 'string' ? children : undefined)
+      }
       accessibilityHint={accessibilityHint}
-      accessibilityRole="text"
+      accessibilityRole='text'
       numberOfLines={numberOfLines}
       ellipsizeMode={ellipsizeMode}
       {...props}

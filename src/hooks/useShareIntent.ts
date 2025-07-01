@@ -27,7 +27,8 @@ export const useShareIntent = (): UseShareIntentResult => {
         setSharedData(data);
       }
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'Failed to process shared data';
+      const errorMessage =
+        e instanceof Error ? e.message : 'Failed to process shared data';
       console.error('Error processing shared data:', errorMessage);
       setError(errorMessage);
     } finally {
@@ -53,7 +54,10 @@ export const useShareIntent = (): UseShareIntentResult => {
     processSharedData();
 
     // Listen for app state changes
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange
+    );
 
     return () => subscription?.remove();
   }, [processSharedData]);
@@ -63,6 +67,6 @@ export const useShareIntent = (): UseShareIntentResult => {
     isProcessing,
     error,
     clearSharedData,
-    processSharedData
+    processSharedData,
   };
 };

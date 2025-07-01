@@ -21,7 +21,7 @@ export class ShareService {
         return {
           text: data.text,
           subject: data.subject,
-          timestamp: data.timestamp
+          timestamp: data.timestamp,
         };
       }
       return null;
@@ -55,13 +55,14 @@ export class ShareService {
    */
   static extractUrl(text: string): string | null {
     // Enhanced URL regex that handles various URL formats
-    const urlRegex = /https?:\/\/(?:[-\w.])+(?:[:\d]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?)?/gi;
+    const urlRegex =
+      /https?:\/\/(?:[-\w.])+(?:[:\d]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?)?/gi;
     const matches = text.match(urlRegex);
-    
+
     if (matches && matches.length > 0) {
       return matches[0]; // Return the first found URL
     }
-    
+
     return null;
   }
 
@@ -84,16 +85,18 @@ export class ShareService {
    * @param sharedData The shared data object
    * @returns Formatted data for article creation
    */
-  static formatForArticle(sharedData: SharedData): { url: string; title?: string } | null {
+  static formatForArticle(
+    sharedData: SharedData
+  ): { url: string; title?: string } | null {
     const url = this.extractUrl(sharedData.text);
-    
+
     if (!url) {
       return null;
     }
 
     return {
       url,
-      title: sharedData.subject || 'Shared Article'
+      title: sharedData.subject || 'Shared Article',
     };
   }
 }

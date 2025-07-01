@@ -1,11 +1,13 @@
 /**
  * BackgroundTaskManager Tests
- * 
+ *
  * Tests for Android background task management service
  */
 
 import { Platform } from 'react-native';
-import BackgroundTaskManager, { backgroundTaskManager } from '../BackgroundTaskManager';
+import BackgroundTaskManager, {
+  backgroundTaskManager,
+} from '../BackgroundTaskManager';
 import { backgroundSyncService } from '../BackgroundSyncService';
 
 // Mock React Native modules
@@ -83,7 +85,7 @@ describe('BackgroundTaskManager', () => {
     it('should schedule background sync correctly', async () => {
       const manager = BackgroundTaskManager.getInstance();
       await manager.initialize();
-      
+
       await manager.scheduleBackgroundSync(30, 'wifi');
       expect(backgroundSyncService.scheduleSync).toHaveBeenCalled();
     });
@@ -91,7 +93,7 @@ describe('BackgroundTaskManager', () => {
     it('should cancel background sync correctly', async () => {
       const manager = BackgroundTaskManager.getInstance();
       await manager.initialize();
-      
+
       await manager.cancelBackgroundSync();
       expect(backgroundSyncService.cancelSync).toHaveBeenCalled();
     });
@@ -102,10 +104,10 @@ describe('BackgroundTaskManager', () => {
       (Platform as any).Version = 33;
       const { PermissionsAndroid } = require('react-native');
       PermissionsAndroid.check.mockResolvedValue(true);
-      
+
       const manager = BackgroundTaskManager.getInstance();
       await manager.initialize();
-      
+
       expect(PermissionsAndroid.check).toHaveBeenCalledWith(
         PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS
       );
@@ -114,7 +116,7 @@ describe('BackgroundTaskManager', () => {
     it('should return correct reliability score', async () => {
       const manager = BackgroundTaskManager.getInstance();
       await manager.initialize();
-      
+
       const score = manager.getReliabilityScore();
       expect(score).toBeGreaterThanOrEqual(0);
       expect(score).toBeLessThanOrEqual(100);
@@ -123,7 +125,7 @@ describe('BackgroundTaskManager', () => {
     it('should check if background tasks can run', async () => {
       const manager = BackgroundTaskManager.getInstance();
       await manager.initialize();
-      
+
       const canRun = manager.canRunBackgroundTasks();
       expect(typeof canRun).toBe('boolean');
     });
@@ -133,7 +135,7 @@ describe('BackgroundTaskManager', () => {
     it('should return task status correctly', async () => {
       const manager = BackgroundTaskManager.getInstance();
       await manager.initialize();
-      
+
       const status = await manager.getTaskStatus();
       expect(status).toHaveProperty('permissions');
       expect(status).toHaveProperty('tasks');
@@ -145,11 +147,17 @@ describe('BackgroundTaskManager', () => {
     it('should cleanup resources correctly', () => {
       const manager = BackgroundTaskManager.getInstance();
       const { DeviceEventEmitter } = require('react-native');
-      
+
       manager.cleanup();
-      expect(DeviceEventEmitter.removeAllListeners).toHaveBeenCalledWith('BackgroundTaskExecuted');
-      expect(DeviceEventEmitter.removeAllListeners).toHaveBeenCalledWith('BackgroundTaskScheduled');
-      expect(DeviceEventEmitter.removeAllListeners).toHaveBeenCalledWith('PermissionChanged');
+      expect(DeviceEventEmitter.removeAllListeners).toHaveBeenCalledWith(
+        'BackgroundTaskExecuted'
+      );
+      expect(DeviceEventEmitter.removeAllListeners).toHaveBeenCalledWith(
+        'BackgroundTaskScheduled'
+      );
+      expect(DeviceEventEmitter.removeAllListeners).toHaveBeenCalledWith(
+        'PermissionChanged'
+      );
     });
   });
 });

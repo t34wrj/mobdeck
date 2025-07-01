@@ -35,13 +35,13 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
   const { articleId } = route.params;
-  
-  const article = useSelector((state: RootState) => 
+
+  const article = useSelector((state: RootState) =>
     selectArticleById(state, articleId)
   );
-  
+
   const { loading, error } = useSelector((state: RootState) => state.articles);
-  
+
   const [refreshing, setRefreshing] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [showLabelModal, setShowLabelModal] = useState(false);
@@ -50,9 +50,10 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   useEffect(() => {
     if (article?.title) {
       navigation.setOptions({
-        title: article.title.length > 30 
-          ? `${article.title.substring(0, 30)}...` 
-          : article.title,
+        title:
+          article.title.length > 30
+            ? `${article.title.substring(0, 30)}...`
+            : article.title,
       });
     }
   }, [article?.title, navigation]);
@@ -60,17 +61,19 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   // Mark as read when article is loaded
   useEffect(() => {
     if (article && !article.isRead) {
-      dispatch(updateArticleLocal({
-        id: articleId,
-        updates: { isRead: true },
-      }));
+      dispatch(
+        updateArticleLocal({
+          id: articleId,
+          updates: { isRead: true },
+        })
+      );
     }
   }, [article, articleId, dispatch]);
 
   // Handle refresh
   const handleRefresh = useCallback(async () => {
     if (!article) return;
-    
+
     setRefreshing(true);
     try {
       // In a real app, this would fetch fresh article data
@@ -83,12 +86,14 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   // Handle favorite toggle
   const handleToggleFavorite = useCallback(async () => {
     if (!article) return;
-    
+
     try {
-      await dispatch(updateArticle({
-        id: articleId,
-        updates: { isFavorite: !article.isFavorite },
-      })).unwrap();
+      await dispatch(
+        updateArticle({
+          id: articleId,
+          updates: { isFavorite: !article.isFavorite },
+        })
+      ).unwrap();
     } catch (error) {
       Alert.alert(
         'Error',
@@ -101,12 +106,14 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   // Handle archive toggle
   const handleToggleArchive = useCallback(async () => {
     if (!article) return;
-    
+
     try {
-      await dispatch(updateArticle({
-        id: articleId,
-        updates: { isArchived: !article.isArchived },
-      })).unwrap();
+      await dispatch(
+        updateArticle({
+          id: articleId,
+          updates: { isArchived: !article.isArchived },
+        })
+      ).unwrap();
     } catch (error) {
       Alert.alert(
         'Error',
@@ -119,25 +126,25 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   // Handle read toggle
   const handleToggleRead = useCallback(async () => {
     if (!article) return;
-    
+
     try {
-      await dispatch(updateArticle({
-        id: articleId,
-        updates: { isRead: !article.isRead },
-      })).unwrap();
+      await dispatch(
+        updateArticle({
+          id: articleId,
+          updates: { isRead: !article.isRead },
+        })
+      ).unwrap();
     } catch (error) {
-      Alert.alert(
-        'Error',
-        'Failed to update read status. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', 'Failed to update read status. Please try again.', [
+        { text: 'OK' },
+      ]);
     }
   }, [article, articleId, dispatch]);
 
   // Handle share
   const handleShare = useCallback(async () => {
     if (!article) return;
-    
+
     try {
       await Share.share({
         message: `${article.title}\n\n${article.url}`,
@@ -145,18 +152,16 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
         title: article.title,
       });
     } catch (error) {
-      Alert.alert(
-        'Error',
-        'Failed to share article. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', 'Failed to share article. Please try again.', [
+        { text: 'OK' },
+      ]);
     }
   }, [article]);
 
   // Handle delete
   const handleDelete = useCallback(() => {
     if (!article) return;
-    
+
     Alert.alert(
       'Delete Article',
       'Are you sure you want to delete this article? This action cannot be undone.',
@@ -188,13 +193,18 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   }, []);
 
   // Handle labels changed
-  const handleLabelsChanged = useCallback((labelIds: string[]) => {
-    // Update the article's tags in the Redux store
-    dispatch(updateArticleLocal({
-      id: articleId,
-      updates: { tags: labelIds },
-    }));
-  }, [articleId, dispatch]);
+  const handleLabelsChanged = useCallback(
+    (labelIds: string[]) => {
+      // Update the article's tags in the Redux store
+      dispatch(
+        updateArticleLocal({
+          id: articleId,
+          updates: { tags: labelIds },
+        })
+      );
+    },
+    [articleId, dispatch]
+  );
 
   // Format date
   const formatDate = (dateString: string): string => {
@@ -212,8 +222,8 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   if (loading.fetch && !article) {
     return (
       <View style={[styles.container, styles.centeredContainer]}>
-        <ActivityIndicator size="large" color={theme.colors.primary[500]} />
-        <Text variant="body1" style={styles.loadingText}>
+        <ActivityIndicator size='large' color={theme.colors.primary[500]} />
+        <Text variant='body1' style={styles.loadingText}>
           Loading article...
         </Text>
       </View>
@@ -224,14 +234,14 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   if (error.fetch && !article) {
     return (
       <View style={[styles.container, styles.centeredContainer]}>
-        <Text variant="h6" style={styles.errorTitle}>
+        <Text variant='h6' style={styles.errorTitle}>
           Article Not Found
         </Text>
-        <Text variant="body1" style={styles.errorMessage}>
+        <Text variant='body1' style={styles.errorMessage}>
           The article you're looking for could not be loaded.
         </Text>
         <Button
-          variant="outline"
+          variant='outline'
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
@@ -245,14 +255,14 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   if (!article) {
     return (
       <View style={[styles.container, styles.centeredContainer]}>
-        <Text variant="h6" style={styles.errorTitle}>
+        <Text variant='h6' style={styles.errorTitle}>
           Article Not Found
         </Text>
-        <Text variant="body1" style={styles.errorMessage}>
+        <Text variant='body1' style={styles.errorMessage}>
           This article may have been deleted or moved.
         </Text>
         <Button
-          variant="outline"
+          variant='outline'
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
@@ -278,19 +288,21 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
       >
         {/* Article Header */}
         <View style={styles.header}>
-          <Text variant="h4" style={styles.title}>
+          <Text variant='h4' style={styles.title}>
             {article.title}
           </Text>
-          
+
           <View style={styles.metadata}>
-            <Text variant="caption" style={styles.metadataText}>
+            <Text variant='caption' style={styles.metadataText}>
               Added {formatDate(article.createdAt)}
             </Text>
-            
+
             {article.readTime && (
               <>
-                <Text variant="caption" style={styles.separator}>•</Text>
-                <Text variant="caption" style={styles.metadataText}>
+                <Text variant='caption' style={styles.separator}>
+                  •
+                </Text>
+                <Text variant='caption' style={styles.metadataText}>
                   {article.readTime} min read
                 </Text>
               </>
@@ -305,7 +317,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
                 Alert.alert('Source', article.sourceUrl);
               }}
             >
-              <Text variant="caption" style={styles.sourceUrl}>
+              <Text variant='caption' style={styles.sourceUrl}>
                 {(() => {
                   try {
                     return new URL(article.sourceUrl).hostname;
@@ -320,9 +332,9 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
           {/* Tags */}
           {article.tags && article.tags.length > 0 && (
             <View style={styles.tagsContainer}>
-              {article.tags.map((tag) => (
+              {article.tags.map(tag => (
                 <View key={tag} style={styles.tag}>
-                  <Text variant="caption" style={styles.tagText}>
+                  <Text variant='caption' style={styles.tagText}>
                     {tag}
                   </Text>
                 </View>
@@ -341,8 +353,8 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
         {/* Actions Section */}
         <View style={styles.actionsContainer}>
           <Button
-            variant="ghost"
-            size="sm"
+            variant='ghost'
+            size='sm'
             onPress={() => setShowActions(!showActions)}
             style={styles.actionToggle}
           >
@@ -352,8 +364,8 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
           {showActions && (
             <View style={styles.actionsGrid}>
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onPress={handleToggleFavorite}
                 style={styles.actionButton}
                 loading={loading.update}
@@ -362,8 +374,8 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
               </Button>
 
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onPress={handleToggleArchive}
                 style={styles.actionButton}
                 loading={loading.update}
@@ -372,8 +384,8 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
               </Button>
 
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onPress={handleToggleRead}
                 style={styles.actionButton}
                 loading={loading.update}
@@ -382,8 +394,8 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
               </Button>
 
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onPress={handleManageLabels}
                 style={styles.actionButton}
               >
@@ -391,8 +403,8 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
               </Button>
 
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onPress={handleShare}
                 style={styles.actionButton}
               >
@@ -400,8 +412,8 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
               </Button>
 
               <Button
-                variant="destructive"
-                size="sm"
+                variant='destructive'
+                size='sm'
                 onPress={handleDelete}
                 style={styles.actionButton}
                 loading={loading.delete}

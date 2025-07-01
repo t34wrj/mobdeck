@@ -3,7 +3,11 @@ import { useDispatch, TypedUseSelectorHook, useSelector } from 'react-redux';
 import articlesReducer from './slices/articlesSlice';
 import authReducer from './slices/authSlice';
 import syncReducer from './slices/syncSlice';
-import { loggerMiddleware, errorHandlerMiddleware, performanceMiddleware } from './middleware';
+import {
+  loggerMiddleware,
+  errorHandlerMiddleware,
+  performanceMiddleware,
+} from './middleware';
 
 // Root reducer configuration
 const rootReducer = {
@@ -15,7 +19,7 @@ const rootReducer = {
 // Store configuration
 const storeConfig: ConfigureStoreOptions = {
   reducer: rootReducer,
-  middleware: (getDefaultMiddleware) =>
+  middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
       // Configure RTK default middleware
       serializableCheck: {
@@ -30,7 +34,7 @@ const storeConfig: ConfigureStoreOptions = {
     }).concat(
       // Add custom middleware
       errorHandlerMiddleware,
-      ...__DEV__ ? [loggerMiddleware, performanceMiddleware] : []
+      ...(__DEV__ ? [loggerMiddleware, performanceMiddleware] : [])
     ),
   // Enable Redux DevTools in development
   devTools: __DEV__ && {
@@ -41,7 +45,7 @@ const storeConfig: ConfigureStoreOptions = {
   // Preloaded state (useful for SSR or state persistence)
   preloadedState: undefined,
   // Enhance store with additional capabilities if needed
-  enhancers: (defaultEnhancers) => defaultEnhancers(),
+  enhancers: defaultEnhancers => defaultEnhancers(),
 };
 
 // Create the store

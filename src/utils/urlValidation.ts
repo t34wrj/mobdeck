@@ -32,7 +32,7 @@ const DEFAULT_VALIDATION_OPTIONS: Required<UrlValidationOptions> = {
  * Validates and normalizes a URL with comprehensive security checks
  */
 export function validateUrl(
-  url: string, 
+  url: string,
   options: UrlValidationOptions = {}
 ): UrlValidationResult {
   const opts = { ...DEFAULT_VALIDATION_OPTIONS, ...options };
@@ -57,13 +57,15 @@ export function validateUrl(
 
     // Check URL length
     if (trimmedUrl.length > opts.maxUrlLength) {
-      result.errors.push(`URL exceeds maximum length of ${opts.maxUrlLength} characters`);
+      result.errors.push(
+        `URL exceeds maximum length of ${opts.maxUrlLength} characters`
+      );
       return result;
     }
 
     // Normalize URL (add protocol if missing)
     const normalizedUrl = normalizeUrl(trimmedUrl);
-    
+
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(normalizedUrl);
@@ -74,7 +76,9 @@ export function validateUrl(
 
     // Protocol validation
     if (!opts.allowedProtocols.includes(parsedUrl.protocol.slice(0, -1))) {
-      result.errors.push(`Protocol '${parsedUrl.protocol.slice(0, -1)}' is not allowed. Allowed protocols: ${opts.allowedProtocols.join(', ')}`);
+      result.errors.push(
+        `Protocol '${parsedUrl.protocol.slice(0, -1)}' is not allowed. Allowed protocols: ${opts.allowedProtocols.join(', ')}`
+      );
       return result;
     }
 
@@ -95,14 +99,22 @@ export function validateUrl(
     }
 
     // Blocked domains check
-    if (opts.blockedDomains.length > 0 && isBlockedDomain(parsedUrl.hostname, opts.blockedDomains)) {
+    if (
+      opts.blockedDomains.length > 0 &&
+      isBlockedDomain(parsedUrl.hostname, opts.blockedDomains)
+    ) {
       result.errors.push(`Domain '${parsedUrl.hostname}' is blocked`);
       return result;
     }
 
     // Allowed domains check (if specified)
-    if (opts.allowedDomains.length > 0 && !isAllowedDomain(parsedUrl.hostname, opts.allowedDomains)) {
-      result.errors.push(`Domain '${parsedUrl.hostname}' is not in the allowed domains list`);
+    if (
+      opts.allowedDomains.length > 0 &&
+      !isAllowedDomain(parsedUrl.hostname, opts.allowedDomains)
+    ) {
+      result.errors.push(
+        `Domain '${parsedUrl.hostname}' is not in the allowed domains list`
+      );
       return result;
     }
 
@@ -125,7 +137,10 @@ export function validateUrl(
 
     return result;
   } catch (error) {
-    console.error('[UrlValidation] Unexpected error during URL validation:', error);
+    console.error(
+      '[UrlValidation] Unexpected error during URL validation:',
+      error
+    );
     result.errors.push('Unexpected error during URL validation');
     return result;
   }
@@ -136,13 +151,13 @@ export function validateUrl(
  */
 export function normalizeUrl(url: string): string {
   let normalized = url.trim();
-  
+
   // Add protocol if missing (only if no protocol is present at all)
   if (!normalized.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//)) {
     // Default to https for better security
     normalized = `https://${normalized}`;
   }
-  
+
   // Remove trailing slash for consistency (except for root domains)
   try {
     const url = new URL(normalized);
@@ -156,16 +171,24 @@ export function normalizeUrl(url: string): string {
       normalized = normalized.slice(0, -1);
     }
   }
-  
+
   return normalized;
 }
 
 /**
  * Validates domain format and checks for common issues
  */
-function validateDomain(hostname: string): { isValid: boolean; errors: string[]; warnings: string[] } {
-  const result = { isValid: true, errors: [] as string[], warnings: [] as string[] };
-  
+function validateDomain(hostname: string): {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+} {
+  const result = {
+    isValid: true,
+    errors: [] as string[],
+    warnings: [] as string[],
+  };
+
   if (!hostname) {
     result.isValid = false;
     result.errors.push('Hostname is required');
@@ -178,7 +201,8 @@ function validateDomain(hostname: string): { isValid: boolean; errors: string[];
   }
 
   // Basic hostname format validation
-  const hostnameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  const hostnameRegex =
+    /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
   if (!hostnameRegex.test(hostname)) {
     result.isValid = false;
     result.errors.push('Invalid hostname format');
@@ -193,7 +217,11 @@ function validateDomain(hostname: string): { isValid: boolean; errors: string[];
   }
 
   // Check for suspicious patterns
-  if (hostname.includes('..') || hostname.startsWith('.') || hostname.endsWith('.')) {
+  if (
+    hostname.includes('..') ||
+    hostname.startsWith('.') ||
+    hostname.endsWith('.')
+  ) {
     result.isValid = false;
     result.errors.push('Domain contains invalid characters or formatting');
     return result;
@@ -206,8 +234,8 @@ function validateDomain(hostname: string): { isValid: boolean; errors: string[];
  * Checks if domain is in blocked domains list
  */
 function isBlockedDomain(hostname: string, blockedDomains: string[]): boolean {
-  return blockedDomains.some(blocked => 
-    hostname === blocked || hostname.endsWith(`.${blocked}`)
+  return blockedDomains.some(
+    blocked => hostname === blocked || hostname.endsWith(`.${blocked}`)
   );
 }
 
@@ -215,8 +243,8 @@ function isBlockedDomain(hostname: string, blockedDomains: string[]): boolean {
  * Checks if domain is in allowed domains list
  */
 function isAllowedDomain(hostname: string, allowedDomains: string[]): boolean {
-  return allowedDomains.some(allowed => 
-    hostname === allowed || hostname.endsWith(`.${allowed}`)
+  return allowedDomains.some(
+    allowed => hostname === allowed || hostname.endsWith(`.${allowed}`)
   );
 }
 
@@ -225,7 +253,11 @@ function isAllowedDomain(hostname: string, allowedDomains: string[]): boolean {
  */
 function isLocalOrPrivateAddress(hostname: string): boolean {
   // Localhost patterns
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+  if (
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '::1'
+  ) {
     return true;
   }
 
@@ -246,7 +278,10 @@ function isLocalOrPrivateAddress(hostname: string): boolean {
 /**
  * Performs additional security checks on the URL
  */
-function performSecurityChecks(url: URL): { errors: string[]; warnings: string[] } {
+function performSecurityChecks(url: URL): {
+  errors: string[];
+  warnings: string[];
+} {
   const result = { errors: [] as string[], warnings: [] as string[] };
 
   // Check for suspicious URL patterns
@@ -264,20 +299,36 @@ function performSecurityChecks(url: URL): { errors: string[]; warnings: string[]
 
   // Check for URL shorteners (informational warning)
   const urlShorteners = [
-    'bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'short.link', 'tiny.cc'
+    'bit.ly',
+    'tinyurl.com',
+    't.co',
+    'goo.gl',
+    'ow.ly',
+    'short.link',
+    'tiny.cc',
   ];
-  
+
   if (urlShorteners.some(shortener => url.hostname.includes(shortener))) {
-    result.warnings.push('URL appears to be shortened - consider expanding for security');
+    result.warnings.push(
+      'URL appears to be shortened - consider expanding for security'
+    );
   }
 
   // Check for suspicious query parameters
   const suspiciousParams = ['javascript', 'script', 'eval', 'onclick'];
   const searchParams = new URLSearchParams(url.search);
-  
+
   for (const [key, value] of searchParams) {
-    if (suspiciousParams.some(param => key.toLowerCase().includes(param) || value.toLowerCase().includes(param))) {
-      result.warnings.push('URL contains potentially suspicious query parameters');
+    if (
+      suspiciousParams.some(
+        param =>
+          key.toLowerCase().includes(param) ||
+          value.toLowerCase().includes(param)
+      )
+    ) {
+      result.warnings.push(
+        'URL contains potentially suspicious query parameters'
+      );
       break;
     }
   }
@@ -294,9 +345,10 @@ export function extractUrlFromText(text: string): string | null {
   }
 
   // URL regex pattern - matches http(s) URLs
-  const urlRegex = /https?:\/\/(?:[-\w.])+(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?/gi;
+  const urlRegex =
+    /https?:\/\/(?:[-\w.])+(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?/gi;
   const matches = text.match(urlRegex);
-  
+
   if (!matches || matches.length === 0) {
     return null;
   }
@@ -309,7 +361,7 @@ export function extractUrlFromText(text: string): string | null {
  * Validates multiple URLs in batch
  */
 export function validateUrls(
-  urls: string[], 
+  urls: string[],
   options: UrlValidationOptions = {}
 ): Array<UrlValidationResult & { originalUrl: string }> {
   return urls.map(url => ({
@@ -325,7 +377,7 @@ export function isLikelyArticleUrl(url: string): boolean {
   try {
     const parsedUrl = new URL(url);
     const pathname = parsedUrl.pathname.toLowerCase();
-    
+
     // Common article URL patterns
     const articlePatterns = [
       /\/article/,

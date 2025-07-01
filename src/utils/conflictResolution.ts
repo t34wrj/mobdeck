@@ -1,6 +1,6 @@
 /**
  * Conflict Resolution Utilities
- * 
+ *
  * Provides conflict resolution strategies for synchronization between local and remote data.
  * Implements various strategies including Last-Write-Wins, Local-Wins, Remote-Wins, and Manual resolution.
  */
@@ -65,22 +65,24 @@ export function resolveConflict(
   };
 
   if (resolverConfig.logConflicts) {
-    console.log(`[ConflictResolution] Resolving conflict for article: ${localArticle.id} using strategy: ${strategy}`);
+    console.log(
+      `[ConflictResolution] Resolving conflict for article: ${localArticle.id} using strategy: ${strategy}`
+    );
   }
 
   switch (strategy) {
     case ConflictResolutionStrategy.LAST_WRITE_WINS:
       return resolveLastWriteWins(localArticle, remoteArticle, resolverConfig);
-    
+
     case ConflictResolutionStrategy.LOCAL_WINS:
       return resolveLocalWins(localArticle, remoteArticle, resolverConfig);
-    
+
     case ConflictResolutionStrategy.REMOTE_WINS:
       return resolveRemoteWins(localArticle, remoteArticle, resolverConfig);
-    
+
     case ConflictResolutionStrategy.MANUAL:
       throw new Error('Manual conflict resolution requires user intervention');
-    
+
     default:
       throw new Error(`Unknown conflict resolution strategy: ${strategy}`);
   }
@@ -97,7 +99,7 @@ function resolveLastWriteWins(
 ): Article {
   const localTimestamp = new Date(localArticle.updatedAt);
   const remoteTimestamp = new Date(remoteArticle.updatedAt);
-  
+
   if (config.logConflicts) {
     console.log(`[ConflictResolution] Last-Write-Wins comparison:`, {
       localTimestamp: localTimestamp.toISOString(),
@@ -107,8 +109,9 @@ function resolveLastWriteWins(
   }
 
   // Return the version with the latest timestamp
-  const winningArticle = localTimestamp > remoteTimestamp ? localArticle : remoteArticle;
-  
+  const winningArticle =
+    localTimestamp > remoteTimestamp ? localArticle : remoteArticle;
+
   // Preserve certain metadata from both versions
   return {
     ...winningArticle,
@@ -129,7 +132,9 @@ function resolveLocalWins(
   config: ConflictResolutionConfig
 ): Article {
   if (config.logConflicts) {
-    console.log(`[ConflictResolution] Local-Wins resolution for article: ${localArticle.id}`);
+    console.log(
+      `[ConflictResolution] Local-Wins resolution for article: ${localArticle.id}`
+    );
   }
 
   return {
@@ -150,7 +155,9 @@ function resolveRemoteWins(
   config: ConflictResolutionConfig
 ): Article {
   if (config.logConflicts) {
-    console.log(`[ConflictResolution] Remote-Wins resolution for article: ${localArticle.id}`);
+    console.log(
+      `[ConflictResolution] Remote-Wins resolution for article: ${localArticle.id}`
+    );
   }
 
   return {
@@ -202,21 +209,25 @@ export function detectConflicts(
 /**
  * Determine the type of conflict based on the field and values
  */
-function getConflictType(field: keyof Article, localValue: any, remoteValue: any): ConflictType {
+function getConflictType(
+  field: keyof Article,
+  localValue: any,
+  remoteValue: any
+): ConflictType {
   switch (field) {
     case 'title':
     case 'summary':
     case 'content':
       return ConflictType.CONTENT_MODIFIED;
-    
+
     case 'isArchived':
     case 'isFavorite':
     case 'isRead':
       return ConflictType.STATUS_CHANGED;
-    
+
     case 'tags':
       return ConflictType.TAGS_UPDATED;
-    
+
     default:
       return ConflictType.CONTENT_MODIFIED;
   }
@@ -225,25 +236,29 @@ function getConflictType(field: keyof Article, localValue: any, remoteValue: any
 /**
  * Determine the severity of a conflict
  */
-function getConflictSeverity(field: keyof Article, localValue: any, remoteValue: any): 'low' | 'medium' | 'high' {
+function getConflictSeverity(
+  field: keyof Article,
+  localValue: any,
+  remoteValue: any
+): 'low' | 'medium' | 'high' {
   switch (field) {
     case 'content':
       return 'high'; // Content changes are high severity
-    
+
     case 'title':
       return 'medium'; // Title changes are medium severity
-    
+
     case 'summary':
       return 'medium';
-    
+
     case 'isArchived':
     case 'isFavorite':
     case 'isRead':
       return 'low'; // Status changes are low severity
-    
+
     case 'tags':
       return 'low'; // Tag changes are low severity
-    
+
     default:
       return 'medium';
   }
@@ -254,9 +269,9 @@ function getConflictSeverity(field: keyof Article, localValue: any, remoteValue:
  */
 function deepEqual(a: any, b: any): boolean {
   if (a === b) return true;
-  
+
   if (a == null || b == null) return a === b;
-  
+
   if (Array.isArray(a) && Array.isArray(b)) {
     if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++) {
@@ -264,20 +279,20 @@ function deepEqual(a: any, b: any): boolean {
     }
     return true;
   }
-  
+
   if (typeof a === 'object' && typeof b === 'object') {
     const keysA = Object.keys(a);
     const keysB = Object.keys(b);
-    
+
     if (keysA.length !== keysB.length) return false;
-    
+
     for (const key of keysA) {
       if (!keysB.includes(key)) return false;
       if (!deepEqual(a[key], b[key])) return false;
     }
     return true;
   }
-  
+
   return false;
 }
 
@@ -371,15 +386,18 @@ function performThreeWayMerge(
     else {
       const localTimestamp = new Date(localArticle.updatedAt);
       const remoteTimestamp = new Date(remoteArticle.updatedAt);
-      (merged as any)[field] = localTimestamp > remoteTimestamp ? localValue : remoteValue;
+      (merged as any)[field] =
+        localTimestamp > remoteTimestamp ? localValue : remoteValue;
     }
   }
 
   // Always use the latest timestamps
-  merged.updatedAt = new Date(Math.max(
-    new Date(localArticle.updatedAt).getTime(),
-    new Date(remoteArticle.updatedAt).getTime()
-  ));
+  merged.updatedAt = new Date(
+    Math.max(
+      new Date(localArticle.updatedAt).getTime(),
+      new Date(remoteArticle.updatedAt).getTime()
+    )
+  );
   merged.syncedAt = new Date();
   merged.isModified = false;
 
@@ -432,13 +450,13 @@ export function describeConflicts(conflicts: ConflictDetails[]): string[] {
     switch (conflict.conflictType) {
       case ConflictType.CONTENT_MODIFIED:
         return `Content in field "${conflict.field}" was modified in both local and remote versions`;
-      
+
       case ConflictType.STATUS_CHANGED:
         return `Status "${conflict.field}" was changed: local=${conflict.localValue}, remote=${conflict.remoteValue}`;
-      
+
       case ConflictType.TAGS_UPDATED:
         return `Tags were updated: local=[${conflict.localValue?.join(', ') || ''}], remote=[${conflict.remoteValue?.join(', ') || ''}]`;
-      
+
       default:
         return `Field "${conflict.field}" has conflicting values`;
     }

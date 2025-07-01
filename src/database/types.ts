@@ -150,7 +150,11 @@ export interface DatabaseStats {
 
 // Error types specific to database operations
 export interface DatabaseError {
-  code: 'CONSTRAINT_VIOLATION' | 'TABLE_NOT_FOUND' | 'SYNTAX_ERROR' | 'CONNECTION_ERROR';
+  code:
+    | 'CONSTRAINT_VIOLATION'
+    | 'TABLE_NOT_FOUND'
+    | 'SYNTAX_ERROR'
+    | 'CONNECTION_ERROR';
   message: string;
   sql?: string;
   params?: any[];

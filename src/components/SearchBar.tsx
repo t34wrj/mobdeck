@@ -7,17 +7,21 @@ interface SearchBarProps {
   onSearchSubmit: () => void;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, onSearchChange, onSearchSubmit }) => {
+const SearchBar: React.FC<SearchBarProps> = ({
+  searchQuery,
+  onSearchChange,
+  onSearchSubmit,
+}) => {
   return (
     <View style={styles.container}>
       <TextInput
         style={styles.input}
-        placeholder="Search articles..."
+        placeholder='Search articles...'
         value={searchQuery}
         onChangeText={onSearchChange}
         onSubmitEditing={onSearchSubmit}
       />
-      <Button title="Search" onPress={onSearchSubmit} />
+      <Button title='Search' onPress={onSearchSubmit} />
     </View>
   );
 };

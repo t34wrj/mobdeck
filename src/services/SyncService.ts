@@ -1,6 +1,6 @@
 /**
  * SyncService - Comprehensive Bidirectional Synchronization Service
- * 
+ *
  * Features:
  * - Two-way sync between local SQLite and Readeck server
  * - Last-Write-Wins conflict resolution strategy
@@ -114,17 +114,17 @@ class SyncService {
   public async initialize(): Promise<void> {
     try {
       console.log('[SyncService] Initializing sync service...');
-      
+
       // Get current sync configuration from Redux store
       const state = store.getState();
       this.config = { ...this.config, ...state.sync.config };
 
       // Set up network monitoring
       this.setupNetworkMonitoring();
-      
+
       // Process any pending sync operations
       await this.processPendingSyncOperations();
-      
+
       console.log('[SyncService] Sync service initialized successfully');
     } catch (error) {
       console.error('[SyncService] Failed to initialize:', error);
@@ -141,41 +141,47 @@ class SyncService {
     }
 
     console.log('[SyncService] Starting full sync...');
-    
+
     this.isRunning = true;
     this.abortController = new AbortController();
-    
+
     const startTime = Date.now();
-    
+
     // Dispatch sync start action
-    store.dispatch(startSync({
-      fullSync: true,
-      forceSync,
-      syncOptions: this.config,
-    }));
+    store.dispatch(
+      startSync({
+        fullSync: true,
+        forceSync,
+        syncOptions: this.config,
+      })
+    );
 
     try {
       const result = await this.executeFullSync();
-      
+
       const duration = Date.now() - startTime;
-      
+
       // Dispatch sync success
-      store.dispatch(syncSuccess({
-        syncDuration: duration,
-        itemsProcessed: result.syncedCount,
-        conflictsDetected: result.conflictCount,
-        syncTime: new Date().toISOString(),
-      }));
+      store.dispatch(
+        syncSuccess({
+          syncDuration: duration,
+          itemsProcessed: result.syncedCount,
+          conflictsDetected: result.conflictCount,
+          syncTime: new Date().toISOString(),
+        })
+      );
 
       // Update sync statistics
-      store.dispatch(updateSyncStats({
-        articlesCreated: result.syncedCount,
-        articlesUpdated: 0,
-        articlesDeleted: 0,
-      }));
+      store.dispatch(
+        updateSyncStats({
+          articlesCreated: result.syncedCount,
+          articlesUpdated: 0,
+          articlesDeleted: 0,
+        })
+      );
 
       console.log(`[SyncService] Full sync completed in ${duration}ms`);
-      
+
       return {
         ...result,
         duration,
@@ -183,16 +189,18 @@ class SyncService {
       };
     } catch (error) {
       const duration = Date.now() - startTime;
-      
+
       console.error('[SyncService] Full sync failed:', error);
-      
+
       // Dispatch sync error
-      store.dispatch(syncError({
-        error: error.message,
-        errorCode: 'SYNC_FAILED',
-        phase: SyncPhase.FINALIZING,
-        retryable: this.isRetryableError(error),
-      }));
+      store.dispatch(
+        syncError({
+          error: error.message,
+          errorCode: 'SYNC_FAILED',
+          phase: SyncPhase.FINALIZING,
+          retryable: this.isRetryableError(error),
+        })
+      );
 
       return {
         success: false,
@@ -201,11 +209,13 @@ class SyncService {
         errorCount: 1,
         duration,
         phase: SyncPhase.FINALIZING,
-        errors: [{
-          operation: 'full_sync',
-          error: error.message,
-          retryable: this.isRetryableError(error),
-        }],
+        errors: [
+          {
+            operation: 'full_sync',
+            error: error.message,
+            retryable: this.isRetryableError(error),
+          },
+        ],
       };
     } finally {
       this.isRunning = false;
@@ -229,12 +239,14 @@ class SyncService {
 
     try {
       // Phase 1: Upload local changes
-      store.dispatch(syncProgress({
-        phase: SyncPhase.UPLOADING_CHANGES,
-        totalItems: 0,
-        processedItems: 0,
-        currentItem: 'Detecting local changes...',
-      }));
+      store.dispatch(
+        syncProgress({
+          phase: SyncPhase.UPLOADING_CHANGES,
+          totalItems: 0,
+          processedItems: 0,
+          currentItem: 'Detecting local changes...',
+        })
+      );
 
       const uploadResult = await this.syncUp();
       syncResult.syncedCount += uploadResult.syncedCount;
@@ -243,12 +255,14 @@ class SyncService {
       syncResult.errors.push(...uploadResult.errors);
 
       // Phase 2: Download remote changes
-      store.dispatch(syncProgress({
-        phase: SyncPhase.DOWNLOADING_UPDATES,
-        totalItems: 0,
-        processedItems: 0,
-        currentItem: 'Fetching remote updates...',
-      }));
+      store.dispatch(
+        syncProgress({
+          phase: SyncPhase.DOWNLOADING_UPDATES,
+          totalItems: 0,
+          processedItems: 0,
+          currentItem: 'Fetching remote updates...',
+        })
+      );
 
       const downloadResult = await this.syncDown();
       syncResult.syncedCount += downloadResult.syncedCount;
@@ -258,23 +272,27 @@ class SyncService {
 
       // Phase 3: Resolve any pending conflicts
       if (syncResult.conflictCount > 0) {
-        store.dispatch(syncProgress({
-          phase: SyncPhase.RESOLVING_CONFLICTS,
-          totalItems: syncResult.conflictCount,
-          processedItems: 0,
-          currentItem: 'Resolving conflicts...',
-        }));
+        store.dispatch(
+          syncProgress({
+            phase: SyncPhase.RESOLVING_CONFLICTS,
+            totalItems: syncResult.conflictCount,
+            processedItems: 0,
+            currentItem: 'Resolving conflicts...',
+          })
+        );
 
         await this.resolveAllConflicts();
       }
 
       // Phase 4: Finalize sync
-      store.dispatch(syncProgress({
-        phase: SyncPhase.FINALIZING,
-        totalItems: syncResult.syncedCount,
-        processedItems: syncResult.syncedCount,
-        currentItem: 'Finalizing sync...',
-      }));
+      store.dispatch(
+        syncProgress({
+          phase: SyncPhase.FINALIZING,
+          totalItems: syncResult.syncedCount,
+          processedItems: syncResult.syncedCount,
+          currentItem: 'Finalizing sync...',
+        })
+      );
 
       syncResult.phase = SyncPhase.FINALIZING;
       return syncResult;
@@ -295,7 +313,7 @@ class SyncService {
    */
   public async syncUp(): Promise<SyncResult> {
     console.log('[SyncService] Starting sync up (local -> remote)...');
-    
+
     const result: SyncResult = {
       success: true,
       syncedCount: 0,
@@ -315,24 +333,33 @@ class SyncService {
       });
 
       if (!modifiedArticlesResult.success) {
-        throw new Error(`Failed to get modified articles: ${modifiedArticlesResult.error}`);
+        throw new Error(
+          `Failed to get modified articles: ${modifiedArticlesResult.error}`
+        );
       }
 
       const modifiedArticles = modifiedArticlesResult.data!.items;
-      console.log(`[SyncService] Found ${modifiedArticles.length} locally modified articles`);
+      console.log(
+        `[SyncService] Found ${modifiedArticles.length} locally modified articles`
+      );
 
       // Process articles in batches
-      const batches = this.createBatches(modifiedArticles, this.config.batchSize);
-      
+      const batches = this.createBatches(
+        modifiedArticles,
+        this.config.batchSize
+      );
+
       for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
-        
-        store.dispatch(syncProgress({
-          phase: SyncPhase.UPLOADING_CHANGES,
-          totalItems: modifiedArticles.length,
-          processedItems: i * this.config.batchSize,
-          currentItem: `Processing batch ${i + 1}/${batches.length}`,
-        }));
+
+        store.dispatch(
+          syncProgress({
+            phase: SyncPhase.UPLOADING_CHANGES,
+            totalItems: modifiedArticles.length,
+            processedItems: i * this.config.batchSize,
+            currentItem: `Processing batch ${i + 1}/${batches.length}`,
+          })
+        );
 
         const batchResult = await this.uploadBatch(batch);
         result.syncedCount += batchResult.syncedCount;
@@ -346,7 +373,9 @@ class SyncService {
         }
       }
 
-      console.log(`[SyncService] Sync up completed: ${result.syncedCount} synced, ${result.conflictCount} conflicts`);
+      console.log(
+        `[SyncService] Sync up completed: ${result.syncedCount} synced, ${result.conflictCount} conflicts`
+      );
       return result;
     } catch (error) {
       console.error('[SyncService] Sync up failed:', error);
@@ -366,7 +395,7 @@ class SyncService {
    */
   public async syncDown(): Promise<SyncResult> {
     console.log('[SyncService] Starting sync down (remote -> local)...');
-    
+
     const result: SyncResult = {
       success: true,
       syncedCount: 0,
@@ -380,30 +409,38 @@ class SyncService {
     try {
       // Get last sync timestamp
       const lastSyncResult = await DatabaseService.getStats();
-      const lastSyncTimestamp = lastSyncResult.success && lastSyncResult.data!.lastSyncAt 
-        ? new Date(lastSyncResult.data!.lastSyncAt * 1000) 
-        : new Date(0);
+      const lastSyncTimestamp =
+        lastSyncResult.success && lastSyncResult.data!.lastSyncAt
+          ? new Date(lastSyncResult.data!.lastSyncAt * 1000)
+          : new Date(0);
 
-      console.log(`[SyncService] Last sync: ${lastSyncTimestamp.toISOString()}`);
+      console.log(
+        `[SyncService] Last sync: ${lastSyncTimestamp.toISOString()}`
+      );
 
       // Fetch articles modified since last sync
-      const remoteArticles = await this.fetchRemoteArticlesSince(lastSyncTimestamp);
-      console.log(`[SyncService] Found ${remoteArticles.length} remote articles to sync`);
+      const remoteArticles =
+        await this.fetchRemoteArticlesSince(lastSyncTimestamp);
+      console.log(
+        `[SyncService] Found ${remoteArticles.length} remote articles to sync`
+      );
 
       // Process remote articles
       for (let i = 0; i < remoteArticles.length; i++) {
         const remoteArticle = remoteArticles[i];
-        
-        store.dispatch(syncProgress({
-          phase: SyncPhase.DOWNLOADING_UPDATES,
-          totalItems: remoteArticles.length,
-          processedItems: i,
-          currentItem: `Syncing: ${remoteArticle.title}`,
-        }));
+
+        store.dispatch(
+          syncProgress({
+            phase: SyncPhase.DOWNLOADING_UPDATES,
+            totalItems: remoteArticles.length,
+            processedItems: i,
+            currentItem: `Syncing: ${remoteArticle.title}`,
+          })
+        );
 
         try {
           const syncResult = await this.syncRemoteArticle(remoteArticle);
-          
+
           if (syncResult.success) {
             result.syncedCount++;
           } else if (syncResult.conflict) {
@@ -431,7 +468,9 @@ class SyncService {
         }
       }
 
-      console.log(`[SyncService] Sync down completed: ${result.syncedCount} synced, ${result.conflictCount} conflicts`);
+      console.log(
+        `[SyncService] Sync down completed: ${result.syncedCount} synced, ${result.conflictCount} conflicts`
+      );
       return result;
     } catch (error) {
       console.error('[SyncService] Sync down failed:', error);
@@ -462,11 +501,14 @@ class SyncService {
 
     for (const dbArticle of articles) {
       try {
-        const article = DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle);
-        
+        const article =
+          DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle);
+
         // Check if article exists on server
-        const existsOnServer = await this.checkArticleExistsOnServer(article.id);
-        
+        const existsOnServer = await this.checkArticleExistsOnServer(
+          article.id
+        );
+
         if (existsOnServer) {
           // Update existing article
           const updateResult = await articlesApiService.updateArticle({
@@ -506,7 +548,10 @@ class SyncService {
           result.syncedCount++;
         }
       } catch (error) {
-        console.error(`[SyncService] Failed to upload article ${dbArticle.id}:`, error);
+        console.error(
+          `[SyncService] Failed to upload article ${dbArticle.id}:`,
+          error
+        );
         result.errorCount++;
         result.errors.push({
           operation: `upload_article_${dbArticle.id}`,
@@ -529,16 +574,19 @@ class SyncService {
   }> {
     try {
       // Check if article exists locally
-      const localArticleResult = await DatabaseService.getArticle(remoteArticle.id);
-      
+      const localArticleResult = await DatabaseService.getArticle(
+        remoteArticle.id
+      );
+
       if (!localArticleResult.success) {
         // Article doesn't exist locally, create it
-        const dbArticle = DatabaseUtilityFunctions.convertArticleToDBArticle(remoteArticle);
+        const dbArticle =
+          DatabaseUtilityFunctions.convertArticleToDBArticle(remoteArticle);
         dbArticle.synced_at = Math.floor(Date.now() / 1000);
         dbArticle.is_modified = 0;
-        
+
         const createResult = await DatabaseService.createArticle(dbArticle);
-        
+
         return {
           success: createResult.success,
           conflict: false,
@@ -547,24 +595,30 @@ class SyncService {
       }
 
       // Article exists locally, check for conflicts
-      const localArticle = DatabaseUtilityFunctions.convertDBArticleToArticle(localArticleResult.data!);
-      
+      const localArticle = DatabaseUtilityFunctions.convertDBArticleToArticle(
+        localArticleResult.data!
+      );
+
       if (this.hasConflict(localArticle, remoteArticle)) {
         // Handle conflict based on strategy
         const resolved = await this.handleConflict(localArticle, remoteArticle);
-        
+
         return {
           success: resolved,
           conflict: !resolved,
         };
       } else {
         // No conflict, update local article
-        const remoteDbArticle = DatabaseUtilityFunctions.convertArticleToDBArticle(remoteArticle);
+        const remoteDbArticle =
+          DatabaseUtilityFunctions.convertArticleToDBArticle(remoteArticle);
         remoteDbArticle.synced_at = Math.floor(Date.now() / 1000);
         remoteDbArticle.is_modified = 0;
-        
-        const updateResult = await DatabaseService.updateArticle(remoteArticle.id, remoteDbArticle);
-        
+
+        const updateResult = await DatabaseService.updateArticle(
+          remoteArticle.id,
+          remoteDbArticle
+        );
+
         return {
           success: updateResult.success,
           conflict: false,
@@ -586,8 +640,10 @@ class SyncService {
   private hasConflict(localArticle: Article, remoteArticle: Article): boolean {
     // Check if both articles have been modified since last sync
     const localModified = localArticle.isModified || false;
-    const remoteModified = new Date(remoteArticle.updatedAt) > (localArticle.syncedAt || new Date(0));
-    
+    const remoteModified =
+      new Date(remoteArticle.updatedAt) >
+      (localArticle.syncedAt || new Date(0));
+
     if (!localModified || !remoteModified) {
       return false;
     }
@@ -598,41 +654,51 @@ class SyncService {
       localArticle.isArchived !== remoteArticle.isArchived ||
       localArticle.isFavorite !== remoteArticle.isFavorite ||
       localArticle.isRead !== remoteArticle.isRead ||
-      JSON.stringify(localArticle.tags || []) !== JSON.stringify(remoteArticle.tags || [])
+      JSON.stringify(localArticle.tags || []) !==
+        JSON.stringify(remoteArticle.tags || [])
     );
   }
 
   /**
    * Handle conflict between local and remote articles
    */
-  private async handleConflict(localArticle: Article, remoteArticle: Article): Promise<boolean> {
-    console.log(`[SyncService] Conflict detected for article: ${localArticle.id}`);
-    
+  private async handleConflict(
+    localArticle: Article,
+    remoteArticle: Article
+  ): Promise<boolean> {
+    console.log(
+      `[SyncService] Conflict detected for article: ${localArticle.id}`
+    );
+
     // Add conflict to Redux state
-    store.dispatch(addConflict({
-      articleId: localArticle.id,
-      type: ConflictType.CONTENT_MODIFIED,
-      localVersion: localArticle,
-      remoteVersion: remoteArticle,
-    }));
+    store.dispatch(
+      addConflict({
+        articleId: localArticle.id,
+        type: ConflictType.CONTENT_MODIFIED,
+        localVersion: localArticle,
+        remoteVersion: remoteArticle,
+      })
+    );
 
     // Apply conflict resolution strategy
     switch (this.config.conflictResolutionStrategy) {
       case ConflictResolutionStrategy.LAST_WRITE_WINS:
         return await this.resolveLastWriteWins(localArticle, remoteArticle);
-      
+
       case ConflictResolutionStrategy.LOCAL_WINS:
         return await this.resolveLocalWins(localArticle, remoteArticle);
-      
+
       case ConflictResolutionStrategy.REMOTE_WINS:
         return await this.resolveRemoteWins(localArticle, remoteArticle);
-      
+
       case ConflictResolutionStrategy.MANUAL:
         // For manual resolution, we'll store the conflict and return false
         return false;
-      
+
       default:
-        console.warn(`[SyncService] Unknown conflict resolution strategy: ${this.config.conflictResolutionStrategy}`);
+        console.warn(
+          `[SyncService] Unknown conflict resolution strategy: ${this.config.conflictResolutionStrategy}`
+        );
         return false;
     }
   }
@@ -640,32 +706,50 @@ class SyncService {
   /**
    * Resolve conflict using Last-Write-Wins strategy
    */
-  private async resolveLastWriteWins(localArticle: Article, remoteArticle: Article): Promise<boolean> {
+  private async resolveLastWriteWins(
+    localArticle: Article,
+    remoteArticle: Article
+  ): Promise<boolean> {
     try {
-      const resolvedArticle = resolveArticleConflict(localArticle, remoteArticle, ConflictResolutionStrategy.LAST_WRITE_WINS);
-      
+      const resolvedArticle = resolveArticleConflict(
+        localArticle,
+        remoteArticle,
+        ConflictResolutionStrategy.LAST_WRITE_WINS
+      );
+
       // Update local database with resolved article
-      const dbArticle = DatabaseUtilityFunctions.convertArticleToDBArticle(resolvedArticle);
+      const dbArticle =
+        DatabaseUtilityFunctions.convertArticleToDBArticle(resolvedArticle);
       dbArticle.synced_at = Math.floor(Date.now() / 1000);
       dbArticle.is_modified = 0;
-      
-      const updateResult = await DatabaseService.updateArticle(resolvedArticle.id, dbArticle);
-      
+
+      const updateResult = await DatabaseService.updateArticle(
+        resolvedArticle.id,
+        dbArticle
+      );
+
       if (updateResult.success) {
         // Mark conflict as resolved
-        store.dispatch(resolveConflict({
-          conflictId: `${localArticle.id}_${Date.now()}`,
-          resolution: ConflictResolutionStrategy.LAST_WRITE_WINS,
-          resolvedVersion: resolvedArticle,
-        }));
-        
-        console.log(`[SyncService] Conflict resolved for article: ${localArticle.id} using Last-Write-Wins`);
+        store.dispatch(
+          resolveConflict({
+            conflictId: `${localArticle.id}_${Date.now()}`,
+            resolution: ConflictResolutionStrategy.LAST_WRITE_WINS,
+            resolvedVersion: resolvedArticle,
+          })
+        );
+
+        console.log(
+          `[SyncService] Conflict resolved for article: ${localArticle.id} using Last-Write-Wins`
+        );
         return true;
       }
-      
+
       return false;
     } catch (error) {
-      console.error(`[SyncService] Failed to resolve conflict for article: ${localArticle.id}`, error);
+      console.error(
+        `[SyncService] Failed to resolve conflict for article: ${localArticle.id}`,
+        error
+      );
       return false;
     }
   }
@@ -673,28 +757,41 @@ class SyncService {
   /**
    * Resolve conflict using Local-Wins strategy
    */
-  private async resolveLocalWins(localArticle: Article, remoteArticle: Article): Promise<boolean> {
+  private async resolveLocalWins(
+    localArticle: Article,
+    remoteArticle: Article
+  ): Promise<boolean> {
     try {
       // Keep local version, but update sync timestamp
-      const updateResult = await DatabaseService.updateArticle(localArticle.id, {
-        synced_at: Math.floor(Date.now() / 1000),
-        is_modified: 1, // Keep as modified to upload later
-      });
-      
+      const updateResult = await DatabaseService.updateArticle(
+        localArticle.id,
+        {
+          synced_at: Math.floor(Date.now() / 1000),
+          is_modified: 1, // Keep as modified to upload later
+        }
+      );
+
       if (updateResult.success) {
-        store.dispatch(resolveConflict({
-          conflictId: `${localArticle.id}_${Date.now()}`,
-          resolution: ConflictResolutionStrategy.LOCAL_WINS,
-          resolvedVersion: localArticle,
-        }));
-        
-        console.log(`[SyncService] Conflict resolved for article: ${localArticle.id} using Local-Wins`);
+        store.dispatch(
+          resolveConflict({
+            conflictId: `${localArticle.id}_${Date.now()}`,
+            resolution: ConflictResolutionStrategy.LOCAL_WINS,
+            resolvedVersion: localArticle,
+          })
+        );
+
+        console.log(
+          `[SyncService] Conflict resolved for article: ${localArticle.id} using Local-Wins`
+        );
         return true;
       }
-      
+
       return false;
     } catch (error) {
-      console.error(`[SyncService] Failed to resolve conflict for article: ${localArticle.id}`, error);
+      console.error(
+        `[SyncService] Failed to resolve conflict for article: ${localArticle.id}`,
+        error
+      );
       return false;
     }
   }
@@ -702,29 +799,43 @@ class SyncService {
   /**
    * Resolve conflict using Remote-Wins strategy
    */
-  private async resolveRemoteWins(localArticle: Article, remoteArticle: Article): Promise<boolean> {
+  private async resolveRemoteWins(
+    localArticle: Article,
+    remoteArticle: Article
+  ): Promise<boolean> {
     try {
       // Use remote version
-      const dbArticle = DatabaseUtilityFunctions.convertArticleToDBArticle(remoteArticle);
+      const dbArticle =
+        DatabaseUtilityFunctions.convertArticleToDBArticle(remoteArticle);
       dbArticle.synced_at = Math.floor(Date.now() / 1000);
       dbArticle.is_modified = 0;
-      
-      const updateResult = await DatabaseService.updateArticle(remoteArticle.id, dbArticle);
-      
+
+      const updateResult = await DatabaseService.updateArticle(
+        remoteArticle.id,
+        dbArticle
+      );
+
       if (updateResult.success) {
-        store.dispatch(resolveConflict({
-          conflictId: `${localArticle.id}_${Date.now()}`,
-          resolution: ConflictResolutionStrategy.REMOTE_WINS,
-          resolvedVersion: remoteArticle,
-        }));
-        
-        console.log(`[SyncService] Conflict resolved for article: ${localArticle.id} using Remote-Wins`);
+        store.dispatch(
+          resolveConflict({
+            conflictId: `${localArticle.id}_${Date.now()}`,
+            resolution: ConflictResolutionStrategy.REMOTE_WINS,
+            resolvedVersion: remoteArticle,
+          })
+        );
+
+        console.log(
+          `[SyncService] Conflict resolved for article: ${localArticle.id} using Remote-Wins`
+        );
         return true;
       }
-      
+
       return false;
     } catch (error) {
-      console.error(`[SyncService] Failed to resolve conflict for article: ${localArticle.id}`, error);
+      console.error(
+        `[SyncService] Failed to resolve conflict for article: ${localArticle.id}`,
+        error
+      );
       return false;
     }
   }
@@ -735,23 +846,31 @@ class SyncService {
   private async resolveAllConflicts(): Promise<void> {
     const state = store.getState();
     const conflicts = state.sync.conflicts;
-    
+
     console.log(`[SyncService] Resolving ${conflicts.length} conflicts...`);
-    
+
     for (let i = 0; i < conflicts.length; i++) {
       const conflict = conflicts[i];
-      
-      store.dispatch(syncProgress({
-        phase: SyncPhase.RESOLVING_CONFLICTS,
-        totalItems: conflicts.length,
-        processedItems: i,
-        currentItem: `Resolving conflict for article: ${conflict.articleId}`,
-      }));
+
+      store.dispatch(
+        syncProgress({
+          phase: SyncPhase.RESOLVING_CONFLICTS,
+          totalItems: conflicts.length,
+          processedItems: i,
+          currentItem: `Resolving conflict for article: ${conflict.articleId}`,
+        })
+      );
 
       try {
-        await this.handleConflict(conflict.localVersion, conflict.remoteVersion);
+        await this.handleConflict(
+          conflict.localVersion,
+          conflict.remoteVersion
+        );
       } catch (error) {
-        console.error(`[SyncService] Failed to resolve conflict for article: ${conflict.articleId}`, error);
+        console.error(
+          `[SyncService] Failed to resolve conflict for article: ${conflict.articleId}`,
+          error
+        );
       }
     }
   }
@@ -769,8 +888,8 @@ class SyncService {
       });
 
       // Filter articles modified since the timestamp
-      return response.items.filter(article => 
-        new Date(article.updatedAt) > since
+      return response.items.filter(
+        article => new Date(article.updatedAt) > since
       );
     } catch (error) {
       console.error('[SyncService] Failed to fetch remote articles:', error);
@@ -781,7 +900,9 @@ class SyncService {
   /**
    * Check if an article exists on the server
    */
-  private async checkArticleExistsOnServer(articleId: string): Promise<boolean> {
+  private async checkArticleExistsOnServer(
+    articleId: string
+  ): Promise<boolean> {
     try {
       await articlesApiService.getArticle(articleId);
       return true;
@@ -801,11 +922,16 @@ class SyncService {
       });
 
       if (pendingResult.success && pendingResult.data!.items.length > 0) {
-        console.log(`[SyncService] Found ${pendingResult.data!.items.length} pending sync operations`);
+        console.log(
+          `[SyncService] Found ${pendingResult.data!.items.length} pending sync operations`
+        );
         // TODO: Process pending operations
       }
     } catch (error) {
-      console.error('[SyncService] Failed to process pending sync operations:', error);
+      console.error(
+        '[SyncService] Failed to process pending sync operations:',
+        error
+      );
     }
   }
 
@@ -815,10 +941,12 @@ class SyncService {
   private setupNetworkMonitoring(): void {
     // TODO: Implement network monitoring using NetInfo
     // For now, assume we're online
-    store.dispatch(updateNetworkStatus({
-      isOnline: true,
-      networkType: NetworkType.WIFI,
-    }));
+    store.dispatch(
+      updateNetworkStatus({
+        isOnline: true,
+        networkType: NetworkType.WIFI,
+      })
+    );
   }
 
   /**
@@ -839,8 +967,9 @@ class SyncService {
     // Network errors, timeouts, and server errors are retryable
     if (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT') return true;
     if (error.status >= 500 && error.status < 600) return true;
-    if (error.message.includes('network') || error.message.includes('timeout')) return true;
-    
+    if (error.message.includes('network') || error.message.includes('timeout'))
+      return true;
+
     return false;
   }
 

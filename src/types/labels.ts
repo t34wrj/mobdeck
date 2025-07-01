@@ -98,7 +98,9 @@ export interface ILabelsApiService {
   assignToArticle(params: AssignLabelToArticleParams): Promise<void>;
   removeFromArticle(params: RemoveLabelFromArticleParams): Promise<void>;
   getLabel(id: string): Promise<Label>;
-  batchAssignLabels(params: BatchAssignLabelsParams): Promise<BatchLabelAssignmentResult>;
+  batchAssignLabels(
+    params: BatchAssignLabelsParams
+  ): Promise<BatchLabelAssignmentResult>;
   getLabelStats(): Promise<LabelStats>;
 }
 
@@ -121,7 +123,9 @@ export interface CreateLabelParams {
 
 export interface UpdateLabelParams {
   id: string;
-  updates: Partial<Omit<Label, 'id' | 'createdAt' | 'updatedAt' | 'articleCount'>>;
+  updates: Partial<
+    Omit<Label, 'id' | 'createdAt' | 'updatedAt' | 'articleCount'>
+  >;
 }
 
 export interface DeleteLabelParams {
@@ -189,7 +193,7 @@ export enum LabelErrorCode {
   ASSIGNMENT_NOT_FOUND = 'ASSIGNMENT_NOT_FOUND',
   BATCH_OPERATION_FAILED = 'BATCH_OPERATION_FAILED',
   QUOTA_EXCEEDED = 'QUOTA_EXCEEDED',
-  UNKNOWN_LABEL_ERROR = 'UNKNOWN_LABEL_ERROR'
+  UNKNOWN_LABEL_ERROR = 'UNKNOWN_LABEL_ERROR',
 }
 
 // Cache and optimization types
@@ -391,7 +395,8 @@ export interface CreateLabelDTO extends Pick<Label, 'name'> {
   description?: string;
 }
 
-export interface UpdateLabelDTO extends Partial<Omit<Label, RequiredLabelFields>> {}
+export interface UpdateLabelDTO
+  extends Partial<Omit<Label, RequiredLabelFields>> {}
 
 // Re-export commonly used types
 export type { PaginatedResponse } from './index';

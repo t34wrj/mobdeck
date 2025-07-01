@@ -38,7 +38,10 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
 
   const testConnection = useCallback(async () => {
     if (!testUrl.trim() || !testToken.trim()) {
-      Alert.alert('Missing Information', 'Please enter both URL and token to test');
+      Alert.alert(
+        'Missing Information',
+        'Please enter both URL and token to test'
+      );
       return;
     }
 
@@ -50,8 +53,8 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
       const response = await fetch(`${testUrl.trim()}/api/bookmarks`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${testToken.trim()}`,
-          'Accept': 'application/json',
+          Authorization: `Bearer ${testToken.trim()}`,
+          Accept: 'application/json',
         },
       });
 
@@ -60,17 +63,21 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
           success: true,
           message: 'Connection successful! Your token is valid.',
         });
-        
+
         // Store the validated token
         const stored = await authStorageService.storeToken(testToken);
         if (!stored) {
-          Alert.alert('Warning', 'Connection test passed but failed to store token securely');
+          Alert.alert(
+            'Warning',
+            'Connection test passed but failed to store token securely'
+          );
         }
       } else {
-        const errorMessage = response.status === 401 
-          ? 'Invalid token. Please check your Bearer token.'
-          : `Connection failed with status: ${response.status}`;
-        
+        const errorMessage =
+          response.status === 401
+            ? 'Invalid token. Please check your Bearer token.'
+            : `Connection failed with status: ${response.status}`;
+
         setTestResult({
           success: false,
           message: errorMessage,
@@ -79,9 +86,10 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
     } catch (error) {
       setTestResult({
         success: false,
-        message: error instanceof Error 
-          ? `Network error: ${error.message}`
-          : 'Failed to connect. Check your URL and network connection.',
+        message:
+          error instanceof Error
+            ? `Network error: ${error.message}`
+            : 'Failed to connect. Check your URL and network connection.',
       });
     } finally {
       setIsTesting(false);
@@ -101,17 +109,20 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
     {
       id: 1,
       title: 'Access your Readeck settings',
-      description: 'Log in to your Readeck web interface and navigate to Settings > API Tokens',
+      description:
+        'Log in to your Readeck web interface and navigate to Settings > API Tokens',
     },
     {
       id: 2,
       title: 'Create a new API token',
-      description: 'Click "Create New Token", give it a descriptive name like "Mobdeck Mobile", and set the expiration as needed',
+      description:
+        'Click "Create New Token", give it a descriptive name like "Mobdeck Mobile", and set the expiration as needed',
     },
     {
       id: 3,
       title: 'Copy the Bearer token',
-      description: 'Copy the generated token immediately - it won\'t be shown again. The token will look like a long string of random characters',
+      description:
+        "Copy the generated token immediately - it won't be shown again. The token will look like a long string of random characters",
     },
     {
       id: 4,
@@ -125,37 +136,41 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
-      keyboardShouldPersistTaps="handled"
+      keyboardShouldPersistTaps='handled'
     >
       <View style={styles.header}>
-        <Text variant="h3" style={styles.title}>
+        <Text variant='h3' style={styles.title}>
           Setup Bearer Token
         </Text>
-        <Text variant="body2" color="neutral.600" align="center">
+        <Text variant='body2' color='neutral.600' align='center'>
           Follow these steps to get your API token from Readeck
         </Text>
       </View>
 
       <View style={styles.stepsContainer}>
-        {setupSteps.map((step) => (
+        {setupSteps.map(step => (
           <View key={step.id} style={styles.step}>
             <View style={styles.stepHeader}>
               <View style={styles.stepNumber}>
-                <Text variant="body2" color="neutral.50" weight="bold">
+                <Text variant='body2' color='neutral.50' weight='bold'>
                   {step.id}
                 </Text>
               </View>
-              <Text variant="h6" style={styles.stepTitle}>
+              <Text variant='h6' style={styles.stepTitle}>
                 {step.title}
               </Text>
             </View>
-            <Text variant="body2" color="neutral.700" style={styles.stepDescription}>
+            <Text
+              variant='body2'
+              color='neutral.700'
+              style={styles.stepDescription}
+            >
               {step.description}
             </Text>
             {step.action && (
               <Button
-                variant="ghost"
-                size="sm"
+                variant='ghost'
+                size='sm'
                 onPress={step.action}
                 style={styles.stepAction}
               >
@@ -167,38 +182,38 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
       </View>
 
       <View style={styles.testContainer}>
-        <Text variant="h5" style={styles.sectionTitle}>
+        <Text variant='h5' style={styles.sectionTitle}>
           Test Your Connection
         </Text>
-        
+
         <View style={styles.inputGroup}>
-          <Text variant="body2" weight="medium" style={styles.label}>
+          <Text variant='body2' weight='medium' style={styles.label}>
             Server URL
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="https://readeck.example.com"
+            placeholder='https://readeck.example.com'
             placeholderTextColor={theme.colors.neutral[400]}
             value={testUrl}
             onChangeText={setTestUrl}
-            autoCapitalize="none"
+            autoCapitalize='none'
             autoCorrect={false}
-            keyboardType="url"
-            textContentType="URL"
+            keyboardType='url'
+            textContentType='URL'
           />
         </View>
 
         <View style={styles.inputGroup}>
-          <Text variant="body2" weight="medium" style={styles.label}>
+          <Text variant='body2' weight='medium' style={styles.label}>
             Bearer Token
           </Text>
           <TextInput
             style={styles.input}
-            placeholder="Paste your token here"
+            placeholder='Paste your token here'
             placeholderTextColor={theme.colors.neutral[400]}
             value={testToken}
             onChangeText={setTestToken}
-            autoCapitalize="none"
+            autoCapitalize='none'
             autoCorrect={false}
             secureTextEntry
             multiline={Platform.OS === 'ios'} // Allow multiline on iOS for easier pasting
@@ -207,14 +222,16 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
         </View>
 
         {testResult && (
-          <View style={[
-            styles.testResult,
-            testResult.success ? styles.testSuccess : styles.testError
-          ]}>
-            <Text 
-              variant="body2" 
+          <View
+            style={[
+              styles.testResult,
+              testResult.success ? styles.testSuccess : styles.testError,
+            ]}
+          >
+            <Text
+              variant='body2'
               color={testResult.success ? 'success.700' : 'error.700'}
-              weight="medium"
+              weight='medium'
             >
               {testResult.message}
             </Text>
@@ -222,8 +239,8 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
         )}
 
         <Button
-          variant="primary"
-          size="md"
+          variant='primary'
+          size='md'
           fullWidth
           onPress={testConnection}
           loading={isTesting}
@@ -237,15 +254,20 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
       <View style={styles.footer}>
         <Button
           variant={testResult?.success ? 'primary' : 'outline'}
-          size="lg"
+          size='lg'
           fullWidth
           onPress={handleBackToLogin}
           style={styles.backButton}
         >
           {testResult?.success ? 'Continue to Login' : 'Back to Login'}
         </Button>
-        
-        <Text variant="caption" color="neutral.500" align="center" style={styles.hint}>
+
+        <Text
+          variant='caption'
+          color='neutral.500'
+          align='center'
+          style={styles.hint}
+        >
           Your token is stored securely on your device
         </Text>
       </View>

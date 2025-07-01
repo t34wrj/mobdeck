@@ -111,9 +111,7 @@ const getButtonStyles = (
           : theme.colors.primary[500],
       },
       text: {
-        color: disabled
-          ? theme.colors.neutral[400]
-          : theme.colors.primary[500],
+        color: disabled ? theme.colors.neutral[400] : theme.colors.primary[500],
       },
     },
     ghost: {
@@ -121,9 +119,7 @@ const getButtonStyles = (
         backgroundColor: 'transparent',
       },
       text: {
-        color: disabled
-          ? theme.colors.neutral[400]
-          : theme.colors.primary[500],
+        color: disabled ? theme.colors.neutral[400] : theme.colors.primary[500],
       },
     },
     destructive: {
@@ -192,7 +188,7 @@ export const Button: React.FC<ButtonProps> = ({
       style={[styles.container, style]}
       onPress={handlePress}
       disabled={isDisabled}
-      accessibilityRole="button"
+      accessibilityRole='button'
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
       accessibilityState={{
@@ -210,23 +206,19 @@ export const Button: React.FC<ButtonProps> = ({
       ) : (
         <>
           {leftIcon && (
-            <View style={{ marginRight: iconSpacing }}>
-              {leftIcon}
-            </View>
+            <View style={{ marginRight: iconSpacing }}>{leftIcon}</View>
           )}
-          
+
           <Text
             style={[styles.text, textStyle]}
             numberOfLines={1}
-            ellipsizeMode="tail"
+            ellipsizeMode='tail'
           >
             {children}
           </Text>
-          
+
           {rightIcon && (
-            <View style={{ marginLeft: iconSpacing }}>
-              {rightIcon}
-            </View>
+            <View style={{ marginLeft: iconSpacing }}>{rightIcon}</View>
           )}
         </>
       )}

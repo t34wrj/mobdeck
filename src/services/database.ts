@@ -74,11 +74,14 @@ const getArticles = (callback: (articles: any[]) => void) => {
 
 const closeDatabase = () => {
   if (db) {
-    db.close(() => {
-      console.log('Database closed successfully');
-    }, error => {
-      console.error('Error closing database: ', error);
-    });
+    db.close(
+      () => {
+        console.log('Database closed successfully');
+      },
+      error => {
+        console.error('Error closing database: ', error);
+      }
+    );
   }
 };
 

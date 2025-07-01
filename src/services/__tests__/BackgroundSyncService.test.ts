@@ -31,14 +31,16 @@ jest.mock('react-native', () => ({
 
 jest.mock('../SyncService', () => ({
   syncService: {
-    startFullSync: jest.fn(() => Promise.resolve({
-      success: true,
-      syncedCount: 5,
-      conflictCount: 0,
-      errorCount: 0,
-      duration: 1000,
-      errors: [],
-    })),
+    startFullSync: jest.fn(() =>
+      Promise.resolve({
+        success: true,
+        syncedCount: 5,
+        conflictCount: 0,
+        errorCount: 0,
+        duration: 1000,
+        errors: [],
+      })
+    ),
   },
 }));
 
@@ -74,18 +76,20 @@ describe('BackgroundSyncService', () => {
 
   it('should update preferences', async () => {
     await backgroundSyncService.initialize();
-    
-    await expect(backgroundSyncService.updatePreferences({
-      enabled: false,
-      interval: 30,
-    })).resolves.not.toThrow();
+
+    await expect(
+      backgroundSyncService.updatePreferences({
+        enabled: false,
+        interval: 30,
+      })
+    ).resolves.not.toThrow();
   });
 
   it('should get sync status', async () => {
     await backgroundSyncService.initialize();
-    
+
     const status = await backgroundSyncService.getStatus();
-    
+
     expect(status).toHaveProperty('isRunning');
     expect(status).toHaveProperty('lastSyncTime');
     expect(status).toHaveProperty('syncHistory');
@@ -93,8 +97,10 @@ describe('BackgroundSyncService', () => {
 
   it('should trigger manual sync', async () => {
     await backgroundSyncService.initialize();
-    
-    await expect(backgroundSyncService.triggerManualSync()).resolves.not.toThrow();
+
+    await expect(
+      backgroundSyncService.triggerManualSync()
+    ).resolves.not.toThrow();
   });
 
   it('should clean up resources', () => {

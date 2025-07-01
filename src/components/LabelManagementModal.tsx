@@ -33,7 +33,8 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
   onLabelsChanged,
 }) => {
   const [availableLabels, setAvailableLabels] = useState<Label[]>([]);
-  const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>(currentLabels);
+  const [selectedLabelIds, setSelectedLabelIds] =
+    useState<string[]>(currentLabels);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [createMode, setCreateMode] = useState(false);
@@ -68,11 +69,9 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       setAvailableLabels(response.items);
     } catch (error) {
       console.error('Failed to load labels:', error);
-      Alert.alert(
-        'Error',
-        'Failed to load labels. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', 'Failed to load labels. Please try again.', [
+        { text: 'OK' },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -122,19 +121,17 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       // Add to available labels and select it
       setAvailableLabels(prev => [newLabel, ...prev]);
       setSelectedLabelIds(prev => [...prev, newLabel.id]);
-      
+
       // Reset form
       setNewLabelName('');
       setCreateMode(false);
-      
+
       Alert.alert('Success', `Label "${newLabel.name}" created successfully!`);
     } catch (error) {
       console.error('Failed to create label:', error);
-      Alert.alert(
-        'Error',
-        'Failed to create label. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', 'Failed to create label. Please try again.', [
+        { text: 'OK' },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -144,18 +141,20 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
   const handleSave = useCallback(async () => {
     try {
       setSaving(true);
-      
+
       // Determine which labels to add and remove
-      const labelsToAdd = selectedLabelIds.filter(id => !currentLabels.includes(id));
-      const labelsToRemove = currentLabels.filter(id => !selectedLabelIds.includes(id));
+      const labelsToAdd = selectedLabelIds.filter(
+        id => !currentLabels.includes(id)
+      );
+      const labelsToRemove = currentLabels.filter(
+        id => !selectedLabelIds.includes(id)
+      );
 
       // Execute label assignments/removals
       const promises: Promise<void>[] = [];
 
       labelsToAdd.forEach(labelId => {
-        promises.push(
-          labelsApiService.assignToArticle({ labelId, articleId })
-        );
+        promises.push(labelsApiService.assignToArticle({ labelId, articleId }));
       });
 
       labelsToRemove.forEach(labelId => {
@@ -168,76 +167,62 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
 
       // Notify parent of changes
       onLabelsChanged?.(selectedLabelIds);
-      
-      Alert.alert(
-        'Success',
-        'Article labels updated successfully!',
-        [{ text: 'OK', onPress: onClose }]
-      );
+
+      Alert.alert('Success', 'Article labels updated successfully!', [
+        { text: 'OK', onPress: onClose },
+      ]);
     } catch (error) {
       console.error('Failed to update labels:', error);
-      Alert.alert(
-        'Error',
-        'Failed to update labels. Please try again.',
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Error', 'Failed to update labels. Please try again.', [
+        { text: 'OK' },
+      ]);
     } finally {
       setSaving(false);
     }
   }, [selectedLabelIds, currentLabels, articleId, onLabelsChanged, onClose]);
 
   // Render label item
-  const renderLabelItem = useCallback((label: Label) => {
-    const isSelected = selectedLabelIds.includes(label.id);
-    
-    return (
-      <TouchableOpacity
-        key={label.id}
-        style={[
-          styles.labelItem,
-          isSelected && styles.selectedLabelItem,
-        ]}
-        onPress={() => handleLabelToggle(label.id)}
-        activeOpacity={0.7}
-      >
-        <View
-          style={[
-            styles.labelColorIndicator,
-            { backgroundColor: label.color || theme.colors.neutral[400] },
-          ]}
-        />
-        <View style={styles.labelContent}>
-          <Text
-            variant="body2"
-            style={[
-              styles.labelName,
-              isSelected && styles.selectedLabelName,
-            ]}
-          >
-            {label.name}
-          </Text>
-          <Text variant="caption" style={styles.labelCount}>
-            {label.articleCount} articles
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.checkbox,
-            isSelected && styles.checkedCheckbox,
-          ]}
+  const renderLabelItem = useCallback(
+    (label: Label) => {
+      const isSelected = selectedLabelIds.includes(label.id);
+
+      return (
+        <TouchableOpacity
+          key={label.id}
+          style={[styles.labelItem, isSelected && styles.selectedLabelItem]}
+          onPress={() => handleLabelToggle(label.id)}
+          activeOpacity={0.7}
         >
-          {isSelected && (
-            <Text style={styles.checkmark}>✓</Text>
-          )}
-        </View>
-      </TouchableOpacity>
-    );
-  }, [selectedLabelIds, handleLabelToggle]);
+          <View
+            style={[
+              styles.labelColorIndicator,
+              { backgroundColor: label.color || theme.colors.neutral[400] },
+            ]}
+          />
+          <View style={styles.labelContent}>
+            <Text
+              variant='body2'
+              style={[styles.labelName, isSelected && styles.selectedLabelName]}
+            >
+              {label.name}
+            </Text>
+            <Text variant='caption' style={styles.labelCount}>
+              {label.articleCount} articles
+            </Text>
+          </View>
+          <View style={[styles.checkbox, isSelected && styles.checkedCheckbox]}>
+            {isSelected && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [selectedLabelIds, handleLabelToggle]
+  );
 
   // Render color selector
   const renderColorSelector = () => (
     <View style={styles.colorSelectorContainer}>
-      <Text variant="body2" style={styles.colorSelectorLabel}>
+      <Text variant='body2' style={styles.colorSelectorLabel}>
         Color:
       </Text>
       <ScrollView
@@ -245,7 +230,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
         showsHorizontalScrollIndicator={false}
         style={styles.colorSelector}
       >
-        {LABEL_COLORS.map((color) => (
+        {LABEL_COLORS.map(color => (
           <TouchableOpacity
             key={color}
             style={[
@@ -263,24 +248,24 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
+      animationType='slide'
+      presentationStyle='pageSheet'
       onRequestClose={onClose}
     >
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text variant="body1" style={styles.closeButtonText}>
+            <Text variant='body1' style={styles.closeButtonText}>
               Cancel
             </Text>
           </TouchableOpacity>
-          <Text variant="h6" style={styles.headerTitle}>
+          <Text variant='h6' style={styles.headerTitle}>
             Manage Labels
           </Text>
           <Button
-            variant="ghost"
-            size="sm"
+            variant='ghost'
+            size='sm'
             onPress={handleSave}
             loading={saving}
             disabled={loading}
@@ -291,13 +276,13 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
 
         {/* Article Info */}
         <View style={styles.articleInfo}>
-          <Text variant="caption" style={styles.articleLabel}>
+          <Text variant='caption' style={styles.articleLabel}>
             Article:
           </Text>
           <Text
-            variant="body2"
+            variant='body2'
             numberOfLines={2}
-            ellipsizeMode="tail"
+            ellipsizeMode='tail'
             style={styles.articleTitle}
           >
             {articleTitle}
@@ -308,7 +293,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search labels..."
+            placeholder='Search labels...'
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor={theme.colors.neutral[500]}
@@ -318,12 +303,12 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
         {/* Create New Label Section */}
         {createMode ? (
           <View style={styles.createLabelSection}>
-            <Text variant="h6" style={styles.createLabelTitle}>
+            <Text variant='h6' style={styles.createLabelTitle}>
               Create New Label
             </Text>
             <TextInput
               style={styles.newLabelInput}
-              placeholder="Label name"
+              placeholder='Label name'
               value={newLabelName}
               onChangeText={setNewLabelName}
               placeholderTextColor={theme.colors.neutral[500]}
@@ -332,16 +317,16 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
             {renderColorSelector()}
             <View style={styles.createLabelActions}>
               <Button
-                variant="outline"
-                size="sm"
+                variant='outline'
+                size='sm'
                 onPress={() => setCreateMode(false)}
                 style={styles.createLabelButton}
               >
                 Cancel
               </Button>
               <Button
-                variant="primary"
-                size="sm"
+                variant='primary'
+                size='sm'
                 onPress={handleCreateLabel}
                 loading={loading}
                 style={styles.createLabelButton}
@@ -353,8 +338,8 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
         ) : (
           <View style={styles.createButtonContainer}>
             <Button
-              variant="outline"
-              size="sm"
+              variant='outline'
+              size='sm'
               onPress={() => setCreateMode(true)}
               style={styles.createNewButton}
             >
@@ -364,24 +349,29 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
         )}
 
         {/* Labels List */}
-        <ScrollView style={styles.labelsList} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.labelsList}
+          showsVerticalScrollIndicator={false}
+        >
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={theme.colors.primary[500]} />
-              <Text variant="body1" style={styles.loadingText}>
+              <ActivityIndicator
+                size='large'
+                color={theme.colors.primary[500]}
+              />
+              <Text variant='body1' style={styles.loadingText}>
                 Loading labels...
               </Text>
             </View>
           ) : availableLabels.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text variant="body1" style={styles.emptyText}>
+              <Text variant='body1' style={styles.emptyText}>
                 {searchQuery ? 'No labels found' : 'No labels available'}
               </Text>
-              <Text variant="caption" style={styles.emptySubtext}>
-                {searchQuery 
+              <Text variant='caption' style={styles.emptySubtext}>
+                {searchQuery
                   ? `No labels match "${searchQuery}"`
-                  : 'Create your first label to get started'
-                }
+                  : 'Create your first label to get started'}
               </Text>
             </View>
           ) : (
@@ -392,8 +382,9 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
         {/* Selected Labels Summary */}
         {selectedLabelIds.length > 0 && (
           <View style={styles.summaryContainer}>
-            <Text variant="caption" style={styles.summaryText}>
-              {selectedLabelIds.length} label{selectedLabelIds.length !== 1 ? 's' : ''} selected
+            <Text variant='caption' style={styles.summaryText}>
+              {selectedLabelIds.length} label
+              {selectedLabelIds.length !== 1 ? 's' : ''} selected
             </Text>
           </View>
         )}

@@ -1,7 +1,10 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { selectIsAuthenticated, selectAuthLoading } from '../store/selectors/authSelectors';
+import {
+  selectIsAuthenticated,
+  selectAuthLoading,
+} from '../store/selectors/authSelectors';
 import { initializeAuth } from '../store/slices/authSlice';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
@@ -23,7 +26,7 @@ const AppNavigator: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated && sharedData) {
       const url = ShareService.extractUrl(sharedData.text);
-      
+
       if (url) {
         Alert.alert(
           'Share Detected',
@@ -32,7 +35,7 @@ const AppNavigator: React.FC = () => {
             {
               text: 'Cancel',
               onPress: () => clearSharedData(),
-              style: 'cancel'
+              style: 'cancel',
             },
             {
               text: 'Add Article',
@@ -40,8 +43,8 @@ const AppNavigator: React.FC = () => {
                 // TODO: Implement article creation from shared URL
                 console.log('Adding article from URL:', url);
                 clearSharedData();
-              }
-            }
+              },
+            },
           ]
         );
       } else {
@@ -54,7 +57,7 @@ const AppNavigator: React.FC = () => {
   if (authLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
+        <ActivityIndicator size='large' color='#2196F3' />
       </View>
     );
   }

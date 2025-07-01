@@ -35,40 +35,46 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
 }) => {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
-  
-  const {
-    loading,
-    error,
-    pagination,
-    filters,
-    sync,
-  } = useSelector((state: RootState) => state.articles);
-  
+
+  const { loading, error, pagination, filters, sync } = useSelector(
+    (state: RootState) => state.articles
+  );
+
   const articles = useSelector(selectAllArticles);
-  
+
   const [searchQuery, setSearchQuery] = useState(filters.searchQuery);
   const [showFilters, setShowFilters] = useState(false);
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   // Debounced search function
-  const debouncedSearch = useCallback((query: string) => {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
-    
-    const timer = setTimeout(() => {
-      dispatch(setFilters({ searchQuery: query }));
-      dispatch(fetchArticles({ page: 1, searchQuery: query, forceRefresh: true }));
-    }, DEBOUNCE_DELAY);
-    
-    setDebounceTimer(timer);
-  }, [dispatch, debounceTimer]);
+  const debouncedSearch = useCallback(
+    (query: string) => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+
+      const timer = setTimeout(() => {
+        dispatch(setFilters({ searchQuery: query }));
+        dispatch(
+          fetchArticles({ page: 1, searchQuery: query, forceRefresh: true })
+        );
+      }, DEBOUNCE_DELAY);
+
+      setDebounceTimer(timer);
+    },
+    [dispatch, debounceTimer]
+  );
 
   // Handle search input change
-  const handleSearchChange = useCallback((text: string) => {
-    setSearchQuery(text);
-    debouncedSearch(text);
-  }, [debouncedSearch]);
+  const handleSearchChange = useCallback(
+    (text: string) => {
+      setSearchQuery(text);
+      debouncedSearch(text);
+    },
+    [debouncedSearch]
+  );
 
   // Clear search
   const handleClearSearch = useCallback(() => {
@@ -93,80 +99,124 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   const handleLoadMore = useCallback(() => {
     if (pagination.hasMore && !loading.fetch) {
       dispatch(setPage(pagination.page + 1));
-      dispatch(fetchArticles({ 
-        page: pagination.page + 1,
-        searchQuery: filters.searchQuery,
-        filters,
-      }));
+      dispatch(
+        fetchArticles({
+          page: pagination.page + 1,
+          searchQuery: filters.searchQuery,
+          filters,
+        })
+      );
     }
   }, [dispatch, pagination.hasMore, pagination.page, loading.fetch, filters]);
 
   // Handle article press
-  const handleArticlePress = useCallback((article: Article) => {
-    navigation.navigate('ArticleDetail', {
-      articleId: article.id,
-      title: article.title,
-    });
-  }, [navigation]);
+  const handleArticlePress = useCallback(
+    (article: Article) => {
+      navigation.navigate('ArticleDetail', {
+        articleId: article.id,
+        title: article.title,
+      });
+    },
+    [navigation]
+  );
 
   // Filter options
-  const filterOptions = useMemo(() => [
-    { key: 'all', label: 'All Articles', active: !filters.isRead && !filters.isArchived && !filters.isFavorite },
-    { key: 'unread', label: 'Unread', active: filters.isRead === false },
-    { key: 'read', label: 'Read', active: filters.isRead === true },
-    { key: 'favorites', label: 'Favorites', active: filters.isFavorite === true },
-    { key: 'archived', label: 'Archived', active: filters.isArchived === true },
-  ], [filters]);
+  const filterOptions = useMemo(
+    () => [
+      {
+        key: 'all',
+        label: 'All Articles',
+        active: !filters.isRead && !filters.isArchived && !filters.isFavorite,
+      },
+      { key: 'unread', label: 'Unread', active: filters.isRead === false },
+      { key: 'read', label: 'Read', active: filters.isRead === true },
+      {
+        key: 'favorites',
+        label: 'Favorites',
+        active: filters.isFavorite === true,
+      },
+      {
+        key: 'archived',
+        label: 'Archived',
+        active: filters.isArchived === true,
+      },
+    ],
+    [filters]
+  );
 
   // Handle filter selection
-  const handleFilterPress = useCallback((filterKey: string) => {
-    let newFilters = {};
-    
-    switch (filterKey) {
-      case 'all':
-        newFilters = { isRead: undefined, isArchived: undefined, isFavorite: undefined };
-        break;
-      case 'unread':
-        newFilters = { isRead: false, isArchived: undefined, isFavorite: undefined };
-        break;
-      case 'read':
-        newFilters = { isRead: true, isArchived: undefined, isFavorite: undefined };
-        break;
-      case 'favorites':
-        newFilters = { isFavorite: true, isRead: undefined, isArchived: undefined };
-        break;
-      case 'archived':
-        newFilters = { isArchived: true, isRead: undefined, isFavorite: undefined };
-        break;
-    }
-    
-    dispatch(setFilters(newFilters));
-    dispatch(fetchArticles({ page: 1, filters: newFilters, forceRefresh: true }));
-  }, [dispatch]);
+  const handleFilterPress = useCallback(
+    (filterKey: string) => {
+      let newFilters = {};
+
+      switch (filterKey) {
+        case 'all':
+          newFilters = {
+            isRead: undefined,
+            isArchived: undefined,
+            isFavorite: undefined,
+          };
+          break;
+        case 'unread':
+          newFilters = {
+            isRead: false,
+            isArchived: undefined,
+            isFavorite: undefined,
+          };
+          break;
+        case 'read':
+          newFilters = {
+            isRead: true,
+            isArchived: undefined,
+            isFavorite: undefined,
+          };
+          break;
+        case 'favorites':
+          newFilters = {
+            isFavorite: true,
+            isRead: undefined,
+            isArchived: undefined,
+          };
+          break;
+        case 'archived':
+          newFilters = {
+            isArchived: true,
+            isRead: undefined,
+            isFavorite: undefined,
+          };
+          break;
+      }
+
+      dispatch(setFilters(newFilters));
+      dispatch(
+        fetchArticles({ page: 1, filters: newFilters, forceRefresh: true })
+      );
+    },
+    [dispatch]
+  );
 
   // Render article item
-  const renderArticleItem = useCallback(({ item }: { item: Article }) => (
-    <ArticleCard
-      article={item}
-      onPress={() => handleArticlePress(item)}
-    />
-  ), [handleArticlePress]);
+  const renderArticleItem = useCallback(
+    ({ item }: { item: Article }) => (
+      <ArticleCard article={item} onPress={() => handleArticlePress(item)} />
+    ),
+    [handleArticlePress]
+  );
 
   // Render empty state
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
-      <Text variant="h4" style={styles.emptyTitle}>
+      <Text variant='h4' style={styles.emptyTitle}>
         {searchQuery ? 'No articles found' : 'No articles yet'}
       </Text>
-      <Text variant="body1" style={styles.emptyMessage}>
-        {searchQuery 
+      <Text variant='body1' style={styles.emptyMessage}>
+        {searchQuery
           ? `No articles match "${searchQuery}"`
-          : 'Pull down to sync your articles from Readeck'
-        }
+          : 'Pull down to sync your articles from Readeck'}
       </Text>
       {searchQuery && (
         <Button
-          variant="outline"
+          variant='outline'
           onPress={handleClearSearch}
           style={styles.clearButton}
         >
@@ -179,11 +229,11 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   // Render footer with loading indicator for pagination
   const renderFooter = () => {
     if (!loading.fetch || pagination.page === 1) return null;
-    
+
     return (
       <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={theme.colors.primary[500]} />
-        <Text variant="caption" style={styles.loadingText}>
+        <ActivityIndicator size='small' color={theme.colors.primary[500]} />
+        <Text variant='caption' style={styles.loadingText}>
           Loading more articles...
         </Text>
       </View>
@@ -197,18 +247,15 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
         horizontal
         showsHorizontalScrollIndicator={false}
         data={filterOptions}
-        keyExtractor={(item) => item.key}
+        keyExtractor={item => item.key}
         contentContainerStyle={styles.filtersContent}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[
-              styles.filterChip,
-              item.active && styles.filterChipActive,
-            ]}
+            style={[styles.filterChip, item.active && styles.filterChipActive]}
             onPress={() => handleFilterPress(item.key)}
           >
             <Text
-              variant="body2"
+              variant='body2'
               style={[
                 styles.filterChipText,
                 item.active && styles.filterChipTextActive,
@@ -226,7 +273,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text variant="h3" style={styles.headerTitle}>
+        <Text variant='h3' style={styles.headerTitle}>
           Articles
         </Text>
         <TouchableOpacity
@@ -241,7 +288,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search articles..."
+          placeholder='Search articles...'
           value={searchQuery}
           onChangeText={handleSearchChange}
           placeholderTextColor={theme.colors.neutral[500]}
@@ -262,13 +309,15 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       {/* Error State */}
       {error.fetch && (
         <View style={styles.errorContainer}>
-          <Text variant="body1" style={styles.errorText}>
+          <Text variant='body1' style={styles.errorText}>
             {error.fetch}
           </Text>
           <Button
-            variant="outline"
-            size="sm"
-            onPress={() => dispatch(fetchArticles({ page: 1, forceRefresh: true }))}
+            variant='outline'
+            size='sm'
+            onPress={() =>
+              dispatch(fetchArticles({ page: 1, forceRefresh: true }))
+            }
             style={styles.retryButton}
           >
             Retry
@@ -280,7 +329,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       <FlatList
         data={articles}
         renderItem={renderArticleItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         contentContainerStyle={styles.listContainer}
         refreshControl={
           <RefreshControl
@@ -304,8 +353,8 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       {/* Loading overlay for initial load */}
       {loading.fetch && articles.length === 0 && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color={theme.colors.primary[500]} />
-          <Text variant="body1" style={styles.loadingText}>
+          <ActivityIndicator size='large' color={theme.colors.primary[500]} />
+          <Text variant='body1' style={styles.loadingText}>
             Loading articles...
           </Text>
         </View>

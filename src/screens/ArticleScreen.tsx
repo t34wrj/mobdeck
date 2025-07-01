@@ -3,7 +3,10 @@ import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { fetchArticleById } from '../services/api';
 import { MainScreenProps } from '../navigation/types';
 
-const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({ navigation, route }) => {
+const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
+  navigation,
+  route,
+}) => {
   const { articleId } = route.params;
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,7 +29,7 @@ const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({ navigation,
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size='large' color='#0000ff' />
       </View>
     );
   }

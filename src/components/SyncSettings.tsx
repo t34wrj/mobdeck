@@ -1,24 +1,23 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Text } from './ui/Text';
 import { Button } from './ui/Button';
 import { theme } from './ui/theme';
 import { RootState } from '../store';
-import { startSync, pauseSync, resumeSync, clearSyncError } from '../store/slices/syncSlice';
+import {
+  startSync,
+  pauseSync,
+  resumeSync,
+  clearSyncError,
+} from '../store/slices/syncSlice';
 import { SyncStatus } from '../types/sync';
 
 export const SyncSettings: React.FC = () => {
   const dispatch = useDispatch();
-  const { status, error, isOnline, networkType, progress, lastSyncTime } = useSelector(
-    (state: RootState) => state.sync
-  );
-  
+  const { status, error, isOnline, networkType, progress, lastSyncTime } =
+    useSelector((state: RootState) => state.sync);
+
   const [manualSyncLoading, setManualSyncLoading] = useState(false);
 
   const handleManualSync = useCallback(async () => {
@@ -32,18 +31,17 @@ export const SyncSettings: React.FC = () => {
 
     try {
       setManualSyncLoading(true);
-      dispatch(startSync({ 
-        syncOptions: { 
-          fullTextSync: true,
-          downloadImages: true 
-        },
-        forceFull: false 
-      }));
-    } catch (err) {
-      Alert.alert(
-        'Sync Error',
-        'Failed to start sync. Please try again.'
+      dispatch(
+        startSync({
+          syncOptions: {
+            fullTextSync: true,
+            downloadImages: true,
+          },
+          forceFull: false,
+        })
       );
+    } catch (err) {
+      Alert.alert('Sync Error', 'Failed to start sync. Please try again.');
     } finally {
       setManualSyncLoading(false);
     }
@@ -63,7 +61,7 @@ export const SyncSettings: React.FC = () => {
 
   const formatLastSyncTime = () => {
     if (!lastSyncTime) return 'Never';
-    
+
     const now = new Date();
     const syncTime = new Date(lastSyncTime);
     const diffMs = now.getTime() - syncTime.getTime();
@@ -72,8 +70,10 @@ export const SyncSettings: React.FC = () => {
     const diffDays = Math.floor(diffHours / 24);
 
     if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    if (diffMins < 60)
+      return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
     return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
   };
 
@@ -128,35 +128,33 @@ export const SyncSettings: React.FC = () => {
   const renderSyncProgress = () => {
     if (status !== SyncStatus.SYNCING) return null;
 
-    const progressPercentage = progress.totalItems > 0 
-      ? Math.round((progress.processedItems / progress.totalItems) * 100)
-      : 0;
+    const progressPercentage =
+      progress.totalItems > 0
+        ? Math.round((progress.processedItems / progress.totalItems) * 100)
+        : 0;
 
     return (
       <View style={styles.progressContainer}>
         <View style={styles.progressHeader}>
-          <Text variant="body2" style={styles.progressText}>
+          <Text variant='body2' style={styles.progressText}>
             {progress.phase.replace('_', ' ').toLowerCase()}
           </Text>
-          <Text variant="body2" style={styles.progressText}>
+          <Text variant='body2' style={styles.progressText}>
             {progressPercentage}%
           </Text>
         </View>
         <View style={styles.progressBar}>
-          <View 
-            style={[
-              styles.progressFill, 
-              { width: `${progressPercentage}%` }
-            ]} 
+          <View
+            style={[styles.progressFill, { width: `${progressPercentage}%` }]}
           />
         </View>
         {progress.currentItem && (
-          <Text variant="caption" style={styles.currentItem} numberOfLines={1}>
+          <Text variant='caption' style={styles.currentItem} numberOfLines={1}>
             Processing: {progress.currentItem}
           </Text>
         )}
         {progress.estimatedTimeRemaining && (
-          <Text variant="caption" style={styles.timeRemaining}>
+          <Text variant='caption' style={styles.timeRemaining}>
             ~{Math.round(progress.estimatedTimeRemaining / 1000)}s remaining
           </Text>
         )}
@@ -167,12 +165,12 @@ export const SyncSettings: React.FC = () => {
   const renderSyncControls = () => {
     const isSyncing = status === SyncStatus.SYNCING;
     const isPaused = status === SyncStatus.PAUSED;
-    
+
     return (
       <View style={styles.controlsContainer}>
         {!isSyncing && !isPaused && (
           <Button
-            variant="primary"
+            variant='primary'
             onPress={handleManualSync}
             loading={manualSyncLoading}
             disabled={!isOnline}
@@ -181,28 +179,24 @@ export const SyncSettings: React.FC = () => {
             {isOnline ? 'Sync Now' : 'No Connection'}
           </Button>
         )}
-        
+
         {isSyncing && (
-          <Button
-            variant="secondary"
-            onPress={handlePauseSync}
-            fullWidth
-          >
+          <Button variant='secondary' onPress={handlePauseSync} fullWidth>
             Pause Sync
           </Button>
         )}
-        
+
         {isPaused && (
           <View style={styles.pausedControls}>
             <Button
-              variant="primary"
+              variant='primary'
               onPress={handleResumeSync}
               style={styles.resumeButton}
             >
               Resume
             </Button>
             <Button
-              variant="outline"
+              variant='outline'
               onPress={handleClearError}
               style={styles.cancelButton}
             >
@@ -219,12 +213,12 @@ export const SyncSettings: React.FC = () => {
 
     return (
       <View style={styles.errorContainer}>
-        <Text variant="body2" style={styles.errorText}>
+        <Text variant='body2' style={styles.errorText}>
           {error}
         </Text>
         <Button
-          variant="outline"
-          size="sm"
+          variant='outline'
+          size='sm'
           onPress={handleClearError}
           style={styles.clearErrorButton}
         >
@@ -240,19 +234,19 @@ export const SyncSettings: React.FC = () => {
       <View style={styles.statusContainer}>
         <View style={styles.statusRow}>
           <View style={styles.statusInfo}>
-            <Text variant="body1" style={styles.statusLabel}>
+            <Text variant='body1' style={styles.statusLabel}>
               Sync Status
             </Text>
             <View style={styles.statusIndicator}>
               {status === SyncStatus.SYNCING && (
-                <ActivityIndicator 
-                  size="small" 
-                  color={theme.colors.primary[500]} 
+                <ActivityIndicator
+                  size='small'
+                  color={theme.colors.primary[500]}
                   style={styles.statusSpinner}
                 />
               )}
-              <Text 
-                variant="body2" 
+              <Text
+                variant='body2'
                 style={[styles.statusText, { color: getSyncStatusColor() }]}
               >
                 {getSyncStatusText()}
@@ -263,11 +257,11 @@ export const SyncSettings: React.FC = () => {
 
         <View style={styles.statusRow}>
           <View style={styles.statusInfo}>
-            <Text variant="body1" style={styles.statusLabel}>
+            <Text variant='body1' style={styles.statusLabel}>
               Network
             </Text>
-            <Text 
-              variant="body2" 
+            <Text
+              variant='body2'
               style={[styles.statusText, { color: getNetworkStatusColor() }]}
             >
               {getNetworkStatusText()}
@@ -277,10 +271,10 @@ export const SyncSettings: React.FC = () => {
 
         <View style={styles.statusRow}>
           <View style={styles.statusInfo}>
-            <Text variant="body1" style={styles.statusLabel}>
+            <Text variant='body1' style={styles.statusLabel}>
               Last Sync
             </Text>
-            <Text variant="body2" style={styles.statusText}>
+            <Text variant='body2' style={styles.statusText}>
               {formatLastSyncTime()}
             </Text>
           </View>

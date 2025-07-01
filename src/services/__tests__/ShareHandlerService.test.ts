@@ -21,9 +21,13 @@ jest.mock('react-native', () => ({
 }));
 
 // Type the mocked modules
-const mockArticlesApiService = articlesApiService as jest.Mocked<typeof articlesApiService>;
+const mockArticlesApiService = articlesApiService as jest.Mocked<
+  typeof articlesApiService
+>;
 const mockValidateUrl = validateUrl as jest.MockedFunction<typeof validateUrl>;
-const mockExtractUrlFromText = extractUrlFromText as jest.MockedFunction<typeof extractUrlFromText>;
+const mockExtractUrlFromText = extractUrlFromText as jest.MockedFunction<
+  typeof extractUrlFromText
+>;
 
 // Mock React Native's NativeModules
 const { NativeModules } = require('react-native');
@@ -36,18 +40,18 @@ describe('ShareHandlerService', () => {
     // Reset all mocks
     jest.clearAllMocks();
     jest.restoreAllMocks();
-    
+
     // Suppress console outputs for cleaner test output
     consoleSpy = jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'warn').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
-    
+
     // Reset ShareModule
     NativeModules.ShareModule = {
       getSharedData: jest.fn(),
       clearSharedData: jest.fn(),
     };
-    
+
     // Create fresh service instance
     service = new ShareHandlerService();
   });
@@ -95,7 +99,10 @@ describe('ShareHandlerService', () => {
       expect(result.success).toBe(true);
       expect(result.article).toEqual(mockArticle);
       expect(NativeModules.ShareModule.getSharedData).toHaveBeenCalled();
-      expect(mockValidateUrl).toHaveBeenCalledWith('https://example.com/article', expect.any(Object));
+      expect(mockValidateUrl).toHaveBeenCalledWith(
+        'https://example.com/article',
+        expect.any(Object)
+      );
       expect(mockArticlesApiService.createArticle).toHaveBeenCalledWith({
         url: 'https://example.com/article',
         title: 'Interesting Article',
@@ -124,11 +131,14 @@ describe('ShareHandlerService', () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ShareErrorCode.URL_VALIDATION_FAILED);
-      expect(result.validationResult?.validationErrors).toEqual(['Invalid URL format']);
+      expect(result.validationResult?.validationErrors).toEqual([
+        'Invalid URL format',
+      ]);
     });
 
     it('should extract URL from text when configured', async () => {
-      const textWithUrl = 'Check out this article: https://example.com/article and let me know what you think!';
+      const textWithUrl =
+        'Check out this article: https://example.com/article and let me know what you think!';
       NativeModules.ShareModule.getSharedData.mockResolvedValue({
         ...mockSharedData,
         text: textWithUrl,
@@ -139,7 +149,9 @@ describe('ShareHandlerService', () => {
 
       expect(result.success).toBe(true);
       expect(mockExtractUrlFromText).toHaveBeenCalledWith(textWithUrl);
-      expect(result.validationResult?.extractedUrl).toBe('https://example.com/article');
+      expect(result.validationResult?.extractedUrl).toBe(
+        'https://example.com/article'
+      );
     });
 
     it('should handle no URL found in text', async () => {
@@ -156,7 +168,11 @@ describe('ShareHandlerService', () => {
     });
 
     it('should handle API errors with retry logic', async () => {
-      const networkError = { code: 'NETWORK_ERROR', message: 'Network error', statusCode: 500 };
+      const networkError = {
+        code: 'NETWORK_ERROR',
+        message: 'Network error',
+        statusCode: 500,
+      };
       mockArticlesApiService.createArticle
         .mockRejectedValueOnce(networkError)
         .mockRejectedValueOnce(networkError)
@@ -197,7 +213,9 @@ describe('ShareHandlerService', () => {
 
     it('should handle share module errors', async () => {
       const shareModuleError = new Error('Native module error');
-      NativeModules.ShareModule.getSharedData.mockRejectedValue(shareModuleError);
+      NativeModules.ShareModule.getSharedData.mockRejectedValue(
+        shareModuleError
+      );
 
       const result = await service.processSharedData();
 
@@ -232,7 +250,10 @@ describe('ShareHandlerService', () => {
     });
 
     it('should process URL directly with custom title', async () => {
-      const result = await service.processUrl('https://example.com/article', 'Custom Title');
+      const result = await service.processUrl(
+        'https://example.com/article',
+        'Custom Title'
+      );
 
       expect(result.success).toBe(true);
       expect(result.article).toEqual(mockArticle);
@@ -308,7 +329,7 @@ describe('ShareHandlerService', () => {
       // Create service with no share module
       NativeModules.ShareModule = null;
       const serviceWithoutModule = new ShareHandlerService();
-      
+
       expect(serviceWithoutModule.isShareModuleAvailable()).toBe(false);
     });
   });
@@ -319,7 +340,7 @@ describe('ShareHandlerService', () => {
         text: 'https://example.com/article',
         timestamp: Date.now(),
       });
-      
+
       // Make validateUrl throw an unexpected error
       mockValidateUrl.mockImplementation(() => {
         throw new Error('Unexpected validation error');
@@ -349,7 +370,7 @@ describe('ShareHandlerService', () => {
   describe('retry logic', () => {
     it('should retry network errors with exponential backoff', async () => {
       const networkError = { code: 'NETWORK_ERROR', message: 'Network error' };
-      
+
       mockArticlesApiService.createArticle
         .mockRejectedValueOnce(networkError)
         .mockRejectedValueOnce(networkError)
@@ -438,7 +459,9 @@ describe('ShareHandlerService', () => {
       const result = await service.processSharedData();
 
       expect(result.success).toBe(true);
-      expect(result.validationResult?.validationWarnings).toContain('Using HTTP instead of HTTPS may be insecure');
+      expect(result.validationResult?.validationWarnings).toContain(
+        'Using HTTP instead of HTTPS may be insecure'
+      );
     });
   });
 });
