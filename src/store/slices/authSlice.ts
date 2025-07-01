@@ -1,5 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { authStorageService } from '../../services/AuthStorageService';
+import { errorHandler, ErrorCategory } from '../../utils/errorHandler';
+import { logger } from '../../utils/logger';
 import {
   AuthState,
   AuthCredentials,
@@ -22,6 +24,10 @@ export const loginUser = createAsyncThunk<
   { rejectValue: string }
 >('auth/loginUser', async (credentials, { rejectWithValue }) => {
   try {
+    logger.info('Login attempt initiated', { 
+      serverUrl: credentials.serverUrl,
+      username: credentials.username,
+    });
     const response = await fetch(`${credentials.serverUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
@@ -55,14 +61,23 @@ export const loginUser = createAsyncThunk<
       loginResponse.token
     );
     if (!tokenStored) {
-      console.warn('[AuthSlice] Failed to store token securely');
+      logger.warn('Failed to store token securely');
     }
 
+    logger.info('Login successful', { userId: user.id });
     return { user, token: loginResponse.token };
   } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Login failed';
-    return rejectWithValue(errorMessage);
+    const handledError = errorHandler.handleError(error, {
+      category: ErrorCategory.AUTHENTICATION,
+      context: { 
+        actionType: 'login',
+        serverUrl: credentials.serverUrl,
+        username: credentials.username,
+      },
+    });
+    
+    logger.error('Login failed', { error: handledError });
+    return rejectWithValue(handledError.userMessage);
   }
 });
 

@@ -10,6 +10,8 @@ import axios, {
   AxiosError,
 } from 'axios';
 import { authStorageService } from './AuthStorageService';
+import { errorHandler, ErrorCategory } from '../utils/errorHandler';
+import { logger } from '../utils/logger';
 import {
   IReadeckApiService,
   ReadeckApiConfig,
@@ -116,37 +118,37 @@ class ReadeckApiService implements IReadeckApiService {
           const token = await authStorageService.retrieveToken();
           if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log('[ReadeckApiService] Bearer token attached to request');
+            logger.debug('Bearer token attached to request', { url: config.url });
           } else {
-            console.warn(
-              '[ReadeckApiService] No Bearer token available for request'
-            );
+            logger.warn('No Bearer token available for request', { url: config.url });
           }
         } catch (error) {
-          console.error(
-            '[ReadeckApiService] Failed to retrieve Bearer token:',
-            error
-          );
+          const handledError = errorHandler.handleError(error, {
+            category: ErrorCategory.AUTHENTICATION,
+            context: { actionType: 'token_retrieval', apiEndpoint: config.url },
+          });
+          logger.error('Failed to retrieve Bearer token', { error: handledError });
         }
 
-        // Log request details (excluding sensitive data)
-        if (__DEV__) {
-          const { data, headers, ...logConfig } = config;
-          console.log('[ReadeckApiService] Request:', {
-            ...logConfig,
-            headers: {
-              ...headers,
-              Authorization: headers.Authorization
-                ? '[BEARER_TOKEN]'
-                : undefined,
-            },
-          });
-        }
+        // Log request details and start performance timer
+        const operationId = `api_${config.method}_${config.url}`;
+        logger.startPerformanceTimer(operationId);
+        (config as any)._startTime = Date.now();
+        (config as any)._operationId = operationId;
+        
+        logger.debug('API Request initiated', {
+          method: config.method,
+          url: config.url,
+          hasAuth: !!config.headers.Authorization,
+        });
 
         return config;
       },
       error => {
-        console.error('[ReadeckApiService] Request interceptor error:', error);
+        const handledError = errorHandler.handleError(error, {
+          category: ErrorCategory.NETWORK,
+          context: { actionType: 'request_interceptor' },
+        });
         return Promise.reject(
           this.createApiError(error, ReadeckErrorCode.UNKNOWN_ERROR)
         );
@@ -156,21 +158,55 @@ class ReadeckApiService implements IReadeckApiService {
     // Response interceptor for error handling
     this.client.interceptors.response.use(
       response => {
-        if (__DEV__) {
-          console.log('[ReadeckApiService] Response received:', {
+        const operationId = (response.config as any)._operationId;
+        if (operationId) {
+          logger.endPerformanceTimer(operationId, {
             status: response.status,
             url: response.config.url,
-            timestamp: new Date().toISOString(),
           });
         }
+        
+        logger.debug('API Response received', {
+          status: response.status,
+          url: response.config.url,
+          duration: Date.now() - (response.config as any)._startTime,
+        });
         return response;
       },
       error => {
         const apiError = this.handleResponseError(error);
-        console.error('[ReadeckApiService] Response error:', apiError);
+        errorHandler.handleError(apiError, {
+          category: this.getErrorCategory(error),
+          context: { 
+            actionType: 'api_response',
+            apiEndpoint: error.config?.url,
+            statusCode: error.response?.status,
+          },
+        });
         return Promise.reject(apiError);
       }
     );
+  }
+
+  /**
+   * Get error category for centralized error handling
+   * @private
+   */
+  private getErrorCategory(error: AxiosError): ErrorCategory {
+    if (!error.response) {
+      return ErrorCategory.NETWORK;
+    }
+    
+    const status = error.response.status;
+    if (status === 401) {
+      return ErrorCategory.AUTHENTICATION;
+    } else if (status >= 400 && status < 500) {
+      return ErrorCategory.VALIDATION;
+    } else if (status >= 500) {
+      return ErrorCategory.NETWORK;
+    }
+    
+    return ErrorCategory.UNKNOWN;
   }
 
   /**
