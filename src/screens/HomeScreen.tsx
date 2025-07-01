@@ -4,8 +4,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchArticles } from '../store/slices/articlesSlice';
 import ArticleCard from '../components/ArticleCard';
 import SearchBar from '../components/SearchBar';
+import { MainScreenProps } from '../navigation/types';
 
-const HomeScreen = () => {
+const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({ navigation, route }) => {
   const dispatch = useDispatch();
   const articles = useSelector((state) => state.articles.items);
   

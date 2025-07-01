@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Switch, StyleSheet } from 'react-native';
+import { MainScreenProps } from '../navigation/types';
 
-const SettingsScreen = () => {
+const SettingsScreen: React.FC<MainScreenProps<'Settings'>> = ({ navigation, route }) => {
   const [isSyncEnabled, setIsSyncEnabled] = React.useState(true);
   const [isNotificationsEnabled, setIsNotificationsEnabled] = React.useState(true);
 

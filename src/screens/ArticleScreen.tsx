@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
-import { useRoute } from '@react-navigation/native';
 import { fetchArticleById } from '../services/api';
+import { MainScreenProps } from '../navigation/types';
 
-const ArticleScreen = () => {
-  const route = useRoute();
+const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({ navigation, route }) => {
   const { articleId } = route.params;
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
