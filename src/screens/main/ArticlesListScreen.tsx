@@ -14,6 +14,7 @@ import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
 import { ArticleCard } from '../../components/ArticleCard';
 import { theme } from '../../components/ui/theme';
+import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
 import {
   fetchArticles,
@@ -27,7 +28,11 @@ import { Article } from '../../types';
 
 const DEBOUNCE_DELAY = 300;
 
-export const ArticlesListScreen: React.FC = () => {
+type ArticlesListScreenProps = MainScreenProps<'ArticlesList'>;
+
+export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
+  navigation,
+}) => {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
   
@@ -98,9 +103,11 @@ export const ArticlesListScreen: React.FC = () => {
 
   // Handle article press
   const handleArticlePress = useCallback((article: Article) => {
-    // TODO: Navigate to article detail screen
-    console.log('Navigate to article:', article.id);
-  }, []);
+    navigation.navigate('ArticleDetail', {
+      articleId: article.id,
+      title: article.title,
+    });
+  }, [navigation]);
 
   // Filter options
   const filterOptions = useMemo(() => [

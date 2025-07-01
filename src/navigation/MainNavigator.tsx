@@ -1,7 +1,7 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
-import HomeScreen from '../screens/HomeScreen';
-import ArticleScreen from '../screens/ArticleScreen';
+import { ArticlesListScreen } from '../screens/main/ArticlesListScreen';
+import { ArticleDetailScreen } from '../screens/main/ArticleDetailScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import { MainStackParamList } from './types';
 
@@ -22,14 +22,14 @@ const MainNavigator: React.FC = () => {
     >
       <Stack.Screen
         name="ArticlesList"
-        component={HomeScreen}
+        component={ArticlesListScreen}
         options={{
           title: 'Articles',
         }}
       />
       <Stack.Screen
         name="ArticleDetail"
-        component={ArticleScreen}
+        component={ArticleDetailScreen}
         options={({ route }) => ({
           title: route.params?.title || 'Article',
         })}
