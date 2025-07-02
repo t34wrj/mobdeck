@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Default configuration for all connections -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- Trust system CA certificates -->
+            <certificates src="system" />
+            <!-- Trust user-added CA certificates for development -->
+            <certificates src="user" overridePins="true" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Development configuration for localhost -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <!-- Android emulator host -->
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- Production configuration with certificate pinning -->
+    <!-- Uncomment and configure when deploying to production -->
+    <!--
+    <domain-config>
+        <domain includeSubdomains="true">api.readeck.com</domain>
+        <pin-set expiration="2025-01-01">
+            <pin digest="SHA-256">AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</pin>
+            <pin digest="SHA-256">BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=</pin>
+        </pin-set>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+    -->
+
+    <!-- Debug overrides (only active in debug builds) -->
+    <debug-overrides>
+        <trust-anchors>
+            <!-- Trust user-added certificates for debugging -->
+            <certificates src="user" />
+            <!-- Allow cleartext for debugging tools -->
+            <certificates src="system" />
+        </trust-anchors>
+    </debug-overrides>
+</network-security-config>

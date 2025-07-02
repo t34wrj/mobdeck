@@ -13,6 +13,13 @@ import { authStorageService } from './AuthStorageService';
 import { errorHandler, ErrorCategory } from '../utils/errorHandler';
 import { logger } from '../utils/logger';
 import {
+  validateUrl,
+  validateToken,
+  getSecurityHeaders,
+  defaultRateLimiter,
+  maskSensitiveData,
+} from '../utils/security';
+import {
   IReadeckApiService,
   ReadeckApiConfig,
   ReadeckApiError,
@@ -52,16 +59,25 @@ class ReadeckApiService implements IReadeckApiService {
   private config: ReadeckApiConfig;
   private retryConfig: RetryConfig;
   private networkState: NetworkState;
+  private certificatePins: Map<string, string[]> = new Map();
 
   constructor(config: Partial<ReadeckApiConfig> = {}) {
-    // Default configuration
+    // Default configuration with security enforcement
+    const defaultBaseUrl = __DEV__ ? 'http://localhost:8000/api/v1' : 'https://localhost:8000/api/v1';
     this.config = {
-      baseUrl: 'http://localhost:8000/api/v1',
+      baseUrl: config.baseUrl || defaultBaseUrl,
       timeout: 30000, // 30 seconds
       retryAttempts: 3,
       retryDelay: 1000, // 1 second base delay
       ...config,
     };
+
+    // Validate and sanitize base URL
+    const urlValidation = validateUrl(this.config.baseUrl);
+    if (!urlValidation.isValid) {
+      throw new Error(`Invalid API base URL: ${urlValidation.error}`);
+    }
+    this.config.baseUrl = urlValidation.sanitized!;
 
     // Retry configuration
     this.retryConfig = {
@@ -87,7 +103,7 @@ class ReadeckApiService implements IReadeckApiService {
       networkType: 'unknown',
     };
 
-    // Create axios instance with default configuration
+    // Create axios instance with security headers
     this.client = axios.create({
       baseURL: this.config.baseUrl,
       timeout: this.config.timeout,
@@ -95,7 +111,12 @@ class ReadeckApiService implements IReadeckApiService {
         'Content-Type': 'application/json',
         Accept: 'application/json',
         'User-Agent': 'Mobdeck-Mobile-Client/1.0.0',
+        ...getSecurityHeaders(),
       },
+      // Additional security configurations
+      maxRedirects: 5,
+      validateStatus: (status) => status >= 200 && status < 500,
+      withCredentials: false, // Prevent CORS credential leaks
     });
 
     this.setupInterceptors();
@@ -106,9 +127,18 @@ class ReadeckApiService implements IReadeckApiService {
    * @private
    */
   private setupInterceptors(): void {
-    // Request interceptor for Bearer token injection
+    // Request interceptor for Bearer token injection and security checks
     this.client.interceptors.request.use(
       async config => {
+        // Rate limiting check
+        const endpoint = `${config.method}:${config.url}`;
+        if (!defaultRateLimiter.isAllowed(endpoint)) {
+          throw this.createApiError(
+            new Error('Rate limit exceeded'),
+            ReadeckErrorCode.RATE_LIMITED
+          );
+        }
+
         // Skip auth for login endpoint
         if (config.url?.includes('/auth/login')) {
           return config;
@@ -117,8 +147,17 @@ class ReadeckApiService implements IReadeckApiService {
         try {
           const token = await authStorageService.retrieveToken();
           if (token) {
+            // Validate token format before using
+            const tokenValidation = validateToken(token, 'jwt');
+            if (!tokenValidation.isValid) {
+              logger.error('Invalid token format detected', { error: tokenValidation.error });
+              throw new Error('Invalid authentication token format');
+            }
             config.headers.Authorization = `Bearer ${token}`;
-            logger.debug('Bearer token attached to request', { url: config.url });
+            logger.debug('Bearer token attached to request', { 
+              url: config.url,
+              tokenPreview: maskSensitiveData(token)
+            });
           } else {
             logger.warn('No Bearer token available for request', { url: config.url });
           }
@@ -136,6 +175,15 @@ class ReadeckApiService implements IReadeckApiService {
         (config as any)._startTime = Date.now();
         (config as any)._operationId = operationId;
         
+        // Validate request URL
+        if (config.url) {
+          const fullUrl = config.url.startsWith('http') ? config.url : `${config.baseURL}${config.url}`;
+          const urlValidation = validateUrl(fullUrl);
+          if (!urlValidation.isValid) {
+            throw new Error(`Invalid request URL: ${urlValidation.error}`);
+          }
+        }
+
         logger.debug('API Request initiated', {
           method: config.method,
           url: config.url,
@@ -241,13 +289,14 @@ class ReadeckApiService implements IReadeckApiService {
   }
 
   /**
-   * Create standardized API error
+   * Create standardized API error with security considerations
    * @private
    */
   private createApiError(error: any, code: ReadeckErrorCode): ReadeckApiError {
     const message = this.getErrorMessage(error, code);
     const statusCode = error.response?.status;
-    const details = error.message || String(error);
+    // Sanitize error details to prevent information leakage
+    const details = this.sanitizeErrorDetails(error.message || String(error));
     const retryable =
       this.retryConfig.retryableErrorCodes.includes(code) ||
       (statusCode &&
@@ -261,6 +310,20 @@ class ReadeckApiService implements IReadeckApiService {
       retryable,
       timestamp: new Date().toISOString(),
     };
+  }
+
+  /**
+   * Sanitize error details to prevent sensitive information leakage
+   * @private
+   */
+  private sanitizeErrorDetails(details: string): string {
+    // Remove potential sensitive information patterns
+    return details
+      .replace(/Bearer\s+[\w\-\.]+/gi, 'Bearer [REDACTED]')
+      .replace(/[\w\-]+@[\w\-]+(\.[\w\-]+)+/g, '[EMAIL]')
+      .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[IP]')
+      .replace(/password[\s=:]+[\S]+/gi, 'password=[REDACTED]')
+      .replace(/api[_\-]?key[\s=:]+[\S]+/gi, 'api_key=[REDACTED]');
   }
 
   /**
@@ -331,8 +394,9 @@ class ReadeckApiService implements IReadeckApiService {
           this.retryConfig.maxDelay
         );
 
-        console.log(
-          `[ReadeckApiService] Retry attempt ${attempt}/${attempts} after ${delay}ms`
+        logger.info(
+          `API retry attempt ${attempt}/${attempts} after ${delay}ms`,
+          { error: maskSensitiveData(lastError.message) }
         );
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -559,6 +623,15 @@ class ReadeckApiService implements IReadeckApiService {
 
   // Configuration methods
   updateConfig(config: Partial<ReadeckApiConfig>): void {
+    // Validate new base URL if provided
+    if (config.baseUrl) {
+      const urlValidation = validateUrl(config.baseUrl);
+      if (!urlValidation.isValid) {
+        throw new Error(`Invalid API base URL: ${urlValidation.error}`);
+      }
+      config.baseUrl = urlValidation.sanitized!;
+    }
+
     this.config = { ...this.config, ...config };
 
     // Update axios instance configuration
@@ -569,7 +642,10 @@ class ReadeckApiService implements IReadeckApiService {
     this.retryConfig.attempts = this.config.retryAttempts;
     this.retryConfig.delay = this.config.retryDelay;
 
-    console.log('[ReadeckApiService] Configuration updated:', this.config);
+    logger.info('API configuration updated', {
+      baseUrl: maskSensitiveData(this.config.baseUrl),
+      timeout: this.config.timeout,
+    });
   }
 
   getNetworkState(): NetworkState {
@@ -582,10 +658,7 @@ class ReadeckApiService implements IReadeckApiService {
    */
   updateNetworkState(state: Partial<NetworkState>): void {
     this.networkState = { ...this.networkState, ...state };
-    console.log(
-      '[ReadeckApiService] Network state updated:',
-      this.networkState
-    );
+    logger.debug('Network state updated', this.networkState);
   }
 
   /**
@@ -600,6 +673,42 @@ class ReadeckApiService implements IReadeckApiService {
    */
   getConfig(): ReadeckApiConfig {
     return { ...this.config };
+  }
+
+  /**
+   * Set certificate pins for enhanced security
+   * @param hostname - The hostname to pin certificates for
+   * @param pins - Array of SHA256 certificate fingerprints
+   */
+  setCertificatePins(hostname: string, pins: string[]): void {
+    if (!hostname || !pins || pins.length === 0) {
+      throw new Error('Invalid certificate pinning configuration');
+    }
+    this.certificatePins.set(hostname, pins);
+    logger.info('Certificate pins configured', { hostname, pinCount: pins.length });
+  }
+
+  /**
+   * Clear all certificate pins
+   */
+  clearCertificatePins(): void {
+    this.certificatePins.clear();
+    logger.info('Certificate pins cleared');
+  }
+
+  /**
+   * Verify certificate pins (to be called by network security config)
+   * @param hostname - The hostname to verify
+   * @param certificateChain - The certificate chain to verify
+   */
+  verifyCertificatePins(hostname: string, certificateChain: string[]): boolean {
+    const pins = this.certificatePins.get(hostname);
+    if (!pins || pins.length === 0) {
+      return true; // No pins configured, allow connection
+    }
+
+    // Check if any certificate in the chain matches our pins
+    return certificateChain.some(cert => pins.includes(cert));
   }
 }
 

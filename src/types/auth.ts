@@ -9,6 +9,8 @@ export interface AuthToken {
   expiresAt: string;
   issuedAt: string;
   serverUrl: string;
+  version?: string;
+  checksum?: string;
 }
 
 // Token storage operation results
