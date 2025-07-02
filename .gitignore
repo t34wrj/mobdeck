@@ -229,13 +229,10 @@ ios/Podfile.lock
 # React Native Debugger
 .vscode-react-native
 
-# Task completion summaries (keep structure, ignore temp files)
-internal_docs/task_completion_summaries/*.tmp
-internal_docs/task_completion_summaries/temp/
-
 # AI and development assistance (project-specific)
 .claude-temp/
 copilot-cache/
+CLAUDE.md
 
 # Mobdeck specific cache and data
 mobdeck-cache/
