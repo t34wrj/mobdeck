@@ -28,8 +28,8 @@ const TOKEN_PATTERNS = {
   JWT: /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/,
   // Bearer token format
   BEARER: /^Bearer\s+[A-Za-z0-9-_]+\.?[A-Za-z0-9-_]*\.?[A-Za-z0-9-_]*$/,
-  // API key format (alphanumeric with dashes)
-  API_KEY: /^[A-Za-z0-9-_]{20,}$/,
+  // API key format (alphanumeric with dashes, dots, slashes, plus, equals for base64)
+  API_KEY: /^[A-Za-z0-9-_.+=\/]{20,}$/,
 };
 
 /**

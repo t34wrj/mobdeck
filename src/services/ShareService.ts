@@ -10,8 +10,8 @@ export class ShareService {
    */
   static async getSharedData(): Promise<SharedData | null> {
     try {
-      if (!ShareModule) {
-        console.warn('ShareModule not available');
+      if (!ShareModule || typeof ShareModule.getSharedData !== 'function') {
+        console.warn('ShareModule not available or getSharedData method not found');
         return null;
       }
 
@@ -37,7 +37,8 @@ export class ShareService {
    */
   static async clearSharedData(): Promise<boolean> {
     try {
-      if (!ShareModule) {
+      if (!ShareModule || typeof ShareModule.clearSharedData !== 'function') {
+        console.warn('ShareModule not available or clearSharedData method not found');
         return false;
       }
 
