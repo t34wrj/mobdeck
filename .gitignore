@@ -189,10 +189,8 @@ fastlane/test_output
 secrets.json
 api-tokens.json
 
-# Documentation artifacts (user-generated)
-internal_docs/screenshots/
-internal_docs/demo/
-internal_docs/user-generated/
+# Documentation artifacts (exclude all internal docs)
+internal_docs/
 
 # Performance and profiling
 *.trace
