@@ -1,6 +1,6 @@
 /**
  * Secure token storage service using react-native-keychain
- * Provides encrypted Bearer token storage with comprehensive error handling
+ * Provides encrypted API token storage with comprehensive error handling
  */
 
 import * as Keychain from 'react-native-keychain';
@@ -26,7 +26,7 @@ import { logger } from '../utils/logger';
  */
 class AuthStorageService implements IAuthStorageService {
   private readonly SERVICE_NAME = 'mobdeck_auth_tokens';
-  private readonly USERNAME_KEY = 'bearer_token';
+  private readonly USERNAME_KEY = 'api_token';
   private readonly TOKEN_VERSION = '1.0';
   private readonly MAX_TOKEN_AGE = 90 * 24 * 60 * 60 * 1000; // 90 days in ms
   private tokenRotationEnabled = true;
@@ -43,8 +43,8 @@ class AuthStorageService implements IAuthStorageService {
   };
 
   /**
-   * Store Bearer token securely in device keychain
-   * @param token - Bearer token string to store
+   * Store API token securely in device keychain
+   * @param token - API token string to store
    * @returns Promise<boolean> - Success status
    */
   storeToken = async (token: string): Promise<boolean> => {
@@ -54,7 +54,7 @@ class AuthStorageService implements IAuthStorageService {
         return false;
       }
 
-      // Flexible token validation for Readeck API Bearer tokens
+      // Flexible token validation for Readeck API tokens
       const trimmedToken = token.trim();
       
       // Basic validation: must be at least 10 characters
@@ -106,7 +106,7 @@ class AuthStorageService implements IAuthStorageService {
   };
 
   /**
-   * Retrieve Bearer token from secure keychain storage
+   * Retrieve API token from secure keychain storage
    * @returns Promise<string | null> - Token string or null if not found
    */
   retrieveToken = async (): Promise<string | null> => {
@@ -170,7 +170,7 @@ class AuthStorageService implements IAuthStorageService {
   };
 
   /**
-   * Delete Bearer token from secure storage
+   * Delete API token from secure storage
    * @returns Promise<boolean> - Success status
    */
   deleteToken = async (): Promise<boolean> => {
@@ -200,7 +200,7 @@ class AuthStorageService implements IAuthStorageService {
   };
 
   /**
-   * Check if a Bearer token is stored in keychain
+   * Check if an API token is stored in keychain
    * @returns Promise<boolean> - True if token exists
    */
   isTokenStored = async (): Promise<boolean> => {

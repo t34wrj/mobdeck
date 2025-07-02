@@ -1,5 +1,5 @@
 /**
- * Readeck API Service with Bearer token authentication
+ * Readeck API Service with API token authentication
  * Comprehensive HTTP client with error handling, retry logic, and network resilience
  */
 
@@ -47,7 +47,7 @@ import {
  * ReadeckApiService - Production-ready API client for Readeck servers
  *
  * Features:
- * - Bearer token authentication with automatic retrieval from secure storage
+ * - API token authentication with automatic retrieval from secure storage
  * - Intelligent retry logic with exponential backoff
  * - Comprehensive error handling and categorization
  * - Network connectivity awareness
@@ -127,7 +127,7 @@ class ReadeckApiService implements IReadeckApiService {
    * @private
    */
   private setupInterceptors(): void {
-    // Request interceptor for Bearer token injection and security checks
+    // Request interceptor for API token injection and security checks
     this.client.interceptors.request.use(
       async config => {
         // Rate limiting check
@@ -159,19 +159,19 @@ class ReadeckApiService implements IReadeckApiService {
             // TODO: Implement proper token validation for Readeck API tokens
             logger.debug('Token validation bypassed for testing');
             config.headers.Authorization = `Bearer ${token}`;
-            logger.debug('Bearer token attached to request', { 
+            logger.debug('API token attached to request', { 
               url: config.url,
               tokenPreview: maskSensitiveData(token)
             });
           } else {
-            logger.warn('No Bearer token available for request', { url: config.url });
+            logger.warn('No API token available for request', { url: config.url });
           }
         } catch (error) {
           const handledError = errorHandler.handleError(error, {
             category: ErrorCategory.AUTHENTICATION,
             context: { actionType: 'token_retrieval', apiEndpoint: config.url },
           });
-          logger.error('Failed to retrieve Bearer token', { error: handledError });
+          logger.error('Failed to retrieve API token', { error: handledError });
         }
 
         // Log request details and start performance timer

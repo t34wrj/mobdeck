@@ -75,7 +75,7 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
       } else {
         const errorMessage =
           response.status === 401
-            ? 'Invalid token. Please check your Bearer token.'
+            ? 'Invalid token. Please check your API token.'
             : `Connection failed with status: ${response.status}`;
 
         setTestResult({
@@ -120,7 +120,7 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
     },
     {
       id: 3,
-      title: 'Copy the Bearer token',
+      title: 'Copy the API token',
       description:
         "Copy the generated token immediately - it won't be shown again. The token will look like a long string of random characters",
     },
@@ -140,7 +140,7 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
     >
       <View style={styles.header}>
         <Text variant='h3' style={styles.title}>
-          Setup Bearer Token
+          Setup Instructions
         </Text>
         <Text variant='body2' color='neutral.600' align='center'>
           Follow these steps to get your API token from Readeck
@@ -205,7 +205,7 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
 
         <View style={styles.inputGroup}>
           <Text variant='body2' weight='medium' style={styles.label}>
-            Bearer Token
+            API Token
           </Text>
           <TextInput
             style={styles.input}

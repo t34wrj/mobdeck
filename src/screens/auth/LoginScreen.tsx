@@ -23,7 +23,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
   const { loading, error } = useSelector((state: RootState) => state.auth);
 
   const [serverUrl, setServerUrl] = useState('');
-  const [bearerToken, setBearerToken] = useState('');
+  const [apiToken, setApiToken] = useState('');
   const [urlError, setUrlError] = useState('');
   const [tokenError, setTokenError] = useState('');
   const [isValidating, setIsValidating] = useState(false);
@@ -54,7 +54,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 
   const validateToken = (token: string): boolean => {
     if (!token.trim()) {
-      setTokenError('Bearer token is required');
+      setTokenError('API token is required');
       return false;
     }
 
@@ -69,7 +69,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 
   const handleLogin = useCallback(async () => {
     const isUrlValid = validateUrl(serverUrl);
-    const isTokenValid = validateToken(bearerToken);
+    const isTokenValid = validateToken(apiToken);
 
     if (!isUrlValid || !isTokenValid) {
       return;
@@ -79,13 +79,13 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 
     try {
       // Store the token securely first
-      const tokenStored = await authStorageService.storeToken(bearerToken);
+      const tokenStored = await authStorageService.storeToken(apiToken);
       if (!tokenStored) {
         Alert.alert('Storage Error', 'Failed to store token securely');
         return;
       }
 
-      // For manual Bearer token auth, we simulate the login process
+      // For manual API token auth, we simulate the login process
       // In a real implementation, this would validate against the Readeck API
       const mockUser = {
         id: 'manual-auth',
@@ -113,7 +113,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
     } finally {
       setIsValidating(false);
     }
-  }, [serverUrl, bearerToken, dispatch]);
+  }, [serverUrl, apiToken, dispatch]);
 
   const handleSetupPress = useCallback(() => {
     navigation.navigate('Setup');
@@ -171,23 +171,23 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 
           <View style={styles.inputGroup}>
             <Text variant='body2' weight='medium' style={styles.label}>
-              Bearer Token
+              API Token
             </Text>
             <TextInput
               style={[styles.input, tokenError ? styles.inputError : null]}
               placeholder='Enter your API token'
               placeholderTextColor={theme.colors.neutral[400]}
-              value={bearerToken}
+              value={apiToken}
               onChangeText={text => {
-                setBearerToken(text);
+                setApiToken(text);
                 if (tokenError) validateToken(text);
               }}
               secureTextEntry
               autoCapitalize='none'
               autoCorrect={false}
               textContentType='password'
-              accessibilityLabel='Bearer token input'
-              accessibilityHint='Enter your Readeck API bearer token'
+              accessibilityLabel='API token input'
+              accessibilityHint='Enter your Readeck API token'
             />
             {tokenError ? (
               <Text
@@ -241,7 +241,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
             onPress={handleSetupPress}
             disabled={loading || isValidating}
             accessibilityLabel='Setup button'
-            accessibilityHint='Tap to get help setting up your Bearer token'
+            accessibilityHint='Tap to get help setting up your API token'
           >
             Need help? Setup Guide
           </Button>

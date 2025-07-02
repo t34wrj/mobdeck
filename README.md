@@ -5,7 +5,7 @@ Mobdeck is a mobile application built with React Native that allows users to rea
 ## Features
 
 - **Android Compatibility**: Optimized for Android 13+ devices
-- **Manual Authentication**: Secure Bearer token authentication with Readeck instances
+- **Manual Authentication**: Secure API token authentication with Readeck instances
 - **OS Share Integration**: Add articles directly from other apps via Android share functionality
 - **Background Sync**: Automatic synchronization of articles in the background
 - **Single User/Instance**: Simplified setup for individual Readeck instance access

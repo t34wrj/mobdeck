@@ -129,7 +129,7 @@ describe('Security: Token Validation', () => {
       });
     });
 
-    it('should validate Bearer tokens', () => {
+    it('should validate API tokens with Bearer prefix', () => {
       const validBearer = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc';
       
       const result = validateToken(validBearer, 'bearer');
