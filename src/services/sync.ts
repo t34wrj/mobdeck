@@ -1,9 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import BackgroundJob from 'react-native-background-job';
+// Legacy sync.ts - DEPRECATED
+// This file is deprecated in favor of BackgroundSyncService.ts
+// which provides more comprehensive background sync functionality
+// using react-native-background-actions
+
 import { fetchArticles } from './api';
 import { saveArticlesToDatabase } from './database';
-
-const SYNC_JOB_KEY = 'articleSyncJob';
 
 const syncArticles = async () => {
   try {
@@ -15,20 +16,13 @@ const syncArticles = async () => {
   }
 };
 
+// Deprecated functions - use BackgroundSyncService instead
 const scheduleSyncJob = () => {
-  const job = {
-    jobKey: SYNC_JOB_KEY,
-    job: () => syncArticles(),
-    period: 15 * 60 * 1000, // 15 minutes
-    allowWhileIdle: true,
-  };
-
-  BackgroundJob.register(job);
-  BackgroundJob.schedule(job);
+  console.warn('scheduleSyncJob is deprecated. Use BackgroundSyncService.scheduleSync() instead.');
 };
 
 const cancelSyncJob = () => {
-  BackgroundJob.cancel(SYNC_JOB_KEY);
+  console.warn('cancelSyncJob is deprecated. Use BackgroundSyncService.cancelSync() instead.');
 };
 
 export { syncArticles, scheduleSyncJob, cancelSyncJob };

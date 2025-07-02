@@ -29,7 +29,7 @@
     "crypto-js": "^4.2.0",
     "react": "19.1.0",
     "react-native": "0.80.0",
-    "react-native-background-job": "^2.3.1",
+    "react-native-background-actions": "^4.0.1",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "^2.26.0",
     "react-native-keychain": "^8.2.0",

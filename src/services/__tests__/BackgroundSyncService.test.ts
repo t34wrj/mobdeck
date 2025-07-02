@@ -5,10 +5,12 @@
 import { backgroundSyncService } from '../BackgroundSyncService';
 
 // Mock dependencies
-jest.mock('react-native-background-job', () => ({
-  register: jest.fn(),
-  schedule: jest.fn(),
-  cancel: jest.fn(),
+jest.mock('react-native-background-actions', () => ({
+  start: jest.fn(() => Promise.resolve()),
+  stop: jest.fn(() => Promise.resolve()),
+  updateNotification: jest.fn(() => Promise.resolve()),
+  isRunning: jest.fn(() => false),
+  on: jest.fn(),
 }));
 
 jest.mock('@react-native-async-storage/async-storage', () => ({

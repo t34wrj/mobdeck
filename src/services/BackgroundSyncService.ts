@@ -10,7 +10,7 @@
  * - Background sync status reporting
  */
 
-import BackgroundJob from 'react-native-background-job';
+import BackgroundService from 'react-native-background-actions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
 import { DeviceEventEmitter, NativeEventEmitter } from 'react-native';
@@ -24,8 +24,6 @@ import {
 import { SyncConfiguration, NetworkType, SyncStatus } from '../types/sync';
 
 // Constants
-const BACKGROUND_SYNC_JOB_KEY = 'mobdeck-background-sync';
-const SYNC_CONFIG_KEY = '@mobdeck/sync_config';
 const LAST_SYNC_KEY = '@mobdeck/last_sync_time';
 const SYNC_PREFERENCES_KEY = '@mobdeck/sync_preferences';
 
@@ -200,7 +198,7 @@ class BackgroundSyncService {
     // Listen for boot completion events
     const bootSubscription = DeviceEventEmitter.addListener(
       'DeviceBootCompleted',
-      data => {
+      (data: any) => {
         console.log('[BackgroundSyncService] Device boot completed:', data);
         this.handleDeviceBootCompleted();
       }
@@ -209,7 +207,7 @@ class BackgroundSyncService {
     // Listen for background sync job events
     const syncJobSubscription = DeviceEventEmitter.addListener(
       'BackgroundSyncEvent',
-      data => {
+      (data: any) => {
         console.log('[BackgroundSyncService] Background sync event:', data);
         this.handleBackgroundSyncEvent(data);
       }
@@ -339,16 +337,11 @@ class BackgroundSyncService {
   }
 
   /**
-   * Register background job with react-native-background-job
+   * Register background job with react-native-background-actions
    */
   private async registerBackgroundJob(): Promise<void> {
-    const backgroundJob = {
-      jobKey: BACKGROUND_SYNC_JOB_KEY,
-      job: () => this.performBackgroundSync(),
-    };
-
-    BackgroundJob.register(backgroundJob);
-    console.log('[BackgroundSyncService] Background job registered');
+    // Background job registration is now handled when starting the service
+    console.log('[BackgroundSyncService] Background job registration prepared');
   }
 
   /**
@@ -364,21 +357,92 @@ class BackgroundSyncService {
         return;
       }
 
-      const syncOptions = {
-        jobKey: BACKGROUND_SYNC_JOB_KEY,
-        period: this.syncPreferences.interval * 60 * 1000, // Convert minutes to milliseconds
-        persist: true,
-        exact: false,
-        allowWhileIdle: true,
-        allowExecutionInForeground: true,
-        networkType: this.syncPreferences.wifiOnly ? 2 : 0, // 2 = WIFI, 0 = ANY
+      // Stop any existing background service
+      if (BackgroundService.isRunning()) {
+        await BackgroundService.stop();
+      }
+
+      // Configure background service options
+      const options = {
+        taskName: 'MobdeckSync',
+        taskTitle: 'Mobdeck Background Sync',
+        taskDesc: 'Syncing your articles in the background',
+        taskIcon: {
+          name: 'ic_launcher',
+          type: 'mipmap',
+        },
+        color: '#2196F3',
+        linkingURI: 'mobdeck://sync',
+        parameters: {
+          syncInterval: this.syncPreferences.interval * 60 * 1000, // Convert minutes to milliseconds
+          wifiOnly: this.syncPreferences.wifiOnly,
+          allowCellular: this.syncPreferences.allowCellular,
+          allowMetered: this.syncPreferences.allowMetered,
+        },
+        progressBar: {
+          max: 100,
+          value: 0,
+          indeterminate: true,
+        },
       };
 
-      await BackgroundJob.schedule(syncOptions);
+      // Define the background task
+      const backgroundTask = async (taskDataArguments: any) => {
+        const { syncInterval, wifiOnly, allowCellular, allowMetered } = taskDataArguments;
+        
+        // Helper function for delays
+        const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(resolve, time));
+        
+        while (BackgroundService.isRunning()) {
+          try {
+            // Check network conditions
+            const networkState = await NetInfo.fetch();
+            
+            if (!networkState.isConnected) {
+              await sleep(syncInterval);
+              continue;
+            }
+            
+            // Check WiFi-only preference
+            if (wifiOnly && networkState.type !== 'wifi') {
+              await sleep(syncInterval);
+              continue;
+            }
+            
+            // Check cellular preference
+            if (!allowCellular && networkState.type === 'cellular') {
+              await sleep(syncInterval);
+              continue;
+            }
+            
+            // Check metered connection preference
+            if (!allowMetered && networkState.details?.isConnectionExpensive) {
+              await sleep(syncInterval);
+              continue;
+            }
+            
+            // Perform the actual sync
+            await this.performBackgroundSync();
+            
+            // Update notification with last sync time
+            await BackgroundService.updateNotification({
+              taskDesc: `Last sync: ${new Date().toLocaleTimeString()}`,
+            });
+            
+          } catch (error) {
+            console.error('[BackgroundSyncService] Error in background task:', error instanceof Error ? error.message : String(error));
+          }
+          
+          await sleep(syncInterval);
+        }
+      };
 
-      const nextSyncTime = new Date(Date.now() + syncOptions.period);
+      // Start the background service
+      await BackgroundService.start(backgroundTask, options);
+
+      const nextSyncTime = new Date(Date.now() + this.syncPreferences.interval * 60 * 1000);
       console.log(
-        `[BackgroundSyncService] Sync scheduled for ${nextSyncTime.toISOString()}`
+        `[BackgroundSyncService] Sync service started, next sync around ${nextSyncTime.toISOString()}`
       );
 
       // Save next sync time
@@ -397,7 +461,9 @@ class BackgroundSyncService {
    */
   public async cancelSync(): Promise<void> {
     try {
-      await BackgroundJob.cancel({ jobKey: BACKGROUND_SYNC_JOB_KEY });
+      if (BackgroundService.isRunning()) {
+        await BackgroundService.stop();
+      }
       await AsyncStorage.removeItem('@mobdeck/next_sync_time');
       console.log('[BackgroundSyncService] Background sync cancelled');
     } catch (error) {
@@ -457,12 +523,13 @@ class BackgroundSyncService {
       );
     } catch (error) {
       console.error('[BackgroundSyncService] Background sync failed:', error);
-      syncHistory.error = error.message;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      syncHistory.error = errorMessage;
 
       // Dispatch error to Redux store
       store.dispatch(
         syncError({
-          error: error.message,
+          error: errorMessage,
           errorCode: 'BACKGROUND_SYNC_FAILED',
           retryable: true,
         })
@@ -592,7 +659,7 @@ class BackgroundSyncService {
       : [];
 
     return {
-      isRunning: store.getState().sync.status === SyncStatus.SYNCING,
+      isRunning: BackgroundService.isRunning() || store.getState().sync.status === SyncStatus.SYNCING,
       lastSyncTime,
       nextScheduledSync: nextSyncTime,
       currentNetworkType: this.getNetworkType(),

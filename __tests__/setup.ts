@@ -108,14 +108,13 @@ jest.mock('react-native-share', () => ({
   open: jest.fn(() => Promise.resolve()),
 }));
 
-// Mock Background Job
-jest.mock('react-native-background-job', () => ({
-  BackgroundJob: {
-    register: jest.fn(),
-    start: jest.fn(),
-    stop: jest.fn(),
-    unregister: jest.fn(),
-  },
+// Mock Background Actions
+jest.mock('react-native-background-actions', () => ({
+  start: jest.fn(() => Promise.resolve()),
+  stop: jest.fn(() => Promise.resolve()),
+  updateNotification: jest.fn(() => Promise.resolve()),
+  isRunning: jest.fn(() => false),
+  on: jest.fn(),
 }));
 
 // Mock React Native Screens
