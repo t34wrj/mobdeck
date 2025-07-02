@@ -190,10 +190,9 @@ secrets.json
 api-tokens.json
 
 # Documentation artifacts (user-generated)
-docs/
-docs/screenshots/
-docs/demo/
-docs/user-generated/
+internal_docs/screenshots/
+internal_docs/demo/
+internal_docs/user-generated/
 
 # Performance and profiling
 *.trace
@@ -233,8 +232,8 @@ ios/Podfile.lock
 .vscode-react-native
 
 # Task completion summaries (keep structure, ignore temp files)
-docs/task_completion_summaries/*.tmp
-docs/task_completion_summaries/temp/
+internal_docs/task_completion_summaries/*.tmp
+internal_docs/task_completion_summaries/temp/
 
 # AI and development assistance (project-specific)
 .claude-temp/
