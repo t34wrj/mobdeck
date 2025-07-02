@@ -13,7 +13,7 @@
 import BackgroundService from 'react-native-background-actions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
-import { DeviceEventEmitter, NativeEventEmitter } from 'react-native';
+import { DeviceEventEmitter } from 'react-native';
 import { syncService } from './SyncService';
 import { store } from '../store';
 import {
@@ -21,7 +21,7 @@ import {
   updateNetworkStatus,
   syncError,
 } from '../store/slices/syncSlice';
-import { SyncConfiguration, NetworkType, SyncStatus } from '../types/sync';
+import { NetworkType, SyncStatus } from '../types/sync';
 
 // Constants
 const LAST_SYNC_KEY = '@mobdeck/last_sync_time';

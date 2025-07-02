@@ -54,21 +54,29 @@ class AuthStorageService implements IAuthStorageService {
         return false;
       }
 
-      // Validate token format
-      const tokenValidation = validateToken(token.trim(), 'jwt');
-      if (!tokenValidation.isValid) {
-        logger.error('Token validation failed', { error: tokenValidation.error });
+      // Flexible token validation for Readeck API Bearer tokens
+      const trimmedToken = token.trim();
+      
+      // Basic validation: must be at least 10 characters
+      if (trimmedToken.length < 10) {
+        logger.error('Token too short for storage');
         return false;
       }
-
+      
+      // Maximum length validation for security
+      if (trimmedToken.length > 4096) {
+        logger.error('Token too long for storage');
+        return false;
+      }
+      
       // Create token metadata with security enhancements
       const tokenData: AuthToken = {
-        token: token.trim(),
-        expiresAt: this.calculateTokenExpiration(token),
+        token: trimmedToken,
+        expiresAt: this.calculateTokenExpiration(trimmedToken),
         issuedAt: new Date().toISOString(),
         serverUrl: '', // Will be set by calling service
         version: this.TOKEN_VERSION,
-        checksum: hashData(token.trim(), generateSecureRandom(16)),
+        checksum: hashData(trimmedToken, generateSecureRandom(16)),
       };
 
       const result = await Keychain.setInternetCredentials(
@@ -92,7 +100,7 @@ class AuthStorageService implements IAuthStorageService {
         error,
         StorageErrorCode.STORAGE_FAILED
       );
-      console.error('[AuthStorageService] Token storage failed:', storageError);
+      logger.error('Token storage failed', { error: storageError });
       return false;
     }
   };

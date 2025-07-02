@@ -101,6 +101,9 @@ gradle/wrapper/gradle-wrapper.properties
 .gradle/
 local.properties
 
+# Android NDK
+android/app/.cxx/
+
 # Xcode
 *.xcodeproj/*
 !*.xcodeproj/project.pbxproj
