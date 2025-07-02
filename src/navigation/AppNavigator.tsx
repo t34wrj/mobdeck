@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import {
-  selectIsAuthenticated,
+  selectIsUserAuthenticated,
   selectAuthLoading,
 } from '../store/selectors/authSelectors';
 import { initializeAuth } from '../store/slices/authSlice';
@@ -14,7 +14,7 @@ import { ShareService } from '../services/ShareService';
 
 const AppNavigator: React.FC = () => {
   const dispatch = useDispatch();
-  const isAuthenticated = useSelector(selectIsAuthenticated);
+  const isAuthenticated = useSelector(selectIsUserAuthenticated);
   const authLoading = useSelector(selectAuthLoading);
   const { sharedData, clearSharedData } = useShareIntent();
 
