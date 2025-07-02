@@ -62,11 +62,29 @@ Run the tests using:
 npm test
 ```
 
-## Distribution
+## Installation
 
-This app is distributed via:
-- **GitHub Releases**: Download APK files from the releases page
-- **Obtainium**: Automatic updates via Obtainium app store alternative
+### For End Users
+
+#### Option 1: Obtainium (Recommended)
+Obtainium provides automatic updates directly from GitHub releases:
+
+1. Install [Obtainium](https://github.com/ImranR98/Obtainium) from F-Droid or GitHub
+2. Add Mobdeck using repository URL: `https://github.com/t34wrj/mobdeck`
+3. Install and receive automatic update notifications
+
+For detailed setup instructions, see [Obtainium Setup Guide](internal_docs/OBTAINIUM_SETUP.md).
+
+#### Option 2: Direct APK Download
+1. Visit [GitHub Releases](https://github.com/t34wrj/mobdeck/releases)
+2. Download the latest `app-release.apk`
+3. Enable "Install from unknown sources" in Android settings
+4. Install the APK file
+
+**System Requirements:**
+- Android 7.0+ (API level 24+)
+- ~50MB storage space
+- Self-hosted Readeck instance for authentication
 
 ## Contributing
 
