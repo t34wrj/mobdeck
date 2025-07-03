@@ -236,6 +236,7 @@ ios/Podfile.lock
 .claude-temp/
 copilot-cache/
 CLAUDE.md
+GEMINI.md
 
 # Mobdeck specific cache and data
 mobdeck-cache/
