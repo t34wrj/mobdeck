@@ -235,8 +235,10 @@ ios/Podfile.lock
 # AI and development assistance (project-specific)
 .claude-temp/
 copilot-cache/
+.github
 CLAUDE.md
 GEMINI.md
+
 
 # Mobdeck specific cache and data
 mobdeck-cache/
