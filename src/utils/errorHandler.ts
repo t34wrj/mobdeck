@@ -284,7 +284,7 @@ class ErrorHandler {
     if (sanitized.serverUrl) {
       try {
         const url = new URL(sanitized.serverUrl);
-        sanitized.serverUrl = `${url.protocol}//${url.hostname}${url.port ? ':' + url.port : ''}`;
+        sanitized.serverUrl = `${url.protocol}//${url.hostname}${url.port ? `:${  url.port}` : ''}`;
       } catch {
         sanitized.serverUrl = '[INVALID_URL]';
       }

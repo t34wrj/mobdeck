@@ -1,13 +1,13 @@
 # Mobdeck Mobile App
 
-Mobdeck is a mobile application built with React Native that allows users to read and manage articles from their self-hosted Readeck instances. The app supports Android devices and provides offline-first functionality.
+Mobdeck is a mobile application built with React Native that allows users to read and manage bookmarks from their self-hosted Readeck instances. The app supports Android devices and provides offline-first functionality.
 
 ## Features
 
 - **Android Compatibility**: Optimized for Android 13+ devices
 - **Manual Authentication**: Secure API token authentication with Readeck instances
-- **OS Share Integration**: Add articles directly from other apps via Android share functionality
-- **Background Sync**: Automatic synchronization of articles in the background
+- **OS Share Integration**: Add bookmarks directly from other apps via Android share functionality
+- **Background Sync**: Automatic synchronization of bookmarks in the background
 - **Single User/Instance**: Simplified setup for individual Readeck instance access
 - **GitHub Releases**: Distributed via GitHub Releases + Obtainium
 

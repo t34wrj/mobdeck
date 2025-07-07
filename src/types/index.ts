@@ -29,6 +29,8 @@ export interface Article {
   createdAt: string;
   updatedAt: string;
   syncedAt?: string;
+  contentUrl?: string; // URL to fetch full article content
+  isModified?: boolean; // Flag to track local modifications for sync
 }
 
 export interface User {

@@ -18,13 +18,16 @@ import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
 import {
   fetchArticles,
+  loadLocalArticles,
   setFilters,
   clearFilters,
   setPage,
   syncArticles,
   selectAllArticles,
 } from '../../store/slices/articlesSlice';
+import { selectIsUserAuthenticated } from '../../store/selectors/authSelectors';
 import { Article } from '../../types';
+import { useNetworkStatus } from '../../hooks/useNetworkStatus';
 
 const DEBOUNCE_DELAY = 300;
 
@@ -41,9 +44,10 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   );
 
   const articles = useSelector(selectAllArticles);
+  const isAuthenticated = useSelector(selectIsUserAuthenticated);
+  const { isOnline } = useNetworkStatus();
 
   const [searchQuery, setSearchQuery] = useState(filters.searchQuery);
-  const [showFilters, setShowFilters] = useState(false);
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(
     null
   );
@@ -57,8 +61,9 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
 
       const timer = setTimeout(() => {
         dispatch(setFilters({ searchQuery: query }));
+        // Always search local articles first to include offline-saved articles
         dispatch(
-          fetchArticles({ page: 1, searchQuery: query, forceRefresh: true })
+          loadLocalArticles({ page: 1, searchQuery: query, forceRefresh: true })
         );
       }, DEBOUNCE_DELAY);
 
@@ -80,15 +85,30 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   const handleClearSearch = useCallback(() => {
     setSearchQuery('');
     dispatch(setFilters({ searchQuery: '' }));
-    dispatch(fetchArticles({ page: 1, forceRefresh: true }));
+    // Always load local articles to include offline-saved articles
+    dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
   }, [dispatch]);
 
-  // Initial load
+  // Initial load - wait for authentication to complete
   useEffect(() => {
-    if (articles.length === 0) {
-      dispatch(fetchArticles({ page: 1 }));
+    console.log('[ArticlesListScreen] useEffect triggered:', {
+      isAuthenticated,
+      articlesLength: articles.length,
+      willFetch: isAuthenticated && articles.length === 0,
+    });
+    
+    if (isAuthenticated && articles.length === 0) {
+      // Add a small delay to ensure API service is configured
+      console.log('[ArticlesListScreen] Scheduling article fetch after delay');
+      const timer = setTimeout(() => {
+        console.log('[ArticlesListScreen] Loading articles...', { isOnline });
+        // Always load local articles first to show offline-saved articles immediately
+        dispatch(loadLocalArticles({ page: 1 }));
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
-  }, [dispatch, articles.length]);
+  }, [dispatch, articles.length, isAuthenticated]);
 
   // Pull to refresh
   const handleRefresh = useCallback(() => {
@@ -99,13 +119,20 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   const handleLoadMore = useCallback(() => {
     if (pagination.hasMore && !loading.fetch) {
       dispatch(setPage(pagination.page + 1));
-      dispatch(
-        fetchArticles({
-          page: pagination.page + 1,
+      const loadParams = {
+        page: pagination.page + 1,
+        searchQuery: filters.searchQuery,
+        filters: {
           searchQuery: filters.searchQuery,
-          filters,
-        })
-      );
+          isArchived: filters.isArchived,
+          isFavorite: filters.isFavorite,
+          isRead: filters.isRead,
+          tags: filters.tags,
+        },
+      };
+      
+      // Always load from local to include offline-saved articles
+      dispatch(loadLocalArticles(loadParams));
     }
   }, [dispatch, pagination.hasMore, pagination.page, loading.fetch, filters]);
 
@@ -126,7 +153,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       {
         key: 'all',
         label: 'All Articles',
-        active: !filters.isRead && !filters.isArchived && !filters.isFavorite,
+        active: filters.isRead === undefined && filters.isArchived === undefined && filters.isFavorite === undefined,
       },
       { key: 'unread', label: 'Unread', active: filters.isRead === false },
       { key: 'read', label: 'Read', active: filters.isRead === true },
@@ -188,11 +215,19 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       }
 
       dispatch(setFilters(newFilters));
-      dispatch(
-        fetchArticles({ page: 1, filters: newFilters, forceRefresh: true })
-      );
+      const loadParams = { 
+        page: 1, 
+        filters: {
+          ...filters,
+          ...newFilters
+        }, 
+        forceRefresh: true 
+      };
+      
+      // Always load from local to include offline-saved articles
+      dispatch(loadLocalArticles(loadParams));
     },
-    [dispatch]
+    [dispatch, filters]
   );
 
   // Render article item
@@ -277,10 +312,10 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
           Articles
         </Text>
         <TouchableOpacity
-          style={styles.filterToggle}
-          onPress={() => setShowFilters(!showFilters)}
+          style={styles.settingsButton}
+          onPress={() => navigation.navigate('Settings')}
         >
-          <Text style={styles.filterIcon}>⚙️</Text>
+          <Text style={styles.settingsIcon}>⚙️</Text>
         </TouchableOpacity>
       </View>
 
@@ -304,7 +339,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       </View>
 
       {/* Filters */}
-      {showFilters && renderFilters()}
+      {renderFilters()}
 
       {/* Error State */}
       {error.fetch && (
@@ -312,16 +347,29 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
           <Text variant='body1' style={styles.errorText}>
             {error.fetch}
           </Text>
-          <Button
-            variant='outline'
-            size='sm'
-            onPress={() =>
-              dispatch(fetchArticles({ page: 1, forceRefresh: true }))
-            }
-            style={styles.retryButton}
-          >
-            Retry
-          </Button>
+          <View style={styles.errorButtonsContainer}>
+            {error.fetch.includes('server settings') || error.fetch.includes('Authentication') || error.fetch.includes('Server not found') ? (
+              <Button
+                variant='primary'
+                size='sm'
+                onPress={() => navigation.navigate('Settings')}
+                style={[styles.retryButton, { marginRight: 8 }]}
+              >
+                Settings
+              </Button>
+            ) : null}
+            <Button
+              variant='outline'
+              size='sm'
+              onPress={() => {
+                // Always load from local to include offline-saved articles
+                dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
+              }}
+              style={styles.retryButton}
+            >
+              Retry
+            </Button>
+          </View>
         </View>
       )}
 
@@ -381,10 +429,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: theme.colors.neutral[900],
   },
-  filterToggle: {
+  settingsButton: {
     padding: theme.spacing[2],
   },
-  filterIcon: {
+  settingsIcon: {
     fontSize: 20,
   },
   searchContainer: {
@@ -446,9 +494,16 @@ const styles = StyleSheet.create({
   errorText: {
     color: theme.colors.error[700],
     marginBottom: theme.spacing[2],
+    textAlign: 'center',
+  },
+  errorButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: theme.spacing[2],
   },
   retryButton: {
-    marginTop: theme.spacing[2],
+    minWidth: 80,
   },
   listContainer: {
     flexGrow: 1,

@@ -17,5 +17,6 @@ export const getUserPreferences = async () => {
     return jsonValue != null ? JSON.parse(jsonValue) : null;
   } catch (e) {
     console.error('Failed to fetch user preferences:', e);
+    return null;
   }
 };

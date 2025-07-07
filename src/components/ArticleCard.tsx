@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Image, type ViewStyle, type TextStyle } from 'react-native';
 import { Text } from './ui/Text';
 import { theme } from './ui/theme';
 import { Article } from '../types';
@@ -40,8 +39,8 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
   };
 
   const formatReadTime = (minutes?: number): string => {
-    if (!minutes) return '';
-    return `${minutes} min read`;
+    if (!minutes || isNaN(minutes) || minutes <= 0) return '';
+    return `${Math.round(minutes)} min read`;
   };
 
   return (
@@ -70,17 +69,17 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
             ellipsizeMode='tail'
             style={[styles.title, article.isRead && styles.readTitle]}
           >
-            {article.title}
+            {article.title || 'Untitled'}
           </Text>
 
-          {article.summary && (
+          {article.summary && article.summary.trim() && (
             <Text
               variant='body2'
               numberOfLines={3}
               ellipsizeMode='tail'
               style={styles.summary}
             >
-              {article.summary}
+              {String(article.summary).trim()}
             </Text>
           )}
 
@@ -89,39 +88,38 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
               {formatDate(article.createdAt)}
             </Text>
 
-            {article.readTime && (
-              <>
-                <Text variant='caption' style={styles.separator}>
-                  •
-                </Text>
-                <Text variant='caption' style={styles.readTime}>
-                  {formatReadTime(article.readTime)}
-                </Text>
-              </>
+            {!!article.readTime && (
+              <Text variant='caption' style={styles.separator}>
+                •
+              </Text>
+            )}
+            {!!article.readTime && (
+              <Text variant='caption' style={styles.readTime}>
+                {formatReadTime(article.readTime)}
+              </Text>
             )}
 
-            {article.sourceUrl && (
-              <>
-                <Text variant='caption' style={styles.separator}>
-                  •
-                </Text>
-                <Text
-                  variant='caption'
-                  numberOfLines={1}
-                  ellipsizeMode='tail'
-                  style={styles.source}
-                >
-                  {article.sourceUrl &&
-                    (() => {
-                      try {
-                        return new URL(article.sourceUrl).hostname;
-                      } catch {
-                        return article.sourceUrl;
-                      }
-                    })()}
-                </Text>
-              </>
-            )}
+            {article.sourceUrl ? (
+              <Text variant='caption' style={styles.separator}>
+                •
+              </Text>
+            ) : null}
+            {article.sourceUrl ? (
+              <Text
+                variant='caption'
+                numberOfLines={1}
+                ellipsizeMode='tail'
+                style={styles.source}
+              >
+                {(() => {
+                  try {
+                    return new URL(article.sourceUrl).hostname;
+                  } catch {
+                    return article.sourceUrl;
+                  }
+                })()}
+              </Text>
+            ) : null}
           </View>
 
           {article.tags && article.tags.length > 0 && (
@@ -145,17 +143,21 @@ export const ArticleCard: React.FC<ArticleCardProps> = ({
         <View style={styles.statusIndicators}>
           {article.isFavorite && (
             <View style={styles.favoriteIndicator}>
-              <Text style={styles.favoriteIcon}>♥</Text>
+              <Text variant='caption' style={styles.favoriteIcon}>♥</Text>
             </View>
           )}
 
           {article.isArchived && (
             <View style={styles.archivedIndicator}>
-              <Text style={styles.archivedIcon}>📦</Text>
+              <Text variant='caption' style={styles.archivedIcon}>📦</Text>
             </View>
           )}
 
-          {article.isRead && <View style={styles.readIndicator} />}
+          {article.isRead && (
+            <View style={styles.readIndicator}>
+              <Text variant='caption' style={styles.readIcon}>✓</Text>
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -247,19 +249,22 @@ const styles = StyleSheet.create({
   favoriteIcon: {
     color: theme.colors.error[500],
     fontSize: 16,
-  },
+  } as TextStyle,
   archivedIndicator: {
     marginBottom: theme.spacing[1],
   },
   archivedIcon: {
     fontSize: 14,
-  },
+  } as TextStyle,
   readIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.success[500],
+    alignItems: 'center',
+    justifyContent: 'center',
   },
+  readIcon: {
+    color: theme.colors.success[500],
+    fontSize: 14,
+    fontWeight: 'bold',
+  } as TextStyle,
 });
 
 export default ArticleCard;

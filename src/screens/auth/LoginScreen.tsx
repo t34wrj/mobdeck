@@ -15,8 +15,10 @@ import { Text } from '../../components/ui/Text';
 import { theme } from '../../components/ui/theme';
 import { AuthScreenProps } from '../../navigation/types';
 import { AppDispatch, RootState } from '../../store';
-import { loginUser, clearError } from '../../store/slices/authSlice';
+import { clearError } from '../../store/slices/authSlice';
 import { authStorageService } from '../../services/AuthStorageService';
+import { validateApiToken } from '../../services/api';
+import { readeckApiService } from '../../services/ReadeckApiService';
 
 const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -75,35 +77,58 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
       return;
     }
 
+    console.log('[LoginScreen] Starting login process...');
+    console.log('[LoginScreen] Server URL:', serverUrl);
+    console.log('[LoginScreen] Token length:', apiToken.length);
+
     setIsValidating(true);
 
     try {
-      // Store the token securely first
-      const tokenStored = await authStorageService.storeToken(apiToken);
+      // Validate the API token against the Readeck server
+      const validationResult = await validateApiToken(serverUrl.trim(), apiToken);
+      
+      if (!validationResult.isValid) {
+        console.error('[LoginScreen] Validation failed - result not valid');
+        Alert.alert('Login Failed', 'Invalid credentials. Please check your server URL and API token.');
+        return;
+      }
+
+      console.log('[LoginScreen] Validation successful, storing token...');
+      
+      // Create user object for storage
+      const userForStorage = {
+        ...validationResult.user,
+        serverUrl: serverUrl.trim().replace(/\/$/, ''),
+      };
+      
+      // Store the token securely after successful validation
+      const tokenStored = await authStorageService.storeToken(apiToken, userForStorage);
       if (!tokenStored) {
+        console.error('[LoginScreen] Failed to store token');
         Alert.alert('Storage Error', 'Failed to store token securely');
         return;
       }
 
-      // For manual API token auth, we simulate the login process
-      // In a real implementation, this would validate against the Readeck API
-      const mockUser = {
-        id: 'manual-auth',
-        username: 'Readeck User',
-        email: 'user@readeck.local',
-        serverUrl: serverUrl.trim(),
-        lastLoginAt: new Date().toISOString(),
-        tokenExpiresAt: new Date(
-          Date.now() + 30 * 24 * 60 * 60 * 1000
-        ).toISOString(), // 30 days
-      };
-
-      // Dispatch success action manually since we're using Bearer tokens
+      console.log('[LoginScreen] Token stored, configuring API service...');
+      
+      // Configure the ReadeckApiService with the server URL
+      // Ensure the URL includes the /api path
+      const cleanUrl = serverUrl.trim().replace(/\/$/, '');
+      const apiUrl = cleanUrl.includes('/api') ? cleanUrl : `${cleanUrl}/api`;
+      
+      readeckApiService.updateConfig({
+        baseUrl: apiUrl,
+      });
+      
+      // Dispatch success action with validated user data
       dispatch({
         type: 'auth/setUser',
-        payload: mockUser,
+        payload: validationResult.user,
       });
+      
+      console.log('[LoginScreen] Login successful!');
     } catch (err) {
+      console.error('[LoginScreen] Login error:', err);
       Alert.alert(
         'Login Failed',
         err instanceof Error
@@ -147,10 +172,11 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
               placeholder='https://readeck.example.com'
               placeholderTextColor={theme.colors.neutral[400]}
               value={serverUrl}
-              onChangeText={text => {
+              onChangeText={(text: string) => {
                 setServerUrl(text);
                 if (urlError) validateUrl(text);
               }}
+              onBlur={() => validateUrl(serverUrl)}
               autoCapitalize='none'
               autoCorrect={false}
               keyboardType='url'
@@ -178,10 +204,11 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
               placeholder='Enter your API token'
               placeholderTextColor={theme.colors.neutral[400]}
               value={apiToken}
-              onChangeText={text => {
+              onChangeText={(text: string) => {
                 setApiToken(text);
                 if (tokenError) validateToken(text);
               }}
+              onBlur={() => validateToken(apiToken)}
               secureTextEntry
               autoCapitalize='none'
               autoCorrect={false}
@@ -275,6 +302,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing[8],
   },
   headerContainer: {
+    marginTop: theme.spacing[8],
     marginBottom: theme.spacing[10],
     alignItems: 'center',
   },

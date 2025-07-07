@@ -43,22 +43,66 @@ export interface ReadeckApiResponse<T> {
   timestamp: string;
 }
 
-// Readeck Article types
+// Readeck Bookmark/Article types - Updated to match API documentation
 export interface ReadeckArticle {
-  id: string;
-  title: string;
-  summary: string;
-  content: string;
-  url: string;
-  image_url?: string;
-  read_time?: number;
-  is_archived: boolean;
-  is_favorite: boolean;
-  is_read: boolean;
-  tags?: string[];
-  source_url?: string;
-  created_at: string;
-  updated_at: string;
+  id: string;                    // Bookmark's ID
+  title: string;                 // Bookmark's title
+  description?: string;          // Bookmark's short description
+  url: string;                   // Bookmark's original URL
+  site?: string;                 // Bookmark's site host name
+  site_name?: string;           // Bookmark's site name
+  authors?: string[];           // Author list
+  lang?: string;                // Language Code
+  type: 'article' | 'photo' | 'video';  // The bookmark type
+  document_type?: string;       // The bookmark document type
+  has_article: boolean;         // Indicates whether the bookmarks contains an article
+  loaded: boolean;              // Becomes true when the bookmark is ready
+  state: 0 | 1 | 2;            // 0: loaded, 1: error, 2: loading
+  is_archived: boolean;         // true when the bookmark is in the archives
+  is_marked: boolean;           // true when the bookmark is in the favorites
+  is_deleted: boolean;          // true when the bookmark is scheduled for deletion
+  labels?: string[];            // Bookmark's labels
+  published?: string | null;    // Publication date. Can be null when unknown
+  reading_time?: number;        // Duration of the article, in minutes
+  read_progress: number;        // Reading progress percentage (0-100)
+  word_count?: number;          // Number of words in the article
+  text_direction?: 'rtl' | 'ltr'; // Direction of the article's text
+  created: string;              // Creation date
+  updated: string;              // Last update
+  resources?: {                 // Resources associated with the bookmark
+    article?: {
+      src: string;              // URL of the article resource
+    };
+    icon?: {
+      src: string;              // URL of the icon resource
+      height?: number;
+      width?: number;
+    };
+    image?: {
+      src: string;              // URL of the image resource
+      height?: number;
+      width?: number;
+    };
+    thumbnail?: {
+      src: string;              // URL of the thumbnail resource
+      height?: number;
+      width?: number;
+    };
+    log?: {
+      src: string;              // URL of the log resource
+    };
+    props?: {
+      src: string;              // URL of the props resource
+    };
+  };
+  links?: Array<{               // Links collected in the article
+    content_type: string;       // MIME type of the destination
+    domain: string;             // Link's domain
+    is_page: boolean;           // true when the destination is a web page
+    title: string;              // Link's title
+    url: string;                // Link URI
+  }>;
+  read_anchor?: string;         // CSS selector of the last seen element
 }
 
 export interface ReadeckArticleList {
@@ -71,70 +115,96 @@ export interface ReadeckArticleList {
   };
 }
 
-// Article operations
+// Article operations - Updated to match API documentation
 export interface CreateArticleRequest {
-  url: string;
-  title?: string;
-  tags?: string[];
-  is_favorite?: boolean;
+  url: string;           // Required - URL to fetch
+  title?: string;        // Optional - Title of the bookmark
+  labels?: string[];     // Optional - List of labels to set to the bookmark
 }
 
 export interface UpdateArticleRequest {
-  title?: string;
-  is_archived?: boolean;
-  is_favorite?: boolean;
-  is_read?: boolean;
-  tags?: string[];
+  title?: string;                // New bookmark's title
+  is_archived?: boolean;         // Archive state
+  is_deleted?: boolean;          // If true, schedules for deletion, otherwise cancels deletion
+  is_marked?: boolean;           // Favorite state
+  labels?: string[];             // Replaces the bookmark's labels
+  add_labels?: string[];         // Add the given labels to the bookmark
+  remove_labels?: string[];      // Remove the given labels from the bookmark
+  read_anchor?: string;          // CSS selector of the last seen element
+  read_progress?: number;        // Reading progress percentage (0-100)
 }
 
 export interface ArticleFilters {
-  page?: number;
-  per_page?: number;
-  is_archived?: boolean;
-  is_favorite?: boolean;
-  is_read?: boolean;
-  tags?: string[];
-  search?: string;
-  sort_by?: 'created_at' | 'updated_at' | 'title';
-  sort_order?: 'asc' | 'desc';
+  limit?: number;                // Number of items per page
+  offset?: number;               // Pagination offset
+  sort?: string[];               // Sorting parameters: created, -created, domain, -domain, duration, -duration, published, -published, site, -site, title, -title
+  search?: string;               // A full text search string
+  title?: string;                // Bookmark title
+  author?: string;               // Author's name
+  site?: string;                 // Bookmark site name or domain
+  type?: ('article' | 'photo' | 'video')[]; // Bookmark type
+  labels?: string;               // One or several labels
+  is_loaded?: boolean;           // Filter by loaded state
+  has_errors?: boolean;          // Filter bookmarks with or without errors
+  has_labels?: boolean;          // Filter bookmarks with or without labels
+  is_marked?: boolean;           // Filter by marked (favorite) status
+  is_archived?: boolean;         // Filter by archived status
+  range_start?: string;          // Date range start
+  range_end?: string;            // Date range end
+  read_status?: ('unread' | 'reading' | 'read')[]; // Read progress status
+  updated_since?: string;        // Retrieve bookmarks created after this date (date-time)
+  id?: string;                   // One or more bookmark ID
+  collection?: string;           // A collection ID
 }
 
-// Authentication types
+// Authentication types - Updated to match Readeck API documentation
 export interface ReadeckLoginRequest {
   username: string;
   password: string;
 }
 
-export interface ReadeckLoginResponse {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-  user: ReadeckUser;
+export interface ReadeckAuthRequest {
+  application: string;  // Required - Application name
+  username: string;     // Required - Username  
+  password: string;     // Required - Password
+  roles?: string[];     // Optional - List of roles to restrict token access
 }
 
+export interface ReadeckLoginResponse {
+  id: string;      // Token ID
+  token: string;   // Authentication token - store this value
+}
+
+// User profile types - Updated to match Readeck API documentation
 export interface ReadeckUser {
   id: string;
   username: string;
   email: string;
-  created_at: string;
-  updated_at: string;
+  created: string;    // Changed from created_at to match API
+  updated: string;    // Changed from updated_at to match API
 }
 
-// User profile and settings
 export interface ReadeckUserProfile {
-  id: string;
-  username: string;
-  email: string;
-  preferences: {
-    theme: string;
-    articles_per_page: number;
-    auto_archive_read: boolean;
+  provider: {
+    application: string;      // Registered application name
+    id: string;              // Authentication provider ID (token ID)
+    name: string;            // Provider name
+    permissions: string[];   // Permissions granted for this session
+    roles: string[];         // Roles granted for this session
   };
-  stats: {
-    total_articles: number;
-    read_articles: number;
-    favorite_articles: number;
-    archived_articles: number;
+  user: {
+    created: string;         // Creation date
+    email: string;           // User email
+    username: string;        // Username
+    updated: string;         // Last update date
+    settings: {
+      debug_info: boolean;   // Enable debug information
+    };
+    reader_settings: {
+      font: string;          // Font setting
+      font_size: number;     // Font size
+      line_height: number;   // Line height
+    };
   };
 }
 

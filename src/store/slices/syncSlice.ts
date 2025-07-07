@@ -242,6 +242,18 @@ const syncSlice = createSlice({
       }
     },
 
+    cancelSync: state => {
+      state.status = SyncStatus.IDLE;
+      state.error = null;
+      state.progress = {
+        phase: SyncPhase.INITIALIZING,
+        totalItems: 0,
+        processedItems: 0,
+        currentItem: null,
+        estimatedTimeRemaining: null,
+      };
+    },
+
     // Statistics actions
     updateSyncStats: (
       state,
@@ -284,6 +296,59 @@ const syncSlice = createSlice({
       state.stats = initialState.stats;
     },
   },
+  extraReducers: (builder) => {
+    // Handle async thunk actions
+    builder
+      // Start sync operation
+      .addCase('sync/startOperation/pending', (state) => {
+        state.status = SyncStatus.SYNCING;
+        state.error = null;
+        state.progress = {
+          phase: SyncPhase.INITIALIZING,
+          totalItems: 0,
+          processedItems: 0,
+          currentItem: null,
+          estimatedTimeRemaining: null,
+        };
+        state.stats.totalSyncs += 1;
+      })
+      .addCase('sync/startOperation/fulfilled', (state) => {
+        // Success is handled by the sync service dispatching syncSuccess
+      })
+      .addCase('sync/startOperation/rejected', (state, action) => {
+        state.status = SyncStatus.ERROR;
+        state.error = action.error.message || 'Sync failed';
+        state.stats.failedSyncs += 1;
+      })
+      // Pause sync operation
+      .addCase('sync/pauseOperation/fulfilled', (state) => {
+        if (state.status === SyncStatus.SYNCING) {
+          state.status = SyncStatus.PAUSED;
+        }
+      })
+      // Resume sync operation
+      .addCase('sync/resumeOperation/pending', (state) => {
+        if (state.status === SyncStatus.PAUSED) {
+          state.status = SyncStatus.SYNCING;
+        }
+      })
+      .addCase('sync/resumeOperation/rejected', (state, action) => {
+        state.status = SyncStatus.ERROR;
+        state.error = action.error.message || 'Resume sync failed';
+      })
+      // Cancel sync operation
+      .addCase('sync/cancelOperation/fulfilled', (state) => {
+        state.status = SyncStatus.IDLE;
+        state.error = null;
+        state.progress = {
+          phase: SyncPhase.INITIALIZING,
+          totalItems: 0,
+          processedItems: 0,
+          currentItem: null,
+          estimatedTimeRemaining: null,
+        };
+      });
+  },
 });
 
 // Export action creators
@@ -294,6 +359,7 @@ export const {
   syncError,
   pauseSync,
   resumeSync,
+  cancelSync,
   addConflict,
   resolveConflict,
   clearConflicts,

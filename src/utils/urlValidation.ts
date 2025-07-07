@@ -160,8 +160,8 @@ export function normalizeUrl(url: string): string {
 
   // Remove trailing slash for consistency (except for root domains)
   try {
-    const url = new URL(normalized);
-    if (url.pathname !== '/' && normalized.endsWith('/')) {
+    const urlObj = new URL(normalized);
+    if (urlObj.pathname !== '/' && normalized.endsWith('/')) {
       // Remove trailing slash for paths but not root domains
       normalized = normalized.slice(0, -1);
     }
@@ -346,7 +346,7 @@ export function extractUrlFromText(text: string): string | null {
 
   // URL regex pattern - matches http(s) URLs
   const urlRegex =
-    /https?:\/\/(?:[-\w.])+(?:\:[0-9]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:\#(?:[\w.])*)?)?/gi;
+    /https?:\/\/(?:[-\w.])+(?::[0-9]+)?(?:\/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?)?/gi;
   const matches = text.match(urlRegex);
 
   if (!matches || matches.length === 0) {

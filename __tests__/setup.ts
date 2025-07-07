@@ -24,6 +24,9 @@ jest.mock('react-native', () => ({
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
   },
+  StyleSheet: {
+    create: jest.fn((styles) => styles),
+  },
   NativeModules: {
     RNCNetInfo: {
       getCurrentState: jest.fn(() => Promise.resolve({
@@ -43,6 +46,21 @@ jest.mock('react-native-keychain', () => ({
   getInternetCredentials: jest.fn(() => Promise.resolve({ username: 'test', password: 'test' })),
   resetInternetCredentials: jest.fn(() => Promise.resolve()),
   canImplyAuthentication: jest.fn(() => Promise.resolve(true)),
+  ACCESSIBLE: {
+    WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WhenUnlockedThisDeviceOnly',
+    WHEN_UNLOCKED: 'WhenUnlocked',
+    AFTER_FIRST_UNLOCK: 'AfterFirstUnlock',
+    ALWAYS: 'Always',
+    WHEN_PASSCODE_SET_THIS_DEVICE_ONLY: 'WhenPasscodeSetThisDeviceOnly',
+    ALWAYS_THIS_DEVICE_ONLY: 'AlwaysThisDeviceOnly',
+    AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY: 'AfterFirstUnlockThisDeviceOnly',
+  },
+  BIOMETRY_TYPE: {
+    BIOMETRICS: 'Biometrics',
+    TOUCH_ID: 'TouchID',
+    FACE_ID: 'FaceID',
+    FINGERPRINT: 'Fingerprint',
+  },
 }));
 
 // Mock NetInfo

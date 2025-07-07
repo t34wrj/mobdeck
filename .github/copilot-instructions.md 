@@ -54,7 +54,7 @@ This file provides GitHub Copilot with essential context, guidelines, and prefer
     * **User:** `serverUrl`, `token` (Bearer token for Readeck API - single user only)
     * **SyncSettings:** `autoSync`, `syncInterval`, `wifiOnly`, `lastSyncTime`
     * **AppState:** `articles[]`, `user`, `loading`, `error`, `syncStatus`
-* **API Integration:** Uses Readeck API endpoints:
+* **API Integration:** Uses Readeck API endpoints (see `@internal_docs/READECK_API_DOCUMENTATION.md` for complete API reference):
     * `GET /api/bookmarks` - Fetch articles
     * `POST /api/bookmarks` - Add new articles
     * `DELETE /api/bookmarks/:id` - Remove articles
@@ -235,6 +235,7 @@ This project maintains comprehensive documentation in the `/docs/` directory:
   - Handle API rate limiting and network failures gracefully
   - Implement proper sync conflict resolution
   - Cache data locally for offline access
+  - Refer to `@internal_docs/READECK_API_DOCUMENTATION.md` for complete API specifications
 
 ---
 

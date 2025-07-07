@@ -8,19 +8,18 @@ import { RootState } from './index';
 export const loggerMiddleware: Middleware<{}, RootState> =
   store => next => (action: AnyAction) => {
     if (__DEV__) {
-      console.group(`🔥 Action: ${action.type}`);
+      console.log(`🔥 Action: ${action.type}`);
       console.log('Payload:', action.payload);
-      console.log('Previous State:', store.getState());
-    }
-
-    const result = next(action);
-
-    if (__DEV__) {
+      const prevState = store.getState();
+      console.log('Previous State:', prevState);
+      
+      const result = next(action);
+      
       console.log('New State:', store.getState());
-      console.groupEnd();
+      return result;
     }
 
-    return result;
+    return next(action);
   };
 
 /**
@@ -52,7 +51,8 @@ export const performanceMiddleware: Middleware<{}, RootState> =
       const result = next(action);
       const endTime = performance.now();
 
-      if (endTime - startTime > 10) {
+      // Only warn for truly slow actions (>100ms)
+      if (endTime - startTime > 100) {
         console.warn(
           `⚠️ Slow action detected: ${action.type} took ${(endTime - startTime).toFixed(2)}ms`
         );

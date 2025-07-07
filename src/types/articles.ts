@@ -15,6 +15,7 @@ export interface IArticlesApiService {
   deleteArticle(params: DeleteArticleParams): Promise<void>;
   syncArticles(params: SyncArticlesParams): Promise<ArticleSyncResult>;
   getArticle(id: string): Promise<Article>;
+  getArticleContent(contentUrl: string): Promise<string>;
   batchUpdateArticles(updates: BatchUpdateParams[]): Promise<Article[]>;
   batchDeleteArticles(ids: string[]): Promise<void>;
   getArticleStats(): Promise<ArticleStats>;

@@ -11,7 +11,18 @@ import {
   StorageErrorCode,
   TokenValidationResult,
   KeychainOptions,
+  AuthenticatedUser,
 } from '../types/auth';
+
+// Enhanced storage data that includes user info
+interface AuthStorageData extends AuthToken {
+  user?: {
+    id: string;
+    username: string;
+    email: string;
+    lastLoginAt: string;
+  };
+}
 import { validateToken, generateSecureRandom, hashData } from '../utils/security';
 import { logger } from '../utils/logger';
 
@@ -43,11 +54,12 @@ class AuthStorageService implements IAuthStorageService {
   };
 
   /**
-   * Store API token securely in device keychain
+   * Store API token and user data securely in device keychain
    * @param token - API token string to store
+   * @param user - Optional user data to store with token
    * @returns Promise<boolean> - Success status
    */
-  storeToken = async (token: string): Promise<boolean> => {
+  storeToken = async (token: string, user?: AuthenticatedUser): Promise<boolean> => {
     try {
       if (!token || typeof token !== 'string' || token.trim().length === 0) {
         logger.error('Invalid token provided for storage');
@@ -70,13 +82,19 @@ class AuthStorageService implements IAuthStorageService {
       }
       
       // Create token metadata with security enhancements
-      const tokenData: AuthToken = {
+      const tokenData: AuthStorageData = {
         token: trimmedToken,
         expiresAt: this.calculateTokenExpiration(trimmedToken),
         issuedAt: new Date().toISOString(),
-        serverUrl: '', // Will be set by calling service
+        serverUrl: user?.serverUrl || '',
         version: this.TOKEN_VERSION,
         checksum: hashData(trimmedToken, generateSecureRandom(16)),
+        user: user ? {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          lastLoginAt: user.lastLoginAt,
+        } : undefined,
       };
 
       const result = await Keychain.setInternetCredentials(
@@ -110,6 +128,15 @@ class AuthStorageService implements IAuthStorageService {
    * @returns Promise<string | null> - Token string or null if not found
    */
   retrieveToken = async (): Promise<string | null> => {
+    const data = await this.retrieveAuthData();
+    return data?.token || null;
+  };
+
+  /**
+   * Retrieve complete authentication data from secure keychain storage
+   * @returns Promise<AuthStorageData | null> - Auth data or null if not found
+   */
+  retrieveAuthData = async (): Promise<AuthStorageData | null> => {
     try {
       const credentials = await Keychain.getInternetCredentials(
         this.SERVICE_NAME
@@ -117,46 +144,46 @@ class AuthStorageService implements IAuthStorageService {
 
       if (credentials && credentials.password) {
         try {
-          const tokenData: AuthToken = JSON.parse(credentials.password);
+          const authData: AuthStorageData = JSON.parse(credentials.password);
 
           // Validate token structure and integrity
-          if (this.isValidTokenData(tokenData)) {
+          if (this.isValidAuthData(authData)) {
             // Check token version compatibility
-            if (!this.isTokenVersionCompatible(tokenData)) {
+            if (!this.isTokenVersionCompatible(authData)) {
               logger.warn('Token version incompatible, migration required');
               // Future: Implement token migration
             }
 
             // Verify token checksum if available
-            if (tokenData.checksum && !this.verifyTokenChecksum(tokenData)) {
+            if (authData.checksum && !this.verifyTokenChecksum(authData)) {
               logger.error('Token checksum verification failed');
               await this.deleteToken(); // Clean up tampered data
               return null;
             }
 
             // Check if token needs rotation
-            if (this.tokenRotationEnabled && this.shouldRotateToken(tokenData)) {
+            if (this.tokenRotationEnabled && this.shouldRotateToken(authData)) {
               logger.info('Token rotation recommended');
               // Future: Implement token rotation
             }
 
-            logger.debug('Token retrieved successfully');
-            return tokenData.token;
+            logger.debug('Auth data retrieved successfully');
+            return authData;
           } else {
-            logger.error('Invalid token data structure');
+            logger.error('Invalid auth data structure');
             await this.deleteToken(); // Clean up invalid data
             return null;
           }
         } catch (parseError) {
           console.error(
-            '[AuthStorageService] Failed to parse stored token data:',
+            '[AuthStorageService] Failed to parse stored auth data:',
             parseError
           );
           await this.deleteToken(); // Clean up corrupted data
           return null;
         }
       } else {
-        logger.debug('No token found in keychain');
+        logger.debug('No auth data found in keychain');
         return null;
       }
     } catch (error) {
@@ -236,17 +263,17 @@ class AuthStorageService implements IAuthStorageService {
         };
       }
 
-      const tokenData: AuthToken = JSON.parse(credentials.password);
+      const authData: AuthStorageData = JSON.parse(credentials.password);
 
-      if (!this.isValidTokenData(tokenData)) {
+      if (!this.isValidAuthData(authData)) {
         return {
           isValid: false,
           isExpired: true,
-          error: 'Invalid token data structure',
+          error: 'Invalid auth data structure',
         };
       }
 
-      const expirationDate = new Date(tokenData.expiresAt);
+      const expirationDate = new Date(authData.expiresAt);
       const currentDate = new Date();
       const isExpired = expirationDate <= currentDate;
       const expiresIn = isExpired
@@ -307,17 +334,17 @@ class AuthStorageService implements IAuthStorageService {
   };
 
   /**
-   * Validate token data structure
+   * Validate auth data structure
    * @private
    */
-  private isValidTokenData = (tokenData: any): tokenData is AuthToken => {
+  private isValidAuthData = (authData: any): authData is AuthStorageData => {
     return (
-      tokenData &&
-      typeof tokenData === 'object' &&
-      typeof tokenData.token === 'string' &&
-      typeof tokenData.expiresAt === 'string' &&
-      typeof tokenData.issuedAt === 'string' &&
-      tokenData.token.trim().length > 0
+      authData &&
+      typeof authData === 'object' &&
+      typeof authData.token === 'string' &&
+      typeof authData.expiresAt === 'string' &&
+      typeof authData.issuedAt === 'string' &&
+      authData.token.trim().length > 0
     );
   };
 
@@ -349,19 +376,19 @@ class AuthStorageService implements IAuthStorageService {
    * Check if token version is compatible
    * @private
    */
-  private isTokenVersionCompatible = (tokenData: any): boolean => {
-    if (!tokenData.version) {
+  private isTokenVersionCompatible = (authData: any): boolean => {
+    if (!authData.version) {
       return true; // Legacy tokens without version are accepted
     }
-    return tokenData.version === this.TOKEN_VERSION;
+    return authData.version === this.TOKEN_VERSION;
   };
 
   /**
    * Verify token checksum for integrity
    * @private
    */
-  private verifyTokenChecksum = (tokenData: AuthToken): boolean => {
-    if (!tokenData.checksum) {
+  private verifyTokenChecksum = (authData: AuthStorageData): boolean => {
+    if (!authData.checksum) {
       return true; // Legacy tokens without checksum are accepted
     }
     // Checksum verification would require the original salt
@@ -373,8 +400,8 @@ class AuthStorageService implements IAuthStorageService {
    * Check if token should be rotated
    * @private
    */
-  private shouldRotateToken = (tokenData: AuthToken): boolean => {
-    const issuedAt = new Date(tokenData.issuedAt);
+  private shouldRotateToken = (authData: AuthStorageData): boolean => {
+    const issuedAt = new Date(authData.issuedAt);
     const now = new Date();
     const tokenAge = now.getTime() - issuedAt.getTime();
     

@@ -56,7 +56,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
   const parseContent = (htmlContent: string): React.ReactNode[] => {
     // Remove HTML tags and convert basic formatting
     // This is a simplified parser - in production, consider using a proper HTML parser
-    let processedContent = htmlContent
+    const processedContent = htmlContent
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n\n')
       .replace(/<p[^>]*>/gi, '')
@@ -176,7 +176,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
           parseContent(content)
         ) : (
           <Text variant='body1' style={[styles.noContent, contentStyles]}>
-            No content available for this article.
+            No content available for this article.{'\n\n'}Pull down to refresh and load content.
           </Text>
         )}
       </View>

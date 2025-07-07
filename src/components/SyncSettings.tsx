@@ -4,17 +4,23 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Text } from './ui/Text';
 import { Button } from './ui/Button';
 import { theme } from './ui/theme';
-import { RootState } from '../store';
+import { RootState, AppDispatch } from '../store';
 import {
-  startSync,
   pauseSync,
   resumeSync,
   clearSyncError,
+  cancelSync,
 } from '../store/slices/syncSlice';
+import { 
+  startSyncOperation,
+  pauseSyncOperation,
+  resumeSyncOperation,
+  cancelSyncOperation,
+} from '../store/thunks/syncThunks';
 import { SyncStatus } from '../types/sync';
 
 export const SyncSettings: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { status, error, isOnline, networkType, progress, lastSyncTime } =
     useSelector((state: RootState) => state.sync);
 
@@ -31,32 +37,54 @@ export const SyncSettings: React.FC = () => {
 
     try {
       setManualSyncLoading(true);
-      dispatch(
-        startSync({
+      await dispatch(
+        startSyncOperation({
           syncOptions: {
             fullTextSync: true,
             downloadImages: true,
           },
           forceFull: false,
         })
-      );
+      ).unwrap();
     } catch (err) {
-      Alert.alert('Sync Error', 'Failed to start sync. Please try again.');
+      console.error('[SyncSettings] Manual sync failed:', err);
+      Alert.alert('Sync Error', err?.message || 'Failed to start sync. Please try again.');
     } finally {
       setManualSyncLoading(false);
     }
   }, [dispatch, isOnline]);
 
-  const handlePauseSync = useCallback(() => {
-    dispatch(pauseSync());
+  const handlePauseSync = useCallback(async () => {
+    try {
+      await dispatch(pauseSyncOperation()).unwrap();
+      dispatch(pauseSync());
+    } catch (err) {
+      console.error('[SyncSettings] Failed to pause sync:', err);
+      Alert.alert('Error', 'Failed to pause sync');
+    }
   }, [dispatch]);
 
-  const handleResumeSync = useCallback(() => {
-    dispatch(resumeSync());
+  const handleResumeSync = useCallback(async () => {
+    try {
+      await dispatch(resumeSyncOperation()).unwrap();
+    } catch (err) {
+      console.error('[SyncSettings] Failed to resume sync:', err);
+      Alert.alert('Error', err?.message || 'Failed to resume sync');
+    }
   }, [dispatch]);
 
   const handleClearError = useCallback(() => {
     dispatch(clearSyncError());
+  }, [dispatch]);
+
+  const handleCancelSync = useCallback(async () => {
+    try {
+      await dispatch(cancelSyncOperation()).unwrap();
+      dispatch(cancelSync());
+    } catch (err) {
+      console.error('[SyncSettings] Failed to cancel sync:', err);
+      Alert.alert('Error', 'Failed to cancel sync');
+    }
   }, [dispatch]);
 
   const formatLastSyncTime = () => {
@@ -153,7 +181,7 @@ export const SyncSettings: React.FC = () => {
             Processing: {progress.currentItem}
           </Text>
         )}
-        {progress.estimatedTimeRemaining && (
+        {!!progress.estimatedTimeRemaining && (
           <Text variant='caption' style={styles.timeRemaining}>
             ~{Math.round(progress.estimatedTimeRemaining / 1000)}s remaining
           </Text>
@@ -197,7 +225,7 @@ export const SyncSettings: React.FC = () => {
             </Button>
             <Button
               variant='outline'
-              onPress={handleClearError}
+              onPress={handleCancelSync}
               style={styles.cancelButton}
             >
               Cancel

@@ -14,6 +14,7 @@
 import DatabaseService from './DatabaseService';
 import { readeckApiService } from './ReadeckApiService';
 import { articlesApiService } from './ArticlesApiService';
+import { ShareService } from './ShareService';
 import { store } from '../store';
 import {
   startSync,
@@ -130,6 +131,21 @@ class SyncService {
       console.error('[SyncService] Failed to initialize:', error);
       throw error;
     }
+  }
+
+  /**
+   * Update sync configuration
+   */
+  public updateConfiguration(newConfig: Partial<SyncConfiguration>): void {
+    this.config = { ...this.config, ...newConfig };
+    console.log('[SyncService] Configuration updated:', newConfig);
+  }
+
+  /**
+   * Get current sync configuration
+   */
+  public getConfiguration(): SyncConfiguration {
+    return { ...this.config };
   }
 
   /**
@@ -325,6 +341,9 @@ class SyncService {
     };
 
     try {
+      // Ensure database is initialized before sync operations
+      await this.ensureDatabaseInitialized();
+
       // Get all locally modified articles
       const modifiedArticlesResult = await DatabaseService.getArticles({
         isModified: true,
@@ -407,6 +426,9 @@ class SyncService {
     };
 
     try {
+      // Ensure database is initialized before sync operations
+      await this.ensureDatabaseInitialized();
+
       // Get last sync timestamp
       const lastSyncResult = await DatabaseService.getStats();
       const lastSyncTimestamp =
@@ -499,6 +521,9 @@ class SyncService {
       errors: [],
     };
 
+    // Ensure database is initialized
+    await this.ensureDatabaseInitialized();
+
     for (const dbArticle of articles) {
       try {
         const article =
@@ -530,7 +555,11 @@ class SyncService {
 
           result.syncedCount++;
         } else {
+          // Check if this is a locally created article (has local ID)
+          const isLocallyCreated = article.id.startsWith('local_');
+          
           // Create new article on server
+          console.log(`[SyncService] Creating article on server: ${article.title}`);
           const createResult = await articlesApiService.createArticle({
             title: article.title,
             url: article.url,
@@ -539,13 +568,49 @@ class SyncService {
             tags: article.tags || [],
           });
 
-          // Update local article with server ID and mark as synced
-          await DatabaseService.updateArticle(article.id, {
-            is_modified: 0,
-            synced_at: Math.floor(Date.now() / 1000),
-          });
-
-          result.syncedCount++;
+          if (createResult.success && createResult.data) {
+            const serverArticle = createResult.data;
+            console.log(`[SyncService] Article created on server with ID: ${serverArticle.id}`);
+            
+            if (isLocallyCreated) {
+              // For locally created articles, we need to replace the local record with the server record
+              const oldLocalId = article.id;
+              
+              // Delete the old local record
+              await DatabaseService.deleteArticle(oldLocalId);
+              
+              // Create new record with server ID
+              await DatabaseService.createArticle({
+                id: serverArticle.id,
+                title: serverArticle.title || article.title,
+                url: serverArticle.url || article.url,
+                summary: serverArticle.summary || article.summary,
+                content: serverArticle.content || article.content,
+                imageUrl: serverArticle.image_url || article.imageUrl || '',
+                readTime: serverArticle.read_time || article.readTime,
+                sourceUrl: serverArticle.source_url || article.sourceUrl || article.url,
+                isArchived: serverArticle.is_archived || article.isArchived,
+                isFavorite: serverArticle.is_favorite || article.isFavorite,
+                isRead: serverArticle.is_read || article.isRead,
+                isModified: false, // Mark as synced
+                createdAt: serverArticle.created_at ? Math.floor(new Date(serverArticle.created_at).getTime() / 1000) : article.createdAt,
+                updatedAt: serverArticle.updated_at ? Math.floor(new Date(serverArticle.updated_at).getTime() / 1000) : Math.floor(Date.now() / 1000),
+                syncedAt: Math.floor(Date.now() / 1000),
+              });
+              
+              console.log(`[SyncService] Replaced local article ${oldLocalId} with server article ${serverArticle.id}`);
+            } else {
+              // For articles with server IDs, just mark as synced
+              await DatabaseService.updateArticle(article.id, {
+                is_modified: 0,
+                synced_at: Math.floor(Date.now() / 1000),
+              });
+            }
+            
+            result.syncedCount++;
+          } else {
+            throw new Error(createResult.error || 'Failed to create article on server');
+          }
         }
       } catch (error) {
         console.error(
@@ -565,6 +630,50 @@ class SyncService {
   }
 
   /**
+   * Fetch full article content if fullTextSync is enabled
+   */
+  private async fetchFullArticleContent(articleId: string): Promise<Article | null> {
+    try {
+      if (!this.config.fullTextSync) {
+        return null;
+      }
+
+      console.log(`[SyncService] Fetching full content for article: ${articleId}`);
+      const response = await readeckApiService.getArticle(articleId);
+      
+      if (response.success && response.data) {
+        // Convert ReadeckArticle to Article format manually
+        const readeckArticle = response.data;
+        const fullArticle: Article = {
+          id: readeckArticle.id,
+          title: readeckArticle.title || '',
+          summary: readeckArticle.summary || '',
+          content: readeckArticle.content || '',
+          url: readeckArticle.url || '',
+          imageUrl: readeckArticle.image_url || '',
+          readTime: readeckArticle.read_time || 0,
+          isArchived: readeckArticle.is_archived || false,
+          isFavorite: readeckArticle.is_favorite || false,
+          isRead: readeckArticle.is_read || false,
+          tags: readeckArticle.tags || [],
+          sourceUrl: readeckArticle.source_url || readeckArticle.url || '',
+          createdAt: readeckArticle.created_at || new Date().toISOString(),
+          updatedAt: readeckArticle.updated_at || new Date().toISOString(),
+          syncedAt: new Date().toISOString(),
+        };
+        console.log(`[SyncService] Full content fetched for article: ${articleId}, content length: ${fullArticle.content?.length || 0}`);
+        return fullArticle;
+      }
+
+      console.warn(`[SyncService] Failed to fetch full content for article: ${articleId}`);
+      return null;
+    } catch (error) {
+      console.error(`[SyncService] Error fetching full content for article: ${articleId}`, error);
+      return null;
+    }
+  }
+
+  /**
    * Sync a remote article to local database
    */
   private async syncRemoteArticle(remoteArticle: Article): Promise<{
@@ -573,15 +682,27 @@ class SyncService {
     error?: string;
   }> {
     try {
+      // Ensure database is initialized
+      await this.ensureDatabaseInitialized();
+
+      // Fetch full content if fullTextSync is enabled and content is missing
+      let articleToSync = remoteArticle;
+      if (this.config.fullTextSync && (!remoteArticle.content || remoteArticle.content.trim() === '')) {
+        const fullArticle = await this.fetchFullArticleContent(remoteArticle.id);
+        if (fullArticle) {
+          articleToSync = fullArticle;
+        }
+      }
+
       // Check if article exists locally
       const localArticleResult = await DatabaseService.getArticle(
-        remoteArticle.id
+        articleToSync.id
       );
 
       if (!localArticleResult.success) {
         // Article doesn't exist locally, create it
         const dbArticle =
-          DatabaseUtilityFunctions.convertArticleToDBArticle(remoteArticle);
+          DatabaseUtilityFunctions.convertArticleToDBArticle(articleToSync);
         dbArticle.synced_at = Math.floor(Date.now() / 1000);
         dbArticle.is_modified = 0;
 
@@ -599,9 +720,9 @@ class SyncService {
         localArticleResult.data!
       );
 
-      if (this.hasConflict(localArticle, remoteArticle)) {
+      if (this.hasConflict(localArticle, articleToSync)) {
         // Handle conflict based on strategy
-        const resolved = await this.handleConflict(localArticle, remoteArticle);
+        const resolved = await this.handleConflict(localArticle, articleToSync);
 
         return {
           success: resolved,
@@ -610,12 +731,12 @@ class SyncService {
       } else {
         // No conflict, update local article
         const remoteDbArticle =
-          DatabaseUtilityFunctions.convertArticleToDBArticle(remoteArticle);
+          DatabaseUtilityFunctions.convertArticleToDBArticle(articleToSync);
         remoteDbArticle.synced_at = Math.floor(Date.now() / 1000);
         remoteDbArticle.is_modified = 0;
 
         const updateResult = await DatabaseService.updateArticle(
-          remoteArticle.id,
+          articleToSync.id,
           remoteDbArticle
         );
 
@@ -916,6 +1037,9 @@ class SyncService {
    */
   private async processPendingSyncOperations(): Promise<void> {
     try {
+      // Ensure database is initialized
+      await this.ensureDatabaseInitialized();
+
       const pendingResult = await DatabaseService.getSyncMetadata({
         syncStatus: 'pending',
         limit: 100,
@@ -925,7 +1049,12 @@ class SyncService {
         console.log(
           `[SyncService] Found ${pendingResult.data!.items.length} pending sync operations`
         );
-        // TODO: Process pending operations
+        
+        // Skip processing old shared URL queue - we now save articles directly offline-first
+        // await this.processPendingSharedUrls();
+        
+        // Process other pending operations
+        await this.processPendingOperations();
       }
     } catch (error) {
       console.error(
@@ -958,6 +1087,78 @@ class SyncService {
       batches.push(items.slice(i, i + batchSize));
     }
     return batches;
+  }
+
+  /**
+   * Process pending shared URLs when coming back online
+   */
+  private async processPendingSharedUrls(): Promise<void> {
+    try {
+      const pendingUrls = await ShareService.getPendingSharedUrls();
+      
+      if (pendingUrls.length === 0) {
+        console.log('[SyncService] No pending shared URLs to process');
+        return;
+      }
+      
+      console.log(`[SyncService] Processing ${pendingUrls.length} pending shared URLs`);
+      
+      for (const sharedUrl of pendingUrls) {
+        try {
+          console.log(`[SyncService] Creating article from shared URL: ${sharedUrl.url}`);
+          
+          // Create article using ArticlesApiService
+          const result = await articlesApiService.createArticle({
+            url: sharedUrl.url,
+            title: sharedUrl.title,
+          });
+          
+          if (result.success) {
+            console.log(`[SyncService] Successfully created article for shared URL: ${sharedUrl.id}`);
+            
+            // Remove from queue
+            await ShareService.removeFromQueue(sharedUrl.id);
+            
+            // Show success notification
+            // TODO: Add notification service
+            console.log(`[SyncService] Article "${sharedUrl.title}" added successfully`);
+          } else {
+            console.error(`[SyncService] Failed to create article for shared URL: ${sharedUrl.id}`, result.error);
+          }
+        } catch (error) {
+          console.error(`[SyncService] Error processing shared URL ${sharedUrl.id}:`, error);
+          
+          // For now, we'll keep the URL in the queue for retry
+          // TODO: Implement retry logic with exponential backoff
+        }
+      }
+    } catch (error) {
+      console.error('[SyncService] Error processing pending shared URLs:', error);
+    }
+  }
+
+  /**
+   * Process other pending sync operations
+   */
+  private async processPendingOperations(): Promise<void> {
+    try {
+      // TODO: Implement processing of other pending operations
+      console.log('[SyncService] Processing other pending operations - not implemented yet');
+    } catch (error) {
+      console.error('[SyncService] Error processing pending operations:', error);
+    }
+  }
+
+  /**
+   * Ensure database is initialized before sync operations
+   */
+  private async ensureDatabaseInitialized(): Promise<void> {
+    try {
+      await DatabaseService.initialize();
+    } catch (error) {
+      console.error('[SyncService] Database initialization failed:', error);
+      throw new Error(`Database initialization failed: ${error.message}`);
+    }
   }
 
   /**

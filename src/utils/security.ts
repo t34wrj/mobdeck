@@ -11,7 +11,7 @@ import CryptoJS from 'crypto-js';
  */
 const URL_PATTERNS = {
   // Standard URL with protocol
-  FULL_URL: /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/,
+  FULL_URL: /^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/,
   // IP address with protocol
   IP_URL: /^https?:\/\/(\d{1,3}\.){3}\d{1,3}(:\d+)?(\/.*)?$/,
   // Localhost URL
@@ -29,7 +29,7 @@ const TOKEN_PATTERNS = {
   // Bearer token format
   BEARER: /^Bearer\s+[A-Za-z0-9-_]+\.?[A-Za-z0-9-_]*\.?[A-Za-z0-9-_]*$/,
   // API key format (alphanumeric with dashes, dots, slashes, plus, equals for base64)
-  API_KEY: /^[A-Za-z0-9-_.+=\/]{20,}$/,
+  API_KEY: /^[A-Za-z0-9-_.+=/]{20,}$/,
 };
 
 /**
@@ -39,7 +39,7 @@ const SQL_INJECTION_PATTERNS = [
   /(\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b)/i,
   /(--|#|\/\*|\*\/|;|\||&&)/,
   /(\bor\b\s*\d+\s*=\s*\d+|\band\b\s*\d+\s*=\s*\d+)/i,
-  /(\'|\"|`|\\)/,
+  /('|"|`|\\)/,
 ];
 
 /**
@@ -50,7 +50,7 @@ const XSS_PATTERNS = [
   /<iframe[^>]*>.*?<\/iframe>/gi,
   /javascript:/gi,
   /on\w+\s*=/gi,
-  /<img[^>]+src[\\s]*=[\\s]*["\']javascript:/gi,
+  /<img[^>]+src[\s]*=[\s]*["']javascript:/gi,
 ];
 
 /**
@@ -58,7 +58,7 @@ const XSS_PATTERNS = [
  */
 const FILE_PATH_PATTERNS = {
   // Path traversal attempts
-  PATH_TRAVERSAL: /\.\.[\/\\]/,
+  PATH_TRAVERSAL: /\.\.[/\\]/,
   // Null byte injection
   NULL_BYTE: /%00|\\x00/,
   // Restricted file extensions
@@ -146,7 +146,7 @@ export const validateToken = (token: string, type: 'jwt' | 'bearer' | 'api_key' 
 
   // Validate based on token type
   switch (type) {
-    case 'jwt':
+    case 'jwt': {
       if (!TOKEN_PATTERNS.JWT.test(token)) {
         return { isValid: false, error: 'Invalid JWT token format' };
       }
@@ -156,6 +156,7 @@ export const validateToken = (token: string, type: 'jwt' | 'bearer' | 'api_key' 
         return { isValid: false, error: 'JWT must have three parts' };
       }
       break;
+    }
 
     case 'bearer':
       if (!TOKEN_PATTERNS.BEARER.test(token)) {
@@ -188,7 +189,7 @@ export const sanitizeInput = (input: string, options: {
     return '';
   }
 
-  const { allowedTags = [], maxLength = 1000, stripHtml = true } = options;
+  const { maxLength = 1000, stripHtml = true } = options;
 
   let sanitized = input.trim();
 
@@ -218,7 +219,7 @@ export const sanitizeInput = (input: string, options: {
   }
 
   // Remove null bytes and control characters
-  sanitized = sanitized.replace(/[\0\x00]/g, '');
+  sanitized = sanitized.replace(/\u0000/g, '');
 
   // Normalize whitespace
   sanitized = sanitized.replace(/\s+/g, ' ').trim();
@@ -377,7 +378,7 @@ export const validatePassword = (password: string): {
   if (/[0-9]/.test(password)) score += 1;
   else feedback.push('Add numbers');
 
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score += 1;
+  if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) score += 1;
   else feedback.push('Add special characters');
 
   // Common patterns check

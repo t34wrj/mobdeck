@@ -63,7 +63,7 @@ class ReadeckApiService implements IReadeckApiService {
 
   constructor(config: Partial<ReadeckApiConfig> = {}) {
     // Default configuration with security enforcement
-    const defaultBaseUrl = __DEV__ ? 'http://localhost:8000/api/v1' : 'https://localhost:8000/api/v1';
+    const defaultBaseUrl = __DEV__ ? 'http://localhost:8000/api' : 'https://localhost:8000/api';
     this.config = {
       baseUrl: config.baseUrl || defaultBaseUrl,
       timeout: 30000, // 30 seconds
@@ -140,7 +140,7 @@ class ReadeckApiService implements IReadeckApiService {
         }
 
         // Skip auth for login endpoint
-        if (config.url?.includes('/auth/login')) {
+        if (config.url?.includes('/auth')) {
           return config;
         }
 
@@ -152,7 +152,7 @@ class ReadeckApiService implements IReadeckApiService {
               length: token.length, 
               startsWithBearer: token.startsWith('Bearer'),
               hasSpecialChars: /[^A-Za-z0-9-_.]/.test(token),
-              preview: token.substring(0, 10) + '...'
+              preview: `${token.substring(0, 10)  }...`
             });
             
             // Temporarily bypass token validation for testing
@@ -227,6 +227,16 @@ class ReadeckApiService implements IReadeckApiService {
         return response;
       },
       error => {
+        // End performance timer for error cases
+        const operationId = (error.config as any)?._operationId;
+        if (operationId) {
+          logger.endPerformanceTimer(operationId, {
+            status: error.response?.status || 0,
+            url: error.config?.url,
+            error: true,
+          });
+        }
+        
         const apiError = this.handleResponseError(error);
         errorHandler.handleError(apiError, {
           category: this.getErrorCategory(error),
@@ -422,7 +432,11 @@ class ReadeckApiService implements IReadeckApiService {
       url: options.url,
       data: options.data,
       params: options.params,
-      headers: options.headers,
+      headers: {
+        ...this.client.defaults.headers.common,
+        ...options.headers,
+        ...options.config?.headers,
+      },
       timeout: options.config?.timeout,
     };
 
@@ -436,10 +450,17 @@ class ReadeckApiService implements IReadeckApiService {
   async login(
     credentials: ReadeckLoginRequest
   ): Promise<ReadeckApiResponse<ReadeckLoginResponse>> {
+    // Map to Readeck API auth request format exactly as documented
+    const authRequest = {
+      application: 'Mobdeck Mobile App',
+      username: credentials.username,
+      password: credentials.password
+    };
+    
     return this.makeRequest<ReadeckLoginResponse>({
       method: 'POST',
-      url: '/auth/login',
-      data: credentials,
+      url: '/auth',
+      data: authRequest,
       config: { skipAuth: true },
     });
   }
@@ -447,15 +468,13 @@ class ReadeckApiService implements IReadeckApiService {
   async validateToken(): Promise<ReadeckApiResponse<ReadeckUser>> {
     return this.makeRequest<ReadeckUser>({
       method: 'GET',
-      url: '/auth/me',
+      url: '/profile',
     });
   }
 
+  // Note: Readeck API doesn't have token refresh endpoint
   async refreshToken(): Promise<ReadeckApiResponse<ReadeckLoginResponse>> {
-    return this.makeRequest<ReadeckLoginResponse>({
-      method: 'POST',
-      url: '/auth/refresh',
-    });
+    throw new Error('Token refresh not supported by Readeck API. Please re-authenticate.');
   }
 
   // Article methods
@@ -464,16 +483,34 @@ class ReadeckApiService implements IReadeckApiService {
   ): Promise<ReadeckApiResponse<ReadeckArticleList>> {
     return this.makeRequest<ReadeckArticleList>({
       method: 'GET',
-      url: '/articles',
+      url: '/bookmarks',
       params: filters,
     });
   }
 
   async getArticle(id: string): Promise<ReadeckApiResponse<ReadeckArticle>> {
-    return this.makeRequest<ReadeckArticle>({
-      method: 'GET',
-      url: `/articles/${id}`,
-    });
+    try {
+      console.log(`[ReadeckApiService] Fetching article with ID: ${id}`);
+      
+      // Get the article metadata from the bookmarks endpoint
+      const response = await this.makeRequest<ReadeckArticle>({
+        method: 'GET',
+        url: `/bookmarks/${id}`,
+      });
+      
+      console.log(`[ReadeckApiService] Article fetch successful: ${id}`);
+      console.log(`[ReadeckApiService] Response data structure:`, {
+        hasData: !!response.data,
+        dataKeys: response.data ? Object.keys(response.data) : [],
+        status: response.status,
+        timestamp: response.timestamp
+      });
+      
+      return response;
+    } catch (error) {
+      console.error(`[ReadeckApiService] Article fetch failed for ID: ${id}:`, error);
+      throw error;
+    }
   }
 
   async createArticle(
@@ -481,7 +518,7 @@ class ReadeckApiService implements IReadeckApiService {
   ): Promise<ReadeckApiResponse<ReadeckArticle>> {
     return this.makeRequest<ReadeckArticle>({
       method: 'POST',
-      url: '/articles',
+      url: '/bookmarks',
       data: article,
     });
   }
@@ -492,7 +529,7 @@ class ReadeckApiService implements IReadeckApiService {
   ): Promise<ReadeckApiResponse<ReadeckArticle>> {
     return this.makeRequest<ReadeckArticle>({
       method: 'PATCH',
-      url: `/articles/${id}`,
+      url: `/bookmarks/${id}`,
       data: updates,
     });
   }
@@ -500,130 +537,200 @@ class ReadeckApiService implements IReadeckApiService {
   async deleteArticle(id: string): Promise<ReadeckApiResponse<void>> {
     return this.makeRequest<void>({
       method: 'DELETE',
-      url: `/articles/${id}`,
+      url: `/bookmarks/${id}`,
     });
+  }
+
+  async getArticleContent(contentUrl: string): Promise<string> {
+    try {
+      console.log('[ReadeckApiService] Fetching article content from URL:', contentUrl);
+      console.log('[ReadeckApiService] Current base URL:', this.config.baseUrl);
+      
+      // Handle both absolute URLs and relative paths
+      let requestUrl = contentUrl;
+      
+      // If it's a full URL, we need to extract the path relative to our base URL
+      if (contentUrl.startsWith('http://') || contentUrl.startsWith('https://')) {
+        // Remove the base URL portion to get just the path
+        const baseUrlWithoutTrailingSlash = this.config.baseUrl.replace(/\/$/, '');
+        
+        if (contentUrl.startsWith(baseUrlWithoutTrailingSlash)) {
+          // Extract the path after the base URL
+          requestUrl = contentUrl.substring(baseUrlWithoutTrailingSlash.length);
+          // Ensure it starts with /
+          if (!requestUrl.startsWith('/')) {
+            requestUrl = `/${  requestUrl}`;
+          }
+        } else {
+          // If URL doesn't match our base URL, try extracting path after /api/
+          const url = new URL(contentUrl);
+          const apiIndex = url.pathname.indexOf('/api/');
+          if (apiIndex !== -1) {
+            requestUrl = url.pathname.substring(apiIndex + 4); // Skip '/api'
+          } else {
+            requestUrl = url.pathname;
+          }
+        }
+      }
+      
+      console.log('[ReadeckApiService] Making request to path:', requestUrl);
+      
+      // Use the makeRequest method to ensure proper authentication and error handling
+      const response = await this.makeRequest<string>({
+        method: 'GET',
+        url: requestUrl,
+        config: {
+          headers: {
+            'Accept': 'text/html',
+          },
+        },
+      });
+      
+      console.log('[ReadeckApiService] Content response received, length:', response.data?.length || 0);
+      
+      return response.data;
+    } catch (error) {
+      console.error('[ReadeckApiService] Failed to fetch article content:', error);
+      console.error('[ReadeckApiService] Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      throw error;
+    }
   }
 
   // User methods
   async getUserProfile(): Promise<ReadeckApiResponse<ReadeckUserProfile>> {
     return this.makeRequest<ReadeckUserProfile>({
       method: 'GET',
-      url: '/user/profile',
+      url: '/profile',
     });
   }
 
   async updateUserProfile(
     updates: Partial<ReadeckUserProfile>
   ): Promise<ReadeckApiResponse<ReadeckUserProfile>> {
+    // Note: Readeck API documentation doesn't show profile update endpoint
+    // This might not be supported, but keeping for backward compatibility
     return this.makeRequest<ReadeckUserProfile>({
       method: 'PATCH',
-      url: '/user/profile',
+      url: '/profile',
       data: updates,
     });
   }
 
-  // System methods
+  // System methods - Readeck API doesn't provide system info endpoint
   async getSystemInfo(): Promise<ReadeckApiResponse<ReadeckSystemInfo>> {
-    return this.makeRequest<ReadeckSystemInfo>({
-      method: 'GET',
-      url: '/system/info',
-      config: { skipAuth: true },
-    });
+    throw new Error('System info endpoint not available in Readeck API');
   }
 
-  // Sync methods
+  // Sync methods - Readeck API doesn't have dedicated sync endpoints
+  // Use getArticles with updated_since parameter for syncing
   async syncArticles(
     request?: SyncRequest
   ): Promise<ReadeckApiResponse<ReadeckSyncResponse>> {
-    return this.makeRequest<ReadeckSyncResponse>({
-      method: 'GET',
-      url: '/sync/articles',
-      params: request,
-    });
+    console.log('[ReadeckApiService] Simulating sync using getArticles with filters');
+    
+    // Map sync request to article filters
+    const filters: any = {};
+    if (request?.since) {
+      filters.updated_since = request.since;
+    }
+    if (request?.limit) {
+      filters.limit = request.limit;
+    }
+    
+    try {
+      const response = await this.getArticles(filters);
+      
+      // Transform response to match expected sync response format
+      const syncResponse: ReadeckSyncResponse = {
+        articles: Array.isArray(response.data) ? response.data : response.data.articles || [],
+        last_updated: new Date().toISOString(),
+        total_count: Array.isArray(response.data) ? response.data.length : response.data.pagination?.total_count || 0,
+        has_more: Array.isArray(response.data) ? false : (response.data.pagination?.page || 1) < (response.data.pagination?.total_pages || 1)
+      };
+      
+      return {
+        data: syncResponse,
+        status: response.status,
+        headers: response.headers,
+        timestamp: response.timestamp
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
-  // Labels methods
+  // Labels methods - Updated to match Readeck API documentation
   async getLabels(filters?: any): Promise<ReadeckApiResponse<any>> {
     return this.makeRequest<any>({
       method: 'GET',
-      url: '/labels',
+      url: '/bookmarks/labels',
       params: filters,
     });
   }
 
-  async createLabel(label: any): Promise<ReadeckApiResponse<any>> {
+  async getLabelInfo(name: string): Promise<ReadeckApiResponse<any>> {
     return this.makeRequest<any>({
-      method: 'POST',
-      url: '/labels',
-      data: label,
+      method: 'GET',
+      url: `/bookmarks/labels/${encodeURIComponent(name)}`,
     });
   }
 
   async updateLabel(
-    id: string,
-    updates: any
+    currentName: string,
+    newName: string
   ): Promise<ReadeckApiResponse<any>> {
     return this.makeRequest<any>({
       method: 'PATCH',
-      url: `/labels/${id}`,
-      data: updates,
+      url: `/bookmarks/labels/${encodeURIComponent(currentName)}`,
+      data: { name: newName },
     });
   }
 
-  async deleteLabel(
-    id: string,
-    params?: any
-  ): Promise<ReadeckApiResponse<void>> {
+  async deleteLabel(name: string): Promise<ReadeckApiResponse<void>> {
     return this.makeRequest<void>({
       method: 'DELETE',
-      url: `/labels/${id}`,
-      params,
+      url: `/bookmarks/labels/${encodeURIComponent(name)}`,
     });
   }
 
-  async getLabel(id: string): Promise<ReadeckApiResponse<any>> {
-    return this.makeRequest<any>({
-      method: 'GET',
-      url: `/labels/${id}`,
-    });
+  // Legacy method aliases for backward compatibility
+  async getLabel(name: string): Promise<ReadeckApiResponse<any>> {
+    return this.getLabelInfo(name);
+  }
+
+  async createLabel(label: any): Promise<ReadeckApiResponse<any>> {
+    // Note: Readeck API doesn't have a direct create label endpoint
+    // Labels are created when assigned to bookmarks
+    throw new Error('Creating labels directly is not supported by Readeck API. Labels are created when assigned to bookmarks.');
   }
 
   async assignLabel(data: any): Promise<ReadeckApiResponse<void>> {
-    return this.makeRequest<void>({
-      method: 'POST',
-      url: '/labels/assign',
-      data,
-    });
+    // Note: Label assignment is done through bookmark update
+    throw new Error('Use updateArticle with labels/add_labels fields instead of assignLabel');
   }
 
   async removeLabel(data: any): Promise<ReadeckApiResponse<void>> {
-    return this.makeRequest<void>({
-      method: 'POST',
-      url: '/labels/remove',
-      data,
-    });
+    // Note: Label removal is done through bookmark update
+    throw new Error('Use updateArticle with remove_labels field instead of removeLabel');
   }
 
   async batchLabels(data: any): Promise<ReadeckApiResponse<any>> {
-    return this.makeRequest<any>({
-      method: 'POST',
-      url: '/labels/batch',
-      data,
-    });
+    // Note: Batch operations should be done through individual bookmark updates
+    throw new Error('Batch label operations not supported. Use individual bookmark updates.');
   }
 
   async getLabelStats(): Promise<ReadeckApiResponse<any>> {
-    return this.makeRequest<any>({
-      method: 'GET',
-      url: '/labels/stats',
-    });
+    // Note: Label stats are available through the labels list endpoint
+    throw new Error('Use getLabels() to get label information including counts');
   }
 
   async getArticleLabels(articleId: string): Promise<ReadeckApiResponse<any>> {
-    return this.makeRequest<any>({
-      method: 'GET',
-      url: `/articles/${articleId}/labels`,
-    });
+    // Note: Article labels are included in the bookmark details
+    throw new Error('Article labels are included in bookmark details from getArticle()');
   }
 
   // Configuration methods

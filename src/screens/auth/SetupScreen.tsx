@@ -5,7 +5,6 @@ import {
   ScrollView,
   TextInput,
   Alert,
-  Linking,
   Platform,
 } from 'react-native';
 import { Button } from '../../components/ui/Button';
@@ -18,7 +17,6 @@ interface SetupStep {
   id: number;
   title: string;
   description: string;
-  action?: () => void;
 }
 
 const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
@@ -30,11 +28,6 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
     message: string;
   } | null>(null);
 
-  const openReadeckDocs = useCallback(() => {
-    Linking.openURL('https://readeck.org/en/docs/api/').catch(() => {
-      Alert.alert('Error', 'Could not open Readeck documentation');
-    });
-  }, []);
 
   const testConnection = useCallback(async () => {
     if (!testUrl.trim() || !testToken.trim()) {
@@ -122,13 +115,12 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
       id: 3,
       title: 'Copy the API token',
       description:
-        "Copy the generated token immediately - it won't be shown again. The token will look like a long string of random characters",
+        "Copy the generated token for easy access. The token will look like a long string of random characters",
     },
     {
       id: 4,
       title: 'Enter your server details',
       description: 'Use the form below to test your connection',
-      action: openReadeckDocs,
     },
   ];
 
@@ -167,16 +159,6 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
             >
               {step.description}
             </Text>
-            {step.action && (
-              <Button
-                variant='ghost'
-                size='sm'
-                onPress={step.action}
-                style={styles.stepAction}
-              >
-                View Documentation
-              </Button>
-            )}
           </View>
         ))}
       </View>
@@ -324,11 +306,6 @@ const styles = StyleSheet.create({
   stepDescription: {
     marginLeft: 40,
     lineHeight: 22,
-  },
-  stepAction: {
-    marginLeft: 40,
-    marginTop: theme.spacing[2],
-    alignSelf: 'flex-start',
   },
   testContainer: {
     backgroundColor: theme.colors.neutral[100],

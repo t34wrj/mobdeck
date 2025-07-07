@@ -116,7 +116,7 @@ function resolveLastWriteWins(
   return {
     ...winningArticle,
     // Always use the most recent sync timestamp
-    syncedAt: new Date(),
+    syncedAt: new Date().toISOString(),
     // Mark as no longer modified since we're resolving the conflict
     isModified: false,
   };
@@ -140,7 +140,7 @@ function resolveLocalWins(
   return {
     ...localArticle,
     // Update sync timestamp but keep as modified to upload later
-    syncedAt: new Date(),
+    syncedAt: new Date().toISOString(),
     isModified: true,
   };
 }
@@ -163,7 +163,7 @@ function resolveRemoteWins(
   return {
     ...remoteArticle,
     // Update sync timestamp and mark as not modified
-    syncedAt: new Date(),
+    syncedAt: new Date().toISOString(),
     isModified: false,
   };
 }
@@ -398,7 +398,7 @@ function performThreeWayMerge(
       new Date(remoteArticle.updatedAt).getTime()
     )
   );
-  merged.syncedAt = new Date();
+  merged.syncedAt = new Date().toISOString();
   merged.isModified = false;
 
   return merged;

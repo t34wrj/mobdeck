@@ -10,7 +10,7 @@ import com.facebook.react.bridge.Arguments
 class ShareModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
     override fun getName(): String {
-        return "ShareModule"
+        return "MobdeckShareModule"
     }
 
     @ReactMethod
@@ -23,8 +23,8 @@ class ShareModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaM
                 result.putString("subject", sharedData.getString("subject"))
                 result.putDouble("timestamp", sharedData.getLong("timestamp").toDouble())
                 
-                // Clear the shared data after retrieving it
-                MainActivity.sharedData = null
+                // Don't clear the shared data immediately - let React handle it
+                // MainActivity.sharedData = null
                 
                 promise.resolve(result)
             } else {

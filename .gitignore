@@ -235,11 +235,29 @@ ios/Podfile.lock
 # AI and development assistance (project-specific)
 .claude-temp/
 copilot-cache/
-.github/
-CLAUDE.md
-GEMINI.md
-
+.github/workflows/
+.github/ISSUE_TEMPLATE/
+.github/PULL_REQUEST_TEMPLATE/
 
 # Mobdeck specific cache and data
 mobdeck-cache/
 readeck-sync-data/
+
+# AI assistant files and development documentation
+CLAUDE.md
+GEMINI.md
+TEST_FRAMEWORK_STATUS.md
+*.ai.md
+
+# Development screenshots and images
+emulatormenu.png
+screenshot*.png
+emulator*.png
+
+# Android generated drawable assets (React Navigation icons)
+android/app/src/main/res/drawable-*/node_modules_*
+android/app/src/main/res/drawable-*/react*
+android/app/src/main/res/raw/keep.xml
+
+# Android duplicate structure (build artifacts)
+android/android/

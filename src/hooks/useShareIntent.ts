@@ -17,22 +17,28 @@ export const useShareIntent = (): UseShareIntentResult => {
   const [error, setError] = useState<string | null>(null);
 
   const processSharedData = useCallback(async () => {
+    console.log('useShareIntent: Starting processSharedData...');
     setIsProcessing(true);
     setError(null);
 
     try {
+      console.log('useShareIntent: Calling ShareService.getSharedData()...');
       const data = await ShareService.getSharedData();
+      
       if (data) {
-        console.log('Share intent detected:', data);
+        console.log('useShareIntent: Share intent detected:', data);
         setSharedData(data);
+      } else {
+        console.log('useShareIntent: No shared data found');
       }
     } catch (e) {
       const errorMessage =
         e instanceof Error ? e.message : 'Failed to process shared data';
-      console.error('Error processing shared data:', errorMessage);
+      console.error('useShareIntent: Error processing shared data:', errorMessage);
       setError(errorMessage);
     } finally {
       setIsProcessing(false);
+      console.log('useShareIntent: Finished processSharedData');
     }
   }, []);
 

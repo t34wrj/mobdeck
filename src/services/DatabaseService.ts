@@ -90,8 +90,14 @@ class DatabaseService implements DatabaseServiceInterface {
         createFromLocation: undefined,
       });
 
-      // Enable foreign key constraints
-      await this.db.executeSql('PRAGMA foreign_keys = ON;');
+      // Enable foreign key constraints (optional - some SQLite versions might not support this)
+      try {
+        await this.db.executeSql('PRAGMA foreign_keys = ON;');
+        console.log('[DatabaseService] Foreign key constraints enabled');
+      } catch (error) {
+        console.warn('[DatabaseService] Could not enable foreign key constraints:', error);
+        console.log('[DatabaseService] Continuing without foreign key constraints');
+      }
 
       // Initialize schema
       await this.initializeSchema();
@@ -197,37 +203,6 @@ class DatabaseService implements DatabaseServiceInterface {
       'CREATE INDEX IF NOT EXISTS idx_sync_metadata_status ON sync_metadata(sync_status);',
       'CREATE INDEX IF NOT EXISTS idx_sync_metadata_timestamp ON sync_metadata(local_timestamp DESC);',
 
-      // Full-text search table
-      `CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts USING fts5(
-                id UNINDEXED,
-                title,
-                summary,
-                content,
-                content=articles,
-                content_rowid=rowid
-            );`,
-
-      // FTS triggers
-      `CREATE TRIGGER IF NOT EXISTS articles_fts_insert 
-            AFTER INSERT ON articles 
-            BEGIN
-                INSERT INTO articles_fts(id, title, summary, content) 
-                VALUES (new.id, new.title, new.summary, new.content);
-            END;`,
-
-      `CREATE TRIGGER IF NOT EXISTS articles_fts_update 
-            AFTER UPDATE ON articles 
-            BEGIN
-                UPDATE articles_fts 
-                SET title = new.title, summary = new.summary, content = new.content 
-                WHERE id = new.id;
-            END;`,
-
-      `CREATE TRIGGER IF NOT EXISTS articles_fts_delete 
-            AFTER DELETE ON articles 
-            BEGIN
-                DELETE FROM articles_fts WHERE id = old.id;
-            END;`,
 
       // Initial schema version
       `INSERT OR IGNORE INTO schema_version (version, applied_at, description) 
@@ -241,6 +216,66 @@ class DatabaseService implements DatabaseServiceInterface {
         console.error('[DatabaseService] Schema query failed:', query, error);
         throw error;
       }
+    }
+
+    // Try to initialize FTS5 features (optional - won't fail if not supported)
+    await this.initializeFTS5();
+  }
+
+  /**
+   * Initialize FTS5 full-text search features (optional)
+   */
+  private async initializeFTS5(): Promise<void> {
+    if (!this.db) {
+      return;
+    }
+
+    try {
+      console.log('[DatabaseService] Attempting to initialize FTS5...');
+      
+      const ftsQueries = [
+        // Full-text search table using FTS5
+        `CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts USING fts5(
+                  id UNINDEXED,
+                  title,
+                  summary,
+                  content,
+                  content=articles,
+                  content_rowid=rowid
+              );`,
+
+        // FTS triggers
+        `CREATE TRIGGER IF NOT EXISTS articles_fts_insert 
+              AFTER INSERT ON articles 
+              BEGIN
+                  INSERT INTO articles_fts(id, title, summary, content) 
+                  VALUES (new.id, new.title, new.summary, new.content);
+              END;`,
+
+        `CREATE TRIGGER IF NOT EXISTS articles_fts_update 
+              AFTER UPDATE ON articles 
+              BEGIN
+                  UPDATE articles_fts 
+                  SET title = new.title, summary = new.summary, content = new.content 
+                  WHERE id = new.id;
+              END;`,
+
+        `CREATE TRIGGER IF NOT EXISTS articles_fts_delete 
+              AFTER DELETE ON articles 
+              BEGIN
+                  DELETE FROM articles_fts WHERE id = old.id;
+              END;`,
+      ];
+
+      for (const query of ftsQueries) {
+        await this.db.executeSql(query);
+      }
+
+      console.log('[DatabaseService] FTS5 initialized successfully');
+    } catch (error) {
+      console.warn('[DatabaseService] FTS5 not available or failed to initialize:', error);
+      console.log('[DatabaseService] Continuing without full-text search features');
+      // Don't throw - FTS5 is optional
     }
   }
 
@@ -352,20 +387,20 @@ class DatabaseService implements DatabaseServiceInterface {
       const params = [
         article.id,
         article.title,
-        article.summary,
-        article.content,
+        article.summary || null,
+        article.content || null,
         article.url,
-        article.image_url,
-        article.read_time,
-        article.is_archived,
-        article.is_favorite,
-        article.is_read,
-        article.source_url,
+        article.image_url || null,
+        article.read_time || null,
+        article.is_archived || 0,
+        article.is_favorite || 0,
+        article.is_read || 0,
+        article.source_url || null,
         now,
         now,
-        article.synced_at,
-        article.is_modified,
-        article.deleted_at,
+        article.synced_at || null,
+        article.is_modified || 0,
+        article.deleted_at || null,
       ];
 
       const result = await this.executeSql(sql, params);
@@ -530,40 +565,82 @@ class DatabaseService implements DatabaseServiceInterface {
       const limit = filters?.limit || 50;
       const offset = filters?.offset || 0;
 
-      const sql = `
-                SELECT a.* FROM articles a
-                JOIN articles_fts fts ON a.id = fts.id
-                WHERE fts MATCH ? AND a.deleted_at IS NULL
-                ORDER BY bm25(fts) ASC
-                LIMIT ? OFFSET ?
-            `;
+      // First try FTS5 search with BM25 ranking
+      try {
+        const sql = `
+                  SELECT a.* FROM articles a
+                  JOIN articles_fts fts ON a.id = fts.id
+                  WHERE fts MATCH ? AND a.deleted_at IS NULL
+                  ORDER BY bm25(fts) ASC
+                  LIMIT ? OFFSET ?
+              `;
 
-      const result = await this.executeSql(sql, [query, limit, offset]);
-      const items = [];
+        const result = await this.executeSql(sql, [query, limit, offset]);
+        const items = [];
 
-      for (let i = 0; i < result.rows.length; i++) {
-        items.push(result.rows.item(i) as DBArticle);
+        for (let i = 0; i < result.rows.length; i++) {
+          items.push(result.rows.item(i) as DBArticle);
+        }
+
+        // Get total count for search
+        const countSql = `
+                  SELECT COUNT(*) as count FROM articles a
+                  JOIN articles_fts fts ON a.id = fts.id
+                  WHERE fts MATCH ? AND a.deleted_at IS NULL
+              `;
+        const countResult = await this.executeSql(countSql, [query]);
+        const totalCount = countResult.rows.item(0).count;
+
+        return {
+          success: true,
+          data: {
+            items,
+            totalCount,
+            hasMore: offset + limit < totalCount,
+            limit,
+            offset,
+          },
+        };
+      } catch (ftsError) {
+        console.warn('[DatabaseService] FTS5 search failed, falling back to LIKE search:', ftsError);
+        
+        // Fallback to LIKE search if FTS is not available
+        const searchTerm = `%${query}%`;
+        const sql = `
+                  SELECT * FROM articles 
+                  WHERE (title LIKE ? OR summary LIKE ? OR content LIKE ?) 
+                  AND deleted_at IS NULL
+                  ORDER BY updated_at DESC
+                  LIMIT ? OFFSET ?
+              `;
+
+        const result = await this.executeSql(sql, [searchTerm, searchTerm, searchTerm, limit, offset]);
+        const items = [];
+
+        for (let i = 0; i < result.rows.length; i++) {
+          items.push(result.rows.item(i) as DBArticle);
+        }
+
+        // Get total count for fallback search
+        const countSql = `
+                  SELECT COUNT(*) as count FROM articles 
+                  WHERE (title LIKE ? OR summary LIKE ? OR content LIKE ?) 
+                  AND deleted_at IS NULL
+              `;
+        const countResult = await this.executeSql(countSql, [searchTerm, searchTerm, searchTerm]);
+        const totalCount = countResult.rows.item(0).count;
+
+        return {
+          success: true,
+          data: {
+            items,
+            totalCount,
+            hasMore: offset + limit < totalCount,
+            limit,
+            offset,
+          },
+        };
       }
-
-      // Get total count for search
-      const countSql = `
-                SELECT COUNT(*) as count FROM articles a
-                JOIN articles_fts fts ON a.id = fts.id
-                WHERE fts MATCH ? AND a.deleted_at IS NULL
-            `;
-      const countResult = await this.executeSql(countSql, [query]);
-      const totalCount = countResult.rows.item(0).count;
-
-      return {
-        success: true,
-        data: {
-          items,
-          totalCount,
-          hasMore: offset + limit < totalCount,
-          limit,
-          offset,
-        },
-      };
     } catch (error) {
       return {
         success: false,
@@ -1039,6 +1116,32 @@ class DatabaseService implements DatabaseServiceInterface {
     }
   }
 
+  /**
+   * Clear all user data from the database (used during logout)
+   */
+  public async clearAllData(): Promise<DatabaseOperationResult> {
+    try {
+      await this.executeInTransaction(async (ctx) => {
+        // Clear all tables in correct order (respecting foreign key constraints)
+        await ctx.executeSql('DELETE FROM article_labels');
+        await ctx.executeSql('DELETE FROM articles_fts');
+        await ctx.executeSql('DELETE FROM articles');
+        await ctx.executeSql('DELETE FROM labels');
+        await ctx.executeSql('DELETE FROM sync_metadata');
+        
+        console.log('[DatabaseService] All user data cleared from database');
+      });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('[DatabaseService] Failed to clear all data:', error);
+      return {
+        success: false,
+        error: `Failed to clear all data: ${error.message}`,
+      };
+    }
+  }
+
   public async vacuum(): Promise<DatabaseOperationResult> {
     try {
       await this.executeSql('VACUUM;');
@@ -1222,21 +1325,23 @@ export const DatabaseUtilityFunctions: DatabaseUtils = {
       summary: dbArticle.summary,
       content: dbArticle.content,
       url: dbArticle.url,
-      image_url: dbArticle.image_url,
-      read_time: dbArticle.read_time,
-      source_url: dbArticle.source_url,
+      imageUrl: dbArticle.image_url,
+      readTime: dbArticle.read_time,
+      sourceUrl: dbArticle.source_url,
       isArchived: Boolean(dbArticle.is_archived),
       isFavorite: Boolean(dbArticle.is_favorite),
       isRead: Boolean(dbArticle.is_read),
       isModified: Boolean(dbArticle.is_modified),
-      createdAt: new Date(dbArticle.created_at * 1000),
-      updatedAt: new Date(dbArticle.updated_at * 1000),
+      createdAt: new Date(dbArticle.created_at * 1000).toISOString(),
+      updatedAt: new Date(dbArticle.updated_at * 1000).toISOString(),
       syncedAt: dbArticle.synced_at
-        ? new Date(dbArticle.synced_at * 1000)
+        ? new Date(dbArticle.synced_at * 1000).toISOString()
         : undefined,
       deletedAt: dbArticle.deleted_at
-        ? new Date(dbArticle.deleted_at * 1000)
+        ? new Date(dbArticle.deleted_at * 1000).toISOString()
         : undefined,
+      tags: [], // Tags are loaded separately from article_labels table
+      contentUrl: undefined, // Not stored in database, comes from API
     } as Article;
   },
 
@@ -1247,20 +1352,20 @@ export const DatabaseUtilityFunctions: DatabaseUtils = {
       summary: article.summary,
       content: article.content,
       url: article.url,
-      image_url: article.image_url,
-      read_time: article.read_time,
-      source_url: article.source_url,
+      image_url: article.imageUrl,
+      read_time: article.readTime,
+      source_url: article.sourceUrl,
       is_archived: article.isArchived ? 1 : 0,
       is_favorite: article.isFavorite ? 1 : 0,
       is_read: article.isRead ? 1 : 0,
       is_modified: article.isModified ? 1 : 0,
-      created_at: Math.floor(article.createdAt.getTime() / 1000),
-      updated_at: Math.floor(article.updatedAt.getTime() / 1000),
+      created_at: Math.floor(new Date(article.createdAt).getTime() / 1000),
+      updated_at: Math.floor(new Date(article.updatedAt).getTime() / 1000),
       synced_at: article.syncedAt
-        ? Math.floor(article.syncedAt.getTime() / 1000)
+        ? Math.floor(new Date(article.syncedAt).getTime() / 1000)
         : null,
       deleted_at: article.deletedAt
-        ? Math.floor(article.deletedAt.getTime() / 1000)
+        ? Math.floor(new Date(article.deletedAt).getTime() / 1000)
         : null,
     };
   },

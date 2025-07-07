@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { Text } from '../components/ui/Text';
 import { fetchArticleById } from '../services/api';
 import { MainScreenProps } from '../navigation/types';
 

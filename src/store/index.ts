@@ -21,16 +21,21 @@ const storeConfig: ConfigureStoreOptions = {
   reducer: rootReducer,
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
-      // Configure RTK default middleware
+      // Configure RTK default middleware with performance optimizations
       serializableCheck: {
         // Ignore specific action types if needed
         ignoredActions: [],
         // Ignore specific paths in state/actions
-        ignoredActionsPaths: [],
-        ignoredPaths: [],
+        ignoredActionsPaths: ['meta.requestId', 'meta.requestStatus'],
+        ignoredPaths: ['articles.items.content', 'auth.user'],
+        // Reduce check frequency to improve performance
+        warnAfter: 128,
       },
-      // Enable immutability check in development
-      immutableCheck: __DEV__,
+      // Optimize immutability check for large state objects
+      immutableCheck: __DEV__ ? {
+        warnAfter: 128,
+        ignoredPaths: ['articles.items.content'],
+      } : false,
     }).concat(
       // Add custom middleware
       errorHandlerMiddleware,

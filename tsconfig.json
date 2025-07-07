@@ -33,7 +33,8 @@
       "@types/*": ["src/types/*"],
       "@navigation/*": ["src/navigation/*"]
     },
-    "typeRoots": ["./node_modules/@types"]
+    "typeRoots": ["./node_modules/@types"],
+    "types": ["jest"]
   },
   "include": [
     "src/**/*.ts",
