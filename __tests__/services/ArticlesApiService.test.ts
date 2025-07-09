@@ -49,6 +49,18 @@ jest.mock('../../src/utils/connectivityManager', () => ({
   },
 }));
 
+// Mock CacheService
+jest.mock('../../src/services/CacheService', () => ({
+  cacheService: {
+    getArticle: jest.fn().mockReturnValue(null),
+    setArticle: jest.fn(),
+    hasArticle: jest.fn().mockReturnValue(false),
+    deleteArticle: jest.fn(),
+    clearArticles: jest.fn(),
+    getStats: jest.fn().mockReturnValue({ articles: {} }),
+  },
+}));
+
 // Mock RetryManager
 jest.mock('../../src/utils/retryManager', () => ({
   RetryManager: {
@@ -669,7 +681,7 @@ describe('ArticlesApiService', () => {
 
       expect(mockReadeckApiService.getArticle).toHaveBeenCalledWith('123');
       expect(result).toMatchObject(createMockArticle({ id: '123' }));
-      expect(consoleSpy.log).toHaveBeenCalledWith('[ArticlesApiService] Fetching article:', '123');
+      expect(consoleSpy.log).toHaveBeenCalledWith('[ArticlesApiService] Cache miss, fetching article:', '123');
       expect(consoleSpy.log).toHaveBeenCalledWith('[ArticlesApiService] Successfully fetched article:', '123', 'with content length:', 12);
     });
 

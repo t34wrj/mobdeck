@@ -17,6 +17,7 @@ import {
 } from '../types/readeck';
 import { RetryManager } from '../utils/retryManager';
 import { connectivityManager, ConnectivityStatus } from '../utils/connectivityManager';
+import { cacheService } from './CacheService';
 
 /**
  * Interface for article operations expected by Redux slice
@@ -433,6 +434,13 @@ class ArticlesApiService implements IArticlesApiService {
         
         const articlesWithFullContent = await Promise.all(
           articles.map(async (article) => {
+            // Check cache first
+            const cachedArticle = cacheService.getArticle(article.id);
+            if (cachedArticle && cachedArticle.content) {
+              console.log(`[ArticlesApiService] Using cached content for article: ${article.id}`);
+              return { ...article, content: cachedArticle.content };
+            }
+            
             // Check if article needs full content
             if (!article.content || article.content.trim() === '') {
               try {
@@ -448,7 +456,10 @@ class ArticlesApiService implements IArticlesApiService {
                   // Convert and merge full content
                   const fullArticle = this.convertReadeckArticleToArticle(fullContentResponse.data);
                   console.log(`[ArticlesApiService] Full content fetched for article: ${article.id}, content length: ${fullArticle.content?.length || 0}`);
-                  return { ...article, content: fullArticle.content };
+                  const updatedArticle = { ...article, content: fullArticle.content };
+                  // Cache the complete article
+                  cacheService.setArticle(article.id, updatedArticle);
+                  return updatedArticle;
                 } else {
                   console.warn(`[ArticlesApiService] Failed to fetch full content for article: ${article.id}`);
                   return article;
@@ -573,6 +584,9 @@ class ArticlesApiService implements IArticlesApiService {
         await readeckApiService.updateArticle(params.id, updateRequest);
       const article = this.convertReadeckArticleToArticle(response.data);
 
+      // Update cache with new article data
+      cacheService.setArticle(params.id, article);
+
       console.log(
         '[ArticlesApiService] Successfully updated article:',
         article.id
@@ -594,6 +608,9 @@ class ArticlesApiService implements IArticlesApiService {
       });
 
       await readeckApiService.deleteArticle(params.id);
+
+      // Remove from cache
+      cacheService.deleteArticle(params.id);
 
       console.log(
         '[ArticlesApiService] Successfully deleted article:',
@@ -652,7 +669,14 @@ class ArticlesApiService implements IArticlesApiService {
    */
   async getArticle(id: string): Promise<Article> {
     try {
-      console.log('[ArticlesApiService] Fetching article:', id);
+      // Check cache first for optimal performance
+      const cachedArticle = cacheService.getArticle(id);
+      if (cachedArticle) {
+        console.log('[ArticlesApiService] Cache hit for article:', id);
+        return cachedArticle;
+      }
+
+      console.log('[ArticlesApiService] Cache miss, fetching article:', id);
 
       const response: ReadeckApiResponse<ReadeckArticle> =
         await readeckApiService.getArticle(id);
@@ -670,6 +694,9 @@ class ArticlesApiService implements IArticlesApiService {
           // Continue without content on error
         }
       }
+
+      // Cache the article for subsequent requests
+      cacheService.setArticle(id, article);
 
       console.log(
         '[ArticlesApiService] Successfully fetched article:',
@@ -774,6 +801,21 @@ class ArticlesApiService implements IArticlesApiService {
     } catch (error) {
       this.handleApiError(error, 'Get article stats');
     }
+  }
+
+  /**
+   * Clear article cache
+   */
+  clearCache(): void {
+    console.log('[ArticlesApiService] Clearing article cache');
+    cacheService.clearArticles();
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats() {
+    return cacheService.getStats().articles;
   }
 }
 
