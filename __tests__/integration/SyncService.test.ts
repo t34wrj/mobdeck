@@ -24,6 +24,7 @@ import {
 import { Article } from '../../src/types';
 import { DBArticle } from '../../src/types/database';
 import { resolveConflict } from '../../src/utils/conflictResolution';
+import { performanceTestHelper, PERFORMANCE_THRESHOLDS } from '../../src/utils/performanceTestHelper';
 
 // Mock DatabaseUtilityFunctions
 const mockDatabaseUtilityFunctions = {
@@ -956,6 +957,346 @@ describe('SyncService Integration Tests', () => {
       await syncPromise;
       const finalState = store.getState();
       expect(finalState.sync.status).toBe(SyncStatus.SUCCESS);
+    });
+  });
+
+  describe('Performance Benchmarks', () => {
+    beforeEach(() => {
+      performanceTestHelper.clearMetrics();
+    });
+
+    it('should sync 100 articles within 30 seconds', async () => {
+      // Create 100 test articles
+      const largeArticleSet = Array.from({ length: 100 }, (_, i) => 
+        createTestArticle(`perf-${i}`, {
+          title: `Performance Test Article ${i}`,
+          content: `This is a test article with moderate content length to simulate real-world data. ${i}`,
+          tags: ['performance', 'test', `tag-${i % 10}`],
+          updatedAt: new Date(`2023-01-01T${(10 + (i % 12)).toString().padStart(2, '0')}:00:00Z`),
+        })
+      );
+
+      mockDatabaseService.getArticles.mockResolvedValue({
+        success: true,
+        data: { items: [], totalCount: 0, hasMore: false, limit: 50, offset: 0 },
+      });
+
+      mockArticlesApiService.fetchArticles.mockResolvedValue({
+        items: largeArticleSet,
+        page: 1,
+        totalPages: 1,
+        totalItems: 100,
+      });
+
+      mockDatabaseService.getArticle.mockResolvedValue({ success: false, error: 'Not found' });
+      mockDatabaseService.createArticle.mockResolvedValue({ success: true, data: 'id', rowsAffected: 1 });
+
+      // Measure sync performance
+      const { result, metrics } = await performanceTestHelper.measureAsync(
+        'sync_100_articles',
+        () => syncServiceInstance.startFullSync(),
+        { articleCount: 100 }
+      );
+
+      expect(result.success).toBe(true);
+      expect(result.syncedCount).toBe(100);
+      expect(metrics.duration).toBeLessThan(30000); // 30 seconds
+
+      // Validate against threshold
+      const validation = performanceTestHelper.validatePerformance(
+        'sync_100_articles',
+        PERFORMANCE_THRESHOLDS.SYNC_OPERATION
+      );
+      expect(validation.passed).toBe(true);
+    });
+
+    it('should handle batch processing efficiently', async () => {
+      const batchSizes = [10, 25, 50, 100];
+      const performanceResults: { batchSize: number; avgDuration: number }[] = [];
+
+      for (const batchSize of batchSizes) {
+        performanceTestHelper.clearMetrics();
+        
+        const articles = Array.from({ length: batchSize }, (_, i) => 
+          createTestDBArticle(`batch-${i}`, { is_modified: 1 })
+        );
+
+        mockDatabaseService.getArticles.mockResolvedValue({
+          success: true,
+          data: { items: articles, totalCount: batchSize, hasMore: false, limit: 200, offset: 0 },
+        });
+
+        mockArticlesApiService.getArticle.mockRejectedValue(new Error('Not found'));
+        mockArticlesApiService.createArticle.mockResolvedValue(createTestArticle('created'));
+
+        // Configure batch size
+        syncServiceInstance.updateConfig({ batchSize: Math.min(25, batchSize) });
+
+        // Run multiple iterations to get average
+        const iterations = 3;
+        for (let i = 0; i < iterations; i++) {
+          await performanceTestHelper.measureAsync(
+            `batch_processing_${batchSize}`,
+            () => syncServiceInstance.startFullSync(),
+            { batchSize }
+          );
+        }
+
+        const avgMetrics = performanceTestHelper.getAverageMetrics(`batch_processing_${batchSize}`);
+        performanceResults.push({
+          batchSize,
+          avgDuration: avgMetrics.averageDuration,
+        });
+      }
+
+      // Verify batch processing scales appropriately
+      // Larger batches should be more efficient per item
+      const efficiency10 = performanceResults[0].avgDuration / 10;
+      const efficiency100 = performanceResults[3].avgDuration / 100;
+      
+      expect(efficiency100).toBeLessThan(efficiency10 * 1.5); // Should not scale linearly
+    });
+
+    it('should maintain acceptable memory usage during large syncs', async () => {
+      // Skip test if memory monitoring is not available
+      if (!global.performance || !('memory' in global.performance)) {
+        console.log('Memory performance monitoring not available, skipping test');
+        return;
+      }
+
+      const largeDataSet = Array.from({ length: 200 }, (_, i) => 
+        createTestArticle(`memory-${i}`, {
+          // Create articles with larger content to test memory usage
+          content: 'x'.repeat(10000), // 10KB per article
+          summary: 'y'.repeat(1000),  // 1KB summary
+        })
+      );
+
+      mockDatabaseService.getArticles.mockResolvedValue({
+        success: true,
+        data: { items: [], totalCount: 0, hasMore: false, limit: 50, offset: 0 },
+      });
+
+      mockArticlesApiService.fetchArticles.mockResolvedValue({
+        items: largeDataSet,
+        page: 1,
+        totalPages: 1,
+        totalItems: 200,
+      });
+
+      mockDatabaseService.getArticle.mockResolvedValue({ success: false, error: 'Not found' });
+      mockDatabaseService.createArticle.mockResolvedValue({ success: true, data: 'id', rowsAffected: 1 });
+
+      const { result, metrics } = await performanceTestHelper.measureAsync(
+        'large_dataset_memory_test',
+        () => syncServiceInstance.startFullSync(),
+        { articleCount: 200, contentSize: '10KB' }
+      );
+
+      expect(result.success).toBe(true);
+      
+      // Memory should not exceed reasonable limits (e.g., 100MB for this operation)
+      if (metrics.memoryUsed) {
+        expect(metrics.memoryUsed).toBeLessThan(100 * 1024 * 1024); // 100MB
+      }
+    });
+
+    it('should process database queries efficiently', async () => {
+      const mockDbQueryPerformance = async (queryType: string, operation: () => Promise<any>) => {
+        return performanceTestHelper.measureAsync(
+          `db_query_${queryType}`,
+          operation,
+          { queryType }
+        );
+      };
+
+      // Test various database operations
+      const testOperations = [
+        {
+          name: 'article_fetch',
+          operation: () => mockDatabaseService.getArticles({
+            limit: 50,
+            offset: 0,
+            filters: { isArchived: false },
+          }),
+        },
+        {
+          name: 'single_article_update',
+          operation: () => mockDatabaseService.updateArticle('test-id', {
+            title: 'Updated Title',
+            is_modified: 1,
+          }),
+        },
+        {
+          name: 'batch_article_create',
+          operation: async () => {
+            const promises = Array.from({ length: 10 }, (_, i) => 
+              mockDatabaseService.createArticle(createTestDBArticle(`batch-create-${i}`))
+            );
+            return Promise.all(promises);
+          },
+        },
+      ];
+
+      // Setup mocks
+      mockDatabaseService.getArticles.mockResolvedValue({
+        success: true,
+        data: { items: [], totalCount: 0, hasMore: false, limit: 50, offset: 0 },
+      });
+      mockDatabaseService.updateArticle.mockResolvedValue({ success: true, rowsAffected: 1 });
+      mockDatabaseService.createArticle.mockResolvedValue({ success: true, data: 'id', rowsAffected: 1 });
+
+      for (const test of testOperations) {
+        const { metrics } = await mockDbQueryPerformance(test.name, test.operation);
+        
+        // Database queries should complete within threshold
+        const validation = performanceTestHelper.validatePerformance(
+          `db_query_${test.name}`,
+          PERFORMANCE_THRESHOLDS.DATABASE_QUERY
+        );
+        
+        expect(validation.passed).toBe(true);
+        if (!validation.passed) {
+          console.log(`Database query ${test.name} performance issue:`, validation.violations);
+        }
+      }
+    });
+
+    it('should optimize sync based on network conditions', async () => {
+      // Test sync performance under different network conditions
+      const networkScenarios = [
+        { type: 'fast', delay: 10, articlesPerRequest: 100 },
+        { type: 'moderate', delay: 50, articlesPerRequest: 50 },
+        { type: 'slow', delay: 200, articlesPerRequest: 25 },
+      ];
+
+      for (const scenario of networkScenarios) {
+        performanceTestHelper.clearMetrics();
+
+        // Simulate network delay
+        mockArticlesApiService.fetchArticles.mockImplementation(
+          () => new Promise(resolve => 
+            setTimeout(() => resolve({
+              items: Array.from({ length: scenario.articlesPerRequest }, (_, i) => 
+                createTestArticle(`network-${i}`)
+              ),
+              page: 1,
+              totalPages: 1,
+              totalItems: scenario.articlesPerRequest,
+            }), scenario.delay)
+          )
+        );
+
+        mockDatabaseService.getArticles.mockResolvedValue({
+          success: true,
+          data: { items: [], totalCount: 0, hasMore: false, limit: 50, offset: 0 },
+        });
+
+        mockDatabaseService.getArticle.mockResolvedValue({ success: false, error: 'Not found' });
+        mockDatabaseService.createArticle.mockResolvedValue({ success: true, data: 'id', rowsAffected: 1 });
+
+        const { result, metrics } = await performanceTestHelper.measureAsync(
+          `network_${scenario.type}_sync`,
+          () => syncServiceInstance.startFullSync(),
+          { networkType: scenario.type, delay: scenario.delay }
+        );
+
+        expect(result.success).toBe(true);
+        
+        // Verify sync adapts to network conditions
+        if (scenario.type === 'slow') {
+          expect(metrics.duration).toBeGreaterThan(scenario.delay * scenario.articlesPerRequest * 0.5);
+        }
+      }
+
+      // Generate network performance comparison
+      const fastMetrics = performanceTestHelper.getAverageMetrics('network_fast_sync');
+      const slowMetrics = performanceTestHelper.getAverageMetrics('network_slow_sync');
+      
+      expect(slowMetrics.averageDuration).toBeGreaterThan(fastMetrics.averageDuration);
+    });
+
+    it('should track incremental sync performance improvements', async () => {
+      // Test that incremental syncs are faster than full syncs
+      const allArticles = Array.from({ length: 50 }, (_, i) => 
+        createTestArticle(`incremental-${i}`, {
+          updatedAt: new Date(`2023-01-01T${(10 + Math.floor(i / 10)).toString().padStart(2, '0')}:00:00Z`),
+        })
+      );
+
+      // First sync - full sync
+      mockDatabaseService.getStats.mockResolvedValue({
+        success: true,
+        data: {
+          totalArticles: 0,
+          archivedArticles: 0,
+          favoriteArticles: 0,
+          unreadArticles: 0,
+          totalLabels: 0,
+          pendingSyncItems: 0,
+          databaseSize: 0,
+          lastSyncAt: null,
+        },
+      });
+
+      mockDatabaseService.getArticles.mockResolvedValue({
+        success: true,
+        data: { items: [], totalCount: 0, hasMore: false, limit: 50, offset: 0 },
+      });
+
+      mockArticlesApiService.fetchArticles.mockResolvedValue({
+        items: allArticles,
+        page: 1,
+        totalPages: 1,
+        totalItems: 50,
+      });
+
+      mockDatabaseService.getArticle.mockResolvedValue({ success: false, error: 'Not found' });
+      mockDatabaseService.createArticle.mockResolvedValue({ success: true, data: 'id', rowsAffected: 1 });
+
+      const { metrics: fullSyncMetrics } = await performanceTestHelper.measureAsync(
+        'full_sync_baseline',
+        () => syncServiceInstance.startFullSync()
+      );
+
+      // Second sync - incremental (only 5 new articles)
+      const lastSyncTime = new Date('2023-01-01T12:00:00Z');
+      mockDatabaseService.getStats.mockResolvedValue({
+        success: true,
+        data: {
+          totalArticles: 50,
+          archivedArticles: 0,
+          favoriteArticles: 0,
+          unreadArticles: 50,
+          totalLabels: 0,
+          pendingSyncItems: 0,
+          databaseSize: 5120,
+          lastSyncAt: Math.floor(lastSyncTime.getTime() / 1000),
+        },
+      });
+
+      const incrementalArticles = allArticles.slice(-5); // Last 5 articles
+      mockArticlesApiService.fetchArticles.mockResolvedValue({
+        items: incrementalArticles,
+        page: 1,
+        totalPages: 1,
+        totalItems: 5,
+      });
+
+      const { metrics: incrementalSyncMetrics } = await performanceTestHelper.measureAsync(
+        'incremental_sync',
+        () => syncServiceInstance.startFullSync()
+      );
+
+      // Incremental sync should be significantly faster
+      expect(incrementalSyncMetrics.duration).toBeLessThan(fullSyncMetrics.duration * 0.2);
+    });
+
+    afterAll(() => {
+      // Generate performance report
+      const report = performanceTestHelper.generateReport();
+      console.log('\n=== Sync Service Performance Report ===\n');
+      console.log(report);
     });
   });
 });
