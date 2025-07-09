@@ -254,6 +254,10 @@ emulatormenu.png
 screenshot*.png
 emulator*.png
 
+# Generated icon assets (keep final icons in android/app/src/main/res/mipmap-*)
+assets/icons/
+android/app/src/main/res/drawable/play_store_512.png
+
 # Android generated drawable assets (React Navigation icons)
 android/app/src/main/res/drawable-*/node_modules_*
 android/app/src/main/res/drawable-*/react*
