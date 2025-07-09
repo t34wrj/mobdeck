@@ -261,3 +261,7 @@ android/app/src/main/res/raw/keep.xml
 
 # Android duplicate structure (build artifacts)
 android/android/
+
+# Performance reports and temporary test files
+performance-report.txt
+*.skip

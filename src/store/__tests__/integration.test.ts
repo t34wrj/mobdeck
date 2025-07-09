@@ -42,15 +42,21 @@ describe('Redux Store Integration', () => {
 
     // Verify auth state structure
     expect(state.auth).toEqual({
-      isAuthenticated: false,
       user: null,
-    });
-
-    // Verify articles state structure
-    expect(state.articles).toEqual({
-      articles: [],
+      token: null,
+      isAuthenticated: false,
       loading: false,
       error: null,
+      lastTokenRefresh: undefined,
     });
+
+    // Verify articles state structure (it uses entity adapter)
+    expect(state.articles).toHaveProperty('ids');
+    expect(state.articles).toHaveProperty('entities');
+    expect(state.articles).toHaveProperty('loading');
+    expect(state.articles).toHaveProperty('error');
+    expect(state.articles).toHaveProperty('pagination');
+    expect(state.articles.ids).toEqual([]);
+    expect(state.articles.entities).toEqual({});
   });
 });

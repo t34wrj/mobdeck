@@ -63,7 +63,8 @@ class ReadeckApiService implements IReadeckApiService {
 
   constructor(config: Partial<ReadeckApiConfig> = {}) {
     // Default configuration with security enforcement
-    const defaultBaseUrl = __DEV__ ? 'http://localhost:8000/api' : 'https://localhost:8000/api';
+    const isDevMode = typeof __DEV__ !== 'undefined' ? __DEV__ : false;
+    const defaultBaseUrl = isDevMode ? 'http://localhost:8000/api' : 'https://localhost:8000/api';
     this.config = {
       baseUrl: config.baseUrl || defaultBaseUrl,
       timeout: 30000, // 30 seconds

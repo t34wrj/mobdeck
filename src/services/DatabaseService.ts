@@ -40,7 +40,7 @@ import {
 } from '../types/database';
 
 // Enable debugging in development
-if (__DEV__) {
+if (typeof __DEV__ !== 'undefined' && __DEV__) {
   SQLite.DEBUG(true);
   SQLite.enablePromise(true);
 }

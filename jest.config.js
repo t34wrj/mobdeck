@@ -3,7 +3,14 @@ module.exports = {
   setupFilesAfterEnv: ['<rootDir>/__tests__/setup.ts'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testMatch: ['**/__tests__/**/*.(ts|tsx|js)', '**/*.(test|spec).(ts|tsx|js)'],
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/android/', '<rootDir>/ios/'],
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules/', 
+    '<rootDir>/android/', 
+    '<rootDir>/ios/',
+    '<rootDir>/__tests__/mocks/',
+    '<rootDir>/__tests__/e2e/helpers/',
+    '<rootDir>/__tests__/setup.ts'
+  ],
   transform: {
     '^.+\\.(ts|tsx)$': 'babel-jest',
     '^.+\\.js$': 'babel-jest',

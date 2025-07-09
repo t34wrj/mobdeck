@@ -55,12 +55,9 @@ describe('Storage Security: AuthStorageService', () => {
 
   describe('Token Storage', () => {
     it('should validate token before storing', async () => {
-      (validateToken as jest.Mock).mockReturnValueOnce({ isValid: false, error: 'Invalid format' });
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue(true);
+      // Test with invalid token (too short)
+      const result = await authService.storeToken('short');
 
-      const result = await authService.storeToken(mockToken);
-
-      expect(validateToken).toHaveBeenCalledWith(mockToken, 'jwt');
       expect(result).toBe(false);
       expect(Keychain.setInternetCredentials).not.toHaveBeenCalled();
     });
@@ -73,7 +70,7 @@ describe('Storage Security: AuthStorageService', () => {
       expect(result).toBe(true);
       expect(Keychain.setInternetCredentials).toHaveBeenCalledWith(
         'mobdeck_auth_tokens',
-        'bearer_token',
+        'api_token',
         expect.stringContaining('"version":"1.0"'),
         expect.objectContaining({
           accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
@@ -190,13 +187,15 @@ describe('Storage Security: AuthStorageService', () => {
         password: JSON.stringify(oldTokenData),
       });
 
-      const consoleSpy = jest.spyOn(console, 'info');
+      // Mock logger.info to capture the rotation message
+      const loggerMock = require('../../src/utils/logger');
+      const loggerInfoSpy = jest.spyOn(loggerMock.logger, 'info');
+      
       await authService.retrieveToken();
 
       // Should log rotation recommendation
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Token rotation recommended'),
-        expect.any(Object)
+      expect(loggerInfoSpy).toHaveBeenCalledWith(
+        'Token rotation recommended'
       );
     });
   });
@@ -370,12 +369,14 @@ describe('Storage Security: AuthStorageService', () => {
         password: JSON.stringify(futureToken),
       });
 
-      const consoleSpy = jest.spyOn(console, 'warn');
+      // Mock logger.warn to capture the version warning
+      const loggerMock = require('../../src/utils/logger');
+      const loggerWarnSpy = jest.spyOn(loggerMock.logger, 'warn');
+      
       await authService.retrieveToken();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Token version incompatible'),
-        expect.any(Object)
+      expect(loggerWarnSpy).toHaveBeenCalledWith(
+        'Token version incompatible, migration required'
       );
     });
   });

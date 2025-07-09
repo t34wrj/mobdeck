@@ -733,9 +733,9 @@ describe('DatabaseUtils', () => {
             expect(article.isFavorite).toBe(false);
             expect(article.isRead).toBe(true);
             expect(article.isModified).toBe(false);
-            expect(article.createdAt).toBeInstanceOf(Date);
-            expect(article.updatedAt).toBeInstanceOf(Date);
-            expect(article.syncedAt).toBeInstanceOf(Date);
+            expect(article.createdAt).toBe('2022-01-01T00:00:00.000Z');
+            expect(article.updatedAt).toBe('2022-01-01T00:01:40.000Z');
+            expect(article.syncedAt).toBe('2022-01-01T00:03:20.000Z');
             expect(article.deletedAt).toBeUndefined();
         });
 

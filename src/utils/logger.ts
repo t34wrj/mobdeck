@@ -77,10 +77,10 @@ class Logger {
 
   private getDefaultConfig(): LoggerConfig {
     return {
-      level: __DEV__ ? 'debug' : 'warn',
-      enableConsole: __DEV__,
+      level: (typeof __DEV__ !== 'undefined' && __DEV__) ? 'debug' : 'warn',
+      enableConsole: (typeof __DEV__ !== 'undefined' && __DEV__),
       enableStorage: true,
-      enablePerformanceLogging: __DEV__,
+      enablePerformanceLogging: (typeof __DEV__ !== 'undefined' && __DEV__),
       maxStorageSize: 1024 * 1024 * 2, // 2MB
       maxStorageEntries: 1000,
       rotationThreshold: 80, // 80%
@@ -325,7 +325,7 @@ class Logger {
     
     const startTime = this.performanceMarks.get(operation);
     if (!startTime) {
-      this.debug('Performance timer not found', { operation });
+      this.warn('Performance timer not found', { operation });
       return;
     }
     
@@ -347,9 +347,9 @@ class Logger {
       context,
     });
     
-    // Log slow operations as debug in development
+    // Log slow operations as warning
     if (duration > 1000) { // > 1 second
-      this.debug('Slow operation detected', {
+      this.warn('Slow operation detected', {
         operation,
         duration: `${duration}ms`,
         context,

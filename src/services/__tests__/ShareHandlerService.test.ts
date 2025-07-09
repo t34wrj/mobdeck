@@ -11,7 +11,15 @@ import { SharedData } from '../../types';
 // Mock dependencies
 jest.mock('../ArticlesApiService');
 jest.mock('../../utils/urlValidation');
+// Mock the ShareModule while preserving other react-native mocks
 jest.mock('react-native', () => ({
+  Platform: {
+    OS: 'ios',
+    select: jest.fn((dict) => dict.ios || dict.default),
+  },
+  Alert: {
+    alert: jest.fn(),
+  },
   NativeModules: {
     ShareModule: {
       getSharedData: jest.fn(),

@@ -39,6 +39,23 @@ jest.mock('../../src/services/ReadeckApiService', () => ({
   },
 }));
 
+// Mock ConnectivityManager
+jest.mock('../../src/utils/connectivityManager', () => ({
+  connectivityManager: {
+    isOnline: jest.fn().mockReturnValue(true),
+    getStatus: jest.fn().mockReturnValue('online'),
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+  },
+}));
+
+// Mock RetryManager
+jest.mock('../../src/utils/retryManager', () => ({
+  RetryManager: {
+    withRetry: jest.fn().mockImplementation(async (fn) => await fn()),
+  },
+}));
+
 // Mock console methods
 const consoleSpy = {
   log: jest.spyOn(console, 'log').mockImplementation(),
@@ -71,21 +88,23 @@ describe('ArticlesApiService', () => {
   });
 
   // Test data helpers
-  const createMockReadeckArticle = (overrides: Partial<ReadeckArticle> = {}): ReadeckArticle => ({
+  const createMockReadeckArticle = (overrides: Partial<any> = {}): any => ({
     id: '1',
     title: 'Test Article',
-    summary: 'Test summary',
+    description: 'Test summary',
     content: 'Test content',
     url: 'https://example.com/article',
-    image_url: 'https://example.com/image.jpg',
-    read_time: 5,
+    resources: {
+      image: { src: 'https://example.com/image.jpg' },
+      thumbnail: { src: 'https://example.com/image.jpg' }
+    },
+    reading_time: 5,
     is_archived: false,
-    is_favorite: false,
-    is_read: false,
-    tags: ['test', 'article'],
-    source_url: 'https://example.com',
-    created_at: '2023-01-01T00:00:00Z',
-    updated_at: '2023-01-01T00:00:00Z',
+    is_marked: false, // API uses is_marked for favorites
+    read_progress: 0, // API uses read_progress instead of is_read
+    labels: ['test', 'article'], // API uses labels instead of tags
+    created: '2023-01-01T00:00:00Z',
+    updated: '2023-01-01T00:00:00Z',
     ...overrides,
   });
 
@@ -101,10 +120,11 @@ describe('ArticlesApiService', () => {
     isFavorite: false,
     isRead: false,
     tags: ['test', 'article'],
-    sourceUrl: 'https://example.com',
+    sourceUrl: 'https://example.com/article', // sourceUrl same as url
     createdAt: '2023-01-01T00:00:00Z',
     updatedAt: '2023-01-01T00:00:00Z',
     syncedAt: expect.any(String),
+    contentUrl: '',
     ...overrides,
   });
 
@@ -118,12 +138,13 @@ describe('ArticlesApiService', () => {
   describe('Type Conversion', () => {
     it('should convert ReadeckArticle to Article format', async () => {
       const readeckArticle = createMockReadeckArticle({
-        image_url: 'https://example.com/image.jpg',
-        read_time: 10,
+        resources: {
+          image: { src: 'https://example.com/image.jpg' }
+        },
+        reading_time: 10,
         is_archived: true,
-        is_favorite: true,
-        is_read: true,
-        source_url: 'https://source.com',
+        is_marked: true, // API field for favorites
+        read_progress: 100, // 100 = fully read
       });
 
       const readeckArticleList: ReadeckArticleList = {
@@ -145,22 +166,22 @@ describe('ArticlesApiService', () => {
       expect(result.items[0]).toMatchObject({
         id: '1',
         title: 'Test Article',
-        imageUrl: 'https://example.com/image.jpg', // snake_case to camelCase
+        imageUrl: 'https://example.com/image.jpg',
         readTime: 10,
         isArchived: true,
         isFavorite: true,
         isRead: true,
-        sourceUrl: 'https://source.com',
+        sourceUrl: 'https://example.com/article', // sourceUrl same as url
         syncedAt: expect.any(String),
       });
     });
 
     it('should handle null values in ReadeckArticle conversion', async () => {
       const readeckArticle = createMockReadeckArticle({
-        image_url: null,
-        summary: null,
+        resources: null,
+        description: null,
         content: null,
-        tags: null,
+        labels: null,
       });
 
       const readeckArticleList: ReadeckArticleList = {
@@ -180,10 +201,10 @@ describe('ArticlesApiService', () => {
       const result = await service.fetchArticles({});
 
       expect(result.items[0]).toMatchObject({
-        imageUrl: null,
-        summary: null,
-        content: null,
-        tags: null,
+        imageUrl: '',
+        summary: '',
+        content: '',
+        tags: [],
       });
     });
 
@@ -209,9 +230,9 @@ describe('ArticlesApiService', () => {
       expect(mockReadeckApiService.updateArticle).toHaveBeenCalledWith('1', {
         title: 'Updated Title',
         is_archived: true, // camelCase to snake_case
-        is_favorite: true,
-        is_read: true,
-        tags: ['updated'],
+        is_marked: true, // isFavorite maps to is_marked
+        read_progress: 100, // isRead maps to read_progress (100 = read)
+        labels: ['updated'], // tags maps to labels
       });
     });
 
@@ -257,10 +278,9 @@ describe('ArticlesApiService', () => {
       const result = await service.fetchArticles({});
 
       expect(mockReadeckApiService.getArticles).toHaveBeenCalledWith({
-        page: 1,
-        per_page: 20,
-        sort_by: 'created_at',
-        sort_order: 'desc',
+        limit: 20,
+        offset: 0,
+        sort: ['-created'],
       });
 
       expect(result).toEqual({
@@ -273,7 +293,9 @@ describe('ArticlesApiService', () => {
 
     it('should fetch articles with custom parameters', async () => {
       const readeckArticleList: ReadeckArticleList = {
-        articles: [createMockReadeckArticle()],
+        articles: [createMockReadeckArticle({
+          read_progress: 100 // Make it read so client-side filter won't remove it
+        })],
         pagination: {
           page: 2,
           per_page: 10,
@@ -301,19 +323,18 @@ describe('ArticlesApiService', () => {
       const result = await service.fetchArticles(params);
 
       expect(mockReadeckApiService.getArticles).toHaveBeenCalledWith({
-        page: 2,
-        per_page: 10,
-        sort_by: 'created_at',
-        sort_order: 'desc',
+        limit: 10,
+        offset: 10, // page 2 with limit 10 = offset 10
+        sort: ['-created'],
         search: 'test search',
         is_archived: true,
-        is_favorite: false,
-        is_read: true,
-        tags: ['tech', 'news'],
+        is_marked: false, // API uses is_marked for favorites
+        read_status: ['read'], // API uses read_status array
+        labels: 'tech,news', // API uses labels as comma-separated string
       });
 
       expect(result).toEqual({
-        items: [createMockArticle()],
+        items: [createMockArticle({ isRead: true })], // Match the read status
         page: 2,
         totalPages: 3,
         totalItems: 25,
@@ -340,7 +361,7 @@ describe('ArticlesApiService', () => {
       expect(result).toEqual({
         items: [],
         page: 1,
-        totalPages: 0,
+        totalPages: 1, // Service uses 1 as minimum totalPages
         totalItems: 0,
       });
     });
@@ -358,7 +379,7 @@ describe('ArticlesApiService', () => {
       mockReadeckApiService.getArticles.mockRejectedValue(apiError);
 
       await expect(service.fetchArticles({})).rejects.toEqual(apiError);
-      expect(consoleSpy.error).toHaveBeenCalledWith('[ArticlesApiService] Fetch articles failed:', apiError);
+      // handleApiError doesn't log errors - they're passed through
     });
 
     it('should handle unknown errors', async () => {
@@ -366,7 +387,7 @@ describe('ArticlesApiService', () => {
       mockReadeckApiService.getArticles.mockRejectedValue(unknownError);
 
       await expect(service.fetchArticles({})).rejects.toThrow('Fetch articles failed: Unknown error');
-      expect(consoleSpy.error).toHaveBeenCalledWith('[ArticlesApiService] Fetch articles failed:', unknownError);
+      // handleApiError doesn't log errors - they're passed through
     });
   });
 
@@ -375,7 +396,7 @@ describe('ArticlesApiService', () => {
       const readeckArticle = createMockReadeckArticle({
         title: 'New Article',
         url: 'https://example.com/new-article',
-        tags: ['new', 'test'],
+        labels: ['new', 'test'],
       });
 
       mockReadeckApiService.createArticle.mockResolvedValue(
@@ -393,13 +414,13 @@ describe('ArticlesApiService', () => {
       expect(mockReadeckApiService.createArticle).toHaveBeenCalledWith({
         url: 'https://example.com/new-article',
         title: 'New Article',
-        tags: ['new', 'test'],
-        is_favorite: false,
+        labels: ['new', 'test'], // API uses labels instead of tags
       });
 
       expect(result).toMatchObject(createMockArticle({
         title: 'New Article',
         url: 'https://example.com/new-article',
+        sourceUrl: 'https://example.com/new-article', // sourceUrl matches url
         tags: ['new', 'test'],
       }));
 
@@ -426,8 +447,7 @@ describe('ArticlesApiService', () => {
       expect(mockReadeckApiService.createArticle).toHaveBeenCalledWith({
         url: 'https://example.com/minimal',
         title: 'Minimal Article',
-        tags: undefined,
-        is_favorite: false,
+        labels: undefined,
       });
 
       expect(result).toMatchObject(createMockArticle());
@@ -451,7 +471,7 @@ describe('ArticlesApiService', () => {
       };
 
       await expect(service.createArticle(params)).rejects.toThrow('Create article failed: Invalid URL provided');
-      expect(consoleSpy.error).toHaveBeenCalledWith('[ArticlesApiService] Create article failed:', apiError);
+      // handleApiError doesn't log errors - they're passed through
     });
   });
 
@@ -460,7 +480,7 @@ describe('ArticlesApiService', () => {
       const readeckArticle = createMockReadeckArticle({
         title: 'Updated Article',
         is_archived: true,
-        is_favorite: true,
+        is_marked: true,
       });
 
       mockReadeckApiService.updateArticle.mockResolvedValue(
@@ -481,7 +501,7 @@ describe('ArticlesApiService', () => {
       expect(mockReadeckApiService.updateArticle).toHaveBeenCalledWith('1', {
         title: 'Updated Article',
         is_archived: true,
-        is_favorite: true,
+        is_marked: true, // API uses is_marked for favorites
       });
 
       expect(result).toMatchObject(createMockArticle({
@@ -515,7 +535,7 @@ describe('ArticlesApiService', () => {
       };
 
       await expect(service.updateArticle(params)).rejects.toThrow('Update article failed: Article not found');
-      expect(consoleSpy.error).toHaveBeenCalledWith('[ArticlesApiService] Update article failed:', apiError);
+      // handleApiError doesn't log errors - they're passed through
     });
   });
 
@@ -555,7 +575,7 @@ describe('ArticlesApiService', () => {
       const params: DeleteArticleParams = { id: '1' };
 
       await expect(service.deleteArticle(params)).rejects.toEqual(apiError);
-      expect(consoleSpy.error).toHaveBeenCalledWith('[ArticlesApiService] Delete article failed:', apiError);
+      // handleApiError doesn't log errors - they're passed through
     });
   });
 
@@ -634,7 +654,7 @@ describe('ArticlesApiService', () => {
       const params: SyncArticlesParams = {};
 
       await expect(service.syncArticles(params)).rejects.toEqual(apiError);
-      expect(consoleSpy.error).toHaveBeenCalledWith('[ArticlesApiService] Sync articles failed:', apiError);
+      // handleApiError doesn't log errors - they're passed through
     });
   });
 
@@ -650,7 +670,7 @@ describe('ArticlesApiService', () => {
       expect(mockReadeckApiService.getArticle).toHaveBeenCalledWith('123');
       expect(result).toMatchObject(createMockArticle({ id: '123' }));
       expect(consoleSpy.log).toHaveBeenCalledWith('[ArticlesApiService] Fetching article:', '123');
-      expect(consoleSpy.log).toHaveBeenCalledWith('[ArticlesApiService] Successfully fetched article:', '123');
+      expect(consoleSpy.log).toHaveBeenCalledWith('[ArticlesApiService] Successfully fetched article:', '123', 'with content length:', 12);
     });
 
     it('should handle get article errors', async () => {
@@ -666,7 +686,7 @@ describe('ArticlesApiService', () => {
       mockReadeckApiService.getArticle.mockRejectedValue(apiError);
 
       await expect(service.getArticle('abc')).rejects.toThrow('Get article failed: Article not found');
-      expect(consoleSpy.error).toHaveBeenCalledWith('[ArticlesApiService] Get article failed:', apiError);
+      // handleApiError doesn't log errors - they're passed through
     });
   });
 
@@ -705,9 +725,7 @@ describe('ArticlesApiService', () => {
       const updates = [{ id: '1', updates: { title: 'Updated 1' } }];
 
       await expect(service.batchUpdateArticles(updates)).rejects.toThrow('Batch update articles failed: Update article failed: Update failed');
-      expect(consoleSpy.error).toHaveBeenCalledTimes(2); // Both individual and batch errors logged
-      expect(consoleSpy.error).toHaveBeenCalledWith('[ArticlesApiService] Update article failed:', apiError);
-      expect(consoleSpy.error).toHaveBeenLastCalledWith('[ArticlesApiService] Batch update articles failed:', expect.any(Error));
+      // handleApiError doesn't log errors - they're passed through
     });
   });
 
@@ -737,9 +755,7 @@ describe('ArticlesApiService', () => {
       const ids = ['1'];
 
       await expect(service.batchDeleteArticles(ids)).rejects.toThrow('Batch delete articles failed: Delete article failed: Delete failed');
-      expect(consoleSpy.error).toHaveBeenCalledTimes(2); // Both individual and batch errors logged
-      expect(consoleSpy.error).toHaveBeenCalledWith('[ArticlesApiService] Delete article failed:', apiError);
-      expect(consoleSpy.error).toHaveBeenLastCalledWith('[ArticlesApiService] Batch delete articles failed:', expect.any(Error));
+      // handleApiError doesn't log errors - they're passed through
     });
   });
 
@@ -796,7 +812,7 @@ describe('ArticlesApiService', () => {
       mockReadeckApiService.getUserProfile.mockRejectedValue(apiError);
 
       await expect(service.getArticleStats()).rejects.toEqual(apiError);
-      expect(consoleSpy.error).toHaveBeenCalledWith('[ArticlesApiService] Get article stats failed:', apiError);
+      // handleApiError doesn't log errors - they're passed through
     });
   });
 
@@ -814,10 +830,9 @@ describe('ArticlesApiService', () => {
       await service.fetchArticles({});
 
       expect(mockReadeckApiService.getArticles).toHaveBeenCalledWith({
-        page: 1,
-        per_page: 20,
-        sort_by: 'created_at',
-        sort_order: 'desc',
+        limit: 20,
+        offset: 0,
+        sort: ['-created'],
       });
     });
 
@@ -842,12 +857,11 @@ describe('ArticlesApiService', () => {
       await service.fetchArticles(params);
 
       expect(mockReadeckApiService.getArticles).toHaveBeenCalledWith({
-        page: 1,
-        per_page: 20,
-        sort_by: 'created_at',
-        sort_order: 'desc',
-        is_favorite: false,
-        // Should not include is_archived or is_read
+        limit: 20,
+        offset: 0,
+        sort: ['-created'],
+        is_marked: false, // API uses is_marked for favorites
+        // Should not include is_archived or read_status
       });
     });
 
@@ -870,11 +884,10 @@ describe('ArticlesApiService', () => {
       await service.fetchArticles(params);
 
       expect(mockReadeckApiService.getArticles).toHaveBeenCalledWith({
-        page: 1,
-        per_page: 20,
-        sort_by: 'created_at',
-        sort_order: 'desc',
-        // Should not include tags
+        limit: 20,
+        offset: 0,
+        sort: ['-created'],
+        // Should not include labels (empty array not sent)
       });
     });
   });

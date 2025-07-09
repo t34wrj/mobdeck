@@ -58,6 +58,20 @@ jest.mock('../BackgroundSyncService', () => ({
 describe('BackgroundTaskManager', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Reset Platform to Android for tests
+    (Platform as any).OS = 'android';
+    (Platform as any).Version = 33;
+    
+    // Reset singleton instance state
+    const manager = BackgroundTaskManager.getInstance();
+    (manager as any).isInitialized = false;
+  });
+
+  afterEach(() => {
+    // Clean up any background tasks and listeners
+    const manager = BackgroundTaskManager.getInstance();
+    manager.cleanup();
   });
 
   describe('initialization', () => {
@@ -76,6 +90,10 @@ describe('BackgroundTaskManager', () => {
     it('should initialize background sync service integration', async () => {
       (Platform as any).OS = 'android';
       const manager = BackgroundTaskManager.getInstance();
+      
+      // Ensure we're testing a fresh instance
+      (manager as any).isInitialized = false;
+      
       await manager.initialize();
       expect(backgroundSyncService.initialize).toHaveBeenCalled();
     });
@@ -101,11 +119,16 @@ describe('BackgroundTaskManager', () => {
 
   describe('permission checking', () => {
     it('should check required permissions on Android 13+', async () => {
+      (Platform as any).OS = 'android';
       (Platform as any).Version = 33;
       const { PermissionsAndroid } = require('react-native');
       PermissionsAndroid.check.mockResolvedValue(true);
 
       const manager = BackgroundTaskManager.getInstance();
+      
+      // Ensure we're testing a fresh instance
+      (manager as any).isInitialized = false;
+      
       await manager.initialize();
 
       expect(PermissionsAndroid.check).toHaveBeenCalledWith(
