@@ -79,6 +79,7 @@ class ErrorHandler {
 
   private setupGlobalErrorHandlers(): void {
     if (typeof global !== 'undefined') {
+      // Only add breadcrumb without intercepting console.error to avoid double logging
       const originalConsoleError = console.error;
       console.error = (...args: any[]) => {
         this.addBreadcrumb(`Console Error: ${args.join(' ')}`);
@@ -300,15 +301,22 @@ class ErrorHandler {
   private logError(appError: AppError): void {
     const logLevel = this.getLogLevel(appError.severity);
     
-    logger.log(logLevel, 'Error handled', {
-      errorId: appError.id,
-      category: appError.category,
-      severity: appError.severity,
-      code: appError.code,
-      message: appError.message,
-      retryable: appError.retryable,
-      context: appError.context,
-    });
+    // For sync operations and network errors, just log the message without full object details
+    if (appError.category === ErrorCategory.SYNC_OPERATION || 
+        appError.category === ErrorCategory.NETWORK) {
+      const operation = appError.context?.actionType || appError.category.toLowerCase();
+      logger.log(logLevel, `[${operation}] ${appError.message}`);
+    } else {
+      logger.log(logLevel, 'Error handled', {
+        errorId: appError.id,
+        category: appError.category,
+        severity: appError.severity,
+        code: appError.code,
+        message: appError.message,
+        retryable: appError.retryable,
+        context: appError.context,
+      });
+    }
   }
 
   private getLogLevel(severity: ErrorSeverity): 'debug' | 'info' | 'warn' | 'error' {

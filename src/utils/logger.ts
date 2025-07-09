@@ -325,7 +325,7 @@ class Logger {
     
     const startTime = this.performanceMarks.get(operation);
     if (!startTime) {
-      this.warn('Performance timer not found', { operation });
+      this.debug('Performance timer not found', { operation });
       return;
     }
     
@@ -347,9 +347,9 @@ class Logger {
       context,
     });
     
-    // Log slow operations as warnings
+    // Log slow operations as debug in development
     if (duration > 1000) { // > 1 second
-      this.warn('Slow operation detected', {
+      this.debug('Slow operation detected', {
         operation,
         duration: `${duration}ms`,
         context,

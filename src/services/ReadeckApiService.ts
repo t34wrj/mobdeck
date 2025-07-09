@@ -115,7 +115,7 @@ class ReadeckApiService implements IReadeckApiService {
       },
       // Additional security configurations
       maxRedirects: 5,
-      validateStatus: (status) => status >= 200 && status < 500,
+      validateStatus: (status) => status >= 200 && status < 300,
       withCredentials: false, // Prevent CORS credential leaks
     });
 
@@ -238,14 +238,6 @@ class ReadeckApiService implements IReadeckApiService {
         }
         
         const apiError = this.handleResponseError(error);
-        errorHandler.handleError(apiError, {
-          category: this.getErrorCategory(error),
-          context: { 
-            actionType: 'api_response',
-            apiEndpoint: error.config?.url,
-            statusCode: error.response?.status,
-          },
-        });
         return Promise.reject(apiError);
       }
     );
@@ -465,10 +457,13 @@ class ReadeckApiService implements IReadeckApiService {
     });
   }
 
-  async validateToken(): Promise<ReadeckApiResponse<ReadeckUser>> {
+  async validateToken(timeout?: number): Promise<ReadeckApiResponse<ReadeckUser>> {
     return this.makeRequest<ReadeckUser>({
       method: 'GET',
       url: '/profile',
+      config: {
+        timeout: timeout || this.config.timeout
+      }
     });
   }
 
@@ -508,7 +503,7 @@ class ReadeckApiService implements IReadeckApiService {
       
       return response;
     } catch (error) {
-      console.error(`[ReadeckApiService] Article fetch failed for ID: ${id}:`, error);
+      // Let the error handler manage logging
       throw error;
     }
   }
@@ -590,12 +585,7 @@ class ReadeckApiService implements IReadeckApiService {
       
       return response.data;
     } catch (error) {
-      console.error('[ReadeckApiService] Failed to fetch article content:', error);
-      console.error('[ReadeckApiService] Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
+      // Let the error handler manage logging
       throw error;
     }
   }

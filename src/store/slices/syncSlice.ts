@@ -237,9 +237,21 @@ const syncSlice = createSlice({
 
     clearSyncError: state => {
       state.error = null;
-      if (state.status === SyncStatus.ERROR) {
+      if (state.status === SyncStatus.ERROR || state.status === SyncStatus.SUCCESS) {
         state.status = SyncStatus.IDLE;
       }
+    },
+
+    resetSyncStatus: state => {
+      state.status = SyncStatus.IDLE;
+      state.error = null;
+      state.progress = {
+        phase: SyncPhase.INITIALIZING,
+        totalItems: 0,
+        processedItems: 0,
+        currentItem: null,
+        estimatedTimeRemaining: null,
+      };
     },
 
     cancelSync: state => {
@@ -368,6 +380,7 @@ export const {
   updateNetworkStatus,
   resetSyncState,
   clearSyncError,
+  resetSyncStatus,
   updateSyncStats,
   resetSyncStats,
 } = syncSlice.actions;

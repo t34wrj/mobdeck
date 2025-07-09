@@ -219,6 +219,7 @@ export const sanitizeInput = (input: string, options: {
   }
 
   // Remove null bytes and control characters
+  // eslint-disable-next-line no-control-regex
   sanitized = sanitized.replace(/\u0000/g, '');
 
   // Normalize whitespace

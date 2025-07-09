@@ -16,6 +16,7 @@ import { readeckApiService } from './ReadeckApiService';
 import { articlesApiService } from './ArticlesApiService';
 import { ShareService } from './ShareService';
 import { store } from '../store';
+import { errorHandler, ErrorCategory } from '../utils/errorHandler';
 import {
   startSync,
   syncProgress,
@@ -36,6 +37,8 @@ import {
 import { Article } from '../types';
 import { DatabaseUtilityFunctions } from './DatabaseService';
 import { resolveConflict as resolveArticleConflict } from '../utils/conflictResolution';
+import { connectivityManager, ConnectivityStatus } from '../utils/connectivityManager';
+import { RetryManager } from '../utils/retryManager';
 
 interface SyncOperation {
   id: string;
@@ -156,6 +159,22 @@ class SyncService {
       throw new Error('Sync already in progress');
     }
 
+    // Check connectivity before starting sync
+    console.log('[SyncService] Checking connectivity...');
+    const connectivityStatus = await connectivityManager.checkConnectivity();
+    console.log('[SyncService] Connectivity status:', connectivityStatus);
+    if (connectivityStatus !== ConnectivityStatus.ONLINE) {
+      console.log('[SyncService] Cannot sync - server unreachable');
+      store.dispatch(
+        syncError({
+          error: 'Server is unreachable. Please check your connection.',
+          phase: SyncPhase.CHECKING_CONNECTION,
+          isRetryable: true,
+        })
+      );
+      throw new Error('Server is unreachable. Please check your connection.');
+    }
+
     console.log('[SyncService] Starting full sync...');
 
     this.isRunning = true;
@@ -206,12 +225,19 @@ class SyncService {
     } catch (error) {
       const duration = Date.now() - startTime;
 
-      console.error('[SyncService] Full sync failed:', error);
+      // Use centralized error handling
+      const handledError = errorHandler.handleError(error, {
+        category: ErrorCategory.SYNC_OPERATION,
+        context: { 
+          actionType: 'full_sync',
+          syncPhase: SyncPhase.FINALIZING,
+        },
+      });
 
       // Dispatch sync error
       store.dispatch(
         syncError({
-          error: error.message,
+          error: handledError.message,
           errorCode: 'SYNC_FAILED',
           phase: SyncPhase.FINALIZING,
           retryable: this.isRetryableError(error),
@@ -495,12 +521,20 @@ class SyncService {
       );
       return result;
     } catch (error) {
-      console.error('[SyncService] Sync down failed:', error);
+      // Use centralized error handling
+      const handledError = errorHandler.handleError(error, {
+        category: ErrorCategory.SYNC_OPERATION,
+        context: { 
+          actionType: 'sync_down',
+          syncPhase: SyncPhase.FETCHING_REMOTE_DATA,
+        },
+      });
+      
       result.success = false;
       result.errorCount++;
       result.errors.push({
         operation: 'sync_down',
-        error: error.message,
+        error: handledError.message,
         retryable: this.isRetryableError(error),
       });
       return result;
@@ -1013,7 +1047,7 @@ class SyncService {
         article => new Date(article.updatedAt) > since
       );
     } catch (error) {
-      console.error('[SyncService] Failed to fetch remote articles:', error);
+      // Let the error handler manage logging
       throw error;
     }
   }

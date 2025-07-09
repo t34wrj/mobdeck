@@ -17,6 +17,7 @@ import DatabaseService from '../services/DatabaseService';
 import { readeckApiService } from '../services/ReadeckApiService';
 import { startSyncOperation } from '../store/thunks/syncThunks';
 import NetInfo from '@react-native-community/netinfo';
+import { ConnectivityIndicator } from '../components/ConnectivityIndicator';
 
 const AppNavigator: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -192,9 +193,12 @@ const AppNavigator: React.FC = () => {
   }
 
   return (
-    <NavigationContainer>
-      {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
-    </NavigationContainer>
+    <>
+      <ConnectivityIndicator />
+      <NavigationContainer>
+        {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
+      </NavigationContainer>
+    </>
   );
 };
 

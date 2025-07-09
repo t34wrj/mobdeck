@@ -15,6 +15,8 @@ import {
   ReadeckApiResponse,
   ReadeckApiError,
 } from '../types/readeck';
+import { RetryManager } from '../utils/retryManager';
+import { connectivityManager, ConnectivityStatus } from '../utils/connectivityManager';
 
 /**
  * Interface for article operations expected by Redux slice
@@ -293,8 +295,7 @@ class ArticlesApiService implements IArticlesApiService {
    * @private
    */
   private handleApiError(error: any, operation: string): never {
-    console.error(`[ArticlesApiService] ${operation} failed:`, error);
-
+    // Don't log here as error will be handled by calling code
     if (error.code && error.message) {
       // ReadeckApiError - pass through
       throw error;
@@ -310,15 +311,25 @@ class ArticlesApiService implements IArticlesApiService {
   async fetchArticles(
     params: FetchArticlesParams
   ): Promise<PaginatedResponse<Article>> {
-    try {
-      console.log(
-        '[ArticlesApiService] Fetching articles with params:',
-        params
-      );
+    // Check connectivity first
+    if (!connectivityManager.isOnline()) {
+      throw {
+        code: 'CONNECTION_ERROR',
+        message: 'Cannot fetch articles while offline',
+      };
+    }
+    
+    return RetryManager.withRetry(
+      async () => {
+        try {
+          console.log(
+            '[ArticlesApiService] Fetching articles with params:',
+            params
+          );
 
-      const filters = this.convertFiltersToReadeckFilters(params);
-      const response: ReadeckApiResponse<ReadeckArticleList> =
-        await readeckApiService.getArticles(filters);
+          const filters = this.convertFiltersToReadeckFilters(params);
+          const response: ReadeckApiResponse<ReadeckArticleList> =
+            await readeckApiService.getArticles(filters);
 
       // Debug log the response structure and first few articles
       console.log('[ArticlesApiService] API Response structure:', {
@@ -337,7 +348,7 @@ class ArticlesApiService implements IArticlesApiService {
         console.log('[ArticlesApiService] First 3 articles read status analysis:', 
           articles.slice(0, 3).map((article: any) => ({
             id: article.id,
-            title: article.title?.substring(0, 50) + '...',
+            title: `${article.title?.substring(0, 50)  }...`,
             read_progress: article.read_progress,
             computed_isRead: article.read_progress !== undefined && article.read_progress >= 100
           }))
@@ -443,13 +454,7 @@ class ArticlesApiService implements IArticlesApiService {
                   return article;
                 }
               } catch (error) {
-                console.error(`[ArticlesApiService] Error fetching full content for article: ${article.id}:`, error);
-                console.error(`[ArticlesApiService] Error details:`, {
-                  message: (error as any)?.message || 'Unknown error',
-                  status: (error as any)?.status,
-                  code: (error as any)?.code,
-                  response: (error as any)?.response?.data
-                });
+                console.warn(`[ArticlesApiService] Failed to fetch full content for article: ${article.id}: ${(error as any)?.message || 'Unknown error'}`);
                 return article; // Return original article if fetch fails
               }
             }
@@ -474,7 +479,7 @@ class ArticlesApiService implements IArticlesApiService {
           if (!shouldInclude) {
             console.log(`[ArticlesApiService] Client-side filter excluding article:`, {
               id: article.id,
-              title: article.title?.substring(0, 30) + '...',
+              title: `${article.title?.substring(0, 30)  }...`,
               isRead: articleIsRead,
               targetReadStatus,
               readProgress: (article as any).readProgress || 'N/A'
@@ -506,7 +511,6 @@ class ArticlesApiService implements IArticlesApiService {
     } catch (error: any) {
       // Check for connection errors and provide better error messages
       if (error?.code === 'CONNECTION_ERROR' || error?.code === 'ECONNREFUSED') {
-        console.error('[ArticlesApiService] Connection error:', error);
         throw {
           code: 'CONNECTION_ERROR',
           message: 'Unable to connect to server. Please check your internet connection and server settings.',
@@ -514,6 +518,14 @@ class ArticlesApiService implements IArticlesApiService {
       }
       this.handleApiError(error, 'Fetch articles');
     }
+      },
+      {
+        maxRetries: 3,
+        onRetry: (error, attempt) => {
+          console.debug(`[ArticlesApiService] Retrying fetch articles (attempt ${attempt}):`, error.message);
+        },
+      }
+    );
   }
 
   /**

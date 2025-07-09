@@ -69,7 +69,7 @@ export const initializeSyncService = createAsyncThunk(
       console.log('[SyncThunks] Sync service initialized successfully');
       return true;
     } catch (error) {
-      console.error('[SyncThunks] Failed to initialize sync service:', error);
+      // Let the service layer handle error logging
       throw error;
     }
   }
@@ -119,7 +119,7 @@ export const startSyncOperation = createAsyncThunk<
       dispatch(fetchArticles({ page: 1, forceRefresh: true }));
       
     } catch (error) {
-      console.error('[SyncThunks] Sync operation failed:', error);
+      // Let the service layer handle error logging
       throw error;
     }
   }
@@ -136,7 +136,7 @@ export const pauseSyncOperation = createAsyncThunk(
       await syncService.stopSync();
       return true;
     } catch (error) {
-      console.error('[SyncThunks] Failed to pause sync:', error);
+      // Let the service layer handle error logging
       throw error;
     }
   }
@@ -171,7 +171,7 @@ export const resumeSyncOperation = createAsyncThunk<
       dispatch(fetchArticles({ page: 1, forceRefresh: true }));
       
     } catch (error) {
-      console.error('[SyncThunks] Failed to resume sync:', error);
+      // Let the service layer handle error logging
       throw error;
     }
   }
@@ -188,7 +188,7 @@ export const cancelSyncOperation = createAsyncThunk(
       await syncService.stopSync();
       return true;
     } catch (error) {
-      console.error('[SyncThunks] Failed to cancel sync:', error);
+      // Let the service layer handle error logging
       throw error;
     }
   }
