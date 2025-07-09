@@ -163,13 +163,15 @@ global.XMLHttpRequest = jest.fn();
 
 // Skip problematic animated mock - not essential for basic testing
 
-// Mock console methods for cleaner test output
-global.console = {
-  ...console,
-  warn: jest.fn(),
-  error: jest.fn(),
-  log: jest.fn(),
-};
+// Mock console methods for cleaner test output (but not during device tests)
+if (process.env.RUN_DEVICE_TESTS !== 'true') {
+  global.console = {
+    ...console,
+    warn: jest.fn(),
+    error: jest.fn(),
+    log: jest.fn(),
+  };
+}
 
 // Setup timeout for async tests
 jest.setTimeout(10000);

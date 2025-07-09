@@ -3,6 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '../screens/auth/LoginScreen';
 import SetupScreen from '../screens/auth/SetupScreen';
 import { AuthStackParamList } from './types';
+import { theme } from '../components/ui/theme';
 
 const Stack = createStackNavigator<AuthStackParamList>();
 
@@ -11,11 +12,12 @@ const AuthNavigator: React.FC = () => {
     <Stack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: '#2196F3',
+          backgroundColor: theme.colors.primary[500],
         },
-        headerTintColor: '#fff',
+        headerTintColor: theme.colors.neutral[50],
         headerTitleStyle: {
           fontWeight: 'bold',
+          color: theme.colors.neutral[50],
         },
       }}
     >

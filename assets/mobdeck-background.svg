@@ -7,7 +7,7 @@
    version="1.1"
    viewBox="0 0 270.93 270.93"
    id="svg1"
-   sodipodi:docname="mobdeck.svg"
+   sodipodi:docname="mobdeck-background.svg"
    inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -40,20 +40,4 @@
      fill="#0b5739"
      id="rect1"
      y="3.6621093e-06" />
-  <ellipse
-     cx="135.465"
-     cy="135.465"
-     fill="none"
-     stroke="#fe5d26"
-     stroke-width="21.4763"
-     id="ellipse1"
-     ry="124.72688"
-     rx="124.72686" />
-  <path
-     d="M 62.415002,63.165 H 105.515 l 29.906,77.382 30.082,-77.382 h 43.012 v 144.6 H 176.498 V 102.005 L 146.24,179.968 H 124.778 L 94.520001,102.005 v 105.76 h -32.105 z"
-     fill="#f9bd4d"
-     stroke-width="50.608"
-     style="white-space:pre;shape-padding:304"
-     aria-label="M"
-     id="path1" />
 </svg>

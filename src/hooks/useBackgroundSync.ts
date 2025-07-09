@@ -7,7 +7,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { useAppSelector, useAppDispatch } from '../store';
+import { useAppSelector, useAppDispatch, store } from '../store';
 import {
   backgroundSyncService,
   SYNC_INTERVALS,
@@ -104,6 +104,12 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
    */
   const updateSyncStatus = async () => {
     try {
+      // Only update sync status if user is authenticated
+      const state = store.getState();
+      if (!state.auth.isAuthenticated) {
+        return;
+      }
+
       const status = await backgroundSyncService.getStatus();
       setLastSyncTime(status.lastSyncTime);
       setNextSyncTime(status.nextScheduledSync);

@@ -11,6 +11,8 @@ module.exports = {
     '<rootDir>/__tests__/e2e/helpers/',
     '<rootDir>/__tests__/setup.ts'
   ],
+  // Special timeout for performance tests
+  testTimeout: process.env.RUN_DEVICE_TESTS === 'true' ? 60000 : 10000,
   transform: {
     '^.+\\.(ts|tsx)$': 'babel-jest',
     '^.+\\.js$': 'babel-jest',

@@ -7,6 +7,7 @@ import SearchBar from '../components/SearchBar';
 import { Text } from '../components/ui/Text';
 import { MainScreenProps } from '../navigation/types';
 import { RootState, AppDispatch } from '../store';
+import { theme } from '../components/ui/theme';
 
 const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
   navigation,
@@ -49,7 +50,7 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color={theme.colors.primary[500]} />
       </View>
     );
   }
@@ -87,16 +88,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    backgroundColor: theme.colors.neutral[50],
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 16,
+    backgroundColor: theme.colors.neutral[50],
   },
   errorText: {
     fontSize: 16,
-    color: '#ff0000',
+    color: theme.colors.error[500],
     textAlign: 'center',
   },
 });

@@ -13,6 +13,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Button } from '../../components/ui/Button';
 import { Text } from '../../components/ui/Text';
 import { theme } from '../../components/ui/theme';
+import MobdeckLogo from '../../components/MobdeckLogo';
 import { AuthScreenProps } from '../../navigation/types';
 import { AppDispatch, RootState } from '../../store';
 import { clearError } from '../../store/slices/authSlice';
@@ -154,9 +155,12 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
         keyboardShouldPersistTaps='handled'
       >
         <View style={styles.headerContainer}>
-          <Text variant='h1' align='center' style={styles.title}>
-            Mobdeck
-          </Text>
+          <View style={styles.titleContainer}>
+            <MobdeckLogo size={48} />
+            <Text variant='h1' align='center' style={styles.title}>
+              Mobdeck
+            </Text>
+          </View>
           <Text variant='body1' align='center' color='neutral.600'>
             Connect to your Readeck server
           </Text>
@@ -306,9 +310,14 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing[10],
     alignItems: 'center',
   },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing[2],
+  },
   title: {
     color: theme.colors.primary[500],
-    marginBottom: theme.spacing[2],
+    marginLeft: theme.spacing[3],
   },
   formContainer: {
     flex: 1,

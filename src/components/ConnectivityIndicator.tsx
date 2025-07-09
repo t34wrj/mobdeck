@@ -87,8 +87,8 @@ export const ConnectivityIndicator: React.FC = () => {
         },
       ]}
     >
-      <Icon name={config.icon} size={20} color="white" style={styles.icon} />
-      <Text style={styles.text}>{config.text}</Text>
+      <Icon name={config.icon} size={20} color="#FFFFFF" style={styles.icon} />
+      <Text style={[styles.text, { color: '#FFFFFF' }]}>{config.text}</Text>
     </Animated.View>
   );
 };
@@ -110,7 +110,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   text: {
-    color: 'white',
     fontSize: 14,
     fontWeight: '500',
   },

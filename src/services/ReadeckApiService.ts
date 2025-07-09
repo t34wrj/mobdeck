@@ -165,14 +165,24 @@ class ReadeckApiService implements IReadeckApiService {
               tokenPreview: maskSensitiveData(token)
             });
           } else {
-            logger.warn('No API token available for request', { url: config.url });
+            // Silently cancel requests without authentication
+            // Return a rejected promise to prevent the request from proceeding
+            return Promise.reject({
+              name: 'AuthenticationError',
+              message: 'No API token available',
+              silent: true, // Flag to indicate this should be handled silently
+            });
           }
         } catch (error) {
-          const handledError = errorHandler.handleError(error, {
-            category: ErrorCategory.AUTHENTICATION,
-            context: { actionType: 'token_retrieval', apiEndpoint: config.url },
-          });
-          logger.error('Failed to retrieve API token', { error: handledError });
+          // Only handle actual errors, not authentication cancellations
+          if (error.name !== 'AuthenticationError') {
+            const handledError = errorHandler.handleError(error, {
+              category: ErrorCategory.AUTHENTICATION,
+              context: { actionType: 'token_retrieval', apiEndpoint: config.url },
+            });
+            logger.error('Failed to retrieve API token', { error: handledError });
+          }
+          return Promise.reject(error);
         }
 
         // Log request details and start performance timer
@@ -199,6 +209,11 @@ class ReadeckApiService implements IReadeckApiService {
         return config;
       },
       error => {
+        // Handle silent authentication errors without logging
+        if (error.silent && error.name === 'AuthenticationError') {
+          return Promise.reject(error);
+        }
+        
         const handledError = errorHandler.handleError(error, {
           category: ErrorCategory.NETWORK,
           context: { actionType: 'request_interceptor' },
@@ -228,6 +243,11 @@ class ReadeckApiService implements IReadeckApiService {
         return response;
       },
       error => {
+        // Handle silent authentication errors without logging
+        if (error.silent && error.name === 'AuthenticationError') {
+          return Promise.reject(error);
+        }
+
         // End performance timer for error cases
         const operationId = (error.config as any)?._operationId;
         if (operationId) {
@@ -285,6 +305,8 @@ class ReadeckApiService implements IReadeckApiService {
       return this.createApiError(error, ReadeckErrorCode.AUTHENTICATION_ERROR);
     } else if (status === 403) {
       return this.createApiError(error, ReadeckErrorCode.AUTHORIZATION_ERROR);
+    } else if (status === 404) {
+      return this.createApiError(error, ReadeckErrorCode.NOT_FOUND);
     } else if (status === 429) {
       return this.createApiError(error, ReadeckErrorCode.RATE_LIMITED);
     } else if (status >= 500) {

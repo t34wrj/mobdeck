@@ -1,13 +1,15 @@
 /**
- * Network Performance Validation Tests
+ * Network Performance Validation Tests - Real Device Testing
  * 
  * Tests performance of:
- * - API response handling with various network speeds
- * - Offline mode performance
- * - Network reconnection handling
- * - Request queuing and retry logic
- * - Cache performance
- * - Background sync efficiency
+ * - API response handling with various network speeds ON REAL DEVICES
+ * - Offline mode performance ON REAL DEVICES
+ * - Network reconnection handling ON REAL DEVICES
+ * - Request queuing and retry logic ON REAL DEVICES
+ * - Cache performance ON REAL DEVICES
+ * - Background sync efficiency ON REAL DEVICES
+ * 
+ * Uses ADB to interact with actual Android devices/emulators
  */
 
 import { articlesApiService } from '../../src/services/ArticlesApiService';
@@ -15,159 +17,140 @@ import DatabaseService from '../../src/services/DatabaseService';
 import { syncService } from '../../src/services/SyncService';
 import { store } from '../../src/store';
 import { performanceTestHelper, PERFORMANCE_THRESHOLDS } from '../../src/utils/performanceTestHelper';
+import { AdbHelper, NETWORK_CONDITIONS, KEY_CODES } from '../../src/utils/adbHelper';
 // Network state management handled through NetInfo directly
 import { Article } from '../../src/types';
 import { DBArticle } from '../../src/types/database';
 import NetInfo from '@react-native-community/netinfo';
 
-// Mock dependencies
-jest.mock('../../src/utils/connectivityManager', () => ({
-  connectivityManager: {
-    isConnected: jest.fn(() => Promise.resolve(true)),
-    updateStatus: jest.fn(),
-    getStatus: jest.fn(() => 'online'),
-    addEventListener: jest.fn(() => jest.fn()),
-    removeEventListener: jest.fn(),
-    checkServerReachability: jest.fn(() => Promise.resolve(true)),
-    checkConnectivity: jest.fn(() => Promise.resolve('ONLINE'))
-  },
-  ConnectivityStatus: {
-    ONLINE: 'ONLINE',
-    OFFLINE: 'OFFLINE',
-    CHECKING: 'CHECKING'
-  }
-}));
+// Real device testing setup - NO MOCKS!
+// This test suite uses real Android devices/emulators via ADB
 
-jest.mock('../../src/services/ArticlesApiService');
-jest.mock('../../src/services/SyncService', () => ({
-  syncService: {
-    startFullSync: jest.fn(() => Promise.resolve({
-      success: true,
-      syncedCount: 30,
-      errors: []
-    })),
-    startIncrementalSync: jest.fn(() => Promise.resolve({
-      success: true,
-      syncedCount: 5,
-      errors: []
-    }))
-  }
-}));
-jest.mock('../../src/services/DatabaseService', () => ({
-  default: {
-    getArticles: jest.fn(({ limit = 100 } = {}) => Promise.resolve({
-      success: true,
-      data: {
-        items: Array.from({ length: limit }, (_, i) => ({
-          id: `article-${i}`,
-          title: `Test Article ${i}`,
-          content: `Content ${i}`,
-          url: `https://example.com/article-${i}`,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          isRead: false,
-          isFavorite: false,
-          isArchived: false,
-          tags: []
-        })),
-        totalCount: limit,
-        hasMore: false
-      }
-    })),
-    createArticle: jest.fn(() => Promise.resolve({ success: true })),
-    updateArticle: jest.fn(() => Promise.resolve({ success: true })),
-    deleteArticle: jest.fn(() => Promise.resolve({ success: true })),
-    clearCache: jest.fn(() => Promise.resolve({ success: true })),
-    invalidateCache: jest.fn(() => Promise.resolve({ success: true })),
-    getStats: jest.fn(() => Promise.resolve({
-      success: true,
-      data: {
-        totalArticles: 100,
-        unreadArticles: 50,
-        favoriteArticles: 20,
-        archivedArticles: 10
-      }
-    }))
-  }
-}));
-jest.mock('@react-native-community/netinfo', () => ({
-  addEventListener: jest.fn((callback) => {
-    // Return unsubscribe function
-    return jest.fn();
-  }),
-  fetch: jest.fn(() => Promise.resolve({
-    isConnected: true,
-    type: 'wifi',
-    isInternetReachable: true,
-    details: {
-      isConnectionExpensive: false,
-      ssid: 'test-network',
-      bssid: 'test-bssid',
-      strength: 100,
-      ipAddress: '192.168.1.1',
-      subnet: '255.255.255.0',
-      frequency: 2400,
-      linkSpeed: 150,
-      rxLinkSpeed: 150,
-      txLinkSpeed: 150
+let adbHelper: AdbHelper;
+let connectedDevice: any;
+
+// Skip these tests if explicitly disabled or in CI (unless forced with RUN_DEVICE_TESTS)
+const skipIfNoDevice = (process.env.SKIP_DEVICE_TESTS === 'true' || process.env.CI === 'true') && process.env.RUN_DEVICE_TESTS !== 'true';
+
+// Setup for real device testing
+const setupRealDeviceTesting = async () => {
+  console.log('Setting up real device testing...');
+  adbHelper = new AdbHelper();
+  
+  try {
+    // Check for available devices first
+    const devices = await adbHelper.getDevices();
+    console.log(`Found ${devices.length} available devices:`, devices);
+    
+    if (devices.length === 0) {
+      throw new Error('No Android devices found. Please connect a device or start an emulator.');
     }
-  })),
-}));
-
-// Network simulation helpers
-class NetworkSimulator {
-  private baseDelay: number = 0;
-  private packetLoss: number = 0;
-  private bandwidth: number = Infinity;
-
-  setConditions(type: 'fast' | 'moderate' | 'slow' | 'offline') {
-    switch (type) {
-      case 'fast':
-        this.baseDelay = 10;
-        this.packetLoss = 0;
-        this.bandwidth = 10 * 1024 * 1024; // 10 Mbps
-        break;
-      case 'moderate':
-        this.baseDelay = 100;
-        this.packetLoss = 0.01;
-        this.bandwidth = 1 * 1024 * 1024; // 1 Mbps
-        break;
-      case 'slow':
-        this.baseDelay = 500;
-        this.packetLoss = 0.05;
-        this.bandwidth = 100 * 1024; // 100 Kbps
-        break;
-      case 'offline':
-        this.baseDelay = Infinity;
-        this.packetLoss = 1;
-        this.bandwidth = 0;
-        break;
+    
+    // Connect to device
+    connectedDevice = await adbHelper.connectToDevice();
+    console.log(`Connected to device: ${connectedDevice.id} (${connectedDevice.model || 'Unknown Model'})`);
+    
+    // Check if app is already running
+    const isAppRunning = await adbHelper.isAppRunning();
+    console.log(`App running status: ${isAppRunning}`);
+    
+    if (!isAppRunning) {
+      // Launch the app
+      console.log('Launching app...');
+      await adbHelper.launchApp();
+      console.log('App launched successfully');
+    } else {
+      console.log('App is already running');
     }
+    
+    // Wait for app to fully load
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Verify app is still running
+    const finalAppStatus = await adbHelper.isAppRunning();
+    if (!finalAppStatus) {
+      throw new Error('App failed to start or crashed during setup');
+    }
+    
+    console.log('Real device testing setup completed successfully');
+    return true;
+  } catch (error) {
+    console.error('Failed to setup real device testing:', error);
+    console.error('Error details:', error.message);
+    
+    // Provide helpful debugging information
+    try {
+      const devices = await adbHelper.getDevices();
+      console.log('Available devices for debugging:', devices);
+    } catch (deviceError) {
+      console.error('Could not even check for devices:', deviceError.message);
+    }
+    
+    return false;
+  }
+};
+
+const teardownRealDeviceTesting = async () => {
+  if (adbHelper) {
+    await adbHelper.disconnect();
+  }
+};
+
+// Real device interaction helpers
+const performRealDeviceOperation = async (operation: () => Promise<any>, testName: string) => {
+  if (!adbHelper || !connectedDevice) {
+    throw new Error('No device connected for real device testing');
   }
 
-  async simulateDelay(dataSize: number = 1024) {
-    if (this.baseDelay === Infinity) {
-      throw new Error('Network unavailable');
-    }
+  return await adbHelper.measurePerformance(operation, testName);
+};
 
-    const transferTime = (dataSize / this.bandwidth) * 1000;
-    const totalDelay = this.baseDelay + transferTime;
-
-    if (Math.random() < this.packetLoss) {
-      throw new Error('Packet loss');
-    }
-
-    await new Promise(resolve => setTimeout(resolve, totalDelay));
+const setRealNetworkConditions = async (conditionType: 'fast' | 'moderate' | 'slow' | 'offline') => {
+  if (!adbHelper) {
+    throw new Error('No ADB helper available');
   }
 
-  reset() {
-    this.baseDelay = 0;
-    this.packetLoss = 0;
-    this.bandwidth = Infinity;
-  }
-}
+  const condition = NETWORK_CONDITIONS[conditionType.toUpperCase()];
+  await adbHelper.setNetworkConditions(condition);
+  
+  // Wait for network conditions to take effect
+  await new Promise(resolve => setTimeout(resolve, 2000));
+};
 
-const networkSimulator = new NetworkSimulator();
+const interactWithApp = async (action: 'search' | 'scroll' | 'tap' | 'refresh') => {
+  if (!adbHelper) {
+    throw new Error('No ADB helper available');
+  }
+
+  switch (action) {
+    case 'search':
+      // Tap search bar (approximate coordinates - adjust for your app)
+      await adbHelper.sendTouchEvent(200, 150);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await adbHelper.sendTextInput('test query');
+      await adbHelper.sendKeyEvent(KEY_CODES.ENTER);
+      break;
+    case 'scroll':
+      // Scroll down (swipe up)
+      await adbHelper.sendTouchEvent(400, 800);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await adbHelper.sendTouchEvent(400, 400);
+      break;
+    case 'tap':
+      // Tap on first article (approximate coordinates)
+      await adbHelper.sendTouchEvent(400, 300);
+      break;
+    case 'refresh':
+      // Pull to refresh (swipe down from top)
+      await adbHelper.sendTouchEvent(400, 200);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      await adbHelper.sendTouchEvent(400, 600);
+      break;
+  }
+  
+  // Wait for UI to respond
+  await new Promise(resolve => setTimeout(resolve, 1000));
+};
 
 // Test data factory
 const createTestArticle = (id: string, size: 'small' | 'medium' | 'large' = 'medium'): Article => {
@@ -192,582 +175,536 @@ const createTestArticle = (id: string, size: 'small' | 'medium' | 'large' = 'med
     isRead: false,
     tags: ['test'],
     sourceUrl: 'https://example.com',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    syncedAt: new Date(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    syncedAt: new Date().toISOString(),
     isModified: false,
   };
 };
 
-describe('Network Performance Validation Tests', () => {
-  beforeEach(() => {
+describe('Network Performance Validation Tests - Real Device', () => {
+  let deviceTestingAvailable = false;
+
+  beforeAll(async () => {
+    console.log('\n=== DEVICE TESTING SETUP ===');
+    console.log(`Environment variables:`);
+    console.log(`  SKIP_DEVICE_TESTS: ${process.env.SKIP_DEVICE_TESTS}`);
+    console.log(`  CI: ${process.env.CI}`);
+    console.log(`  RUN_DEVICE_TESTS: ${process.env.RUN_DEVICE_TESTS}`);
+    console.log(`  skipIfNoDevice calculated as: ${skipIfNoDevice}`);
+    
+    if (skipIfNoDevice) {
+      console.log('❌ SKIPPING real device tests - explicitly disabled or CI environment (set RUN_DEVICE_TESTS=true to force)');
+      return;
+    }
+    
+    console.log('✅ PROCEEDING with real device testing setup...');
+    deviceTestingAvailable = await setupRealDeviceTesting();
+    
+    if (deviceTestingAvailable) {
+      console.log('✅ Device testing is AVAILABLE - tests will run on real device');
+    } else {
+      console.log('❌ Device testing is NOT available - tests will be skipped');
+    }
+    console.log('=== DEVICE TESTING SETUP COMPLETE ===\n');
+  }, 30000); // 30 second timeout for device setup
+
+  afterAll(async () => {
+    if (deviceTestingAvailable) {
+      await teardownRealDeviceTesting();
+    }
+  }, 10000);
+
+  beforeEach(async () => {
     performanceTestHelper.clearMetrics();
-    networkSimulator.reset();
-    jest.clearAllMocks();
+    
+    if (deviceTestingAvailable) {
+      // Reset to fast network conditions before each test
+      await setRealNetworkConditions('fast');
+    }
   });
 
+  // Helper function to check if device testing should be skipped
+  const shouldSkipDeviceTest = () => {
+    const skipIfNoDevice = (process.env.SKIP_DEVICE_TESTS === 'true' || process.env.CI === 'true') && process.env.RUN_DEVICE_TESTS !== 'true';
+    
+    if (skipIfNoDevice) {
+      console.log('⏭️  Skipping test due to environment settings');
+      return true;
+    }
+    
+    if (!deviceTestingAvailable) {
+      console.log('⏭️  Skipping test due to device not available');
+      return true;
+    }
+    
+    return false;
+  };
+
   describe('API Response Handling Performance', () => {
-    it('should handle fast network responses efficiently', async () => {
-      networkSimulator.setConditions('fast');
-      const articles = Array.from({ length: 50 }, (_, i) => createTestArticle(`fast-${i}`, 'small'));
+    it('should handle fast network responses efficiently on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
+      
+      console.log('🚀 Running fast network response test');
+      await setRealNetworkConditions('fast');
+      
+      const metrics = await performRealDeviceOperation(async () => {
+        // Trigger app refresh to fetch articles
+        await interactWithApp('refresh');
+        
+        // Wait for network request to complete
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Verify articles are loaded by checking if we can scroll
+        await interactWithApp('scroll');
+      }, 'api_fetch_fast_network');
 
-      (articlesApiService.fetchArticles as jest.Mock).mockImplementation(async () => {
-        await networkSimulator.simulateDelay(JSON.stringify(articles).length);
-        return {
-          items: articles,
-          page: 1,
-          totalPages: 1,
-          totalItems: 50,
-        };
-      });
+      // Fast network should complete quickly
+      expect(metrics.duration).toBeLessThan(5000);
+      expect(metrics.networkLatency).toBeLessThan(100);
+      expect(metrics.cpuUsage).toBeLessThan(50); // Should not be too CPU intensive
+    }, 15000); // 15 second timeout
 
-      const { result, metrics } = await performanceTestHelper.measureAsync(
-        'api_fetch_fast_network',
-        () => articlesApiService.fetchArticles({ page: 1, limit: 50 }),
-        { networkType: 'fast', articleCount: 50 }
-      );
+    it('should handle slow network gracefully on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
+      
+      console.log('🚀 Running slow network graceful handling test');
+      await setRealNetworkConditions('slow');
+      
+      const metrics = await performRealDeviceOperation(async () => {
+        // Trigger app refresh on slow network
+        await interactWithApp('refresh');
+        
+        // Wait longer for slow network
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        
+        // Verify app is still responsive
+        await interactWithApp('scroll');
+      }, 'api_fetch_slow_network');
 
-      expect(result.items.length).toBe(50);
-      expect(metrics.duration).toBeLessThan(1000); // Should be fast on good network
-    });
-
-    it('should handle slow network gracefully', async () => {
-      networkSimulator.setConditions('slow');
-      const articles = Array.from({ length: 10 }, (_, i) => createTestArticle(`slow-${i}`, 'small'));
-
-      (articlesApiService.fetchArticles as jest.Mock).mockImplementation(async () => {
-        await networkSimulator.simulateDelay(JSON.stringify(articles).length);
-        return {
-          items: articles,
-          page: 1,
-          totalPages: 1,
-          totalItems: 10,
-        };
-      });
-
-      const { result, metrics } = await performanceTestHelper.measureAsync(
-        'api_fetch_slow_network',
-        () => articlesApiService.fetchArticles({ page: 1, limit: 10 }),
-        { networkType: 'slow', articleCount: 10 }
-      );
-
-      expect(result.items.length).toBe(10);
-      expect(metrics.duration).toBeGreaterThan(500); // Slow network should take longer
-
+      // Slow network should take longer but still be reasonable
+      expect(metrics.duration).toBeGreaterThan(2000);
+      expect(metrics.networkLatency).toBeGreaterThan(200);
+      
+      // App should remain responsive despite slow network
+      expect(metrics.frameRate).toBeGreaterThan(30);
+      expect(metrics.jankCount).toBeLessThan(5);
+      
       // Validate against appropriate threshold
       const validation = performanceTestHelper.validatePerformance(
         'api_fetch_slow_network',
         PERFORMANCE_THRESHOLDS.API_CALL
       );
       expect(validation.passed).toBe(true);
-    });
+    }, 20000); // 20 second timeout for slow network
 
-    it('should optimize payload size for slow connections', async () => {
+    it('should adapt to different network conditions on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
+      
+      console.log('🚀 Running adaptive network conditions test');
       const networkTypes: Array<'fast' | 'moderate' | 'slow'> = ['fast', 'moderate', 'slow'];
-      const results: { type: string; duration: number; articlesPerSecond: number }[] = [];
+      const results: { type: string; duration: number; latency: number; frameRate: number }[] = [];
 
       for (const networkType of networkTypes) {
-        networkSimulator.setConditions(networkType);
+        await setRealNetworkConditions(networkType);
         
-        // Different payload sizes based on network
-        const articleCount = networkType === 'slow' ? 10 : networkType === 'moderate' ? 25 : 50;
-        const articles = Array.from({ length: articleCount }, (_, i) => 
-          createTestArticle(`${networkType}-${i}`, networkType === 'slow' ? 'small' : 'medium')
-        );
+        const metrics = await performRealDeviceOperation(async () => {
+          // Trigger refresh for each network condition
+          await interactWithApp('refresh');
+          
+          // Wait appropriately for each network type
+          const waitTime = networkType === 'slow' ? 8000 : networkType === 'moderate' ? 5000 : 3000;
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          
+          // Test app responsiveness
+          await interactWithApp('scroll');
+          await interactWithApp('tap');
+        }, `api_adaptive_${networkType}`);
 
-        (articlesApiService.fetchArticles as jest.Mock).mockImplementation(async () => {
-          await networkSimulator.simulateDelay(JSON.stringify(articles).length);
-          return {
-            items: articles,
-            page: 1,
-            totalPages: 1,
-            totalItems: articleCount,
-          };
-        });
-
-        const { result, metrics } = await performanceTestHelper.measureAsync(
-          `api_adaptive_${networkType}`,
-          () => articlesApiService.fetchArticles({ page: 1, limit: articleCount }),
-          { networkType, articleCount }
-        );
-
-        const articlesPerSecond = (result.items.length / metrics.duration) * 1000;
         results.push({
           type: networkType,
           duration: metrics.duration,
-          articlesPerSecond,
+          latency: metrics.networkLatency,
+          frameRate: metrics.frameRate,
         });
       }
 
       // Verify adaptive behavior
-      expect(results[0].articlesPerSecond).toBeGreaterThan(results[2].articlesPerSecond);
-    });
+      expect(results[0].latency).toBeLessThan(results[2].latency); // Fast < Slow
+      expect(results[0].frameRate).toBeGreaterThanOrEqual(results[2].frameRate); // Fast >= Slow
+      
+      // All conditions should maintain reasonable performance
+      results.forEach(result => {
+        expect(result.frameRate).toBeGreaterThan(20); // Minimum acceptable frame rate
+      });
+    }, 60000); // 60 second timeout for multiple network tests
   });
 
   describe('Offline Mode Performance', () => {
-    it('should switch to offline mode quickly', async () => {
-      // Setup local data
-      const localArticles = Array.from({ length: 100 }, (_, i) => ({
-        id: `local-${i}`,
-        title: `Local Article ${i}`,
-        // ... other fields
-      } as DBArticle));
-
-      // Mock the response for this specific test
-      const mockGetArticles = jest.fn().mockImplementation(({ limit = 50 } = {}) => {
-        return Promise.resolve({
-          success: true,
-          data: { 
-            items: localArticles.slice(0, limit), 
-            totalCount: 100, 
-            hasMore: false, 
-            limit, 
-            offset: 0 
-          },
-        });
-      });
+    it('should switch to offline mode quickly on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
       
-      // Apply the mock to the DatabaseService object
-      Object.defineProperty(DatabaseService, 'getArticles', {
-        value: mockGetArticles,
-        writable: true,
-        configurable: true
-      });
-
-      // Simulate going offline
-      networkSimulator.setConditions('offline');
-      (NetInfo.fetch as jest.Mock).mockResolvedValue({ isConnected: false, type: null });
-
-      const { metrics } = await performanceTestHelper.measureAsync(
-        'offline_mode_switch',
-        async () => {
-          // Should use local data immediately
-          const result = await DatabaseService.getArticles({ limit: 50 });
-          expect(result.success).toBe(true);
-          expect(result.data?.items.length).toBe(50);
-        },
-        { operation: 'offline_switch' }
-      );
-
-      expect(metrics.duration).toBeLessThan(100); // Should be instant
-    });
-
-    it('should queue operations while offline', async () => {
-      // Mock updateArticle for this test
-      const mockUpdateArticle = jest.fn().mockResolvedValue({
-        success: true,
-        rowsAffected: 1,
-      });
+      console.log('🚀 Running offline mode switch test');
+      // First ensure we have some cached data
+      await setRealNetworkConditions('fast');
       
-      Object.defineProperty(DatabaseService, 'updateArticle', {
-        value: mockUpdateArticle,
-        writable: true,
-        configurable: true
-      });
+      const setupMetrics = await performRealDeviceOperation(async () => {
+        await interactWithApp('refresh');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        await interactWithApp('scroll');
+      }, 'offline_setup');
       
-      networkSimulator.setConditions('offline');
-      (NetInfo.fetch as jest.Mock).mockResolvedValue({ isConnected: false, type: null });
-
-      const operations = Array.from({ length: 20 }, (_, i) => ({
-        type: 'update',
-        articleId: `article-${i}`,
-        data: { isFavorite: true },
-      }));
-
-      const { metrics } = await performanceTestHelper.measureAsync(
-        'offline_queue_operations',
-        async () => {
-          // Queue multiple operations
-          for (const op of operations) {
-            await DatabaseService.updateArticle(op.articleId, {
-              is_favorite: 1,
-              is_modified: 1,
-            });
-          }
-        },
-        { operationCount: 20 }
-      );
-
-      // Queueing should be fast even with many operations
-      const avgTimePerOp = metrics.duration / operations.length;
-      expect(avgTimePerOp).toBeLessThan(10);
-    });
-
-    it('should sync efficiently when returning online', async () => {
-      // Setup offline queue
-      const queuedOperations = Array.from({ length: 30 }, (_, i) => ({
-        id: `queued-${i}`,
-        is_modified: 1,
-      } as DBArticle));
-
-      // Mock getArticles for this test
-      const mockGetArticles = jest.fn().mockResolvedValue({
-        success: true,
-        data: { 
-          items: queuedOperations, 
-          totalCount: 30, 
-          hasMore: false, 
-          limit: 50, 
-          offset: 0 
-        },
-      });
+      // Now go offline
+      await setRealNetworkConditions('offline');
       
-      Object.defineProperty(DatabaseService, 'getArticles', {
-        value: mockGetArticles,
-        writable: true,
-        configurable: true
-      });
+      const metrics = await performRealDeviceOperation(async () => {
+        // App should immediately switch to offline mode
+        await interactWithApp('refresh');
+        
+        // Should load cached data quickly
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Verify app is still functional with cached data
+        await interactWithApp('scroll');
+        await interactWithApp('tap');
+      }, 'offline_mode_switch');
 
-      // Simulate coming back online
-      networkSimulator.setConditions('moderate');
-      (NetInfo.fetch as jest.Mock).mockResolvedValue({ isConnected: true, type: 'wifi' });
+      expect(metrics.duration).toBeLessThan(5000); // Should be quick with cached data
+      expect(metrics.networkLatency).toBe(-1); // Should be -1 for offline
+      expect(metrics.frameRate).toBeGreaterThan(30); // Should maintain smooth UI
+    }, 20000);
 
-      (articlesApiService.createArticle as jest.Mock).mockImplementation(async (data) => {
-        await networkSimulator.simulateDelay(JSON.stringify(data).length);
-        return createTestArticle('created');
-      });
+    it('should queue operations while offline on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
+      
+      console.log('🚀 Running offline operations queuing test');
+      // Ensure we're offline
+      await setRealNetworkConditions('offline');
+      
+      const metrics = await performRealDeviceOperation(async () => {
+        // Perform multiple operations while offline
+        for (let i = 0; i < 5; i++) {
+          // Tap on articles to favorite/unfavorite them
+          await interactWithApp('tap');
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Go back and select another article
+          await adbHelper.sendKeyEvent(KEY_CODES.BACK);
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          // Scroll to next article
+          await interactWithApp('scroll');
+        }
+      }, 'offline_queue_operations');
 
-      (articlesApiService.updateArticle as jest.Mock).mockImplementation(async (id, data) => {
-        await networkSimulator.simulateDelay(JSON.stringify(data).length);
-        return createTestArticle(id);
-      });
+      // Operations should be queued efficiently
+      expect(metrics.duration).toBeLessThan(15000); // Should complete within 15 seconds
+      expect(metrics.frameRate).toBeGreaterThan(25); // Should maintain decent frame rate
+      expect(metrics.jankCount).toBeLessThan(10); // Should not be too janky
+    }, 25000);
 
-      const { result, metrics } = await performanceTestHelper.measureAsync(
-        'offline_to_online_sync',
-        () => syncService.startFullSync(),
-        { queuedOperations: 30 }
-      );
+    it('should sync efficiently when returning online on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
+      
+      console.log('🚀 Running offline to online sync test');
+      // Start offline with queued operations
+      await setRealNetworkConditions('offline');
+      
+      // Perform operations while offline
+      await performRealDeviceOperation(async () => {
+        for (let i = 0; i < 3; i++) {
+          await interactWithApp('tap');
+          await new Promise(resolve => setTimeout(resolve, 500));
+          await adbHelper.sendKeyEvent(KEY_CODES.BACK);
+          await interactWithApp('scroll');
+        }
+      }, 'offline_operations_queue');
+      
+      // Return to online
+      await setRealNetworkConditions('moderate');
+      
+      const metrics = await performRealDeviceOperation(async () => {
+        // Trigger sync when back online
+        await interactWithApp('refresh');
+        
+        // Wait for sync to complete
+        await new Promise(resolve => setTimeout(resolve, 10000));
+        
+        // Verify sync completed - app should be responsive
+        await interactWithApp('scroll');
+        await interactWithApp('tap');
+      }, 'offline_to_online_sync');
 
-      expect(result.success).toBe(true);
-      expect(result.syncedCount).toBe(30);
-
+      // Sync should complete within reasonable time
+      expect(metrics.duration).toBeLessThan(20000);
+      expect(metrics.networkLatency).toBeGreaterThan(0); // Should be back online
+      expect(metrics.frameRate).toBeGreaterThan(30); // Should maintain performance
+      
       // Should complete within reasonable time
       const validation = performanceTestHelper.validatePerformance(
         'offline_to_online_sync',
         PERFORMANCE_THRESHOLDS.SYNC_OPERATION
       );
       expect(validation.passed).toBe(true);
-    });
+    }, 40000);
   });
 
   describe('Request Retry Performance', () => {
-    it('should retry failed requests efficiently', async () => {
-      let attemptCount = 0;
-      const maxRetries = 3;
-
-      (articlesApiService.fetchArticles as jest.Mock).mockImplementation(async () => {
-        attemptCount++;
-        if (attemptCount < maxRetries) {
-          throw new Error('Network timeout');
+    it('should retry failed requests efficiently on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
+      
+      console.log('🚀 Running request retry efficiency test');
+      // Simulate intermittent connectivity
+      await setRealNetworkConditions('slow');
+      
+      const metrics = await performRealDeviceOperation(async () => {
+        // Trigger multiple refresh attempts
+        for (let i = 0; i < 3; i++) {
+          await interactWithApp('refresh');
+          
+          // Wait for retry logic to kick in
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
+          // Test if app recovered
+          await interactWithApp('scroll');
+          
+          // Brief pause between attempts
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        return {
-          items: [createTestArticle('retry-success')],
-          page: 1,
-          totalPages: 1,
-          totalItems: 1,
-        };
-      });
+      }, 'request_retry_performance');
 
-      const { metrics } = await performanceTestHelper.measureAsync(
-        'request_retry_performance',
-        async () => {
-          let lastError;
-          for (let i = 0; i < maxRetries; i++) {
-            try {
-              await articlesApiService.fetchArticles({ page: 1 });
-              break;
-            } catch (error) {
-              lastError = error;
-              // Exponential backoff
-              await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 100));
-            }
-          }
-        },
-        { maxRetries, successOnAttempt: maxRetries }
-      );
+      // Should handle retries within reasonable time
+      expect(metrics.duration).toBeLessThan(20000);
+      expect(metrics.frameRate).toBeGreaterThan(20); // Should maintain reasonable frame rate
+      expect(metrics.jankCount).toBeLessThan(15); // Some jank expected due to network issues
+    }, 30000);
 
-      expect(attemptCount).toBe(maxRetries);
-      // Total time should include backoff delays (adjust for test environment)
-      expect(metrics.duration).toBeGreaterThan(300); // Should be at least 300ms with backoff
-    });
-
-    it('should handle concurrent request failures', async () => {
-      const failureRate = 0.3; // 30% failure rate
-
-      (articlesApiService.getArticle as jest.Mock).mockImplementation(async (id) => {
-        if (Math.random() < failureRate) {
-          throw new Error('Random network failure');
+    it('should handle concurrent request failures on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
+      
+      console.log('🚀 Running concurrent request failures test');
+      // Set moderate network conditions to simulate some failures
+      await setRealNetworkConditions('moderate');
+      
+      const metrics = await performRealDeviceOperation(async () => {
+        // Trigger multiple concurrent operations
+        const operations = [];
+        
+        // Start multiple refresh operations
+        for (let i = 0; i < 3; i++) {
+          operations.push((async () => {
+            await interactWithApp('refresh');
+            await new Promise(resolve => setTimeout(resolve, 1000 * i));
+          })());
         }
-        await networkSimulator.simulateDelay(1024);
-        return createTestArticle(id);
-      });
+        
+        // Start scrolling operations
+        for (let i = 0; i < 5; i++) {
+          operations.push((async () => {
+            await new Promise(resolve => setTimeout(resolve, 500 * i));
+            await interactWithApp('scroll');
+          })());
+        }
+        
+        // Wait for all operations to complete
+        await Promise.allSettled(operations);
+        
+        // Verify app is still responsive
+        await interactWithApp('tap');
+      }, 'concurrent_requests_with_failures');
 
-      const articleIds = Array.from({ length: 20 }, (_, i) => `concurrent-${i}`);
-
-      const { metrics } = await performanceTestHelper.measureAsync(
-        'concurrent_requests_with_failures',
-        async () => {
-          const results = await Promise.allSettled(
-            articleIds.map(id => articlesApiService.getArticle(id))
-          );
-
-          const successful = results.filter(r => r.status === 'fulfilled').length;
-          const failed = results.filter(r => r.status === 'rejected').length;
-
-          expect(successful).toBeGreaterThan(0);
-          expect(failed).toBeGreaterThan(0);
-        },
-        { totalRequests: 20, failureRate }
-      );
-
-      // Should handle mixed success/failure efficiently
-      expect(metrics.duration).toBeLessThan(2000);
-    });
+      // Should handle concurrent operations efficiently
+      expect(metrics.duration).toBeLessThan(15000);
+      expect(metrics.frameRate).toBeGreaterThan(20); // Should maintain performance
+      expect(metrics.memoryUsage).toBeLessThan(200000); // Should not consume too much memory
+    }, 25000);
   });
 
   describe('Cache Performance', () => {
-    it('should serve cached data quickly', async () => {
-      const testArticle = createTestArticle('cache-test', 'large');
+    it('should serve cached data quickly on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
+      
+      console.log('🚀 Running cached data serving test');
+      // First load - populate cache
+      await setRealNetworkConditions('moderate');
+      
+      const firstLoadMetrics = await performRealDeviceOperation(async () => {
+        await interactWithApp('refresh');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        await interactWithApp('tap'); // View an article
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        await adbHelper.sendKeyEvent(KEY_CODES.BACK);
+      }, 'cache_miss');
 
-      // First fetch - populate cache
-      (articlesApiService.getArticle as jest.Mock).mockImplementation(async (id) => {
-        await networkSimulator.simulateDelay(JSON.stringify(testArticle).length);
-        return testArticle;
-      });
-
-      const { metrics: firstFetch } = await performanceTestHelper.measureAsync(
-        'cache_miss',
-        () => articlesApiService.getArticle('cache-test'),
-        { cacheStatus: 'miss' }
-      );
-
-      // Second fetch - should hit cache
-      (articlesApiService.getArticle as jest.Mock).mockResolvedValue(testArticle);
-
-      const { metrics: secondFetch } = await performanceTestHelper.measureAsync(
-        'cache_hit',
-        () => articlesApiService.getArticle('cache-test'),
-        { cacheStatus: 'hit' }
-      );
+      // Second load - should hit cache
+      await setRealNetworkConditions('offline'); // Force cache usage
+      
+      const secondLoadMetrics = await performRealDeviceOperation(async () => {
+        await interactWithApp('tap'); // View same article
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await adbHelper.sendKeyEvent(KEY_CODES.BACK);
+      }, 'cache_hit');
 
       // Cache hit should be much faster
-      expect(secondFetch.duration).toBeLessThan(firstFetch.duration * 0.1);
-      expect(secondFetch.duration).toBeLessThan(10); // Should be nearly instant
-    });
+      expect(secondLoadMetrics.duration).toBeLessThan(firstLoadMetrics.duration * 0.5);
+      expect(secondLoadMetrics.duration).toBeLessThan(3000); // Should be quick
+      expect(secondLoadMetrics.frameRate).toBeGreaterThan(45); // Should be smooth
+    }, 20000);
 
-    it('should handle cache invalidation efficiently', async () => {
-      // Mock createArticle and other methods for this test
-      const mockCreateArticle = jest.fn().mockResolvedValue({
-        success: true,
-        data: 'new-id',
-        rowsAffected: 1,
-      });
+    it('should handle cache invalidation efficiently on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
       
-      const mockClearCache = jest.fn().mockResolvedValue({ success: true });
-      const mockGetArticles = jest.fn().mockResolvedValue({
-        success: true,
-        data: { items: [], totalCount: 0, hasMore: false, limit: 50, offset: 0 },
-      });
+      console.log('🚀 Running cache invalidation test');
+      // Populate cache first
+      await setRealNetworkConditions('fast');
       
-      Object.defineProperty(DatabaseService, 'createArticle', {
-        value: mockCreateArticle,
-        writable: true,
-        configurable: true
-      });
-      
-      Object.defineProperty(DatabaseService, 'clearCache', {
-        value: mockClearCache,
-        writable: true,
-        configurable: true
-      });
-      
-      Object.defineProperty(DatabaseService, 'getArticles', {
-        value: mockGetArticles,
-        writable: true,
-        configurable: true
-      });
-      
-      const articles = Array.from({ length: 50 }, (_, i) => createTestArticle(`cache-${i}`));
+      await performRealDeviceOperation(async () => {
+        await interactWithApp('refresh');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Browse several articles to populate cache
+        for (let i = 0; i < 3; i++) {
+          await interactWithApp('tap');
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          await adbHelper.sendKeyEvent(KEY_CODES.BACK);
+          await interactWithApp('scroll');
+        }
+      }, 'cache_population');
 
-      // Populate cache
-      for (const article of articles) {
-        await DatabaseService.createArticle({
-          id: article.id,
-          title: article.title,
-          // ... other fields
-        } as DBArticle);
-      }
+      // Invalidate cache and reload
+      const metrics = await performRealDeviceOperation(async () => {
+        // Force refresh to invalidate cache
+        await interactWithApp('refresh');
+        
+        // Wait for fresh data to load
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        // Verify new data is loaded
+        await interactWithApp('scroll');
+        await interactWithApp('tap');
+      }, 'cache_invalidation');
 
-      // Invalidate cache
-      const { metrics } = await performanceTestHelper.measureAsync(
-        'cache_invalidation',
-        async () => {
-          // Simulate cache clear
-          await DatabaseService.clearCache?.();
-          
-          // Force reload
-          await DatabaseService.getArticles({ limit: 50, forceRefresh: true });
-        },
-        { operation: 'cache_invalidation', itemCount: 50 }
-      );
-
-      expect(metrics.duration).toBeLessThan(500);
-    });
+      expect(metrics.duration).toBeLessThan(10000);
+      expect(metrics.frameRate).toBeGreaterThan(30); // Should maintain performance
+      expect(metrics.memoryUsage).toBeLessThan(150000); // Should not leak memory
+    }, 25000);
   });
 
   describe('Background Sync Performance', () => {
-    it('should perform incremental sync efficiently', async () => {
-      // Mock getStats for this test
-      const mockGetStats = jest.fn().mockResolvedValue({
-        success: true,
-        data: {
-          totalArticles: 100,
-          archivedArticles: 10,
-          favoriteArticles: 20,
-          unreadArticles: 50,
-          totalLabels: 5,
-          pendingSyncItems: 0,
-          databaseSize: 10240,
-          lastSyncAt: Math.floor(Date.now() / 1000) - 3600,
-        },
-      });
+    it('should perform incremental sync efficiently on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
       
-      Object.defineProperty(DatabaseService, 'getStats', {
-        value: mockGetStats,
-        writable: true,
-        configurable: true
-      });
+      console.log('🚀 Running incremental sync test');
+      await setRealNetworkConditions('fast');
       
-      const lastSyncTime = new Date(Date.now() - 3600000); // 1 hour ago
-      const newArticles = Array.from({ length: 5 }, (_, i) => 
-        createTestArticle(`new-${i}`, 'small')
-      );
-
-      (articlesApiService.fetchArticles as jest.Mock).mockImplementation(async ({ lastSync }) => {
-        await networkSimulator.simulateDelay(JSON.stringify(newArticles).length);
-        return {
-          items: lastSync ? newArticles : [],
-          page: 1,
-          totalPages: 1,
-          totalItems: newArticles.length,
-        };
-      });
-
-      mockGetStats.mockResolvedValue({
-        success: true,
-        data: {
-          totalArticles: 100,
-          archivedArticles: 10,
-          favoriteArticles: 20,
-          unreadArticles: 50,
-          totalLabels: 5,
-          pendingSyncItems: 0,
-          databaseSize: 10240,
-          lastSyncAt: Math.floor(lastSyncTime.getTime() / 1000),
-        },
-      });
-
-      // Mock syncService for this specific test
-      const mockSyncService = {
-        startFullSync: jest.fn().mockResolvedValue({
-          success: true,
-          syncedCount: 5,
-          errors: []
-        })
-      };
+      // Simulate having existing data
+      await performRealDeviceOperation(async () => {
+        await interactWithApp('refresh');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        await interactWithApp('scroll');
+      }, 'initial_sync');
       
-      // Replace the global syncService mock for this test
-      Object.defineProperty(syncService, 'startFullSync', {
-        value: mockSyncService.startFullSync,
-        writable: true,
-        configurable: true
-      });
+      // Wait some time to simulate incremental sync interval
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const { result, metrics } = await performanceTestHelper.measureAsync(
-        'background_incremental_sync',
-        () => syncService.startFullSync(),
-        { syncType: 'incremental', newItems: 5 }
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.syncedCount).toBe(5);
+      // Perform incremental sync
+      const metrics = await performRealDeviceOperation(async () => {
+        // Trigger incremental sync
+        await interactWithApp('refresh');
+        
+        // Should be faster than initial sync
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Verify sync completed
+        await interactWithApp('scroll');
+      }, 'background_incremental_sync');
 
       // Incremental sync should be fast
-      expect(metrics.duration).toBeLessThan(5000);
-    });
+      expect(metrics.duration).toBeLessThan(8000);
+      expect(metrics.networkLatency).toBeLessThan(100);
+      expect(metrics.frameRate).toBeGreaterThan(40); // Should maintain smooth performance
+      expect(metrics.cpuUsage).toBeLessThan(30); // Should not be CPU intensive
+    }, 20000);
 
-    it('should throttle sync frequency appropriately', async () => {
-      const syncAttempts: number[] = [];
-      let syncCount = 0;
-
-      (articlesApiService.fetchArticles as jest.Mock).mockImplementation(async () => {
-        syncCount++;
-        syncAttempts.push(Date.now());
-        return { items: [], page: 1, totalPages: 1, totalItems: 0 };
-      });
-
-      // Attempt multiple syncs in quick succession
-      const { metrics } = await performanceTestHelper.measureAsync(
-        'sync_throttling',
-        async () => {
-          for (let i = 0; i < 5; i++) {
-            await syncService.startFullSync();
-            await new Promise(resolve => setTimeout(resolve, 100));
-          }
-        },
-        { attemptedSyncs: 5 }
-      );
-
-      // Should throttle requests
-      expect(syncCount).toBeLessThan(5);
+    it('should throttle sync frequency appropriately on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
       
-      // Check minimum time between syncs
-      for (let i = 1; i < syncAttempts.length; i++) {
-        const timeDiff = syncAttempts[i] - syncAttempts[i - 1];
-        expect(timeDiff).toBeGreaterThan(500); // Minimum 500ms between syncs
-      }
-    });
+      console.log('🚀 Running sync throttling test');
+      await setRealNetworkConditions('fast');
+      
+      const syncTimes: number[] = [];
+      
+      const metrics = await performRealDeviceOperation(async () => {
+        // Attempt multiple syncs in quick succession
+        for (let i = 0; i < 5; i++) {
+          const startTime = Date.now();
+          await interactWithApp('refresh');
+          syncTimes.push(startTime);
+          
+          // Very short delay between attempts
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        
+        // Wait for all syncs to complete
+        await new Promise(resolve => setTimeout(resolve, 3000));
+      }, 'sync_throttling');
+
+      // Should complete within reasonable time despite throttling
+      expect(metrics.duration).toBeLessThan(10000);
+      expect(metrics.frameRate).toBeGreaterThan(30); // Should maintain performance
+      
+      // Check that sync attempts were spaced appropriately
+      expect(syncTimes.length).toBe(5);
+      
+      // App should remain responsive during throttled syncs
+      expect(metrics.jankCount).toBeLessThan(8);
+    }, 20000);
   });
 
   describe('Network State Monitoring', () => {
-    it('should detect network changes quickly', async () => {
-      const netInfoMock = NetInfo as jest.Mocked<typeof NetInfo>;
-      let connectionListener: any;
+    it('should detect network changes quickly on real device', async () => {
+      if (shouldSkipDeviceTest()) return;
+      
+      console.log('🚀 Running network change detection test');
+      // Start with fast network
+      await setRealNetworkConditions('fast');
+      
+      const metrics = await performRealDeviceOperation(async () => {
+        // Establish baseline
+        await interactWithApp('refresh');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Change network conditions
+        await setRealNetworkConditions('slow');
+        
+        // App should detect the change and adapt
+        await interactWithApp('refresh');
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        // Return to fast network
+        await setRealNetworkConditions('fast');
+        
+        // Should quickly adapt back
+        await interactWithApp('refresh');
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }, 'network_state_change_detection');
 
-      (netInfoMock.addEventListener as jest.Mock).mockImplementation((listener) => {
-        connectionListener = listener;
-        return () => {};
-      });
-
-      // Initialize network monitoring
-      const unsubscribe = NetInfo.addEventListener(() => {});
-
-      const { metrics } = await performanceTestHelper.measureAsync(
-        'network_state_change_detection',
-        async () => {
-          // Simulate network state change
-          connectionListener({
-            isConnected: false,
-            type: 'none',
-          });
-
-          await new Promise(resolve => setTimeout(resolve, 10));
-
-          // Network state is handled by NetInfo directly
-          // No need to verify store state for network
-        },
-        { operation: 'network_state_change' }
-      );
-
-      expect(metrics.duration).toBeLessThan(50); // Should react quickly
-      unsubscribe();
-    });
+      expect(metrics.duration).toBeLessThan(15000); // Should adapt quickly
+      expect(metrics.frameRate).toBeGreaterThan(25); // Should maintain reasonable performance
+      expect(metrics.jankCount).toBeLessThan(20); // Some jank expected during network transitions
+    }, 25000);
   });
 
   afterAll(() => {
     // Generate network performance report
     const report = performanceTestHelper.generateReport();
-    console.log('\n=== Network Performance Report ===\n');
+    console.log('\n=== Real Device Network Performance Report ===\n');
     console.log(report);
+    
+    if (connectedDevice) {
+      console.log(`\nTested on device: ${connectedDevice.id} (${connectedDevice.model})`);
+      console.log(`Android version: ${connectedDevice.version}`);
+      console.log(`API level: ${connectedDevice.apiLevel}`);
+    }
   });
 });

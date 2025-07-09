@@ -1,6 +1,6 @@
 import React from 'react';
 import { Provider } from 'react-redux';
-import { View, StyleSheet, ActivityIndicator, Platform, Dimensions } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, Platform, Dimensions, StatusBar } from 'react-native';
 import { store } from './store';
 import AppNavigator from './navigation/AppNavigator';
 import { useAppInitialization } from './hooks/useAppInitialization';
@@ -75,6 +75,13 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Provider store={store}>
+      <StatusBar 
+        backgroundColor={theme.colors.success[700]} 
+        barStyle="light-content"
+        translucent={false}
+        animated={false}
+        hidden={false}
+      />
       <AppContent />
     </Provider>
   );

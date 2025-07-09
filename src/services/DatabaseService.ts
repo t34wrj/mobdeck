@@ -273,8 +273,8 @@ class DatabaseService implements DatabaseServiceInterface {
 
       console.log('[DatabaseService] FTS5 initialized successfully');
     } catch (error) {
-      console.warn('[DatabaseService] FTS5 not available or failed to initialize:', error);
-      console.log('[DatabaseService] Continuing without full-text search features');
+      // FTS5 is optional - log as debug instead of warning to reduce noise
+      console.log('[DatabaseService] FTS5 not available, continuing without full-text search features');
       // Don't throw - FTS5 is optional
     }
   }

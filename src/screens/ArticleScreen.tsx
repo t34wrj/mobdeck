@@ -3,6 +3,7 @@ import { View, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { Text } from '../components/ui/Text';
 import { fetchArticleById } from '../services/api';
 import { MainScreenProps } from '../navigation/types';
+import { colors } from '../components/ui/theme';
 
 const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
   navigation,
@@ -30,7 +31,7 @@ const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size='large' color='#0000ff' />
+        <ActivityIndicator size='large' color={colors.primary[500]} />
       </View>
     );
   }
@@ -57,7 +58,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.neutral[50],
   },
   loadingContainer: {
     flex: 1,
@@ -81,7 +82,7 @@ const styles = StyleSheet.create({
   },
   summary: {
     fontSize: 16,
-    color: '#666',
+    color: colors.neutral[600],
     marginBottom: 8,
   },
   content: {

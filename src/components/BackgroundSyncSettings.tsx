@@ -14,6 +14,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useBackgroundSync, SYNC_INTERVALS } from '../hooks/useBackgroundSync';
+import { colors } from '../components/ui/theme';
 
 interface SyncIntervalOption {
   label: string;
@@ -280,14 +281,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
   },
   selectedOption: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary[500],
   },
   intervalOptionText: {
     fontSize: 14,
     color: '#333',
   },
   selectedOptionText: {
-    color: 'white',
+    color: '#FFFFFF',
   },
   statusSection: {
     marginTop: 20,
@@ -315,7 +316,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   manualSyncButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: colors.primary[500],
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -323,10 +324,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   disabledButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: colors.neutral[400],
   },
   manualSyncButtonText: {
-    color: 'white',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -343,7 +344,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   refreshButton: {
-    color: '#007AFF',
+    color: colors.primary[500],
     fontSize: 14,
   },
   historyEntry: {
@@ -361,10 +362,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   successStatus: {
-    color: '#4CAF50',
+    color: colors.success[700],
   },
   errorStatus: {
-    color: '#F44336',
+    color: colors.error[500],
   },
   historyDetails: {
     fontSize: 12,

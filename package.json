@@ -23,7 +23,13 @@
     "test:performance:ui": "jest --testPathPattern='UIResponsiveness.perf.test.tsx' --verbose",
     "test:performance:articles": "jest --testPathPattern='ArticleOperations.perf.test.ts' --verbose",
     "test:performance:network": "jest --testPathPattern='NetworkPerformance.perf.test.ts' --verbose",
-    "performance:report": "npm run test:performance > performance-report.txt 2>&1"
+    "test:performance:device": "jest --testPathPattern='.*\\.perf\\.test\\.(ts|tsx)$' --verbose --testTimeout=60000",
+    "test:performance:network-device": "jest --testPathPattern='NetworkPerformance.perf.test.ts' --verbose --testTimeout=60000",
+    "performance:report": "npm run test:performance > performance-report.txt 2>&1",
+    "performance:setup-device": "./scripts/setup-device-tests.sh",
+    "performance:check-device": "adb devices && adb shell 'ps | grep com.mobdeck'",
+    "performance:device": "RUN_DEVICE_TESTS=true npm run test:performance:device",
+    "performance:network-device": "RUN_DEVICE_TESTS=true npm run test:performance:network-device"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.23.1",
@@ -47,6 +53,7 @@
     "react-native-screens": "^4.11.1",
     "react-native-share": "^10.2.1",
     "react-native-sqlite-storage": "^6.0.1",
+    "react-native-svg": "^15.12.0",
     "react-native-vector-icons": "^10.2.0",
     "react-redux": "^9.1.0",
     "redux": "^5.0.1"

@@ -9,6 +9,7 @@ import { initializeAuth } from '../store/slices/authSlice';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import { theme } from '../components/ui/theme';
 import { useShareIntent } from '../hooks/useShareIntent';
 import { ShareService } from '../services/ShareService';
 import { createArticle, fetchArticles, loadLocalArticles } from '../store/slices/articlesSlice';
@@ -187,7 +188,7 @@ const AppNavigator: React.FC = () => {
   if (authLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size='large' color='#2196F3' />
+        <ActivityIndicator size='large' color={theme.colors.primary[500]} />
       </View>
     );
   }
@@ -207,7 +208,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.neutral[50],
   },
 });
 

@@ -487,6 +487,13 @@ class BackgroundSyncService {
     };
 
     try {
+      // Check if user is authenticated first
+      const state = store.getState();
+      if (!state.auth.isAuthenticated) {
+        console.log('[BackgroundSyncService] User not authenticated, skipping sync');
+        return;
+      }
+
       // Check network conditions
       if (!this.shouldSyncOnCurrentNetwork()) {
         console.log(
@@ -496,7 +503,6 @@ class BackgroundSyncService {
       }
 
       // Check if sync is already running
-      const state = store.getState();
       if (state.sync.status === SyncStatus.SYNCING) {
         console.log(
           '[BackgroundSyncService] Sync already in progress, skipping'

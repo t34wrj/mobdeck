@@ -7,12 +7,14 @@ import {
   ActivityIndicator,
   TextInput,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Text } from '../../components/ui/Text';
 import { Button } from '../../components/ui/Button';
 import { ArticleCard } from '../../components/ArticleCard';
+import MobdeckLogo from '../../components/MobdeckLogo';
 import { theme } from '../../components/ui/theme';
 import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
@@ -152,7 +154,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
     () => [
       {
         key: 'all',
-        label: 'All Articles',
+        label: 'All',
         active: filters.isRead === undefined && filters.isArchived === undefined && filters.isFavorite === undefined,
       },
       { key: 'unread', label: 'Unread', active: filters.isRead === false },
@@ -308,9 +310,15 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text variant='h3' style={styles.headerTitle}>
-          Articles
-        </Text>
+        <View style={styles.headerLeft}>
+          <MobdeckLogo 
+            size={24}
+            color={theme.colors.accent[500]} // Tiffany Blue for contrast on green
+          />
+          <Text variant='h3' style={styles.headerTitle}>
+            Mobdeck
+          </Text>
+        </View>
         <TouchableOpacity
           style={styles.settingsButton}
           onPress={() => navigation.navigate('Settings')}
@@ -422,18 +430,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing[4],
     paddingVertical: theme.spacing[3],
-    backgroundColor: theme.colors.neutral[50],
+    backgroundColor: theme.colors.success[700], // Castleton Green
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.neutral[200],
+    borderBottomColor: theme.colors.success[800],
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   headerTitle: {
-    color: theme.colors.neutral[900],
+    color: theme.colors.neutral[50], // White text for contrast on green background
+    marginLeft: theme.spacing[2],
   },
   settingsButton: {
     padding: theme.spacing[2],
   },
   settingsIcon: {
     fontSize: 20,
+    color: theme.colors.neutral[50], // White color for contrast on green background
   },
   searchContainer: {
     flexDirection: 'row',

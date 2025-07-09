@@ -171,6 +171,10 @@ class ErrorHandler {
       return ErrorCategory.AUTHENTICATION;
     }
     
+    if (error?.status === 404 || error?.code === 'NOT_FOUND') {
+      return ErrorCategory.VALIDATION;
+    }
+    
     if (error?.status >= 400 && error?.status < 500) {
       return ErrorCategory.VALIDATION;
     }
