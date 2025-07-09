@@ -26,7 +26,16 @@ jest.mock('react-native', () => ({
   },
   StyleSheet: {
     create: jest.fn((styles) => styles),
+    flatten: jest.fn((styles) => styles),
   },
+  View: 'View',
+  Text: 'Text',
+  TouchableOpacity: 'TouchableOpacity',
+  ScrollView: 'ScrollView',
+  TextInput: 'TextInput',
+  FlatList: 'FlatList',
+  Image: 'Image',
+  Modal: 'Modal',
   NativeModules: {
     RNCNetInfo: {
       getCurrentState: jest.fn(() => Promise.resolve({
