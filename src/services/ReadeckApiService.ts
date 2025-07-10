@@ -14,7 +14,6 @@ import { errorHandler, ErrorCategory } from '../utils/errorHandler';
 import { logger } from '../utils/logger';
 import {
   validateUrl,
-  validateToken,
   getSecurityHeaders,
   defaultRateLimiter,
   maskSensitiveData,
@@ -214,7 +213,7 @@ class ReadeckApiService implements IReadeckApiService {
           return Promise.reject(error);
         }
         
-        const handledError = errorHandler.handleError(error, {
+        errorHandler.handleError(error, {
           category: ErrorCategory.NETWORK,
           context: { actionType: 'request_interceptor' },
         });
@@ -349,11 +348,11 @@ class ReadeckApiService implements IReadeckApiService {
   private sanitizeErrorDetails(details: string): string {
     // Remove potential sensitive information patterns
     return details
-      .replace(/Bearer\s+[\w\-\.]+/gi, 'Bearer [REDACTED]')
-      .replace(/[\w\-]+@[\w\-]+(\.[\w\-]+)+/g, '[EMAIL]')
+      .replace(/Bearer\s+[\w-.]+/gi, 'Bearer [REDACTED]')
+      .replace(/[\w-]+@[\w-]+(\.[\w-]+)+/g, '[EMAIL]')
       .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[IP]')
       .replace(/password[\s=:]+[\S]+/gi, 'password=[REDACTED]')
-      .replace(/api[_\-]?key[\s=:]+[\S]+/gi, 'api_key=[REDACTED]');
+      .replace(/api[_-]?key[\s=:]+[\S]+/gi, 'api_key=[REDACTED]');
   }
 
   /**
@@ -507,28 +506,23 @@ class ReadeckApiService implements IReadeckApiService {
   }
 
   async getArticle(id: string): Promise<ReadeckApiResponse<ReadeckArticle>> {
-    try {
-      console.log(`[ReadeckApiService] Fetching article with ID: ${id}`);
-      
-      // Get the article metadata from the bookmarks endpoint
-      const response = await this.makeRequest<ReadeckArticle>({
-        method: 'GET',
-        url: `/bookmarks/${id}`,
-      });
-      
-      console.log(`[ReadeckApiService] Article fetch successful: ${id}`);
-      console.log(`[ReadeckApiService] Response data structure:`, {
-        hasData: !!response.data,
-        dataKeys: response.data ? Object.keys(response.data) : [],
-        status: response.status,
-        timestamp: response.timestamp
-      });
-      
-      return response;
-    } catch (error) {
-      // Let the error handler manage logging
-      throw error;
-    }
+    console.log(`[ReadeckApiService] Fetching article with ID: ${id}`);
+    
+    // Get the article metadata from the bookmarks endpoint
+    const response = await this.makeRequest<ReadeckArticle>({
+      method: 'GET',
+      url: `/bookmarks/${id}`,
+    });
+    
+    console.log(`[ReadeckApiService] Article fetch successful: ${id}`);
+    console.log(`[ReadeckApiService] Response data structure:`, {
+      hasData: !!response.data,
+      dataKeys: response.data ? Object.keys(response.data) : [],
+      status: response.status,
+      timestamp: response.timestamp
+    });
+    
+    return response;
   }
 
   async createArticle(
@@ -560,9 +554,8 @@ class ReadeckApiService implements IReadeckApiService {
   }
 
   async getArticleContent(contentUrl: string): Promise<string> {
-    try {
-      console.log('[ReadeckApiService] Fetching article content from URL:', contentUrl);
-      console.log('[ReadeckApiService] Current base URL:', this.config.baseUrl);
+    console.log('[ReadeckApiService] Fetching article content from URL:', contentUrl);
+    console.log('[ReadeckApiService] Current base URL:', this.config.baseUrl);
       
       // Handle both absolute URLs and relative paths
       let requestUrl = contentUrl;
@@ -607,10 +600,6 @@ class ReadeckApiService implements IReadeckApiService {
       console.log('[ReadeckApiService] Content response received, length:', response.data?.length || 0);
       
       return response.data;
-    } catch (error) {
-      // Let the error handler manage logging
-      throw error;
-    }
   }
 
   // User methods
@@ -654,26 +643,22 @@ class ReadeckApiService implements IReadeckApiService {
       filters.limit = request.limit;
     }
     
-    try {
-      const response = await this.getArticles(filters);
-      
-      // Transform response to match expected sync response format
-      const syncResponse: ReadeckSyncResponse = {
-        articles: Array.isArray(response.data) ? response.data : response.data.articles || [],
-        last_updated: new Date().toISOString(),
-        total_count: Array.isArray(response.data) ? response.data.length : response.data.pagination?.total_count || 0,
-        has_more: Array.isArray(response.data) ? false : (response.data.pagination?.page || 1) < (response.data.pagination?.total_pages || 1)
-      };
-      
-      return {
-        data: syncResponse,
-        status: response.status,
-        headers: response.headers,
-        timestamp: response.timestamp
-      };
-    } catch (error) {
-      throw error;
-    }
+    const response = await this.getArticles(filters);
+    
+    // Transform response to match expected sync response format
+    const syncResponse: ReadeckSyncResponse = {
+      articles: Array.isArray(response.data) ? response.data : response.data.articles || [],
+      last_updated: new Date().toISOString(),
+      total_count: Array.isArray(response.data) ? response.data.length : response.data.pagination?.total_count || 0,
+      has_more: Array.isArray(response.data) ? false : (response.data.pagination?.page || 1) < (response.data.pagination?.total_pages || 1)
+    };
+    
+    return {
+      data: syncResponse,
+      status: response.status,
+      headers: response.headers,
+      timestamp: response.timestamp
+    };
   }
 
   // Labels methods - Updated to match Readeck API documentation
@@ -715,23 +700,23 @@ class ReadeckApiService implements IReadeckApiService {
     return this.getLabelInfo(name);
   }
 
-  async createLabel(label: any): Promise<ReadeckApiResponse<any>> {
+  async createLabel(_label: any): Promise<ReadeckApiResponse<any>> {
     // Note: Readeck API doesn't have a direct create label endpoint
     // Labels are created when assigned to bookmarks
     throw new Error('Creating labels directly is not supported by Readeck API. Labels are created when assigned to bookmarks.');
   }
 
-  async assignLabel(data: any): Promise<ReadeckApiResponse<void>> {
+  async assignLabel(_data: any): Promise<ReadeckApiResponse<void>> {
     // Note: Label assignment is done through bookmark update
     throw new Error('Use updateArticle with labels/add_labels fields instead of assignLabel');
   }
 
-  async removeLabel(data: any): Promise<ReadeckApiResponse<void>> {
+  async removeLabel(_data: any): Promise<ReadeckApiResponse<void>> {
     // Note: Label removal is done through bookmark update
     throw new Error('Use updateArticle with remove_labels field instead of removeLabel');
   }
 
-  async batchLabels(data: any): Promise<ReadeckApiResponse<any>> {
+  async batchLabels(_data: any): Promise<ReadeckApiResponse<any>> {
     // Note: Batch operations should be done through individual bookmark updates
     throw new Error('Batch label operations not supported. Use individual bookmark updates.');
   }
@@ -741,7 +726,7 @@ class ReadeckApiService implements IReadeckApiService {
     throw new Error('Use getLabels() to get label information including counts');
   }
 
-  async getArticleLabels(articleId: string): Promise<ReadeckApiResponse<any>> {
+  async getArticleLabels(_articleId: string): Promise<ReadeckApiResponse<any>> {
     // Note: Article labels are included in the bookmark details
     throw new Error('Article labels are included in bookmark details from getArticle()');
   }

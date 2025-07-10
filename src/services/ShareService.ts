@@ -1,7 +1,7 @@
 import { NativeModules } from 'react-native';
 import { SharedData } from '../types';
 import DatabaseService from './DatabaseService';
-import { DBSyncMetadata } from '../types/database';
+// import { DBSyncMetadata } from '../types/database'; // Currently unused
 
 const { MobdeckShareModule } = NativeModules;
 
@@ -71,7 +71,7 @@ export class ShareService {
   static extractUrl(text: string): string | null {
     // Enhanced URL regex that handles various URL formats
     const urlRegex =
-      /https?:\/\/(?:[-\w.])+(?:[:\d]+)?(?:\/(?:[\w\/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?)?/gi;
+      /https?:\/\/(?:[-\w.])+(?:[:\d]+)?(?:\/(?:[\w/_.])*(?:\?(?:[\w&=%.])*)?(?:#(?:[\w.])*)?)?/gi;
     const matches = text.match(urlRegex);
 
     if (matches && matches.length > 0) {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { Text, StyleSheet, Animated } from 'react-native';
 import { useAppTheme } from '../hooks/useAppTheme';
 import { connectivityManager, ConnectivityStatus } from '../utils/connectivityManager';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -35,7 +35,7 @@ export const ConnectivityIndicator: React.FC = () => {
     return () => {
       connectivityManager.off('statusChanged', handleStatusChange);
     };
-  }, []);
+  }, [animatedValue]);
   
   if (!visible && animatedValue._value === 0) {
     return null;
@@ -87,8 +87,8 @@ export const ConnectivityIndicator: React.FC = () => {
         },
       ]}
     >
-      <Icon name={config.icon} size={20} color="#FFFFFF" style={styles.icon} />
-      <Text style={[styles.text, { color: '#FFFFFF' }]}>{config.text}</Text>
+      <Icon name={config.icon} size={20} color={theme.colors.neutral[50]} style={styles.icon} />
+      <Text style={[styles.text, { color: theme.colors.neutral[50] }]}>{config.text}</Text>
     </Animated.View>
   );
 };

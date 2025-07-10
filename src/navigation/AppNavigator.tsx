@@ -12,11 +12,9 @@ import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { theme } from '../components/ui/theme';
 import { useShareIntent } from '../hooks/useShareIntent';
 import { ShareService } from '../services/ShareService';
-import { createArticle, fetchArticles, loadLocalArticles } from '../store/slices/articlesSlice';
-import { AppDispatch, RootState } from '../store';
+import { fetchArticles, loadLocalArticles } from '../store/slices/articlesSlice';
+import { AppDispatch } from '../store';
 import DatabaseService from '../services/DatabaseService';
-import { readeckApiService } from '../services/ReadeckApiService';
-import { startSyncOperation } from '../store/thunks/syncThunks';
 import NetInfo from '@react-native-community/netinfo';
 import { ConnectivityIndicator } from '../components/ConnectivityIndicator';
 
@@ -24,7 +22,6 @@ const AppNavigator: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const isAuthenticated = useSelector(selectIsUserAuthenticated);
   const authLoading = useSelector(selectAuthLoading);
-  const syncState = useSelector((state: RootState) => state.sync);
   const { sharedData, clearSharedData } = useShareIntent();
   const [networkConnected, setNetworkConnected] = useState(true);
 
@@ -183,7 +180,7 @@ const AppNavigator: React.FC = () => {
         clearSharedData();
       }
     }
-  }, [isAuthenticated, sharedData, clearSharedData, dispatch]);
+  }, [isAuthenticated, sharedData, clearSharedData, dispatch, networkConnected]);
 
   if (authLoading) {
     return (

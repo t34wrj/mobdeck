@@ -3,7 +3,6 @@ import { RootState } from '../index';
 import { Article } from '../../types';
 import {
   selectAllArticles,
-  selectArticleById,
   selectArticleEntities,
 } from '../slices/articlesSlice';
 

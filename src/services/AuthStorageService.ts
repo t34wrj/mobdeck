@@ -23,7 +23,7 @@ interface AuthStorageData extends AuthToken {
     lastLoginAt: string;
   };
 }
-import { validateToken, generateSecureRandom, hashData } from '../utils/security';
+import { generateSecureRandom, hashData } from '../utils/security';
 import { logger } from '../utils/logger';
 
 /**

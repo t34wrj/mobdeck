@@ -30,7 +30,7 @@ import {
   RemoveLabelRequest,
   BatchLabelAssignmentRequest,
 } from '../types/labels';
-import { ReadeckApiResponse, ReadeckApiError } from '../types/readeck';
+import { ReadeckApiResponse } from '../types/readeck';
 
 /**
  * LabelsApiService - Comprehensive labels management service
@@ -267,7 +267,7 @@ class LabelsApiService implements ILabelsApiService {
       );
       return paginatedResponse;
     } catch (error) {
-      this.handleApiError(error, 'Fetch labels');
+      return this.handleApiError(error, 'Fetch labels');
     }
   }
 
@@ -299,7 +299,7 @@ class LabelsApiService implements ILabelsApiService {
       console.log('[LabelsApiService] Successfully created label:', label.id);
       return label;
     } catch (error) {
-      this.handleApiError(error, 'Create label');
+      return this.handleApiError(error, 'Create label');
     }
   }
 
@@ -323,7 +323,7 @@ class LabelsApiService implements ILabelsApiService {
       console.log('[LabelsApiService] Successfully updated label:', label.id);
       return label;
     } catch (error) {
-      this.handleApiError(error, 'Update label', params.id);
+      return this.handleApiError(error, 'Update label', params.id);
     }
   }
 
@@ -346,8 +346,9 @@ class LabelsApiService implements ILabelsApiService {
 
       this.invalidateCache(params.id);
       console.log('[LabelsApiService] Successfully deleted label:', params.id);
+      return; // Explicitly return void
     } catch (error) {
-      this.handleApiError(error, 'Delete label', params.id);
+      throw this.handleApiError(error, 'Delete label', params.id);
     }
   }
 
@@ -372,8 +373,9 @@ class LabelsApiService implements ILabelsApiService {
       this.invalidateCache(params.labelId);
 
       console.log('[LabelsApiService] Successfully assigned label to article');
+      return; // Explicitly return void
     } catch (error) {
-      this.handleApiError(
+      throw this.handleApiError(
         error,
         'Assign label to article',
         params.labelId,
@@ -403,8 +405,9 @@ class LabelsApiService implements ILabelsApiService {
       this.invalidateCache(params.labelId);
 
       console.log('[LabelsApiService] Successfully removed label from article');
+      return; // Explicitly return void
     } catch (error) {
-      this.handleApiError(
+      throw this.handleApiError(
         error,
         'Remove label from article',
         params.labelId,
@@ -436,7 +439,7 @@ class LabelsApiService implements ILabelsApiService {
       console.log('[LabelsApiService] Successfully fetched label:', label.id);
       return label;
     } catch (error) {
-      this.handleApiError(error, 'Get label', id);
+      return this.handleApiError(error, 'Get label', id);
     }
   }
 
@@ -474,7 +477,7 @@ class LabelsApiService implements ILabelsApiService {
 
       return response.data;
     } catch (error) {
-      this.handleApiError(error, 'Batch assign labels');
+      return this.handleApiError(error, 'Batch assign labels');
     }
   }
 
@@ -509,7 +512,7 @@ class LabelsApiService implements ILabelsApiService {
 
       return stats;
     } catch (error) {
-      this.handleApiError(error, 'Get label stats');
+      return this.handleApiError(error, 'Get label stats');
     }
   }
 
@@ -534,7 +537,7 @@ class LabelsApiService implements ILabelsApiService {
       );
       return labels;
     } catch (error) {
-      this.handleApiError(error, 'Batch update labels');
+      return this.handleApiError(error, 'Batch update labels');
     }
   }
 
@@ -578,7 +581,7 @@ class LabelsApiService implements ILabelsApiService {
 
       return response.items;
     } catch (error) {
-      this.handleApiError(error, 'Search labels');
+      return this.handleApiError(error, 'Search labels');
     }
   }
 
@@ -604,7 +607,7 @@ class LabelsApiService implements ILabelsApiService {
       );
       return labels;
     } catch (error) {
-      this.handleApiError(
+      return this.handleApiError(
         error,
         'Get labels for article',
         undefined,

@@ -58,7 +58,7 @@ const getArticles = (callback: (articles: any[]) => void) => {
     tx.executeSql(
       'SELECT * FROM articles',
       [],
-      (tx, results) => {
+      (_tx, results) => {
         const articles: any[] = [];
         for (let i = 0; i < results.rows.length; i++) {
           articles.push(results.rows.item(i));

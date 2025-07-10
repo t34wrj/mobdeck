@@ -10,7 +10,6 @@ import { AppState, AppStateStatus } from 'react-native';
 import { useAppSelector, useAppDispatch, store } from '../store';
 import {
   backgroundSyncService,
-  SYNC_INTERVALS,
 } from '../services/BackgroundSyncService';
 import { updateSyncConfig } from '../store/slices/syncSlice';
 
@@ -81,6 +80,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
       const interval = setInterval(updateSyncStatus, 30000); // Update every 30 seconds
       return () => clearInterval(interval);
     }
+    return undefined;
   }, [appState]);
 
   /**

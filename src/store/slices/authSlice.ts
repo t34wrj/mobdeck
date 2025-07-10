@@ -114,6 +114,8 @@ export const logoutUser = createAsyncThunk<void, void, { rejectValue: string; di
         console.warn('[AuthSlice] Error clearing local data during logout:', error);
         // Don't fail the logout if data cleanup fails
       }
+      
+      return undefined; // Explicit return for consistency
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Logout failed';

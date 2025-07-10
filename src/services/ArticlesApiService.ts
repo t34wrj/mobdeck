@@ -5,7 +5,7 @@
  */
 
 import { readeckApiService } from './ReadeckApiService';
-import { Article, PaginatedResponse, ApiResponse } from '../types';
+import { Article, PaginatedResponse } from '../types';
 import {
   ReadeckArticle,
   ReadeckArticleList,
@@ -13,10 +13,9 @@ import {
   UpdateArticleRequest,
   ArticleFilters,
   ReadeckApiResponse,
-  ReadeckApiError,
 } from '../types/readeck';
 import { RetryManager } from '../utils/retryManager';
-import { connectivityManager, ConnectivityStatus } from '../utils/connectivityManager';
+import { connectivityManager } from '../utils/connectivityManager';
 import { cacheService } from './CacheService';
 
 /**
@@ -351,7 +350,7 @@ class ArticlesApiService implements IArticlesApiService {
             id: article.id,
             title: `${article.title?.substring(0, 50)  }...`,
             read_progress: article.read_progress,
-            computed_isRead: article.read_progress !== undefined && article.read_progress >= 100
+            computedIsRead: article.read_progress !== undefined && article.read_progress >= 100
           }))
         );
         
@@ -527,7 +526,7 @@ class ArticlesApiService implements IArticlesApiService {
           message: 'Unable to connect to server. Please check your internet connection and server settings.',
         };
       }
-      this.handleApiError(error, 'Fetch articles');
+      return this.handleApiError(error, 'Fetch articles');
     }
       },
       {
@@ -565,7 +564,7 @@ class ArticlesApiService implements IArticlesApiService {
       );
       return article;
     } catch (error) {
-      this.handleApiError(error, 'Create article');
+      throw this.handleApiError(error, 'Create article');
     }
   }
 
@@ -593,7 +592,7 @@ class ArticlesApiService implements IArticlesApiService {
       );
       return article;
     } catch (error) {
-      this.handleApiError(error, 'Update article');
+      throw this.handleApiError(error, 'Update article');
     }
   }
 
@@ -617,7 +616,7 @@ class ArticlesApiService implements IArticlesApiService {
         params.id
       );
     } catch (error) {
-      this.handleApiError(error, 'Delete article');
+      throw this.handleApiError(error, 'Delete article');
     }
   }
 
@@ -660,7 +659,7 @@ class ArticlesApiService implements IArticlesApiService {
 
       return { syncedCount, conflictCount };
     } catch (error) {
-      this.handleApiError(error, 'Sync articles');
+      throw this.handleApiError(error, 'Sync articles');
     }
   }
 
@@ -706,7 +705,7 @@ class ArticlesApiService implements IArticlesApiService {
       );
       return article;
     } catch (error) {
-      this.handleApiError(error, 'Get article');
+      throw this.handleApiError(error, 'Get article');
     }
   }
 
@@ -753,7 +752,7 @@ class ArticlesApiService implements IArticlesApiService {
       );
       return articles;
     } catch (error) {
-      this.handleApiError(error, 'Batch update articles');
+      throw this.handleApiError(error, 'Batch update articles');
     }
   }
 
@@ -772,7 +771,7 @@ class ArticlesApiService implements IArticlesApiService {
         ids.length
       );
     } catch (error) {
-      this.handleApiError(error, 'Batch delete articles');
+      throw this.handleApiError(error, 'Batch delete articles');
     }
   }
 
@@ -799,7 +798,7 @@ class ArticlesApiService implements IArticlesApiService {
         archived: stats.archived_articles,
       };
     } catch (error) {
-      this.handleApiError(error, 'Get article stats');
+      throw this.handleApiError(error, 'Get article stats');
     }
   }
 

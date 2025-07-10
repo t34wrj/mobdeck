@@ -8,7 +8,7 @@ interface MobdeckLogoProps {
 
 const MobdeckLogo: React.FC<MobdeckLogoProps> = ({ 
   size = 24, 
-  color = '#f9bd4d' // This prop is now unused but kept for compatibility
+  color: _color = '#f9bd4d' // This prop is now unused but kept for compatibility
 }) => {
   return (
     <View style={[styles.container, { width: size, height: size }]}>

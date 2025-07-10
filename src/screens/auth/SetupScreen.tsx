@@ -229,7 +229,7 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
           disabled={isTesting || !testUrl.trim() || !testToken.trim()}
           style={styles.testButton}
         >
-          Test Connection
+          <Text>Test Connection</Text>
         </Button>
       </View>
 
@@ -241,7 +241,7 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
           onPress={handleBackToLogin}
           style={styles.backButton}
         >
-          {testResult?.success ? 'Continue to Login' : 'Back to Login'}
+          <Text>{testResult?.success ? 'Continue to Login' : 'Back to Login'}</Text>
         </Button>
 
         <Text

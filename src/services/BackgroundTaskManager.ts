@@ -10,9 +10,8 @@
  */
 
 import {
-  NativeModules,
   DeviceEventEmitter,
-  PermissionsAndroid,
+  PermissionsAndroid, // eslint-disable-line react-native/split-platform-components
   Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -22,8 +21,6 @@ import { syncError } from '../store/slices/syncSlice';
 
 // Background task constants
 const BACKGROUND_TASK_STORAGE_KEY = '@mobdeck/background_tasks';
-const NOTIFICATION_PERMISSION_KEY = '@mobdeck/notification_permission';
-const ALARM_PERMISSION_KEY = '@mobdeck/alarm_permission';
 
 interface BackgroundTaskConfig {
   taskId: string;
@@ -235,7 +232,7 @@ class BackgroundTaskManager {
       // This would typically require a native module implementation
       // For now, we'll assume permission is granted and handle gracefully
       return true;
-    } catch (error) {
+    } catch (error) { // eslint-disable-line no-unreachable
       console.warn(
         '[BackgroundTaskManager] Could not check exact alarm permission:',
         error

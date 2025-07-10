@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   TextInput,
   TouchableOpacity,
-  Image,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,10 +18,8 @@ import { theme } from '../../components/ui/theme';
 import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
 import {
-  fetchArticles,
   loadLocalArticles,
   setFilters,
-  clearFilters,
   setPage,
   syncArticles,
   selectAllArticles,
@@ -110,7 +107,8 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       
       return () => clearTimeout(timer);
     }
-  }, [dispatch, articles.length, isAuthenticated]);
+    return undefined;
+  }, [dispatch, articles.length, isAuthenticated, isOnline]);
 
   // Pull to refresh
   const handleRefresh = useCallback(() => {
@@ -257,7 +255,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
           onPress={handleClearSearch}
           style={styles.clearButton}
         >
-          Clear Search
+          <Text>Clear Search</Text>
         </Button>
       )}
     </View>
@@ -361,9 +359,9 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
                 variant='primary'
                 size='sm'
                 onPress={() => navigation.navigate('Settings')}
-                style={[styles.retryButton, { marginRight: 8 }]}
+                style={styles.settingsButton}
               >
-                Settings
+                <Text>Settings</Text>
               </Button>
             ) : null}
             <Button
@@ -375,7 +373,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
               }}
               style={styles.retryButton}
             >
-              Retry
+              <Text>Retry</Text>
             </Button>
           </View>
         </View>

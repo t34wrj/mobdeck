@@ -1,6 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
 import { RootState } from '../index';
-import { SyncStatus, SyncPhase, ConflictType } from '../../types/sync';
+import { SyncStatus, ConflictType } from '../../types/sync';
 
 // Base selector for sync state
 const selectSyncState = (state: RootState) => state.sync;

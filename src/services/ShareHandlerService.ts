@@ -10,8 +10,7 @@ import {
   isLikelyArticleUrl,
   UrlValidationOptions,
 } from '../utils/urlValidation';
-import { SharedData, ShareModuleInterface } from '../types';
-import { Article, AppError, ErrorCode } from '../types';
+import { SharedData, ShareModuleInterface, Article } from '../types';
 import { NativeModules } from 'react-native';
 
 export interface ShareProcessingResult {

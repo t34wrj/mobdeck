@@ -7,7 +7,6 @@ import { theme } from './ui/theme';
 import { RootState, AppDispatch } from '../store';
 import {
   pauseSync,
-  resumeSync,
   clearSyncError,
   resetSyncStatus,
   cancelSync,
@@ -224,7 +223,7 @@ export const SyncSettings: React.FC = () => {
 
         {isSyncing && (
           <Button variant='secondary' onPress={handlePauseSync} fullWidth>
-            Pause Sync
+            <Text>Pause Sync</Text>
           </Button>
         )}
 
@@ -235,14 +234,14 @@ export const SyncSettings: React.FC = () => {
               onPress={handleResumeSync}
               style={styles.resumeButton}
             >
-              Resume
+              <Text>Resume</Text>
             </Button>
             <Button
               variant='outline'
               onPress={handleCancelSync}
               style={styles.cancelButton}
             >
-              Cancel
+              <Text>Cancel</Text>
             </Button>
           </View>
         )}
@@ -264,7 +263,7 @@ export const SyncSettings: React.FC = () => {
           onPress={handleClearError}
           style={styles.clearErrorButton}
         >
-          Dismiss
+          <Text>Dismiss</Text>
         </Button>
       </View>
     );

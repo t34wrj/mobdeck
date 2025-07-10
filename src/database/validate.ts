@@ -1,6 +1,6 @@
 // Database schema validation utilities
 import { DatabaseManager, databaseManager } from './init';
-import { DBArticle, DBLabel, DatabaseStats } from './types';
+import { DatabaseStats } from './types';
 
 export class DatabaseValidator {
   private db: DatabaseManager;

@@ -222,7 +222,7 @@ class ErrorHandler {
     return `${categoryPrefix}_${errorType}_${timestamp}`;
   }
 
-  private getUserFriendlyMessage(category: ErrorCategory, code: string): string {
+  private getUserFriendlyMessage(category: ErrorCategory, _code: string): string {
     const messages: Record<ErrorCategory, string> = {
       [ErrorCategory.NETWORK]: 'Unable to connect to the server. Please check your internet connection and try again.',
       [ErrorCategory.AUTHENTICATION]: 'Authentication failed. Please check your credentials and try logging in again.',

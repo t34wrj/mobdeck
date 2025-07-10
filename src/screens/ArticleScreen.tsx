@@ -6,7 +6,7 @@ import { MainScreenProps } from '../navigation/types';
 import { colors } from '../components/ui/theme';
 
 const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
-  navigation,
+  navigation: _navigation,
   route,
 }) => {
   const { articleId } = route.params;

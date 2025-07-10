@@ -75,7 +75,7 @@ const SettingsRow: React.FC<SettingsRowProps> = ({
 );
 
 export const SettingsScreen: React.FC<SettingsScreenProps> = ({
-  navigation,
+  navigation: _navigation,
 }) => {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
@@ -226,7 +226,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               loading={authLoading}
               fullWidth
             >
-              Logout
+              <Text>Logout</Text>
             </Button>
           </View>
         </SettingsSection>
@@ -343,7 +343,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   onPress={handleResetSyncSettings}
                   fullWidth
                 >
-                  Reset to Defaults
+                  <Text>Reset to Defaults</Text>
                 </Button>
               </View>
             </View>

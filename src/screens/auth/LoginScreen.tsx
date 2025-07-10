@@ -250,7 +250,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
             accessibilityLabel='Login button'
             accessibilityHint='Tap to connect to your Readeck server'
           >
-            Connect to Server
+            <Text>Connect to Server</Text>
           </Button>
 
           <View style={styles.divider}>
@@ -274,7 +274,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
             accessibilityLabel='Setup button'
             accessibilityHint='Tap to get help setting up your API token'
           >
-            Need help? Setup Guide
+            <Text>Need help? Setup Guide</Text>
           </Button>
         </View>
 

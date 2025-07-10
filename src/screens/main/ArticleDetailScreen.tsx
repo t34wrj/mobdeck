@@ -26,7 +26,6 @@ import {
   updateArticleLocalWithDB,
 } from '../../store/slices/articlesSlice';
 import { articlesApiService } from '../../services/ArticlesApiService';
-import { Article } from '../../types';
 
 type ArticleDetailScreenProps = MainScreenProps<'ArticleDetail'>;
 
@@ -135,12 +134,12 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
               }
             }, 1000);
             
-          } catch (error) {
-            console.error('[ArticleDetailScreen] Failed to sync local article to server:', error);
+          } catch (syncErr) {
+            console.error('[ArticleDetailScreen] Failed to sync local article to server:', syncErr);
             console.error('[ArticleDetailScreen] Error details:', {
-              message: error.message,
-              stack: error.stack,
-              name: error.name
+              message: syncErr.message,
+              stack: syncErr.stack,
+              name: syncErr.name
             });
             
             // Show user-friendly error message
@@ -160,8 +159,8 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
                 updates: { content: htmlContent },
               })
             );
-          } catch (error) {
-            console.error('[ArticleDetailScreen] Failed to auto-fetch content:', error);
+          } catch (fetchErr) {
+            console.error('[ArticleDetailScreen] Failed to auto-fetch content:', fetchErr);
           }
         }
       }
@@ -245,11 +244,11 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
         `Content fetched: ${updatedArticle.content ? 'YES' : 'NO'}\nContent length: ${updatedArticle.content?.length || 0} chars\nFields available: ${Object.keys(updatedArticle).join(', ')}`,
         [{ text: 'OK' }]
       );
-    } catch (error) {
-      console.error('[ArticleDetailScreen] Failed to refresh article:', error);
+    } catch (refreshErr) {
+      console.error('[ArticleDetailScreen] Failed to refresh article:', refreshErr);
       Alert.alert(
         'Refresh Failed',
-        `Unable to fetch latest article content. Error: ${error.message || 'Unknown error'}`,
+        `Unable to fetch latest article content. Error: ${refreshErr.message || 'Unknown error'}`,
         [{ text: 'OK' }]
       );
     } finally {
@@ -268,7 +267,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
           updates: { isFavorite: !article.isFavorite },
         })
       ).unwrap();
-    } catch (error) {
+    } catch (favoriteErr) {
       Alert.alert(
         'Error',
         'Failed to update favorite status. Please try again.',
@@ -288,7 +287,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
           updates: { isArchived: !article.isArchived },
         })
       ).unwrap();
-    } catch (error) {
+    } catch (archiveErr) {
       Alert.alert(
         'Error',
         'Failed to update archive status. Please try again.',
@@ -308,7 +307,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
           updates: { isRead: !article.isRead },
         })
       ).unwrap();
-    } catch (error) {
+    } catch (readErr) {
       Alert.alert('Error', 'Failed to update read status. Please try again.', [
         { text: 'OK' },
       ]);
@@ -325,7 +324,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
         url: article.url,
         title: article.title,
       });
-    } catch (error) {
+    } catch (shareErr) {
       Alert.alert('Error', 'Failed to share article. Please try again.', [
         { text: 'OK' },
       ]);
@@ -348,7 +347,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
             try {
               await dispatch(deleteArticle({ id: articleId })).unwrap();
               navigation.goBack();
-            } catch (error) {
+            } catch (deleteErr) {
               Alert.alert(
                 'Error',
                 'Failed to delete article. Please try again.',
@@ -419,7 +418,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          Go Back
+          <Text>Go Back</Text>
         </Button>
       </View>
     );
@@ -440,7 +439,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          Go Back
+          <Text>Go Back</Text>
         </Button>
       </View>
     );
@@ -532,7 +531,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
             onPress={() => setShowActions(!showActions)}
             style={styles.actionToggle}
           >
-            {showActions ? 'Hide Actions' : 'Show Actions'}
+            <Text>{showActions ? 'Hide Actions' : 'Show Actions'}</Text>
           </Button>
 
           {showActions && (
@@ -544,7 +543,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
                 style={styles.actionButton}
                 loading={loading.update}
               >
-                {article.isFavorite ? 'Unfavorite' : 'Favorite'}
+                <Text>{article.isFavorite ? 'Unfavorite' : 'Favorite'}</Text>
               </Button>
 
               <Button
@@ -554,7 +553,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
                 style={styles.actionButton}
                 loading={loading.update}
               >
-                {article.isArchived ? 'Unarchive' : 'Archive'}
+                <Text>{article.isArchived ? 'Unarchive' : 'Archive'}</Text>
               </Button>
 
               <Button
@@ -564,7 +563,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
                 style={styles.actionButton}
                 loading={loading.update}
               >
-                {article.isRead ? 'Mark Unread' : 'Mark Read'}
+                <Text>{article.isRead ? 'Mark Unread' : 'Mark Read'}</Text>
               </Button>
 
               <Button
@@ -573,7 +572,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
                 onPress={handleManageLabels}
                 style={styles.actionButton}
               >
-                Manage Labels
+                <Text>Manage Labels</Text>
               </Button>
 
               <Button
@@ -582,7 +581,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
                 onPress={handleShare}
                 style={styles.actionButton}
               >
-                Share
+                <Text>Share</Text>
               </Button>
 
               <Button
@@ -592,7 +591,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
                 style={styles.actionButton}
                 loading={loading.delete}
               >
-                Delete
+                <Text>Delete</Text>
               </Button>
             </View>
           )}

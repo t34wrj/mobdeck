@@ -10,8 +10,8 @@ import { RootState, AppDispatch } from '../store';
 import { theme } from '../components/ui/theme';
 
 const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
-  navigation,
-  route,
+  navigation: _navigation,
+  route: _route,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const articles = useSelector(selectAllArticles);

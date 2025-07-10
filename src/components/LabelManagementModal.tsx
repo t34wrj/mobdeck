@@ -270,7 +270,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
             loading={saving}
             disabled={loading}
           >
-            Save
+            <Text>Save</Text>
           </Button>
         </View>
 
@@ -322,7 +322,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
                 onPress={() => setCreateMode(false)}
                 style={styles.createLabelButton}
               >
-                Cancel
+                <Text>Cancel</Text>
               </Button>
               <Button
                 variant='primary'
@@ -331,7 +331,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
                 loading={loading}
                 style={styles.createLabelButton}
               >
-                Create
+                <Text>Create</Text>
               </Button>
             </View>
           </View>
@@ -343,7 +343,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
               onPress={() => setCreateMode(true)}
               style={styles.createNewButton}
             >
-              + Create New Label
+              <Text>+ Create New Label</Text>
             </Button>
           </View>
         )}

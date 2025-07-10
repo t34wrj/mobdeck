@@ -16,7 +16,6 @@ import SQLite from 'react-native-sqlite-storage';
 import {
   DatabaseServiceInterface,
   DatabaseConfig,
-  DatabaseConnection,
   DatabaseTransaction,
   DatabaseResult,
   DatabaseOperationResult,
@@ -25,9 +24,7 @@ import {
   TransactionContext,
   DBArticle,
   DBLabel,
-  DBArticleLabel,
   DBSyncMetadata,
-  DBSchemaVersion,
   ArticleFilters,
   LabelFilters,
   SyncMetadataFilters,
@@ -1154,7 +1151,7 @@ class DatabaseService implements DatabaseServiceInterface {
     }
   }
 
-  public async backup(path: string): Promise<DatabaseOperationResult> {
+  public async backup(_path: string): Promise<DatabaseOperationResult> {
     // TODO: Implement database backup functionality
     return {
       success: false,

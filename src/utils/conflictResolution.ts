@@ -211,8 +211,8 @@ export function detectConflicts(
  */
 function getConflictType(
   field: keyof Article,
-  localValue: any,
-  remoteValue: any
+  _localValue: any,
+  _remoteValue: any
 ): ConflictType {
   switch (field) {
     case 'title':
@@ -238,8 +238,8 @@ function getConflictType(
  */
 function getConflictSeverity(
   field: keyof Article,
-  localValue: any,
-  remoteValue: any
+  _localValue: any,
+  _remoteValue: any
 ): 'low' | 'medium' | 'high' {
   switch (field) {
     case 'content':

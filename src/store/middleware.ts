@@ -45,7 +45,7 @@ export const errorHandlerMiddleware: Middleware<{}, RootState> =
  * Tracks action processing time in development
  */
 export const performanceMiddleware: Middleware<{}, RootState> =
-  store => next => (action: AnyAction) => {
+  _store => next => (action: AnyAction) => {
     if (__DEV__) {
       const startTime = performance.now();
       const result = next(action);

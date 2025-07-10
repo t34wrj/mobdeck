@@ -277,7 +277,7 @@ export class AdbHelper {
   /**
    * Measure app performance metrics
    */
-  async measurePerformance(operation: () => Promise<void>, testName: string): Promise<PerformanceMetrics> {
+  async measurePerformance(operation: () => Promise<void>, _testName: string): Promise<PerformanceMetrics> {
     if (!this.currentDevice) {
       throw new Error('No device connected');
     }

@@ -35,7 +35,7 @@ const TOKEN_PATTERNS = {
 /**
  * SQL injection patterns to detect and prevent
  */
-const SQL_INJECTION_PATTERNS = [
+export const SQL_INJECTION_PATTERNS = [
   /(\b(union|select|insert|update|delete|drop|create|alter|exec|execute)\b)/i,
   /(--|#|\/\*|\*\/|;|\||&&)/,
   /(\bor\b\s*\d+\s*=\s*\d+|\band\b\s*\d+\s*=\s*\d+)/i,

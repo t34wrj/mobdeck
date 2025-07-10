@@ -11,7 +11,7 @@
  * - Progress tracking and status reporting
  */
 
-import DatabaseService from './DatabaseService';
+import DatabaseService, { DatabaseUtilityFunctions } from './DatabaseService';
 import { readeckApiService } from './ReadeckApiService';
 import { articlesApiService } from './ArticlesApiService';
 import { ShareService } from './ShareService';
@@ -35,10 +35,8 @@ import {
   NetworkType,
 } from '../types/sync';
 import { Article } from '../types';
-import { DatabaseUtilityFunctions } from './DatabaseService';
 import { resolveConflict as resolveArticleConflict } from '../utils/conflictResolution';
 import { connectivityManager, ConnectivityStatus } from '../utils/connectivityManager';
-import { RetryManager } from '../utils/retryManager';
 
 interface SyncOperation {
   id: string;
@@ -570,7 +568,7 @@ class SyncService {
 
         if (existsOnServer) {
           // Update existing article
-          const updateResult = await articlesApiService.updateArticle({
+          await articlesApiService.updateArticle({
             id: article.id,
             updates: {
               title: article.title,
@@ -914,7 +912,7 @@ class SyncService {
    */
   private async resolveLocalWins(
     localArticle: Article,
-    remoteArticle: Article
+    _remoteArticle: Article
   ): Promise<boolean> {
     try {
       // Keep local version, but update sync timestamp
@@ -1034,22 +1032,17 @@ class SyncService {
    * Fetch remote articles modified since a specific timestamp
    */
   private async fetchRemoteArticlesSince(since: Date): Promise<Article[]> {
-    try {
-      // Use the existing ArticlesApiService to fetch articles
-      const response = await articlesApiService.fetchArticles({
-        page: 1,
-        limit: 1000, // Fetch a large batch for sync
-        forceRefresh: true,
-      });
+    // Use the existing ArticlesApiService to fetch articles
+    const response = await articlesApiService.fetchArticles({
+      page: 1,
+      limit: 1000, // Fetch a large batch for sync
+      forceRefresh: true,
+    });
 
-      // Filter articles modified since the timestamp
-      return response.items.filter(
-        article => new Date(article.updatedAt) > since
-      );
-    } catch (error) {
-      // Let the error handler manage logging
-      throw error;
-    }
+    // Filter articles modified since the timestamp
+    return response.items.filter(
+      article => new Date(article.updatedAt) > since
+    );
   }
 
   /**
@@ -1230,7 +1223,7 @@ class SyncService {
   /**
    * Get current sync status
    */
-  public isRunning(): boolean {
+  public isSyncRunning(): boolean {
     return this.isRunning;
   }
 

@@ -291,7 +291,7 @@ export const loadLocalArticles = createAsyncThunk<
   PaginatedResponse<Article>,
   FetchArticlesParams,
   { rejectValue: string; state: RootState }
->('articles/loadLocalArticles', async (params, { rejectWithValue, getState }) => {
+>('articles/loadLocalArticles', async (params, { rejectWithValue }) => {
   try {
     console.log('[articlesSlice] Loading articles from local database...');
     

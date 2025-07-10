@@ -699,6 +699,170 @@ describe('DatabaseService', () => {
             expect(result.error).toContain('Failed to create label');
         });
     });
+
+    describe('Additional Coverage Tests', () => {
+        beforeEach(async () => {
+            await dbService.initialize();
+        });
+
+        describe('Schema Initialization', () => {
+            it('should handle FTS5 initialization failure gracefully', async () => {
+                // Mock executeSql to fail on FTS5 queries
+                const originalMock = mockDb.executeSql;
+                mockDb.executeSql = jest.fn().mockImplementation((sql) => {
+                    if (sql.includes('FTS5') || sql.includes('fts5')) {
+                        return Promise.reject(new Error('FTS5 not supported'));
+                    }
+                    return originalMock(sql);
+                });
+
+                // Should not throw even if FTS5 fails
+                await expect(dbService.initialize()).resolves.not.toThrow();
+            });
+        });
+
+        describe('Search Fallback', () => {
+            it('should fallback to LIKE search when FTS5 search fails', async () => {
+                // First call will fail (FTS5 search)
+                mockDb.executeSql
+                    .mockRejectedValueOnce(new Error('no such table: articles_fts'))
+                    // Then succeed with LIKE search
+                    .mockResolvedValueOnce([{ 
+                        rows: { 
+                            length: 1,
+                            item: jest.fn().mockReturnValue({ 
+                                id: 'article-1',
+                                title: 'Test Article',
+                                created_at: 1640995200,
+                                updated_at: 1640995200
+                            })
+                        } 
+                    }])
+                    .mockResolvedValueOnce([{ 
+                        rows: { 
+                            item: jest.fn().mockReturnValue({ count: 1 }) 
+                        } 
+                    }]);
+
+                const result = await dbService.searchArticles('test');
+                
+                expect(result.success).toBe(true);
+                expect(result.data?.items).toHaveLength(1);
+                // Verify LIKE query was used
+                expect(mockDb.executeSql).toHaveBeenCalledWith(
+                    expect.stringContaining('LIKE ?'),
+                    expect.arrayContaining(['%test%'])
+                );
+            });
+        });
+
+        describe('clearAllData', () => {
+            it('should clear all data from database tables', async () => {
+                const result = await dbService.clearAllData();
+                
+                expect(result.success).toBe(true);
+                expect(mockDb.transaction).toHaveBeenCalled();
+            });
+
+            it('should handle clearAllData errors', async () => {
+                mockDb.transaction.mockImplementation((_callback: any, error: any) => {
+                    error(new Error('Clear data failed'));
+                });
+
+                const result = await dbService.clearAllData();
+                
+                expect(result.success).toBe(false);
+                expect(result.error).toContain('Failed to clear all data');
+            });
+        });
+
+        describe('Migration Error Handling', () => {
+            it('should handle migration errors', async () => {
+                mockDb.executeSql.mockResolvedValueOnce([{
+                    rows: { item: () => ({ version: 1 }) }
+                }]);
+
+                const failingMigration = {
+                    version: 2,
+                    description: 'Failing migration',
+                    up: jest.fn().mockImplementation(() => {
+                        throw new Error('Migration failed');
+                    }),
+                    down: jest.fn()
+                };
+
+                const result = await dbService.runMigrations([failingMigration]);
+                
+                expect(result.success).toBe(false);
+                expect(result.error).toContain('Migration failed');
+            });
+
+            it('should handle getCurrentVersion error', async () => {
+                mockDb.executeSql.mockRejectedValueOnce(new Error('Table not found'));
+                
+                const version = await dbService.getCurrentVersion();
+                
+                expect(version).toBe(0);
+            });
+        });
+
+        describe('Edge Cases', () => {
+            it('should handle empty label filters', async () => {
+                mockDb.executeSql
+                    .mockResolvedValueOnce([{ rows: { item: () => ({ count: 0 }) } }])
+                    .mockResolvedValueOnce([{ rows: { length: 0 } }]);
+
+                const result = await dbService.getLabels({});
+                
+                expect(result.success).toBe(true);
+                expect(result.data?.items).toHaveLength(0);
+            });
+
+            it('should handle article updates with no changes', async () => {
+                const result = await dbService.updateArticle('test-id', {});
+                
+                expect(result.success).toBe(true);
+                expect(result.rowsAffected).toBe(0);
+                // Should not execute any SQL
+                expect(mockDb.executeSql).not.toHaveBeenCalled();
+            });
+
+            it('should handle label updates with no changes', async () => {
+                const result = await dbService.updateLabel(1, {});
+                
+                expect(result.success).toBe(true);
+                expect(result.rowsAffected).toBe(0);
+            });
+
+            it('should handle sync metadata updates with no changes', async () => {
+                const result = await dbService.updateSyncMetadata(1, {});
+                
+                expect(result.success).toBe(true);
+                expect(result.rowsAffected).toBe(0);
+            });
+        });
+
+        describe('Database Operations without connection', () => {
+            beforeEach(async () => {
+                await dbService.close();
+            });
+
+            it('should handle executeInTransaction without connection', async () => {
+                await expect(
+                    dbService.executeInTransaction(async () => {})
+                ).rejects.toThrow();
+            });
+        });
+
+        describe('Backup functionality', () => {
+            it('should return not implemented for backup', async () => {
+                const result = await dbService.backup('/test/path');
+                
+                expect(result.success).toBe(false);
+                expect(result.error).toContain('not implemented');
+            });
+        });
+    });
 });
 
 describe('DatabaseUtils', () => {

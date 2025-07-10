@@ -3,7 +3,6 @@ import {
   SyncState,
   SyncStatus,
   SyncPhase,
-  NetworkType,
   ConflictResolutionStrategy,
   StartSyncPayload,
   SyncProgressPayload,
@@ -324,7 +323,7 @@ const syncSlice = createSlice({
         };
         state.stats.totalSyncs += 1;
       })
-      .addCase('sync/startOperation/fulfilled', (state) => {
+      .addCase('sync/startOperation/fulfilled', (_state) => {
         // Success is handled by the sync service dispatching syncSuccess
       })
       .addCase('sync/startOperation/rejected', (state, action) => {
