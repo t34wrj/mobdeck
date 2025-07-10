@@ -93,6 +93,12 @@ class Logger {
         'credential',
         'bearer',
         'session',
+        'cookie',
+        'auth',
+        'apikey',
+        'api_key',
+        'access_token',
+        'refresh_token',
       ],
     };
   }
@@ -194,32 +200,82 @@ class Logger {
   private sanitizeData(data: Record<string, any>): Record<string, any> {
     const sanitized = { ...data };
     
-    const sanitizeObject = (obj: any, depth = 0): any => {
+    const sanitizeValue = (value: any, key: string, depth = 0): any => {
       if (depth > 5) return '[MAX_DEPTH_REACHED]';
       
-      if (obj === null || typeof obj !== 'object') {
-        return obj;
+      if (value === null || value === undefined) {
+        return value;
       }
       
-      if (Array.isArray(obj)) {
-        return obj.map(item => sanitizeObject(item, depth + 1));
+      // Check if key contains sensitive information
+      if (this.config.sensitiveKeys.some(sensitive => 
+        key.toLowerCase().includes(sensitive.toLowerCase())
+      )) {
+        return '[REDACTED]';
       }
       
-      const result: any = {};
-      Object.keys(obj).forEach(key => {
-        if (this.config.sensitiveKeys.some(sensitive => 
-          key.toLowerCase().includes(sensitive.toLowerCase())
-        )) {
-          result[key] = '[REDACTED]';
-        } else {
-          result[key] = sanitizeObject(obj[key], depth + 1);
+      // Check if string value looks like sensitive data
+      if (typeof value === 'string') {
+        // Bearer token pattern
+        if (/^Bearer\s+[A-Za-z0-9-_.]+$/i.test(value)) {
+          return '[REDACTED_BEARER_TOKEN]';
         }
-      });
+        // JWT pattern
+        if (/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/.test(value)) {
+          return '[REDACTED_JWT]';
+        }
+        // API key pattern (long alphanumeric strings)
+        if (/^[a-zA-Z0-9]{20,}$/.test(value)) {
+          return '[REDACTED_API_KEY]';
+        }
+        // Email pattern
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          return '[REDACTED_EMAIL]';
+        }
+        // URL with credentials
+        if (/https?:\/\/[^\s]*:[^\s]*@/.test(value)) {
+          return value.replace(/:([^@:]*):([^@]*)@/, ':[REDACTED]:[REDACTED]@');
+        }
+        // Credit card pattern
+        if (/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/.test(value)) {
+          return '[REDACTED_CARD]';
+        }
+        // Phone number pattern
+        if (/\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/.test(value)) {
+          return '[REDACTED_PHONE]';
+        }
+        // Social security number pattern
+        if (/\b\d{3}[-.\s]?\d{2}[-.\s]?\d{4}\b/.test(value)) {
+          return '[REDACTED_SSN]';
+        }
+        // IP addresses
+        if (/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(value)) {
+          return value.replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[REDACTED_IP]');
+        }
+      }
       
-      return result;
+      // Handle objects and arrays
+      if (typeof value === 'object') {
+        if (Array.isArray(value)) {
+          return value.map((item, index) => sanitizeValue(item, `${key}[${index}]`, depth + 1));
+        } else {
+          const result: any = {};
+          Object.keys(value).forEach(subKey => {
+            result[subKey] = sanitizeValue(value[subKey], subKey, depth + 1);
+          });
+          return result;
+        }
+      }
+      
+      return value;
     };
     
-    return sanitizeObject(sanitized);
+    const result: any = {};
+    Object.keys(sanitized).forEach(key => {
+      result[key] = sanitizeValue(sanitized[key], key);
+    });
+    
+    return result;
   }
 
   private logToConsole(logEntry: LogEntry): void {

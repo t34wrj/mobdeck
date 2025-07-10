@@ -217,10 +217,10 @@ class AuthStorageService implements IAuthStorageService {
         error,
         StorageErrorCode.DELETION_FAILED
       );
-      console.error(
-        '[AuthStorageService] Token deletion failed:',
-        storageError
-      );
+      logger.error('Token deletion failed', { 
+        errorCode: storageError.code,
+        message: storageError.message
+      });
       return false;
     }
   };

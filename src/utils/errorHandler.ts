@@ -270,12 +270,62 @@ class ErrorHandler {
     if (!details) return undefined;
     
     const sanitized = { ...details };
-    const sensitiveKeys = ['password', 'token', 'authorization', 'secret', 'key', 'credential'];
+    const sensitiveKeys = ['password', 'token', 'authorization', 'secret', 'key', 'credential', 'bearer', 'session', 'cookie', 'auth'];
+    
+    const sanitizeValue = (value: any, key: string): any => {
+      if (value === null || value === undefined) return value;
+      
+      // Check if key contains sensitive information
+      if (sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
+        return '[REDACTED]';
+      }
+      
+      // Check if string value looks like sensitive data
+      if (typeof value === 'string') {
+        // Bearer token pattern
+        if (/^Bearer\s+[A-Za-z0-9-_.]+$/i.test(value)) {
+          return '[REDACTED_BEARER_TOKEN]';
+        }
+        // JWT pattern
+        if (/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/.test(value)) {
+          return '[REDACTED_JWT]';
+        }
+        // API key pattern (long alphanumeric strings)
+        if (/^[a-zA-Z0-9]{20,}$/.test(value)) {
+          return '[REDACTED_API_KEY]';
+        }
+        // Email pattern
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          return '[REDACTED_EMAIL]';
+        }
+        // URL with credentials
+        if (/https?:\/\/[^\s]*:[^\s]*@/.test(value)) {
+          return value.replace(/:([^@:]*):([^@]*)@/, ':[REDACTED]:[REDACTED]@');
+        }
+        // IP addresses
+        if (/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(value)) {
+          return value.replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[REDACTED_IP]');
+        }
+      }
+      
+      // Recursively sanitize objects and arrays
+      if (typeof value === 'object' && value !== null) {
+        if (Array.isArray(value)) {
+          return value.map((item, index) => sanitizeValue(item, `${key}[${index}]`));
+        } else {
+          const sanitizedObj: any = {};
+          Object.keys(value).forEach(subKey => {
+            sanitizedObj[subKey] = sanitizeValue(value[subKey], subKey);
+          });
+          return sanitizedObj;
+        }
+      }
+      
+      return value;
+    };
     
     Object.keys(sanitized).forEach(key => {
-      if (sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
-        sanitized[key] = '[REDACTED]';
-      }
+      sanitized[key] = sanitizeValue(sanitized[key], key);
     });
     
     return sanitized;
@@ -286,20 +336,84 @@ class ErrorHandler {
     
     const sanitized = { ...context };
     
+    // Sanitize server URL to remove credentials and sensitive info
     if (sanitized.serverUrl) {
       try {
         const url = new URL(sanitized.serverUrl);
-        sanitized.serverUrl = `${url.protocol}//${url.hostname}${url.port ? `:${  url.port}` : ''}`;
+        // Remove any embedded credentials and sensitive query params
+        sanitized.serverUrl = `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}${url.pathname}`;
+        // Remove sensitive query parameters
+        if (url.search) {
+          const searchParams = new URLSearchParams(url.search);
+          const sensitiveParams = ['token', 'key', 'secret', 'password', 'auth', 'session'];
+          sensitiveParams.forEach(param => {
+            if (searchParams.has(param)) {
+              searchParams.set(param, '[REDACTED]');
+            }
+          });
+          const cleanSearch = searchParams.toString();
+          if (cleanSearch) {
+            sanitized.serverUrl += `?${cleanSearch}`;
+          }
+        }
       } catch {
         sanitized.serverUrl = '[INVALID_URL]';
       }
     }
     
+    // Sanitize user ID
     if (sanitized.userId) {
       sanitized.userId = sanitized.userId.length > 0 ? '[USER_ID_PRESENT]' : '[NO_USER_ID]';
     }
     
+    // Sanitize API endpoint to remove sensitive path segments
+    if (sanitized.apiEndpoint) {
+      sanitized.apiEndpoint = sanitized.apiEndpoint.replace(/\/api\/[^/]*\/[a-zA-Z0-9]{20,}/g, '/api/[ENDPOINT]/[REDACTED_ID]');
+    }
+    
+    // Sanitize device info
+    if (sanitized.deviceInfo) {
+      sanitized.deviceInfo = this.sanitizeDetails(sanitized.deviceInfo) || {};
+    }
+    
     return sanitized;
+  }
+
+  /**
+   * Sanitize error messages to remove sensitive information
+   * @private
+   */
+  private sanitizeErrorMessage(message: string): string {
+    if (!message || typeof message !== 'string') {
+      return message;
+    }
+    
+    return message
+      .replace(/Bearer\s+[A-Za-z0-9-_.]+/gi, 'Bearer [REDACTED]')
+      .replace(/[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*/g, '[JWT_TOKEN]')
+      .replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g, '[EMAIL]')
+      .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[IP_ADDRESS]')
+      .replace(/password[\s=:]+[\S]+/gi, 'password=[REDACTED]')
+      .replace(/api[_-]?key[\s=:]+[\S]+/gi, 'api_key=[REDACTED]')
+      .replace(/token[\s=:]+[\S]+/gi, 'token=[REDACTED]')
+      .replace(/secret[\s=:]+[\S]+/gi, 'secret=[REDACTED]');
+  }
+
+  /**
+   * Sanitize stack traces to remove sensitive file paths and data
+   * @private
+   */
+  private sanitizeStackTrace(stack?: string): string {
+    if (!stack) {
+      return '';
+    }
+    
+    return stack
+      .replace(/\/Users\/[^\s/]+/g, '/Users/[USERNAME]')
+      .replace(/\/home\/[^\s/]+/g, '/home/[USERNAME]')
+      .replace(/C:\\Users\\[^\s\\]+/g, 'C:\\Users\\[USERNAME]')
+      .replace(/Bearer\s+[A-Za-z0-9-_.]+/gi, 'Bearer [REDACTED]')
+      .replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g, '[EMAIL]');
   }
 
   private logError(appError: AppError): void {

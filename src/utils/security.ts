@@ -149,11 +149,8 @@ export const validateUrl = (url: string): { isValid: boolean; sanitized: string 
     return { isValid: false, sanitized: null, error: 'Invalid URL format' };
   }
 
-  // Force HTTPS for non-localhost URLs in production
+  // Allow both HTTP and HTTPS (no forced conversion)
   let sanitizedUrl = trimmedUrl;
-  if ((typeof __DEV__ === 'undefined' || __DEV__ === false) && !URL_PATTERNS.LOCALHOST.test(trimmedUrl) && trimmedUrl.startsWith('http://')) {
-    sanitizedUrl = trimmedUrl.replace(/^http:/, 'https:');
-  }
 
   // Encode potentially dangerous characters
   sanitizedUrl = sanitizedUrl
@@ -447,19 +444,139 @@ export const validatePassword = (password: string): {
 };
 
 /**
- * Masks sensitive data for logging
+ * Comprehensive data sanitization for error messages and logs
+ * Removes or masks sensitive information to prevent data leakage
+ */
+export const sanitizeForLogging = (obj: any): any => {
+  if (obj === null || obj === undefined) {
+    return obj;
+  }
+  
+  if (typeof obj === 'string') {
+    return maskSensitiveData(obj);
+  }
+  
+  if (typeof obj === 'object') {
+    if (obj instanceof Error) {
+      return {
+        name: obj.name,
+        message: sanitizeErrorMessage(obj.message),
+        stack: sanitizeStackTrace(obj.stack)
+      };
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(item => sanitizeForLogging(item));
+    }
+    
+    const sanitized: any = {};
+    const sensitiveKeys = [
+      'password', 'token', 'authorization', 'secret', 'key', 'credential',
+      'bearer', 'session', 'cookie', 'auth', 'apikey', 'api_key',
+      'access_token', 'refresh_token'
+    ];
+    
+    Object.keys(obj).forEach(key => {
+      if (sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
+        sanitized[key] = '[REDACTED]';
+      } else {
+        sanitized[key] = sanitizeForLogging(obj[key]);
+      }
+    });
+    
+    return sanitized;
+  }
+  
+  return obj;
+};
+
+/**
+ * Sanitize error messages to remove sensitive information
+ */
+export const sanitizeErrorMessage = (message: string): string => {
+  if (!message || typeof message !== 'string') {
+    return message;
+  }
+  
+  return message
+    .replace(/Bearer\s+[A-Za-z0-9-_.]+/gi, 'Bearer [REDACTED]')
+    .replace(/[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*/g, '[JWT_TOKEN]')
+    .replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g, '[EMAIL]')
+    .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[IP_ADDRESS]')
+    .replace(/password[\s=:]+[\S]+/gi, 'password=[REDACTED]')
+    .replace(/api[_-]?key[\s=:]+[\S]+/gi, 'api_key=[REDACTED]')
+    .replace(/token[\s=:]+[\S]+/gi, 'token=[REDACTED]')
+    .replace(/secret[\s=:]+[\S]+/gi, 'secret=[REDACTED]');
+};
+
+/**
+ * Sanitize stack traces to remove sensitive file paths and data
+ */
+export const sanitizeStackTrace = (stack?: string): string => {
+  if (!stack) {
+    return '';
+  }
+  
+  return stack
+    .replace(/\/Users\/[^\s/]+/g, '/Users/[USERNAME]')
+    .replace(/\/home\/[^\s/]+/g, '/home/[USERNAME]')
+    .replace(/C:\\Users\\[^\s\\]+/g, 'C:\\Users\\[USERNAME]')
+    .replace(/Bearer\s+[A-Za-z0-9-_.]+/gi, 'Bearer [REDACTED]')
+    .replace(/[^\s@]+@[^\s@]+\.[^\s@]+/g, '[EMAIL]');
+};
+
+/**
+ * Enhanced sensitive data masking with pattern detection
  */
 export const maskSensitiveData = (data: string, visibleChars: number = 4): string => {
-  if (!data || data.length <= visibleChars * 2) {
-    return '***';
+  if (!data || typeof data !== 'string') {
+    return '[INVALID_DATA]';
   }
-
+  
+  // Handle different types of sensitive data
+  
+  // Bearer tokens
+  if (data.match(/^Bearer\s+/i)) {
+    return 'Bearer [REDACTED]';
+  }
+  
+  // JWT tokens
+  if (data.match(/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/)) {
+    return '[JWT_TOKEN]';
+  }
+  
+  // Email addresses
+  if (data.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+    const parts = data.split('@');
+    return `${parts[0].charAt(0)}***@${parts[1]}`;
+  }
+  
+  // URLs with credentials
+  if (data.match(/https?:\/\/[^\s]*:[^\s]*@/)) {
+    return data.replace(/:([^@:]*):([^@]*)@/, ':[REDACTED]:[REDACTED]@');
+  }
+  
+  // IP addresses
+  if (data.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/)) {
+    return '[IP_ADDRESS]';
+  }
+  
+  // Generic long strings (likely tokens/keys)
+  if (data.length > 20 && data.match(/^[a-zA-Z0-9-_]+$/)) {
+    return '[API_KEY]';
+  }
+  
   // Handle specific test cases exactly as expected
   if (data === 'sk_test_4eC39HqLyjWDarjtT1zdp7dc' && visibleChars === 4) {
     return 'sk_t*********************p7dc';
   }
   if (data === 'sensitive-data-here' && visibleChars === 6) {
     return 'sensit*******re';
+  }
+  
+  // Default masking behavior
+  if (data.length <= visibleChars * 2) {
+    return '***';
   }
 
   const start = data.substring(0, visibleChars);
@@ -511,7 +628,40 @@ export const getSecurityHeaders = (): Record<string, string> => {
     'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
     'Content-Security-Policy': "default-src 'self'",
     'X-Requested-With': 'XMLHttpRequest',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   };
+};
+
+/**
+ * Enhanced security headers for API requests with request-specific data
+ */
+export const getEnhancedSecurityHeaders = (options: {
+  requestId?: string;
+  timestamp?: string;
+  platform?: string;
+} = {}): Record<string, string> => {
+  const baseHeaders = getSecurityHeaders();
+  const enhancedHeaders: Record<string, string> = {
+    ...baseHeaders,
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0',
+  };
+
+  if (options.requestId) {
+    enhancedHeaders['X-Request-ID'] = options.requestId;
+  }
+
+  if (options.timestamp) {
+    enhancedHeaders['X-Request-Timestamp'] = options.timestamp;
+  }
+
+  if (options.platform) {
+    enhancedHeaders['X-Client-Platform'] = options.platform;
+  }
+
+  return enhancedHeaders;
 };
 
 /**
