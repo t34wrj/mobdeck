@@ -81,7 +81,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 
     console.log('[LoginScreen] Starting login process...');
     console.log('[LoginScreen] Server URL:', serverUrl);
-    console.log('[LoginScreen] Token length:', apiToken.length);
+    console.log('[LoginScreen] Token provided:', apiToken ? '[TOKEN_PRESENT]' : '[NO_TOKEN]');
 
     setIsValidating(true);
 

@@ -21,6 +21,7 @@ import {
 } from '../../store/slices/syncSlice';
 import { logoutUser } from '../../store/slices/authSlice';
 import { SyncSettings } from '../../components/SyncSettings';
+import { useLocaleDateFormatter } from '../../hooks/useLocaleSettings';
 
 type SettingsScreenProps = MainScreenProps<'Settings'>;
 
@@ -79,6 +80,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const dispatch = useDispatch();
   const insets = useSafeAreaInsets();
+  const { formatDate } = useLocaleDateFormatter();
 
   const { user, loading: authLoading } = useSelector(
     (state: RootState) => state.auth
@@ -215,7 +217,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             label='Last Login'
             value={
               user?.lastLoginAt
-                ? new Date(user.lastLoginAt).toLocaleDateString()
+                ? formatDate(user.lastLoginAt, { includeTime: false })
                 : 'Never'
             }
           />

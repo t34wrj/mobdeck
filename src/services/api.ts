@@ -6,7 +6,7 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
   
   try {
     console.log('[API] Attempting to connect to:', cleanUrl);
-    console.log('[API] Using token:', `${apiToken.substring(0, 10)  }...${  apiToken.length > 10 ? '(hidden)' : ''}`);
+    console.log('[API] Using token:', apiToken ? '[TOKEN_PRESENT]' : '[NO_TOKEN]');
     
     // Use correct Readeck API endpoint for profile validation
     const response = await axios.get(`${cleanUrl}/api/profile`, {
@@ -18,8 +18,8 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
     });
     
     console.log('[API] Connection successful! Status:', response.status);
-    console.log('[API] Response headers:', response.headers);
-    console.log('[API] Profile data:', response.data);
+    console.log('[API] Profile response received');
+    // Note: Profile data not logged to prevent sensitive information disclosure
     
     // Extract user info from profile response
     const profileData = response.data;
@@ -43,13 +43,11 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
       console.error('[API] Axios error details:', {
         code: error.code,
         message: error.message,
-        response: error.response ? {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-          headers: error.response.headers,
-        } : 'No response',
-        request: error.request ? 'Request made but no response' : 'Request not made',
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        hasResponse: !!error.response,
+        hasRequest: !!error.request,
+        // Note: Response data and headers not logged to prevent sensitive information disclosure
       });
       
       if (error.response?.status === 401) {

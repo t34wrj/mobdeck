@@ -175,10 +175,9 @@ class AuthStorageService implements IAuthStorageService {
             return null;
           }
         } catch (parseError) {
-          console.error(
-            '[AuthStorageService] Failed to parse stored auth data:',
-            parseError
-          );
+          logger.error('Failed to parse stored auth data', { 
+            error: 'Parse error occurred - corrupted auth data detected' 
+          });
           await this.deleteToken(); // Clean up corrupted data
           return null;
         }
