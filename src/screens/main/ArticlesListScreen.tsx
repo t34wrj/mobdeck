@@ -22,6 +22,7 @@ import {
   setFilters,
   setPage,
   syncArticles,
+  fetchArticles,
   selectAllArticles,
 } from '../../store/slices/articlesSlice';
 import { selectIsUserAuthenticated } from '../../store/selectors/authSelectors';
@@ -111,9 +112,41 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   }, [dispatch, articles.length, isAuthenticated, isOnline]);
 
   // Pull to refresh
-  const handleRefresh = useCallback(() => {
-    dispatch(syncArticles({ fullSync: false }));
-  }, [dispatch]);
+  const handleRefresh = useCallback(async () => {
+    console.log('[ArticlesListScreen] Pull to refresh triggered');
+    
+    // Always reload local articles first for immediate feedback
+    dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
+    
+    // Try to sync with server if online and authenticated
+    if (isOnline && isAuthenticated) {
+      try {
+        console.log('[ArticlesListScreen] Syncing with server...');
+        const syncResult = await dispatch(syncArticles({ fullSync: false }));
+        console.log('[ArticlesListScreen] Sync result:', syncResult);
+        
+        // Try to fetch fresh articles from server
+        try {
+          console.log('[ArticlesListScreen] Fetching fresh articles from server');
+          const fetchResult = await dispatch(fetchArticles({ 
+            page: 1, 
+            forceRefresh: true, 
+            fetchFullContent: false 
+          }));
+          console.log('[ArticlesListScreen] Fetch result:', fetchResult);
+        } catch (fetchError) {
+          console.warn('[ArticlesListScreen] Fetch failed, continuing with sync:', fetchError);
+        }
+        
+        // Reload local articles after sync to show changes
+        dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
+      } catch (syncError) {
+        console.warn('[ArticlesListScreen] Sync failed, showing local articles only:', syncError);
+      }
+    } else {
+      console.log('[ArticlesListScreen] Offline or not authenticated, showing local articles only');
+    }
+  }, [dispatch, isOnline, isAuthenticated]);
 
   // Load more articles (pagination)
   const handleLoadMore = useCallback(() => {

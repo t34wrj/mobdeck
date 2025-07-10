@@ -2,11 +2,21 @@ import { logger } from './logger';
 
 export interface RetryOptions {
   maxRetries?: number;
+  maxAttempts?: number;
   initialDelay?: number;
   maxDelay?: number;
   backoffMultiplier?: number;
   retryCondition?: (error: any) => boolean;
-  onRetry?: (error: any, attempt: number) => void;
+  shouldRetry?: (error: any) => boolean;
+  onRetry?: (error: any, attempt: number, delay?: number) => void;
+  jitter?: boolean;
+  getDelay?: (attempt: number) => number;
+  signal?: AbortSignal;
+}
+
+export interface RetryContext {
+  attempt: number;
+  previousError: any;
 }
 
 interface RetryState {
@@ -18,6 +28,7 @@ interface RetryState {
 export class RetryManager {
   private static defaultOptions: Required<RetryOptions> = {
     maxRetries: 3,
+    maxAttempts: 3,
     initialDelay: 1000, // 1 second
     maxDelay: 30000, // 30 seconds
     backoffMultiplier: 2,
@@ -28,7 +39,17 @@ export class RetryManager {
              error.code === 'TIMEOUT_ERROR' ||
              (error.response?.status >= 500 && error.response?.status < 600);
     },
+    shouldRetry: (error) => {
+      // Retry on network errors and 5xx errors
+      return error.code === 'CONNECTION_ERROR' ||
+             error.code === 'ECONNREFUSED' ||
+             error.code === 'TIMEOUT_ERROR' ||
+             (error.response?.status >= 500 && error.response?.status < 600);
+    },
     onRetry: () => {},
+    jitter: false,
+    getDelay: undefined,
+    signal: undefined,
   };
   
   /**
@@ -118,6 +139,127 @@ export class RetryManager {
    */
   static isRetryableError(error: any): boolean {
     return this.defaultOptions.retryCondition(error);
+  }
+
+  /**
+   * Instance method to retry operations with context
+   */
+  async retry<T>(
+    operation: (context?: RetryContext) => T | Promise<T>,
+    options: RetryOptions = {}
+  ): Promise<T> {
+    const opts = { ...RetryManager.defaultOptions, ...options };
+    const maxAttempts = opts.maxAttempts ?? opts.maxRetries;
+    
+    // Handle invalid max attempts
+    if (maxAttempts <= 0) {
+      throw new Error('Max attempts must be greater than 0');
+    }
+    
+    let attempt = 0;
+    let previousError: any = null;
+    let lastError: any = null;
+    
+    while (attempt < maxAttempts) {
+      attempt++;
+      
+      // Check if operation was aborted
+      if (opts.signal?.aborted) {
+        throw new Error('aborted');
+      }
+      
+      try {
+        const context: RetryContext = {
+          attempt,
+          previousError,
+        };
+        
+        const result = await Promise.resolve(operation(context));
+        
+        // Success!
+        if (attempt > 1) {
+          logger.info(`[RetryManager] Succeeded after ${attempt - 1} retries`);
+        }
+        
+        return result;
+      } catch (error) {
+        lastError = error;
+        
+        // Check if we should retry this error
+        let shouldRetryResult = true;
+        
+        if (opts.shouldRetry) {
+          try {
+            shouldRetryResult = opts.shouldRetry(error);
+          } catch (e) {
+            // If shouldRetry throws, treat as false
+            shouldRetryResult = false;
+          }
+        } else if (opts.retryCondition) {
+          try {
+            shouldRetryResult = opts.retryCondition(error);
+          } catch (e) {
+            // If retryCondition throws, treat as false
+            shouldRetryResult = false;
+          }
+        }
+        
+        // If this is the last attempt or we shouldn't retry, throw the error
+        if (attempt >= maxAttempts || !shouldRetryResult) {
+          logger.warn(`[RetryManager] Failed after ${attempt} attempts: ${error.message || error}`);
+          throw error;
+        }
+        
+        // Calculate delay
+        let delay: number;
+        if (opts.getDelay) {
+          delay = opts.getDelay(attempt);
+        } else {
+          delay = opts.initialDelay * Math.pow(opts.backoffMultiplier, attempt - 1);
+          delay = Math.min(delay, opts.maxDelay);
+          
+          // Cap very large delays to 1 minute
+          if (delay > 60000) {
+            delay = 60000;
+          }
+        }
+        
+        // Add jitter if enabled
+        if (opts.jitter) {
+          const jitterFactor = 0.5 + Math.random() * 0.5; // 0.5 to 1.0
+          delay = Math.floor(delay * jitterFactor);
+        }
+        
+        // Call onRetry callback
+        if (opts.onRetry) {
+          try {
+            opts.onRetry(error, attempt + 1, delay);
+          } catch (e) {
+            // Continue even if onRetry throws
+          }
+        }
+        
+        logger.debug(`[RetryManager] Attempt ${attempt} failed, will retry in ${delay}ms: ${error.message || error}`);
+        
+        // Wait before retrying
+        await this.delay(delay);
+        
+        // Check if operation was aborted during delay
+        if (opts.signal?.aborted) {
+          throw new Error('aborted');
+        }
+        
+        // Set previous error for next attempt
+        previousError = error;
+      }
+    }
+    
+    // This should never be reached, but just in case
+    throw lastError;
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
   
   private static delay(ms: number): Promise<void> {

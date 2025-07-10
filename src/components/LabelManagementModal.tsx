@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { Text } from './ui/Text';
 import { Button } from './ui/Button';
@@ -39,19 +40,19 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [createMode, setCreateMode] = useState(false);
   const [newLabelName, setNewLabelName] = useState('');
-  const [newLabelColor, setNewLabelColor] = useState('#2196F3');
+  const [newLabelColor, setNewLabelColor] = useState(theme.colors.primary[500]);
   const [saving, setSaving] = useState(false);
 
-  // Predefined colors for new labels
+  // Predefined colors for new labels - using theme colors
   const LABEL_COLORS = [
-    '#2196F3', // Blue
-    '#4CAF50', // Green
-    '#FF9800', // Orange
-    '#9C27B0', // Purple
-    '#F44336', // Red
-    '#607D8B', // Blue Grey
-    '#795548', // Brown
-    '#009688', // Teal
+    theme.colors.primary[500],   // Giants Orange
+    theme.colors.secondary[500], // Xanthous Yellow
+    theme.colors.accent[500],    // Tiffany Blue
+    theme.colors.success[600],   // Castleton Green
+    theme.colors.error[500],     // Error Red
+    theme.colors.dark[600],      // Yale Blue (darker shade)
+    theme.colors.warning[600],   // Warning Orange
+    theme.colors.info[600],      // Info Cyan
   ];
 
   // Load available labels
@@ -88,7 +89,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       setSearchQuery('');
       setCreateMode(false);
       setNewLabelName('');
-      setNewLabelColor('#2196F3');
+      setNewLabelColor(theme.colors.primary[500]);
       setSelectedLabelIds(currentLabels);
     }
   }, [visible, currentLabels]);
@@ -252,6 +253,10 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       presentationStyle='pageSheet'
       onRequestClose={onClose}
     >
+      <StatusBar 
+        backgroundColor={theme.colors.neutral[100]} 
+        barStyle="dark-content"
+      />
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>

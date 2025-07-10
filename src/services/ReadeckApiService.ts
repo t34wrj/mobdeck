@@ -77,7 +77,7 @@ class ReadeckApiService implements IReadeckApiService {
     if (!urlValidation.isValid) {
       throw new Error(`Invalid API base URL: ${urlValidation.error}`);
     }
-    this.config.baseUrl = urlValidation.sanitized!;
+    this.config.baseUrl = urlValidation.sanitized || this.config.baseUrl;
 
     // Retry configuration
     this.retryConfig = {
@@ -431,7 +431,7 @@ class ReadeckApiService implements IReadeckApiService {
       }
     }
 
-    throw lastError!;
+    throw lastError || new Error('Request failed after retries');
   }
 
   /**
@@ -739,7 +739,7 @@ class ReadeckApiService implements IReadeckApiService {
       if (!urlValidation.isValid) {
         throw new Error(`Invalid API base URL: ${urlValidation.error}`);
       }
-      config.baseUrl = urlValidation.sanitized!;
+      config.baseUrl = urlValidation.sanitized || config.baseUrl;
     }
 
     this.config = { ...this.config, ...config };

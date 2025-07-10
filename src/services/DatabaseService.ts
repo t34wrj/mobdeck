@@ -316,7 +316,7 @@ class DatabaseService implements DatabaseServiceInterface {
     }
 
     return new Promise((resolve, reject) => {
-      this.db!.transaction(
+      this.db.transaction(
         async tx => {
           try {
             const context: TransactionContext = {
@@ -662,7 +662,7 @@ class DatabaseService implements DatabaseServiceInterface {
 
       return {
         success: true,
-        data: result.insertId!,
+        data: result.insertId || 0,
         rowsAffected: result.rowsAffected,
       };
     } catch (error) {
@@ -944,7 +944,7 @@ class DatabaseService implements DatabaseServiceInterface {
 
       return {
         success: true,
-        data: result.insertId!,
+        data: result.insertId || 0,
         rowsAffected: result.rowsAffected,
       };
     } catch (error) {

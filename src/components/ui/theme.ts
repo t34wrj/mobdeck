@@ -41,18 +41,18 @@ export const colors = {
     900: '#297e71',
   },
 
-  // Dark colors - Yale Blue (083D77)
+  // Dark colors - Yale Blue (083D77) - primary reference at 500
   dark: {
     50: '#f0f4f9',
     100: '#d9e2f0',
     200: '#b3c5e1',
     300: '#8da8d2',
     400: '#678bc3',
-    500: '#416eb4',
-    600: '#2b5596',
-    700: '#083d77',
-    800: '#073563',
-    900: '#062c52',
+    500: '#083d77', // Yale Blue - now the primary reference
+    600: '#073563',
+    700: '#062c52',
+    800: '#051f3d',
+    900: '#041829',
   },
 
   // Success colors - Castleton Green (0B5739)

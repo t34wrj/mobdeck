@@ -70,7 +70,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [handleAppStateChange]);
 
   // Update sync status periodically when app is active
   useEffect(() => {
@@ -86,7 +86,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
   /**
    * Handle app state changes
    */
-  const handleAppStateChange = (nextAppState: AppStateStatus) => {
+  const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
     console.log(
       `[useBackgroundSync] App state changed from ${appState} to ${nextAppState}`
     );
@@ -97,7 +97,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
     }
 
     setAppState(nextAppState);
-  };
+  }, [appState]);
 
   /**
    * Update sync status from background service

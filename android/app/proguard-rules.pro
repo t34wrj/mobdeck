@@ -209,6 +209,7 @@
 
 # Warning suppression for known issues
 -dontwarn javax.annotation.**
+-dontwarn javax.lang.model.element.Modifier
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**

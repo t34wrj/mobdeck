@@ -381,7 +381,7 @@ class SyncService {
         );
       }
 
-      const modifiedArticles = modifiedArticlesResult.data!.items;
+      const modifiedArticles = modifiedArticlesResult.data?.items || [];
       console.log(
         `[SyncService] Found ${modifiedArticles.length} locally modified articles`
       );
@@ -456,8 +456,8 @@ class SyncService {
       // Get last sync timestamp
       const lastSyncResult = await DatabaseService.getStats();
       const lastSyncTimestamp =
-        lastSyncResult.success && lastSyncResult.data!.lastSyncAt
-          ? new Date(lastSyncResult.data!.lastSyncAt * 1000)
+        lastSyncResult.success && lastSyncResult.data?.lastSyncAt
+          ? new Date(lastSyncResult.data.lastSyncAt * 1000)
           : new Date(0);
 
       console.log(
@@ -749,7 +749,7 @@ class SyncService {
 
       // Article exists locally, check for conflicts
       const localArticle = DatabaseUtilityFunctions.convertDBArticleToArticle(
-        localArticleResult.data!
+        localArticleResult.data
       );
 
       if (this.hasConflict(localArticle, articleToSync)) {
@@ -1072,9 +1072,9 @@ class SyncService {
         limit: 100,
       });
 
-      if (pendingResult.success && pendingResult.data!.items.length > 0) {
+      if (pendingResult.success && pendingResult.data?.items.length > 0) {
         console.log(
-          `[SyncService] Found ${pendingResult.data!.items.length} pending sync operations`
+          `[SyncService] Found ${pendingResult.data.items.length} pending sync operations`
         );
         
         // Skip processing old shared URL queue - we now save articles directly offline-first

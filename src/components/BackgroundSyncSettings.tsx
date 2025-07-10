@@ -4,7 +4,7 @@
  * Provides UI controls for configuring background sync preferences
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useBackgroundSync, SYNC_INTERVALS } from '../hooks/useBackgroundSync';
-import { colors } from '../components/ui/theme';
+import { theme } from '../components/ui/theme';
 
 interface SyncIntervalOption {
   label: string;
@@ -50,9 +50,9 @@ export default function BackgroundSyncSettings() {
   // Load sync history on component mount
   useEffect(() => {
     loadSyncHistory();
-  }, []);
+  }, [loadSyncHistory]);
 
-  const loadSyncHistory = async () => {
+  const loadSyncHistory = useCallback(async () => {
     setIsLoadingHistory(true);
     try {
       const history = await getSyncHistory();
@@ -62,7 +62,7 @@ export default function BackgroundSyncSettings() {
     } finally {
       setIsLoadingHistory(false);
     }
-  };
+  }, [getSyncHistory]);
 
   const handleToggleEnabled = async (enabled: boolean) => {
     try {
@@ -260,15 +260,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: theme.colors.neutral[200],
   },
   settingLabel: {
     fontSize: 16,
-    color: '#333',
+    color: theme.colors.neutral[700],
   },
   settingValue: {
     fontSize: 16,
-    color: '#666',
+    color: theme.colors.neutral[500],
   },
   intervalOptions: {
     marginVertical: 10,
@@ -278,23 +278,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginVertical: 2,
     borderRadius: 6,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.neutral[100],
   },
   selectedOption: {
-    backgroundColor: colors.primary[500],
+    backgroundColor: theme.colors.primary[500],
   },
   intervalOptionText: {
     fontSize: 14,
-    color: '#333',
+    color: theme.colors.neutral[700],
   },
   selectedOptionText: {
-    color: '#FFFFFF',
+    color: theme.colors.neutral[50],
   },
   statusSection: {
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: theme.colors.neutral[200],
   },
   sectionTitle: {
     fontSize: 18,
@@ -308,15 +308,15 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     fontSize: 14,
-    color: '#666',
+    color: theme.colors.neutral[500],
   },
   statusValue: {
     fontSize: 14,
-    color: '#333',
+    color: theme.colors.neutral[700],
     fontWeight: '500',
   },
   manualSyncButton: {
-    backgroundColor: colors.primary[500],
+    backgroundColor: theme.colors.primary[500],
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
@@ -324,10 +324,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   disabledButton: {
-    backgroundColor: colors.neutral[400],
+    backgroundColor: theme.colors.neutral[400],
   },
   manualSyncButtonText: {
-    color: '#FFFFFF',
+    color: theme.colors.neutral[50],
     fontSize: 16,
     fontWeight: '600',
   },
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingTop: 20,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: theme.colors.neutral[200],
   },
   historyHeader: {
     flexDirection: 'row',
@@ -344,17 +344,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   refreshButton: {
-    color: colors.primary[500],
+    color: theme.colors.primary[500],
     fontSize: 14,
   },
   historyEntry: {
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: theme.colors.neutral[100],
   },
   historyTime: {
     fontSize: 12,
-    color: '#666',
+    color: theme.colors.neutral[500],
   },
   historyStatus: {
     fontSize: 14,
@@ -362,19 +362,19 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   successStatus: {
-    color: colors.success[700],
+    color: theme.colors.success[700],
   },
   errorStatus: {
-    color: colors.error[500],
+    color: theme.colors.error[500],
   },
   historyDetails: {
     fontSize: 12,
-    color: '#999',
+    color: theme.colors.neutral[400],
     marginTop: 2,
   },
   noHistory: {
     fontSize: 14,
-    color: '#999',
+    color: theme.colors.neutral[400],
     textAlign: 'center',
     fontStyle: 'italic',
     paddingVertical: 20,

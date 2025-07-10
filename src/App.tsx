@@ -1,6 +1,7 @@
 import React from 'react';
 import { Provider } from 'react-redux';
 import { View, StyleSheet, ActivityIndicator, Platform, Dimensions, StatusBar } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from './store';
 import AppNavigator from './navigation/AppNavigator';
 import { useAppInitialization } from './hooks/useAppInitialization';
@@ -73,17 +74,36 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  // Set status bar imperatively for Android following best practices
+  React.useEffect(() => {
+    if (Platform.OS === 'android') {
+      // Clear any existing translucent flags
+      StatusBar.setTranslucent(false);
+      
+      // Enable drawing system bar backgrounds
+      StatusBar.setBackgroundColor(theme.colors.neutral[100], false);
+      
+      // Set bar style for proper icon contrast
+      StatusBar.setBarStyle('dark-content', false);
+      
+      // Ensure status bar is visible
+      StatusBar.setHidden(false, 'none');
+    }
+  }, []);
+
   return (
-    <Provider store={store}>
-      <StatusBar 
-        backgroundColor={theme.colors.success[700]} 
-        barStyle="light-content"
-        translucent={false}
-        animated={false}
-        hidden={false}
-      />
-      <AppContent />
-    </Provider>
+    <SafeAreaProvider>
+      <Provider store={store}>
+        <StatusBar 
+          backgroundColor={theme.colors.neutral[100]} 
+          barStyle="dark-content"
+          translucent={false}
+          animated={false}
+          hidden={false}
+        />
+        <AppContent />
+      </Provider>
+    </SafeAreaProvider>
   );
 };
 

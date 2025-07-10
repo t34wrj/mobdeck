@@ -1,21 +1,28 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Text, StyleSheet, Animated } from 'react-native';
-import { useAppTheme } from '../hooks/useAppTheme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSelector } from 'react-redux';
+import { theme } from './ui/theme';
 import { connectivityManager, ConnectivityStatus } from '../utils/connectivityManager';
+import { selectIsUserAuthenticated } from '../store/selectors/authSelectors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export const ConnectivityIndicator: React.FC = () => {
-  const theme = useAppTheme();
   const [status, setStatus] = useState<ConnectivityStatus>(connectivityManager.getStatus());
   const [visible, setVisible] = useState(false);
-  const animatedValue = new Animated.Value(0);
+  const animatedValue = useMemo(() => new Animated.Value(0), []);
+  const insets = useSafeAreaInsets();
+  const isUserAuthenticated = useSelector(selectIsUserAuthenticated);
   
   useEffect(() => {
     const handleStatusChange = (newStatus: ConnectivityStatus) => {
       setStatus(newStatus);
       
-      // Show indicator when offline or server unreachable
-      const shouldShow = newStatus !== ConnectivityStatus.ONLINE;
+      // Only show indicator when offline or server unreachable AND user is authenticated
+      // Don't show server unreachable before user has configured a server
+      const shouldShow = newStatus !== ConnectivityStatus.ONLINE && 
+                        (newStatus === ConnectivityStatus.OFFLINE || 
+                         (newStatus === ConnectivityStatus.SERVER_UNREACHABLE && isUserAuthenticated));
       setVisible(shouldShow);
       
       // Animate in/out
@@ -35,7 +42,7 @@ export const ConnectivityIndicator: React.FC = () => {
     return () => {
       connectivityManager.off('statusChanged', handleStatusChange);
     };
-  }, [animatedValue]);
+  }, [animatedValue, isUserAuthenticated]);
   
   if (!visible && animatedValue._value === 0) {
     return null;
@@ -47,19 +54,19 @@ export const ConnectivityIndicator: React.FC = () => {
         return {
           icon: 'wifi-off',
           text: 'No Internet Connection',
-          backgroundColor: theme.colors.error,
+          backgroundColor: theme.colors.error[500],
         };
       case ConnectivityStatus.SERVER_UNREACHABLE:
         return {
           icon: 'server-network-off',
           text: 'Server Unreachable',
-          backgroundColor: theme.colors.warning || theme.colors.error,
+          backgroundColor: theme.colors.warning[500],
         };
       case ConnectivityStatus.CHECKING:
         return {
           icon: 'sync',
           text: 'Checking Connection...',
-          backgroundColor: theme.colors.primary,
+          backgroundColor: theme.colors.primary[500],
         };
       default:
         return null;
@@ -76,6 +83,7 @@ export const ConnectivityIndicator: React.FC = () => {
         {
           backgroundColor: config.backgroundColor,
           opacity: animatedValue,
+          top: insets.top,
           transform: [
             {
               translateY: animatedValue.interpolate({
@@ -96,7 +104,6 @@ export const ConnectivityIndicator: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 0,
     left: 0,
     right: 0,
     flexDirection: 'row',

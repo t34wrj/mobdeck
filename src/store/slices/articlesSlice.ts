@@ -355,12 +355,27 @@ export const loadLocalArticles = createAsyncThunk<
 });
 
 export const syncArticles = createAsyncThunk<
-  { syncedCount: number; conflictCount: number },
+  { syncedCount: number; conflictCount: number; articles: Article[] },
   SyncArticlesParams,
   { rejectValue: string }
->('articles/syncArticles', async (params, { rejectWithValue }) => {
+>('articles/syncArticles', async (params, { rejectWithValue, dispatch }) => {
   try {
+    const syncStartTime = Date.now();
     const result = await articlesApiService.syncArticles(params);
+    
+    // Also update the main sync slice's lastSyncTime for the Settings screen
+    const syncEndTime = Date.now();
+    const syncDuration = syncEndTime - syncStartTime;
+    
+    // Import and dispatch syncSuccess action
+    const { syncSuccess } = await import('./syncSlice');
+    dispatch(syncSuccess({
+      syncTime: new Date().toISOString(),
+      syncDuration,
+      itemsSynced: result.syncedCount,
+      conflicts: result.conflictCount
+    }));
+    
     return result;
   } catch (error) {
     const errorMessage =
@@ -700,7 +715,12 @@ const articlesSlice = createSlice({
         state.sync.lastSyncTime = new Date().toISOString();
         state.sync.syncError = null;
 
-        const { conflictCount } = action.payload;
+        const { conflictCount, articles } = action.payload;
+
+        // Add or update synced articles in the store
+        if (articles && articles.length > 0) {
+          articlesAdapter.upsertMany(state, articles);
+        }
 
         // Clear pending changes for successfully synced articles
         // This would be more sophisticated in a real implementation

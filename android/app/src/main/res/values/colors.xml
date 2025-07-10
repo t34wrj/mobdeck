@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mobdeck App Theme Colors -->
+    
+    <!-- Primary Brand Colors -->
+    <color name="color_primary">#FE5D26</color>          <!-- Giants Orange -->
+    <color name="color_primary_dark">#e54a1f</color>     <!-- Giants Orange Dark -->
+    <color name="color_primary_light">#fec7b3</color>    <!-- Giants Orange Light -->
+    
+    <!-- Secondary Colors -->
+    <color name="color_secondary">#F9BD4D</color>        <!-- Xanthous -->
+    <color name="color_accent">#7DE2D1</color>           <!-- Tiffany Blue -->
+    
+    <!-- Status Bar and System Colors -->
+    <color name="status_bar_color">#f1f3f5</color>       <!-- Light grey for status bar -->
+    <color name="status_bar_scrim">#f8f9fa</color>       <!-- Even lighter fallback -->
+    
+    <!-- Background Colors -->
+    <color name="background">#FFFFFF</color>             <!-- Pure white background -->
+    <color name="surface">#F8F9FA</color>                <!-- Light surface -->
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#083D77</color>           <!-- Yale Blue -->
+    <color name="text_secondary">#6C757D</color>         <!-- Grey -->
+    
+    <!-- State Colors -->
+    <color name="success">#0B5739</color>                <!-- Castleton Green -->
+    <color name="error">#DC3545</color>                  <!-- Error Red -->
+    <color name="warning">#F9BD4D</color>                <!-- Warning Yellow -->
+    
+    <!-- Neutral Colors -->
+    <color name="neutral_50">#f8f9fa</color>
+    <color name="neutral_100">#f1f3f5</color>
+    <color name="neutral_200">#e9ecef</color>
+    <color name="neutral_300">#dee2e6</color>
+    <color name="neutral_400">#ced4da</color>
+    <color name="neutral_500">#adb5bd</color>
+    <color name="neutral_600">#6c757d</color>
+    <color name="neutral_700">#495057</color>
+    <color name="neutral_800">#343a40</color>
+    <color name="neutral_900">#212529</color>
+</resources>

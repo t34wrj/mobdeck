@@ -20,6 +20,7 @@ import { clearError } from '../../store/slices/authSlice';
 import { authStorageService } from '../../services/AuthStorageService';
 import { validateApiToken } from '../../services/api';
 import { readeckApiService } from '../../services/ReadeckApiService';
+import { startSyncOperation } from '../../store/thunks/syncThunks';
 
 const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
   const dispatch = useDispatch<AppDispatch>();
@@ -127,7 +128,23 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
         payload: validationResult.user,
       });
       
-      console.log('[LoginScreen] Login successful!');
+      console.log('[LoginScreen] Login successful! Starting initial sync...');
+      
+      // Trigger immediate sync after successful authentication
+      try {
+        await dispatch(startSyncOperation({ 
+          forceFull: true,
+          syncOptions: {
+            fullTextSync: true,
+            downloadImages: true,
+          }
+        }));
+        console.log('[LoginScreen] Initial sync completed successfully');
+      } catch (syncError) {
+        console.error('[LoginScreen] Initial sync failed:', syncError);
+        // Don't fail login if sync fails, just log it
+        // User can manually trigger sync later
+      }
     } catch (err) {
       console.error('[LoginScreen] Login error:', err);
       Alert.alert(

@@ -173,8 +173,8 @@ class Logger {
     
     const context: LogContext = {
       ...this.context,
-      platform: this.context.platform!,
-      version: this.context.version!,
+      platform: this.context.platform || 'unknown',
+      version: this.context.version || 'unknown',
     };
 
     if (this.config.enablePerformanceLogging) {

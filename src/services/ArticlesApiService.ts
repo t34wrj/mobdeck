@@ -17,6 +17,7 @@ import {
 import { RetryManager } from '../utils/retryManager';
 import { connectivityManager } from '../utils/connectivityManager';
 import { cacheService } from './CacheService';
+import DatabaseService, { DatabaseUtilityFunctions } from './DatabaseService';
 
 /**
  * Interface for article operations expected by Redux slice
@@ -30,7 +31,7 @@ export interface IArticlesApiService {
   deleteArticle(params: DeleteArticleParams): Promise<void>;
   syncArticles(
     params: SyncArticlesParams
-  ): Promise<{ syncedCount: number; conflictCount: number }>;
+  ): Promise<{ syncedCount: number; conflictCount: number; articles: Article[] }>;
 }
 
 /**
@@ -625,7 +626,7 @@ class ArticlesApiService implements IArticlesApiService {
    */
   async syncArticles(
     params: SyncArticlesParams
-  ): Promise<{ syncedCount: number; conflictCount: number }> {
+  ): Promise<{ syncedCount: number; conflictCount: number; articles: Article[] }> {
     try {
       console.log('[ArticlesApiService] Syncing articles:', params);
 
@@ -634,7 +635,13 @@ class ArticlesApiService implements IArticlesApiService {
         include_deleted: params.fullSync || false,
       };
 
+      console.log('[ArticlesApiService] Calling readeckApiService.syncArticles with:', syncRequest);
       const response = await readeckApiService.syncArticles(syncRequest);
+      console.log('[ArticlesApiService] Sync response received:', {
+        hasData: !!response?.data,
+        responseKeys: response ? Object.keys(response) : [],
+        dataKeys: response?.data ? Object.keys(response.data) : []
+      });
 
       // Validate response structure
       if (!response || !response.data) {
@@ -643,10 +650,49 @@ class ArticlesApiService implements IArticlesApiService {
       }
 
       // Safely access articles array with validation
-      const articles = response.data.articles || [];
-      if (!Array.isArray(articles)) {
-        console.error('[ArticlesApiService] Expected articles array, got:', typeof articles, articles);
+      const readeckArticles = response.data.articles || [];
+      console.log('[ArticlesApiService] Extracted articles:', {
+        articlesCount: readeckArticles.length,
+        isArray: Array.isArray(readeckArticles),
+        firstArticleKeys: readeckArticles[0] ? Object.keys(readeckArticles[0]) : []
+      });
+
+      if (!Array.isArray(readeckArticles)) {
+        console.error('[ArticlesApiService] Expected articles array, got:', typeof readeckArticles, readeckArticles);
         throw new Error('Invalid articles data in sync response');
+      }
+
+      // Convert ReadeckArticle to Article format
+      const articles = readeckArticles.map(readeckArticle =>
+        this.convertReadeckArticleToArticle(readeckArticle)
+      );
+
+      console.log('[ArticlesApiService] Converted articles:', {
+        convertedCount: articles.length,
+        firstArticleTitle: articles[0]?.title,
+        firstArticleId: articles[0]?.id
+      });
+
+      // Save articles to local database
+      for (const article of articles) {
+        try {
+          // Convert to database format
+          const dbArticle = DatabaseUtilityFunctions.convertArticleToDBArticle(article);
+          
+          // Try to create the article (this will fail if it already exists)
+          const createResult = await DatabaseService.createArticle(dbArticle);
+          
+          if (createResult.success) {
+            console.log(`[ArticlesApiService] Created article in database: ${article.id}`);
+          } else {
+            // If creation failed, try to update existing article
+            console.log(`[ArticlesApiService] Article exists, updating: ${article.id}`);
+            await DatabaseService.updateArticle(article.id, dbArticle);
+          }
+        } catch (dbError) {
+          console.warn(`[ArticlesApiService] Failed to save article ${article.id}:`, dbError);
+          // Continue with other articles even if one fails
+        }
       }
 
       // Calculate sync metrics
@@ -657,9 +703,16 @@ class ArticlesApiService implements IArticlesApiService {
         `[ArticlesApiService] Sync completed: ${syncedCount} articles synced, ${conflictCount} conflicts`
       );
 
-      return { syncedCount, conflictCount };
+      return { syncedCount, conflictCount, articles };
     } catch (error) {
-      throw this.handleApiError(error, 'Sync articles');
+      console.error('[ArticlesApiService] Sync error:', error);
+      
+      // Return empty result instead of throwing to prevent app crash
+      return { 
+        syncedCount: 0, 
+        conflictCount: 0, 
+        articles: [] 
+      };
     }
   }
 
