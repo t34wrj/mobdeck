@@ -11,6 +11,7 @@ export enum ErrorCategory {
   VALIDATION = 'VALIDATION',
   STORAGE = 'STORAGE',
   SYNC = 'SYNC',
+  SYNC_OPERATION = 'SYNC_OPERATION',
   RUNTIME = 'RUNTIME',
   UNKNOWN = 'UNKNOWN',
 }
@@ -187,6 +188,10 @@ class ErrorHandler {
       return ErrorCategory.SYNC;
     }
     
+    if (error?.context?.actionType?.includes('sync')) {
+      return ErrorCategory.SYNC_OPERATION;
+    }
+    
     if (error instanceof Error) {
       return ErrorCategory.RUNTIME;
     }
@@ -229,6 +234,7 @@ class ErrorHandler {
       [ErrorCategory.VALIDATION]: 'Please check your input and try again.',
       [ErrorCategory.STORAGE]: 'Unable to save data locally. Please ensure you have sufficient storage space.',
       [ErrorCategory.SYNC]: 'Synchronization failed. Your changes will be synced when connection is restored.',
+      [ErrorCategory.SYNC_OPERATION]: 'Sync operation encountered an issue. Your data is safe and sync will retry automatically.',
       [ErrorCategory.RUNTIME]: 'An unexpected error occurred. Please restart the app if the problem persists.',
       [ErrorCategory.UNKNOWN]: 'Something went wrong. Please try again or contact support if the issue continues.',
     };
@@ -240,6 +246,7 @@ class ErrorHandler {
     const retryableCategories = [
       ErrorCategory.NETWORK,
       ErrorCategory.SYNC,
+      ErrorCategory.SYNC_OPERATION,
     ];
     
     if (retryableCategories.includes(category)) {
@@ -275,12 +282,7 @@ class ErrorHandler {
     const sanitizeValue = (value: any, key: string): any => {
       if (value === null || value === undefined) return value;
       
-      // Check if key contains sensitive information
-      if (sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
-        return '[REDACTED]';
-      }
-      
-      // Check if string value looks like sensitive data
+      // Check if string value looks like sensitive data patterns first
       if (typeof value === 'string') {
         // Bearer token pattern
         if (/^Bearer\s+[A-Za-z0-9-_.]+$/i.test(value)) {
@@ -290,10 +292,19 @@ class ErrorHandler {
         if (/^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*$/.test(value)) {
           return '[REDACTED_JWT]';
         }
-        // API key pattern (long alphanumeric strings)
-        if (/^[a-zA-Z0-9]{20,}$/.test(value)) {
+        // API key pattern (long alphanumeric strings with underscores)
+        if (/^[a-zA-Z0-9_]{20,}$/.test(value)) {
           return '[REDACTED_API_KEY]';
         }
+      }
+      
+      // Then check if key contains sensitive information (only for string values)
+      if (typeof value === 'string' && sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
+        return '[REDACTED]';
+      }
+      
+      // Continue with other string patterns
+      if (typeof value === 'string') {
         // Email pattern
         if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
           return '[REDACTED_EMAIL]';
@@ -340,8 +351,13 @@ class ErrorHandler {
     if (sanitized.serverUrl) {
       try {
         const url = new URL(sanitized.serverUrl);
+        // Check for embedded credentials
+        let hostname = url.hostname;
+        if (url.username || url.password) {
+          hostname = `%5BREDACTED%5D@${hostname}`;
+        }
         // Remove any embedded credentials, path, and sensitive query params
-        sanitized.serverUrl = `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}`;
+        sanitized.serverUrl = `${url.protocol}//${hostname}${url.port ? `:${url.port}` : ''}`;
         // Remove sensitive query parameters
         if (url.search) {
           const searchParams = new URLSearchParams(url.search);
@@ -368,7 +384,8 @@ class ErrorHandler {
     
     // Sanitize API endpoint to remove sensitive path segments
     if (sanitized.apiEndpoint) {
-      sanitized.apiEndpoint = sanitized.apiEndpoint.replace(/\/api\/[^/]*\/[a-zA-Z0-9]{20,}/g, '/api/[ENDPOINT]/[REDACTED_ID]');
+      // Replace long IDs (12+ chars) with [REDACTED_ID]
+      sanitized.apiEndpoint = sanitized.apiEndpoint.replace(/\/[a-zA-Z0-9]{12,}/g, '/[REDACTED_ID]');
     }
     
     // Sanitize device info
@@ -419,18 +436,21 @@ class ErrorHandler {
   private logError(appError: AppError): void {
     const logLevel = this.getLogLevel(appError.severity);
     
+    // Sanitize the message before logging
+    const sanitizedMessage = this.sanitizeErrorMessage(appError.message);
+    
     // For sync operations and network errors, just log the message without full object details
     if (appError.category === ErrorCategory.SYNC_OPERATION || 
         appError.category === ErrorCategory.NETWORK) {
       const operation = appError.context?.actionType || appError.category.toLowerCase();
-      logger.log(logLevel, `[${operation}] ${appError.message}`);
+      logger.log(logLevel, `[${operation}] ${sanitizedMessage}`);
     } else {
       logger.log(logLevel, 'Error handled', {
         errorId: appError.id,
         category: appError.category,
         severity: appError.severity,
         code: appError.code,
-        message: appError.message,
+        message: sanitizedMessage,
         retryable: appError.retryable,
         context: appError.context,
       });

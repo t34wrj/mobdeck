@@ -4,6 +4,7 @@
  */
 
 import * as Keychain from 'react-native-keychain';
+import { errorHandler, ErrorCategory } from '../utils/errorHandler';
 import {
   IAuthStorageService,
   AuthToken,
@@ -295,13 +296,22 @@ class AuthStorageService implements IAuthStorageService {
   };
 
   /**
-   * Handle storage errors with proper categorization
+   * Handle storage errors with proper categorization using centralized error handler
    * @private
    */
   private handleStorageError = (
     error: any,
     defaultCode: StorageErrorCode
   ): StorageError => {
+    // Use centralized error handling for consistent error categorization and logging
+    errorHandler.handleError(error, {
+      category: ErrorCategory.STORAGE,
+      context: { 
+        actionType: 'auth_storage_operation',
+        storageErrorCode: defaultCode,
+      },
+    });
+
     let code = defaultCode;
     let message = 'Unknown storage error occurred';
     let details = '';

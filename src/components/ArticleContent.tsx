@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -36,7 +36,7 @@ const FontSizes = {
   },
 };
 
-export const ArticleContent: React.FC<ArticleContentProps> = ({
+export const ArticleContent: React.FC<ArticleContentProps> = memo(({
   content,
   summary,
   imageUrl,
@@ -46,14 +46,14 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const contentStyles = {
+  const contentStyles = useMemo(() => ({
     fontSize: FontSizes[fontSize].body,
     lineHeight: FontSizes[fontSize].lineHeight,
     fontFamily,
-  };
+  }), [fontSize, fontFamily]);
 
-  // Simple HTML content parser for basic formatting
-  const parseContent = (htmlContent: string): React.ReactNode[] => {
+  // Memoize the expensive HTML content parser
+  const parseContent = useCallback((htmlContent: string): React.ReactNode[] => {
     // Remove HTML tags and convert basic formatting
     // This is a simplified parser - in production, consider using a proper HTML parser
     const processedContent = htmlContent
@@ -128,22 +128,22 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
         </Text>
       );
     });
-  };
+  }, [contentStyles, fontSize, fontFamily]);
 
   // Handle image load error
-  const handleImageError = () => {
+  const handleImageError = useCallback(() => {
     setImageError(true);
-  };
+  }, []);
 
   // Handle image press
-  const handleImagePress = () => {
+  const handleImagePress = useCallback(() => {
     if (!imageError && imageUrl) {
       setImageModalVisible(true);
     }
-  };
+  }, [imageError, imageUrl]);
 
   // Render image with fallback
-  const renderImage = (style: any, resizeMode: any = 'cover') => {
+  const renderImage = useCallback((style: any, resizeMode: any = 'cover') => {
     if (!imageUrl || imageError) {
       return null;
     }
@@ -156,7 +156,15 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
         onError={handleImageError}
       />
     );
-  };
+  }, [imageUrl, imageError, handleImageError]);
+
+  // Memoize parsed content to avoid re-parsing on every render
+  const parsedContent = useMemo(() => {
+    if (content && content.trim()) {
+      return parseContent(content);
+    }
+    return null;
+  }, [content, parseContent]);
 
   return (
     <View style={styles.container}>
@@ -185,8 +193,8 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
 
       {/* Content */}
       <View style={styles.contentContainer}>
-        {content && content.trim() ? (
-          parseContent(content)
+        {parsedContent ? (
+          parsedContent
         ) : (
           <Text variant='body1' style={[styles.noContent, contentStyles]}>
             No content available for this article.{'\n\n'}Pull down to refresh to try loading the content from the server.
@@ -230,7 +238,16 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
       </Modal>
     </View>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function for React.memo optimization
+  return (
+    prevProps.content === nextProps.content &&
+    prevProps.summary === nextProps.summary &&
+    prevProps.imageUrl === nextProps.imageUrl &&
+    prevProps.fontSize === nextProps.fontSize &&
+    prevProps.fontFamily === nextProps.fontFamily
+  );
+});
 
 const styles = StyleSheet.create({
   container: {

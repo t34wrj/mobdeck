@@ -13,6 +13,7 @@
  */
 
 import SQLite from 'react-native-sqlite-storage';
+import { errorHandler, ErrorCategory } from '../utils/errorHandler';
 import {
   DatabaseServiceInterface,
   DatabaseConfig,
@@ -187,18 +188,39 @@ class DatabaseService implements DatabaseServiceInterface {
                 description TEXT
             );`,
 
-      // Performance indexes
+      // Performance indexes - optimized for common query patterns
+      
+      // Single column indexes for basic filtering
       'CREATE INDEX IF NOT EXISTS idx_articles_is_archived ON articles(is_archived);',
       'CREATE INDEX IF NOT EXISTS idx_articles_is_favorite ON articles(is_favorite);',
       'CREATE INDEX IF NOT EXISTS idx_articles_is_read ON articles(is_read);',
-      'CREATE INDEX IF NOT EXISTS idx_articles_created_at ON articles(created_at DESC);',
-      'CREATE INDEX IF NOT EXISTS idx_articles_updated_at ON articles(updated_at DESC);',
       'CREATE INDEX IF NOT EXISTS idx_articles_is_modified ON articles(is_modified);',
       'CREATE INDEX IF NOT EXISTS idx_articles_deleted_at ON articles(deleted_at);',
       'CREATE INDEX IF NOT EXISTS idx_articles_synced_at ON articles(synced_at);',
+      
+      // Composite indexes for common filtering combinations
+      'CREATE INDEX IF NOT EXISTS idx_articles_deleted_archived ON articles(deleted_at, is_archived, created_at DESC);',
+      'CREATE INDEX IF NOT EXISTS idx_articles_deleted_favorite ON articles(deleted_at, is_favorite, created_at DESC);',
+      'CREATE INDEX IF NOT EXISTS idx_articles_deleted_read ON articles(deleted_at, is_read, created_at DESC);',
+      'CREATE INDEX IF NOT EXISTS idx_articles_archived_read ON articles(is_archived, is_read, created_at DESC);',
+      
+      // Covering indexes for pagination queries (includes commonly selected columns)
+      'CREATE INDEX IF NOT EXISTS idx_articles_list_covering ON articles(deleted_at, created_at DESC, id, title, summary, is_archived, is_favorite, is_read);',
+      'CREATE INDEX IF NOT EXISTS idx_articles_modified_covering ON articles(is_modified, updated_at DESC, id, synced_at);',
+      
+      // Time-based indexes for sorting and sync operations
+      'CREATE INDEX IF NOT EXISTS idx_articles_created_at ON articles(created_at DESC);',
+      'CREATE INDEX IF NOT EXISTS idx_articles_updated_at ON articles(updated_at DESC);',
+      
+      // Label operations optimization
+      'CREATE INDEX IF NOT EXISTS idx_article_labels_article ON article_labels(article_id, label_id);',
+      'CREATE INDEX IF NOT EXISTS idx_article_labels_label ON article_labels(label_id, article_id);',
+      
+      // Sync metadata optimization
       'CREATE INDEX IF NOT EXISTS idx_sync_metadata_entity ON sync_metadata(entity_type, entity_id);',
       'CREATE INDEX IF NOT EXISTS idx_sync_metadata_status ON sync_metadata(sync_status);',
       'CREATE INDEX IF NOT EXISTS idx_sync_metadata_timestamp ON sync_metadata(local_timestamp DESC);',
+      'CREATE INDEX IF NOT EXISTS idx_sync_metadata_status_time ON sync_metadata(sync_status, created_at DESC);',
 
 
       // Initial schema version
@@ -408,9 +430,17 @@ class DatabaseService implements DatabaseServiceInterface {
         rowsAffected: result.rowsAffected,
       };
     } catch (error) {
+      // Use centralized error handling for storage operations
+      const handledError = errorHandler.handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { 
+          actionType: 'create_article',
+        },
+      });
+
       return {
         success: false,
-        error: `Failed to create article: ${error.message}`,
+        error: handledError.userMessage,
       };
     }
   }
@@ -434,9 +464,17 @@ class DatabaseService implements DatabaseServiceInterface {
         data: result.rows.item(0) as DBArticle,
       };
     } catch (error) {
+      // Use centralized error handling for storage operations
+      const handledError = errorHandler.handleError(error, {
+        category: ErrorCategory.STORAGE,
+        context: { 
+          actionType: 'get_article',
+        },
+      });
+
       return {
         success: false,
-        error: `Failed to get article: ${error.message}`,
+        error: handledError.userMessage,
       };
     }
   }
@@ -511,19 +549,23 @@ class DatabaseService implements DatabaseServiceInterface {
       const { whereClause, params, countParams } =
         this.buildArticleQuery(filters);
 
-      // Get total count
+      // Get total count with optimized query
       const countSql = `SELECT COUNT(*) as count FROM articles ${whereClause}`;
       const countResult = await this.executeSql(countSql, countParams);
       const totalCount = countResult.rows.item(0).count;
 
-      // Get paginated results
+      // Get paginated results with optimized query that uses covering indexes
       const limit = filters?.limit || 50;
       const offset = filters?.offset || 0;
       const sortBy = filters?.sortBy || 'created_at';
       const sortOrder = filters?.sortOrder || 'DESC';
 
+      // Use covering index hints for better performance on large datasets
       const sql = `
-                SELECT * FROM articles 
+                SELECT id, title, summary, content, url, image_url, read_time,
+                       is_archived, is_favorite, is_read, source_url, 
+                       created_at, updated_at, synced_at, is_modified, deleted_at
+                FROM articles 
                 ${whereClause} 
                 ORDER BY ${sortBy} ${sortOrder} 
                 LIMIT ? OFFSET ?
@@ -856,9 +898,11 @@ class DatabaseService implements DatabaseServiceInterface {
     articleId: string
   ): Promise<DatabaseOperationResult<DBLabel[]>> {
     try {
+      // Optimized query using article_labels index
       const sql = `
-                SELECT l.* FROM labels l
-                JOIN article_labels al ON l.id = al.label_id
+                SELECT l.id, l.name, l.color, l.created_at, l.updated_at, l.synced_at 
+                FROM labels l
+                INNER JOIN article_labels al ON l.id = al.label_id
                 WHERE al.article_id = ?
                 ORDER BY l.name ASC
             `;
@@ -886,9 +930,13 @@ class DatabaseService implements DatabaseServiceInterface {
     labelId: number
   ): Promise<DatabaseOperationResult<DBArticle[]>> {
     try {
+      // Optimized query using label-specific index and explicit column selection
       const sql = `
-                SELECT a.* FROM articles a
-                JOIN article_labels al ON a.id = al.article_id
+                SELECT a.id, a.title, a.summary, a.content, a.url, a.image_url, a.read_time,
+                       a.is_archived, a.is_favorite, a.is_read, a.source_url, 
+                       a.created_at, a.updated_at, a.synced_at, a.is_modified, a.deleted_at
+                FROM articles a
+                INNER JOIN article_labels al ON a.id = al.article_id
                 WHERE al.label_id = ? AND a.deleted_at IS NULL
                 ORDER BY a.created_at DESC
             `;
@@ -1073,6 +1121,115 @@ class DatabaseService implements DatabaseServiceInterface {
     }
   }
 
+  /**
+   * Batch create multiple articles in a single transaction
+   */
+  public async createArticlesBatch(
+    articles: Omit<DBArticle, 'created_at' | 'updated_at'>[]
+  ): Promise<DatabaseOperationResult<string[]>> {
+    if (articles.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    try {
+      const articleIds: string[] = [];
+      
+      await this.executeInTransaction(async (ctx) => {
+        const now = this.createTimestamp();
+        
+        // Use prepared statement for better performance
+        const sql = `
+          INSERT INTO articles (
+            id, title, summary, content, url, image_url, read_time,
+            is_archived, is_favorite, is_read, source_url, created_at,
+            updated_at, synced_at, is_modified, deleted_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        
+        for (const article of articles) {
+          const params = [
+            article.id,
+            article.title,
+            article.summary || null,
+            article.content || null,
+            article.url,
+            article.image_url || null,
+            article.read_time || null,
+            article.is_archived || 0,
+            article.is_favorite || 0,
+            article.is_read || 0,
+            article.source_url || null,
+            now,
+            now,
+            article.synced_at || null,
+            article.is_modified || 0,
+            article.deleted_at || null,
+          ];
+          
+          await ctx.executeSql(sql, params);
+          articleIds.push(article.id);
+        }
+      });
+      
+      return {
+        success: true,
+        data: articleIds,
+        rowsAffected: articles.length,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to create articles batch: ${(error as Error).message}`,
+      };
+    }
+  }
+
+  /**
+   * Batch update multiple articles in a single transaction
+   */
+  public async updateArticlesBatch(
+    updates: { id: string; updates: Partial<DBArticle> }[]
+  ): Promise<DatabaseOperationResult> {
+    if (updates.length === 0) {
+      return { success: true, rowsAffected: 0 };
+    }
+
+    try {
+      let totalRowsAffected = 0;
+      
+      await this.executeInTransaction(async (ctx) => {
+        const now = this.createTimestamp();
+        
+        for (const { id, updates: articleUpdates } of updates) {
+          const updateFields = Object.keys(articleUpdates).filter(key => key !== 'id');
+          if (updateFields.length === 0) continue;
+          
+          const setClause = updateFields.map(field => `${field} = ?`).join(', ');
+          const sql = `UPDATE articles SET ${setClause}, updated_at = ? WHERE id = ?`;
+          
+          const params = [
+            ...updateFields.map(field => articleUpdates[field as keyof DBArticle]),
+            now,
+            id,
+          ];
+          
+          const result = await ctx.executeSql(sql, params);
+          totalRowsAffected += result.rowsAffected || 0;
+        }
+      });
+      
+      return {
+        success: true,
+        rowsAffected: totalRowsAffected,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to update articles batch: ${(error as Error).message}`,
+      };
+    }
+  }
+
   // Utility Operations
   public async getStats(): Promise<DatabaseOperationResult<DatabaseStats>> {
     try {
@@ -1218,8 +1375,76 @@ class DatabaseService implements DatabaseServiceInterface {
   }
 
   private async runPendingMigrations(): Promise<void> {
-    // No pending migrations for initial version
-    // Future migrations will be added here
+    // Version 2 migration: Add optimized indexes
+    const migrations: Migration[] = [
+      {
+        version: 2,
+        description: 'Add optimized composite and covering indexes for performance',
+        up: async (tx: DatabaseTransaction) => {
+          const indexQueries = [
+            // Remove any conflicting indexes first (if they exist)
+            'DROP INDEX IF EXISTS idx_articles_deleted_archived',
+            'DROP INDEX IF EXISTS idx_articles_deleted_favorite',
+            'DROP INDEX IF EXISTS idx_articles_deleted_read',
+            'DROP INDEX IF EXISTS idx_articles_archived_read',
+            'DROP INDEX IF EXISTS idx_articles_list_covering',
+            'DROP INDEX IF EXISTS idx_articles_modified_covering',
+            'DROP INDEX IF EXISTS idx_article_labels_article',
+            'DROP INDEX IF EXISTS idx_article_labels_label',
+            'DROP INDEX IF EXISTS idx_sync_metadata_status_time',
+            
+            // Create optimized composite indexes
+            'CREATE INDEX IF NOT EXISTS idx_articles_deleted_archived ON articles(deleted_at, is_archived, created_at DESC)',
+            'CREATE INDEX IF NOT EXISTS idx_articles_deleted_favorite ON articles(deleted_at, is_favorite, created_at DESC)',
+            'CREATE INDEX IF NOT EXISTS idx_articles_deleted_read ON articles(deleted_at, is_read, created_at DESC)',
+            'CREATE INDEX IF NOT EXISTS idx_articles_archived_read ON articles(is_archived, is_read, created_at DESC)',
+            
+            // Create covering indexes for better performance
+            'CREATE INDEX IF NOT EXISTS idx_articles_list_covering ON articles(deleted_at, created_at DESC, id, title, summary, is_archived, is_favorite, is_read)',
+            'CREATE INDEX IF NOT EXISTS idx_articles_modified_covering ON articles(is_modified, updated_at DESC, id, synced_at)',
+            
+            // Optimize article-label joins
+            'CREATE INDEX IF NOT EXISTS idx_article_labels_article ON article_labels(article_id, label_id)',
+            'CREATE INDEX IF NOT EXISTS idx_article_labels_label ON article_labels(label_id, article_id)',
+            
+            // Additional sync optimization
+            'CREATE INDEX IF NOT EXISTS idx_sync_metadata_status_time ON sync_metadata(sync_status, created_at DESC)',
+          ];
+          
+          for (const query of indexQueries) {
+            tx.executeSql(
+              query,
+              [],
+              () => {}, // Success callback
+              (_, error) => {
+                console.error('Migration query failed:', query, error);
+                return false; // Don't halt transaction for index creation failures
+              }
+            );
+          }
+        },
+        down: async (tx: DatabaseTransaction) => {
+          // Rollback: Remove the optimized indexes
+          const rollbackQueries = [
+            'DROP INDEX IF EXISTS idx_articles_deleted_archived',
+            'DROP INDEX IF EXISTS idx_articles_deleted_favorite',
+            'DROP INDEX IF EXISTS idx_articles_deleted_read',
+            'DROP INDEX IF EXISTS idx_articles_archived_read',
+            'DROP INDEX IF EXISTS idx_articles_list_covering',
+            'DROP INDEX IF EXISTS idx_articles_modified_covering',
+            'DROP INDEX IF EXISTS idx_article_labels_article',
+            'DROP INDEX IF EXISTS idx_article_labels_label',
+            'DROP INDEX IF EXISTS idx_sync_metadata_status_time',
+          ];
+          
+          for (const query of rollbackQueries) {
+            tx.executeSql(query, [], () => {}, () => false);
+          }
+        },
+      },
+    ];
+    
+    await this.runMigrations(migrations);
   }
 
   // Helper Methods
@@ -1253,9 +1478,11 @@ class DatabaseService implements DatabaseServiceInterface {
     params: any[];
     countParams: any[];
   } {
+    // Order conditions for optimal index usage (most selective first)
     const conditions = ['deleted_at IS NULL'];
     const params: any[] = [];
 
+    // Add specific filters in order of selectivity
     if (filters?.isArchived !== undefined) {
       conditions.push('is_archived = ?');
       params.push(filters.isArchived ? 1 : 0);
@@ -1271,11 +1498,13 @@ class DatabaseService implements DatabaseServiceInterface {
       params.push(filters.isRead ? 1 : 0);
     }
 
+    // Optimize label filtering with EXISTS for better performance
     if (filters?.labelIds && filters.labelIds.length > 0) {
       const placeholders = filters.labelIds.map(() => '?').join(',');
-      conditions.push(`id IN (
-                SELECT article_id FROM article_labels 
-                WHERE label_id IN (${placeholders})
+      conditions.push(`EXISTS (
+                SELECT 1 FROM article_labels al 
+                WHERE al.article_id = articles.id 
+                AND al.label_id IN (${placeholders})
             )`);
       params.push(...filters.labelIds);
     }
@@ -1297,6 +1526,17 @@ class DatabaseService implements DatabaseServiceInterface {
     query?: string,
     params?: any[]
   ): DatabaseError {
+    // Use centralized error handling for consistent error categorization and logging
+    errorHandler.handleError(originalError || new Error(message), {
+      category: ErrorCategory.STORAGE,
+      context: { 
+        actionType: 'database_operation',
+        errorCode: code,
+      },
+      details: { query, params },
+    });
+
+    // Return original message for compatibility with existing tests
     const error = new Error(message) as DatabaseError;
     error.code = code;
     error.details = originalError;

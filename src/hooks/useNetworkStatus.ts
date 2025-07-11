@@ -1,11 +1,29 @@
 import { useEffect, useState } from 'react';
 import { readeckApiService } from '../services/ReadeckApiService';
 
+/**
+ * Network status information
+ */
 interface NetworkStatus {
+  /** Whether the app is online */
   isOnline: boolean;
+  /** Whether connected to the network */
   isConnected: boolean;
 }
 
+/**
+ * Hook to monitor network connectivity status
+ * 
+ * @returns NetworkStatus object with connectivity information
+ * @example
+ * ```tsx
+ * const { isOnline, isConnected } = useNetworkStatus();
+ * 
+ * if (!isOnline) {
+ *   return <OfflineBanner />;
+ * }
+ * ```
+ */
 export const useNetworkStatus = (): NetworkStatus => {
   const [networkStatus, setNetworkStatus] = useState<NetworkStatus>({
     isOnline: true,

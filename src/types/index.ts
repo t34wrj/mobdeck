@@ -1,36 +1,73 @@
 // API Response Types
+
+/**
+ * Generic API response wrapper
+ * @template T - Type of the response data
+ */
 export interface ApiResponse<T> {
+  /** Response payload data */
   data: T;
+  /** Optional success message */
   message?: string;
+  /** Optional error message */
   error?: string;
 }
 
+/**
+ * Paginated API response for list endpoints
+ * @template T - Type of individual items in the list
+ */
 export interface PaginatedResponse<T> {
+  /** Array of items in the current page */
   items: T[];
+  /** Current page number (1-based) */
   page: number;
+  /** Total number of pages available */
   totalPages: number;
+  /** Total number of items across all pages */
   totalItems: number;
 }
 
 // Entity Types
+
+/**
+ * Core Article entity representing a saved article/bookmark
+ */
 export interface Article {
+  /** Unique identifier for the article */
   id: string;
+  /** Article title */
   title: string;
+  /** Brief summary or excerpt */
   summary: string;
+  /** Full article content */
   content: string;
+  /** Original article URL */
   url: string;
+  /** Optional featured image URL */
   imageUrl?: string;
+  /** Estimated reading time in minutes */
   readTime?: number;
+  /** Whether article is archived */
   isArchived: boolean;
+  /** Whether article is marked as favorite */
   isFavorite: boolean;
+  /** Whether article has been read */
   isRead: boolean;
+  /** Optional array of tag strings */
   tags?: string[];
+  /** Original source URL if different from url */
   sourceUrl?: string;
+  /** ISO timestamp when article was created */
   createdAt: string;
+  /** ISO timestamp when article was last updated */
   updatedAt: string;
+  /** ISO timestamp when article was last synced */
   syncedAt?: string;
-  contentUrl?: string; // URL to fetch full article content
-  isModified?: boolean; // Flag to track local modifications for sync
+  /** URL to fetch full article content */
+  contentUrl?: string;
+  /** Flag to track local modifications for sync */
+  isModified?: boolean;
 }
 
 export interface User {

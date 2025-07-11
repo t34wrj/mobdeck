@@ -1,6 +1,17 @@
 import axios from 'axios';
 
-// Function to validate API token against Readeck server
+/**
+ * Validates API token against Readeck server by fetching user profile
+ * @param serverUrl - Base URL of the Readeck server
+ * @param apiToken - API token to validate
+ * @returns Promise resolving to validation result with user data
+ * @throws Error if validation fails or network issues occur
+ * @example
+ * const result = await validateApiToken("https://readeck.example.com", "your-api-token");
+ * if (result.isValid) {
+ *   console.log("User:", result.user.username);
+ * }
+ */
 export const validateApiToken = async (serverUrl: string, apiToken: string) => {
   const cleanUrl = serverUrl.replace(/\/$/, ''); // Remove trailing slash
   
@@ -71,7 +82,13 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
   }
 };
 
-// Function to fetch articles
+/**
+ * Fetches articles/bookmarks from Readeck server
+ * @param serverUrl - Base URL of the Readeck server
+ * @param apiToken - Valid API token for authentication
+ * @returns Promise resolving to articles data from the API
+ * @throws Error if request fails or authentication is invalid
+ */
 export const fetchArticles = async (serverUrl: string, apiToken: string) => {
   try {
     const cleanUrl = serverUrl.replace(/\/$/, '');
@@ -88,7 +105,14 @@ export const fetchArticles = async (serverUrl: string, apiToken: string) => {
   }
 };
 
-// Function to fetch a single article by ID
+/**
+ * Fetches a single article/bookmark by ID from Readeck server
+ * @param serverUrl - Base URL of the Readeck server
+ * @param apiToken - Valid API token for authentication
+ * @param id - Unique identifier of the article to fetch
+ * @returns Promise resolving to article data
+ * @throws Error if article not found or request fails
+ */
 export const fetchArticleById = async (serverUrl: string, apiToken: string, id: string) => {
   try {
     const cleanUrl = serverUrl.replace(/\/$/, '');

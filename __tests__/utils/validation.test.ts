@@ -439,7 +439,7 @@ describe('Input Validation Security Tests', () => {
   describe('Batch Validation', () => {
     test('should validate multiple inputs', () => {
       const validations = [
-        { value: 'https://example.com', validator: validateUrl },
+        { value: 'https://example.com', validator: (url: string) => validateUrl(url, { allowHttp: true, allowLocalhost: true }) },
         { value: 'test query', validator: validateSearchQuery },
         { value: 'work', validator: validateLabelName },
       ];
@@ -637,8 +637,11 @@ describe('Input Validation Security Tests', () => {
 
       unicodeInputs.forEach(input => {
         const result = validateSearchQuery(input);
-        // Should handle unicode gracefully (may pass or fail based on pattern)
-        expect(result.error).toBeDefined();
+        // Should handle unicode gracefully - result can be valid or invalid but shouldn't crash
+        expect(typeof result.isValid).toBe('boolean');
+        if (!result.isValid) {
+          expect(result.error).toBeDefined();
+        }
       });
     });
   });

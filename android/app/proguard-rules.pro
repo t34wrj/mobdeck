@@ -167,9 +167,6 @@
 # Additional Security Rules
 # ===========================
 
-# Obfuscate package names (except critical ones)
--repackageclasses 'o'
-
 # Remove source file names and line numbers
 -renamesourcefileattribute SourceFile
 -keepattributes !SourceFile,!LineNumberTable
@@ -180,9 +177,12 @@
 # Aggressive optimization for smaller APK
 -allowaccessmodification
 
-# Remove unused code
--dontshrink
--dontoptimize
+# Obfuscate package names (except critical ones)
+-repackageclasses 'o'
+
+# Enable aggressive shrinking and optimization for smaller APK
+# -dontshrink
+# -dontoptimize
 
 # ===========================
 # Debugging Prevention
@@ -213,3 +213,31 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+# ===========================
+# Additional APK Size Optimization
+# ===========================
+
+# Enable maximum code shrinking
+-optimizationpasses 10
+
+# More aggressive optimization settings
+-overloadaggressively
+-mergeinterfacesaggressively
+
+# Standard optimization settings
+-optimizations !code/simplification/arithmetic,!field/*,!class/merging/*,!code/allocation/variable
+
+# Resource shrinking handled by build.gradle shrinkResources setting
+
+# Minimize attribute information
+-keepattributes !LocalVariableTable,!LocalVariableTypeTable
+
+# Remove parameter names for smaller bytecode
+-keepparameternames
+
+# Additional React Native bundle optimization
+-keep class com.facebook.react.bridge.** { *; }
+-keep class com.facebook.react.uimanager.** { *; }
+
+# Final size optimization handled by -repackageclasses above

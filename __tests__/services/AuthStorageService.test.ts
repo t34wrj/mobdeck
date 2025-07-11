@@ -213,8 +213,10 @@ describe('AuthStorageService', () => {
       expect(result).toBeNull();
       expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith('mobdeck_auth_tokens');
       expect(console.error).toHaveBeenCalledWith(
-        '[AuthStorageService] Failed to parse stored auth data:',
-        expect.any(Error)
+        expect.stringMatching(/\[ERROR\] Failed to parse stored auth data/),
+        expect.objectContaining({
+          error: 'Parse error occurred - corrupted auth data detected'
+        })
       );
     });
 
@@ -304,9 +306,10 @@ describe('AuthStorageService', () => {
       // Assert
       expect(result).toBe(false);
       expect(console.error).toHaveBeenCalledWith(
-        '[AuthStorageService] Token deletion failed:',
+        expect.stringMatching(/\[ERROR\] Token deletion failed/),
         expect.objectContaining({
-          code: StorageErrorCode.DELETION_FAILED,
+          errorCode: StorageErrorCode.DELETION_FAILED,
+          message: expect.stringContaining('Storage operation failed')
         })
       );
     });

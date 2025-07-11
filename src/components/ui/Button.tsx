@@ -10,16 +10,29 @@ import {
 import { Text } from './Text';
 import { theme } from './theme';
 
+/**
+ * Props for the Button component
+ */
 export interface ButtonProps extends Omit<TouchableOpacityProps, 'style'> {
+  /** Button visual variant */
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+  /** Button size */
   size?: 'sm' | 'md' | 'lg';
+  /** Show loading spinner */
   loading?: boolean;
+  /** Disable button interaction */
   disabled?: boolean;
+  /** Icon to display on the left side */
   leftIcon?: React.ReactNode;
+  /** Icon to display on the right side */
   rightIcon?: React.ReactNode;
+  /** Custom button container styles */
   style?: ViewStyle | ViewStyle[];
+  /** Custom text styles */
   textStyle?: TextStyle | TextStyle[];
+  /** Button content */
   children: React.ReactNode;
+  /** Make button take full width */
   fullWidth?: boolean;
 }
 
@@ -149,6 +162,23 @@ const getButtonStyles = (
   };
 };
 
+/**
+ * Reusable Button component with multiple variants and sizes
+ * 
+ * @param props - Button component props
+ * @returns Rendered button component
+ * 
+ * @example
+ * ```tsx
+ * <Button variant="primary" size="md" onPress={() => console.log('Pressed')}>
+ *   Save Article
+ * </Button>
+ * 
+ * <Button variant="outline" loading={true}>
+ *   Loading...
+ * </Button>
+ * ```
+ */
 export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',

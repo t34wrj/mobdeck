@@ -62,7 +62,7 @@ def enableProguardInReleaseBuilds = true
 /**
  * Run Proguard to shrink the Java bytecode in release builds.
  */
-def enableSeparateBuildPerCPUArchitecture = false
+def enableSeparateBuildPerCPUArchitecture = true
 
 /**
  * Set this to true to create four separate APKs instead of one,
@@ -101,6 +101,21 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        
+        // ABI filters handled by splits configuration below
+        
+        // Bundle configuration for splitting
+        bundle {
+            language {
+                enableSplit = true
+            }
+            density {
+                enableSplit = true
+            }
+            abi {
+                enableSplit = true
+            }
+        }
     }
     signingConfigs {
         debug {
@@ -125,12 +140,19 @@ android {
         release {
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig = signingConfigs.release
+            signingConfig = signingConfigs.debug  // Temporary: use debug keystore for size testing
             minifyEnabled = enableProguardInReleaseBuilds
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             shrinkResources = true
             zipAlignEnabled = true
             crunchPngs = true
+            
+            // Additional optimization settings
+            debuggable = false
+            jniDebuggable = false
+            
+            // Enable resource optimization
+            resValue "string", "build_config_package", "com.mobdeck"
         }
     }
     
@@ -140,6 +162,38 @@ android {
     
     buildFeatures {
         buildConfig = true
+    }
+    
+    packagingOptions {
+        pickFirst "lib/x86/libc++_shared.so"
+        pickFirst "lib/x86_64/libc++_shared.so"
+        pickFirst "lib/arm64-v8a/libc++_shared.so"
+        pickFirst "lib/armeabi-v7a/libc++_shared.so"
+        
+        // Exclude unnecessary files
+        exclude "META-INF/DEPENDENCIES"
+        exclude "META-INF/LICENSE"
+        exclude "META-INF/LICENSE.txt"
+        exclude "META-INF/license.txt"
+        exclude "META-INF/NOTICE"
+        exclude "META-INF/NOTICE.txt"
+        exclude "META-INF/notice.txt"
+        exclude "META-INF/ASL2.0"
+        exclude "META-INF/*.kotlin_module"
+        
+        // Remove debug information
+        exclude "**/*.debug"
+        exclude "**/*.dSYM/**"
+    }
+    
+    // Splits configuration for smaller APKs
+    splits {
+        abi {
+            reset()
+            enable enableSeparateBuildPerCPUArchitecture
+            universalApk false  // Also generate a universal APK
+            include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
+        }
     }
 }
 

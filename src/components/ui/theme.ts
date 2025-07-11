@@ -252,6 +252,33 @@ export const shadows = {
   },
 };
 
+/**
+ * Mobdeck design system theme object containing all design tokens
+ * 
+ * Provides a comprehensive design system with:
+ * - Color palette with semantic color scales
+ * - Typography system with font sizes, weights, and line heights  
+ * - Spacing scale for consistent layout
+ * - Border radius values
+ * - Shadow/elevation styles
+ * 
+ * @example
+ * ```tsx
+ * import { theme } from './theme';
+ * 
+ * const styles = {
+ *   container: {
+ *     backgroundColor: theme.colors.primary[500],
+ *     padding: theme.spacing[4],
+ *     borderRadius: theme.borderRadius.md,
+ *   },
+ *   text: {
+ *     fontSize: theme.typography.fontSize.lg,
+ *     fontWeight: theme.typography.fontWeight.semibold,
+ *   }
+ * };
+ * ```
+ */
 export const theme = {
   colors,
   typography,

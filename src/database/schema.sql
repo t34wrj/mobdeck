@@ -69,22 +69,39 @@ CREATE TABLE IF NOT EXISTS schema_version (
     description TEXT
 );
 
--- Performance indexes
+-- Performance indexes - optimized for common query patterns
 
--- Articles: Fast retrieval by common queries
+-- Single column indexes for basic filtering
 CREATE INDEX IF NOT EXISTS idx_articles_is_archived ON articles(is_archived);
 CREATE INDEX IF NOT EXISTS idx_articles_is_favorite ON articles(is_favorite);
 CREATE INDEX IF NOT EXISTS idx_articles_is_read ON articles(is_read);
-CREATE INDEX IF NOT EXISTS idx_articles_created_at ON articles(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_articles_updated_at ON articles(updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_articles_is_modified ON articles(is_modified);
 CREATE INDEX IF NOT EXISTS idx_articles_deleted_at ON articles(deleted_at);
-
--- Sync optimization
 CREATE INDEX IF NOT EXISTS idx_articles_synced_at ON articles(synced_at);
+
+-- Composite indexes for common filtering combinations
+CREATE INDEX IF NOT EXISTS idx_articles_deleted_archived ON articles(deleted_at, is_archived, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_articles_deleted_favorite ON articles(deleted_at, is_favorite, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_articles_deleted_read ON articles(deleted_at, is_read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_articles_archived_read ON articles(is_archived, is_read, created_at DESC);
+
+-- Covering indexes for pagination queries (includes commonly selected columns)
+CREATE INDEX IF NOT EXISTS idx_articles_list_covering ON articles(deleted_at, created_at DESC, id, title, summary, is_archived, is_favorite, is_read);
+CREATE INDEX IF NOT EXISTS idx_articles_modified_covering ON articles(is_modified, updated_at DESC, id, synced_at);
+
+-- Time-based indexes for sorting and sync operations
+CREATE INDEX IF NOT EXISTS idx_articles_created_at ON articles(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_articles_updated_at ON articles(updated_at DESC);
+
+-- Label operations optimization
+CREATE INDEX IF NOT EXISTS idx_article_labels_article ON article_labels(article_id, label_id);
+CREATE INDEX IF NOT EXISTS idx_article_labels_label ON article_labels(label_id, article_id);
+
+-- Sync metadata optimization
 CREATE INDEX IF NOT EXISTS idx_sync_metadata_entity ON sync_metadata(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS idx_sync_metadata_status ON sync_metadata(sync_status);
 CREATE INDEX IF NOT EXISTS idx_sync_metadata_timestamp ON sync_metadata(local_timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_sync_metadata_status_time ON sync_metadata(sync_status, created_at DESC);
 
 -- Full-text search support for article content
 CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts USING fts5(

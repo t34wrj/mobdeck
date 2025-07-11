@@ -1,5 +1,8 @@
 import { useMemo } from 'react';
 
+/**
+ * Application theme interface defining color palette, spacing, and typography
+ */
 export interface AppTheme {
   colors: {
     primary: string;
@@ -72,6 +75,21 @@ const defaultTheme: AppTheme = {
   },
 };
 
+/**
+ * Hook to access the application theme
+ * 
+ * @returns AppTheme object with colors, spacing, and typography values
+ * @example
+ * ```tsx
+ * const theme = useAppTheme();
+ * const styles = {
+ *   container: {
+ *     backgroundColor: theme.colors.background,
+ *     padding: theme.spacing.md,
+ *   }
+ * };
+ * ```
+ */
 export const useAppTheme = (): AppTheme => {
   return useMemo(() => defaultTheme, []);
 };

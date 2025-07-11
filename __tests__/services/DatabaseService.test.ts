@@ -819,6 +819,9 @@ describe('DatabaseService', () => {
             });
 
             it('should handle article updates with no changes', async () => {
+                // Clear any previous SQL calls (like schema initialization)
+                mockDb.executeSql.mockClear();
+                
                 const result = await dbService.updateArticle('test-id', {});
                 
                 expect(result.success).toBe(true);

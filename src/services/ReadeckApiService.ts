@@ -505,10 +505,20 @@ securityNote: 'Consider using HTTPS for encrypted communication'
   }
 
   /**
-   * Handle response errors with proper categorization
+   * Handle response errors with proper categorization using centralized error handler
    * @private
    */
   private handleResponseError(error: AxiosError): ReadeckApiError {
+    // Use centralized error handling for consistent categorization
+    errorHandler.handleError(error, {
+      category: this.getErrorCategory(error),
+      context: { 
+        actionType: 'api_request',
+        apiEndpoint: error.config?.url,
+        serverUrl: this.config.baseUrl,
+      },
+    });
+
     if (!error.response) {
       // Network or connection error
       if (error.code === 'ECONNABORTED') {
@@ -607,7 +617,7 @@ securityNote: 'Consider using HTTPS for encrypted communication'
   }
 
   /**
-   * Execute request with retry logic
+   * Execute request with retry logic and centralized error handling
    * @private
    */
   private async executeWithRetry<T>(
@@ -617,7 +627,7 @@ securityNote: 'Consider using HTTPS for encrypted communication'
     const attempts = config?.retryAttempts ?? this.retryConfig.attempts;
     const skipRetry = config?.skipRetry ?? false;
 
-    let lastError: ReadeckApiError;
+    let lastError: ReadeckApiError | undefined;
 
     for (let attempt = 1; attempt <= attempts; attempt++) {
       try {
@@ -630,6 +640,10 @@ securityNote: 'Consider using HTTPS for encrypted communication'
           timestamp: new Date().toISOString(),
         };
       } catch (error) {
+        // Use centralized error handling for network errors
+        const networkErrorHandler = errorHandler.getNetworkErrorHandler();
+        const handledError = networkErrorHandler(error);
+        
         lastError = error as ReadeckApiError;
 
         // Don't retry if configured to skip, on last attempt, or if error is not retryable
@@ -645,7 +659,7 @@ securityNote: 'Consider using HTTPS for encrypted communication'
 
         logger.info(
           `API retry attempt ${attempt}/${attempts} after ${delay}ms`,
-          { error: maskSensitiveData(lastError.message) }
+          { error: maskSensitiveData(handledError.userMessage) }
         );
         await new Promise<void>(resolve => setTimeout(resolve, delay));
       }

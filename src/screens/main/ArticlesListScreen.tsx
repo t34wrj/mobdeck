@@ -266,13 +266,16 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   // Render article item
   const renderArticleItem = useCallback(
     ({ item }: { item: Article }) => (
-      <ArticleCard article={item} onPress={() => handleArticlePress(item)} />
+      <ArticleCard 
+        article={item} 
+        onPress={() => handleArticlePress(item)} 
+      />
     ),
     [handleArticlePress]
   );
 
   // Render empty state
-  const renderEmptyState = () => {
+  const renderEmptyState = useCallback(() => {
     const getEmptyStateContent = () => {
       if (searchQuery) {
         return {
@@ -346,10 +349,10 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
         )}
       </View>
     );
-  };
+  }, [searchQuery, filters, handleClearSearch]);
 
   // Render footer with loading indicator for pagination
-  const renderFooter = () => {
+  const renderFooter = useCallback(() => {
     if (!loading.fetch || pagination.page === 1) return null;
 
     return (
@@ -360,10 +363,10 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
         </Text>
       </View>
     );
-  };
+  }, [loading.fetch, pagination.page]);
 
   // Render filter chips
-  const renderFilters = () => (
+  const renderFilters = useCallback(() => (
     <View style={styles.filtersContainer}>
       <FlatList
         horizontal
@@ -389,7 +392,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
         )}
       />
     </View>
-  );
+  ), [filterOptions, handleFilterPress]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

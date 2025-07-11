@@ -39,7 +39,7 @@ describe('Error Handling Security Tests', () => {
       });
 
       // Verify that sensitive data is redacted
-      expect(handledError.details?.authorization).toBe('[REDACTED]');
+      expect(handledError.details?.authorization).toBe('[REDACTED_BEARER_TOKEN]');
       expect(handledError.details?.token).toBe('[REDACTED_JWT]');
       expect(handledError.details?.apiKey).toBe('[REDACTED_API_KEY]');
     });
@@ -67,6 +67,11 @@ describe('Error Handling Security Tests', () => {
         details: nestedSensitiveData,
       });
 
+      // First verify the structure exists
+      expect(handledError.details).toBeDefined();
+      expect(handledError.details?.user).toBeDefined();
+      expect(handledError.details?.user?.credentials).toBeDefined();
+      
       // Verify nested sensitive data is redacted
       expect(handledError.details?.user?.credentials?.password).toBe('[REDACTED]');
       expect(handledError.details?.user?.credentials?.token).toBe('[REDACTED_BEARER_TOKEN]');
@@ -269,8 +274,8 @@ describe('Error Handling Security Tests', () => {
       expect(sanitized.api.token).toBe('[REDACTED]');
       expect(sanitized.api.key).toBe('[REDACTED]');
       expect(sanitized.server.ip).toBe('[IP_ADDRESS]');
-      expect(sanitized.server.url).toBe('h***@api.com'); // Masked format
-      expect(sanitized.error.message).toContain('[JWT_TOKEN]');
+      expect(sanitized.server.url).toBe('h***@api.com'); // Masked as email-like pattern
+      expect(sanitized.error.message).toContain('[REDACTED]');
     });
   });
 

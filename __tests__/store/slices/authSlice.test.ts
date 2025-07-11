@@ -4,39 +4,33 @@
  */
 
 import { configureStore } from '@reduxjs/toolkit';
-import authSlice, {
-  setAuthToken,
+import authReducer, {
+  clearError,
+  setUser,
   clearAuth,
-  setServerUrl,
-  setAuthLoading,
-  setAuthError,
-  validateTokenStart,
-  validateTokenSuccess,
-  validateTokenFailure,
+  loginUser,
+  logoutUser,
+  initializeAuth,
+  refreshToken,
 } from '../../../src/store/slices/authSlice';
-import { AuthState } from '../../../src/types/auth';
+import { AuthState, AuthenticatedUser } from '../../../src/types/auth';
 
 describe('authSlice', () => {
   let store: ReturnType<typeof configureStore>;
   
   const initialState: AuthState = {
-    isAuthenticated: false,
+    user: null,
     token: null,
-    serverUrl: null,
-    isLoading: false,
+    isAuthenticated: false,
+    loading: false,
     error: null,
-    isValidatingToken: false,
-    tokenValidation: {
-      isValid: false,
-      isExpired: false,
-      error: null,
-    },
+    lastTokenRefresh: undefined,
   };
 
   beforeEach(() => {
     store = configureStore({
       reducer: {
-        auth: authSlice.reducer,
+        auth: authReducer,
       },
     });
   });
@@ -48,27 +42,21 @@ describe('authSlice', () => {
     });
   });
 
-  describe('setAuthToken', () => {
-    it('should set auth token and mark as authenticated', () => {
-      const token = 'test-token-123';
+  describe('setUser', () => {
+    it('should set user and mark as authenticated', () => {
+      const user: AuthenticatedUser = {
+        id: 'user123',
+        username: 'testuser',
+        email: 'test@example.com',
+        serverUrl: 'https://readeck.example.com',
+        lastLoginAt: new Date().toISOString(),
+        tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
+      };
       
-      store.dispatch(setAuthToken(token));
-      
-      const state = store.getState().auth;
-      expect(state.token).toBe(token);
-      expect(state.isAuthenticated).toBe(true);
-      expect(state.error).toBeNull();
-    });
-
-    it('should clear error when setting token', () => {
-      // First set an error
-      store.dispatch(setAuthError('Previous error'));
-      
-      // Then set token
-      store.dispatch(setAuthToken('new-token'));
+      store.dispatch(setUser(user));
       
       const state = store.getState().auth;
-      expect(state.error).toBeNull();
+      expect(state.user).toEqual(user);
       expect(state.isAuthenticated).toBe(true);
     });
   });
@@ -76,9 +64,15 @@ describe('authSlice', () => {
   describe('clearAuth', () => {
     it('should clear all auth data', () => {
       // First set some auth data
-      store.dispatch(setAuthToken('token'));
-      store.dispatch(setServerUrl('https://example.com'));
-      store.dispatch(setAuthError('error'));
+      const user: AuthenticatedUser = {
+        id: 'user123',
+        username: 'testuser',
+        email: 'test@example.com',
+        serverUrl: 'https://example.com',
+        lastLoginAt: new Date().toISOString(),
+        tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
+      };
+      store.dispatch(setUser(user));
       
       // Then clear
       store.dispatch(clearAuth());
@@ -86,314 +80,222 @@ describe('authSlice', () => {
       const state = store.getState().auth;
       expect(state.isAuthenticated).toBe(false);
       expect(state.token).toBeNull();
-      expect(state.serverUrl).toBeNull();
+      expect(state.user).toBeNull();
       expect(state.error).toBeNull();
-      expect(state.isValidatingToken).toBe(false);
-      expect(state.tokenValidation).toEqual({
-        isValid: false,
-        isExpired: false,
-        error: null,
-      });
-    });
-
-    it('should reset loading state', () => {
-      // Set loading state
-      store.dispatch(setAuthLoading(true));
-      
-      // Clear auth
-      store.dispatch(clearAuth());
-      
-      const state = store.getState().auth;
-      expect(state.isLoading).toBe(false);
+      expect(state.lastTokenRefresh).toBeUndefined();
     });
   });
 
-  describe('setServerUrl', () => {
-    it('should set server URL', () => {
-      const url = 'https://readeck.example.com';
+  describe('clearError', () => {
+    it('should clear error state', () => {
+      // Simulate an error state by attempting a failed login
+      const mockError = 'Authentication failed';
       
-      store.dispatch(setServerUrl(url));
-      
-      const state = store.getState().auth;
-      expect(state.serverUrl).toBe(url);
-    });
-
-    it('should handle null server URL', () => {
-      // First set a URL
-      store.dispatch(setServerUrl('https://example.com'));
-      
-      // Then clear it
-      store.dispatch(setServerUrl(null));
-      
-      const state = store.getState().auth;
-      expect(state.serverUrl).toBeNull();
-    });
-  });
-
-  describe('setAuthLoading', () => {
-    it('should set loading state to true', () => {
-      store.dispatch(setAuthLoading(true));
-      
-      const state = store.getState().auth;
-      expect(state.isLoading).toBe(true);
-    });
-
-    it('should set loading state to false', () => {
-      // First set to true
-      store.dispatch(setAuthLoading(true));
-      
-      // Then set to false
-      store.dispatch(setAuthLoading(false));
-      
-      const state = store.getState().auth;
-      expect(state.isLoading).toBe(false);
-    });
-
-    it('should clear error when starting to load', () => {
-      // First set an error
-      store.dispatch(setAuthError('Login failed'));
-      
-      // Start loading
-      store.dispatch(setAuthLoading(true));
-      
-      const state = store.getState().auth;
-      expect(state.error).toBeNull();
-      expect(state.isLoading).toBe(true);
-    });
-  });
-
-  describe('setAuthError', () => {
-    it('should set error message', () => {
-      const error = 'Invalid credentials';
-      
-      store.dispatch(setAuthError(error));
-      
-      const state = store.getState().auth;
-      expect(state.error).toBe(error);
-      expect(state.isLoading).toBe(false);
-    });
-
-    it('should stop loading when error is set', () => {
-      // Start loading
-      store.dispatch(setAuthLoading(true));
-      
-      // Set error
-      store.dispatch(setAuthError('Network error'));
-      
-      const state = store.getState().auth;
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBe('Network error');
-    });
-
-    it('should handle null error', () => {
-      // First set an error
-      store.dispatch(setAuthError('Some error'));
-      
-      // Then clear it
-      store.dispatch(setAuthError(null));
+      // We'll test error clearing after setting up error state through async action
+      store.dispatch(clearError());
       
       const state = store.getState().auth;
       expect(state.error).toBeNull();
     });
   });
 
-  describe('Token Validation Actions', () => {
-    describe('validateTokenStart', () => {
-      it('should set validation loading state', () => {
-        store.dispatch(validateTokenStart());
-        
-        const state = store.getState().auth;
-        expect(state.isValidatingToken).toBe(true);
-        expect(state.tokenValidation.error).toBeNull();
-      });
-
-      it('should clear previous validation error', () => {
-        // Set a validation error first
-        store.dispatch(validateTokenFailure('Previous error'));
-        
-        // Start new validation
-        store.dispatch(validateTokenStart());
-        
-        const state = store.getState().auth;
-        expect(state.tokenValidation.error).toBeNull();
-      });
-    });
-
-    describe('validateTokenSuccess', () => {
-      it('should set token as valid', () => {
-        const validationResult = {
-          isValid: true,
-          isExpired: false,
-          expiresIn: 3600,
-        };
-        
-        store.dispatch(validateTokenSuccess(validationResult));
-        
-        const state = store.getState().auth;
-        expect(state.isValidatingToken).toBe(false);
-        expect(state.tokenValidation.isValid).toBe(true);
-        expect(state.tokenValidation.isExpired).toBe(false);
-        expect(state.tokenValidation.expiresIn).toBe(3600);
-        expect(state.tokenValidation.error).toBeNull();
-      });
-
-      it('should handle expired token', () => {
-        const validationResult = {
-          isValid: false,
-          isExpired: true,
-          expiresIn: 0,
-        };
-        
-        store.dispatch(validateTokenSuccess(validationResult));
-        
-        const state = store.getState().auth;
-        expect(state.tokenValidation.isValid).toBe(false);
-        expect(state.tokenValidation.isExpired).toBe(true);
-        expect(state.tokenValidation.expiresIn).toBe(0);
-      });
-
-      it('should stop validation loading', () => {
-        // Start validation
-        store.dispatch(validateTokenStart());
-        
-        // Complete validation
-        store.dispatch(validateTokenSuccess({
-          isValid: true,
-          isExpired: false,
-        }));
-        
-        const state = store.getState().auth;
-        expect(state.isValidatingToken).toBe(false);
-      });
-    });
-
-    describe('validateTokenFailure', () => {
-      it('should set validation error', () => {
-        const error = 'Token validation failed';
-        
-        store.dispatch(validateTokenFailure(error));
-        
-        const state = store.getState().auth;
-        expect(state.isValidatingToken).toBe(false);
-        expect(state.tokenValidation.error).toBe(error);
-        expect(state.tokenValidation.isValid).toBe(false);
-      });
-
-      it('should stop validation loading on error', () => {
-        // Start validation
-        store.dispatch(validateTokenStart());
-        
-        // Fail validation
-        store.dispatch(validateTokenFailure('Network error'));
-        
-        const state = store.getState().auth;
-        expect(state.isValidatingToken).toBe(false);
-        expect(state.tokenValidation.error).toBe('Network error');
-      });
-    });
-  });
-
-  describe('Complex State Transitions', () => {
-    it('should handle login flow', () => {
-      // Start loading
-      store.dispatch(setAuthLoading(true));
-      expect(store.getState().auth.isLoading).toBe(true);
+  describe('Async Actions - loginUser', () => {
+    it('should handle pending state', () => {
+      const credentials: AuthCredentials = {
+        serverUrl: 'https://readeck.example.com',
+        username: 'testuser',
+        password: 'testpass',
+      };
       
-      // Set server URL
-      store.dispatch(setServerUrl('https://readeck.example.com'));
-      
-      // Set token (successful login)
-      store.dispatch(setAuthToken('auth-token-123'));
+      store.dispatch(loginUser.pending('', credentials));
       
       const state = store.getState().auth;
+      expect(state.loading).toBe(true);
+      expect(state.error).toBeNull();
+    });
+
+    it('should handle fulfilled state', () => {
+      const payload = {
+        user: {
+          id: 'user123',
+          username: 'testuser',
+          email: 'test@example.com',
+          serverUrl: 'https://readeck.example.com',
+          lastLoginAt: new Date().toISOString(),
+          tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
+        },
+        token: 'test-token-123',
+      };
+      
+      store.dispatch(loginUser.fulfilled(payload, '', {
+        serverUrl: 'https://readeck.example.com',
+        username: 'testuser',
+        password: 'testpass',
+      }));
+      
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.user).toEqual(payload.user);
+      expect(state.token).toBe(payload.token);
       expect(state.isAuthenticated).toBe(true);
-      expect(state.token).toBe('auth-token-123');
-      expect(state.serverUrl).toBe('https://readeck.example.com');
       expect(state.error).toBeNull();
     });
 
-    it('should handle login failure', () => {
-      // Start loading
-      store.dispatch(setAuthLoading(true));
+    it('should handle rejected state', () => {
+      const errorMessage = 'Invalid credentials';
       
-      // Set server URL
-      store.dispatch(setServerUrl('https://readeck.example.com'));
-      
-      // Login fails
-      store.dispatch(setAuthError('Invalid credentials'));
+      store.dispatch(loginUser.rejected(null, '', {
+        serverUrl: 'https://readeck.example.com',
+        username: 'testuser',
+        password: 'testpass',
+      }, errorMessage));
       
       const state = store.getState().auth;
-      expect(state.isAuthenticated).toBe(false);
+      expect(state.loading).toBe(false);
+      expect(state.user).toBeNull();
       expect(state.token).toBeNull();
-      expect(state.isLoading).toBe(false);
-      expect(state.error).toBe('Invalid credentials');
-      expect(state.serverUrl).toBe('https://readeck.example.com'); // Should persist
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.error).toBe(errorMessage);
+    });
+  });
+
+  describe('Async Actions - logoutUser', () => {
+    it('should handle pending state', () => {
+      store.dispatch(logoutUser.pending(''));
+      
+      const state = store.getState().auth;
+      expect(state.loading).toBe(true);
+      expect(state.error).toBeNull();
     });
 
-    it('should handle logout flow', () => {
-      // First login
-      store.dispatch(setServerUrl('https://readeck.example.com'));
-      store.dispatch(setAuthToken('token'));
+    it('should handle fulfilled state', () => {
+      // First set up authenticated state
+      const user: AuthenticatedUser = {
+        id: 'user123',
+        username: 'testuser',
+        email: 'test@example.com',
+        serverUrl: 'https://readeck.example.com',
+        lastLoginAt: new Date().toISOString(),
+        tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
+      };
+      store.dispatch(setUser(user));
       
       // Then logout
-      store.dispatch(clearAuth());
+      store.dispatch(logoutUser.fulfilled(undefined, ''));
       
       const state = store.getState().auth;
-      expect(state).toEqual(initialState);
+      expect(state.loading).toBe(false);
+      expect(state.user).toBeNull();
+      expect(state.token).toBeNull();
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.error).toBeNull();
+      expect(state.lastTokenRefresh).toBeUndefined();
     });
 
-    it('should handle token validation during session', () => {
-      // Login first
-      store.dispatch(setAuthToken('token'));
+    it('should handle rejected state', () => {
+      const errorMessage = 'Logout failed';
       
-      // Start token validation
-      store.dispatch(validateTokenStart());
+      store.dispatch(logoutUser.rejected(null, '', undefined, errorMessage));
       
-      // Token is valid
-      store.dispatch(validateTokenSuccess({
-        isValid: true,
-        isExpired: false,
-        expiresIn: 1800,
-      }));
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBe(errorMessage);
+      // On logout failure, auth state is still cleared for security
+      expect(state.user).toBeNull();
+      expect(state.token).toBeNull();
+      expect(state.isAuthenticated).toBe(false);
+    });
+  });
+
+
+  describe('Complex State Transitions', () => {
+    it('should handle auth initialization with stored data', () => {
+      const storedAuth = {
+        user: {
+          id: 'user123',
+          username: 'testuser',
+          email: 'test@example.com',
+          serverUrl: 'https://readeck.example.com',
+          lastLoginAt: new Date().toISOString(),
+          tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
+        },
+        token: 'stored-token',
+      };
+      
+      store.dispatch(initializeAuth.fulfilled(storedAuth, ''));
       
       const state = store.getState().auth;
       expect(state.isAuthenticated).toBe(true);
-      expect(state.tokenValidation.isValid).toBe(true);
-      expect(state.tokenValidation.expiresIn).toBe(1800);
+      expect(state.user).toEqual(storedAuth.user);
+      expect(state.token).toBe(storedAuth.token);
     });
 
-    it('should handle expired token detection', () => {
-      // Login first
-      store.dispatch(setAuthToken('expired-token'));
+    it('should handle token refresh during session', () => {
+      // First login
+      const user: AuthenticatedUser = {
+        id: 'user123',
+        username: 'testuser',
+        email: 'test@example.com',
+        serverUrl: 'https://readeck.example.com',
+        lastLoginAt: new Date().toISOString(),
+        tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
+      };
+      store.dispatch(setUser(user));
       
-      // Validate token
-      store.dispatch(validateTokenStart());
-      store.dispatch(validateTokenSuccess({
-        isValid: false,
-        isExpired: true,
-        expiresIn: 0,
-      }));
+      // Then refresh token
+      store.dispatch(refreshToken.fulfilled({ token: 'new-token' }, '', 'https://readeck.example.com'));
       
       const state = store.getState().auth;
-      expect(state.isAuthenticated).toBe(true); // Still authenticated until logout
-      expect(state.tokenValidation.isValid).toBe(false);
-      expect(state.tokenValidation.isExpired).toBe(true);
+      expect(state.isAuthenticated).toBe(true);
+      expect(state.token).toBe('new-token');
+      expect(state.lastTokenRefresh).toBeDefined();
     });
   });
 
   describe('Edge Cases', () => {
-    it('should handle empty string token', () => {
-      store.dispatch(setAuthToken(''));
+    it('should handle empty string token in login response', () => {
+      const loginPayload = {
+        user: {
+          id: 'user123',
+          username: 'testuser',
+          email: 'test@example.com',
+          serverUrl: 'https://readeck.example.com',
+          lastLoginAt: new Date().toISOString(),
+          tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
+        },
+        token: '',
+      };
+      
+      store.dispatch(loginUser.fulfilled(loginPayload, '', {
+        serverUrl: 'https://readeck.example.com',
+        username: 'testuser',
+        password: 'testpass',
+      }));
       
       const state = store.getState().auth;
       expect(state.token).toBe('');
-      expect(state.isAuthenticated).toBe(true); // Still authenticated with empty token
+      expect(state.isAuthenticated).toBe(true);
     });
 
     it('should handle very long token', () => {
       const longToken = 'a'.repeat(10000);
+      const loginPayload = {
+        user: {
+          id: 'user123',
+          username: 'testuser',
+          email: 'test@example.com',
+          serverUrl: 'https://readeck.example.com',
+          lastLoginAt: new Date().toISOString(),
+          tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
+        },
+        token: longToken,
+      };
       
-      store.dispatch(setAuthToken(longToken));
+      store.dispatch(loginUser.fulfilled(loginPayload, '', {
+        serverUrl: 'https://readeck.example.com',
+        username: 'testuser',
+        password: 'testpass',
+      }));
       
       const state = store.getState().auth;
       expect(state.token).toBe(longToken);
@@ -402,17 +304,29 @@ describe('authSlice', () => {
 
     it('should handle special characters in server URL', () => {
       const specialUrl = 'https://readeck.example.com:8080/path?param=value#hash';
+      const user: AuthenticatedUser = {
+        id: 'user123',
+        username: 'testuser',
+        email: 'test@example.com',
+        serverUrl: specialUrl,
+        lastLoginAt: new Date().toISOString(),
+        tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
+      };
       
-      store.dispatch(setServerUrl(specialUrl));
+      store.dispatch(setUser(user));
       
       const state = store.getState().auth;
-      expect(state.serverUrl).toBe(specialUrl);
+      expect(state.user?.serverUrl).toBe(specialUrl);
     });
 
     it('should handle unicode characters in error messages', () => {
       const unicodeError = 'Authentication failed: ñáéíóú 中文 🔒';
       
-      store.dispatch(setAuthError(unicodeError));
+      store.dispatch(loginUser.rejected(null, '', {
+        serverUrl: 'https://readeck.example.com',
+        username: 'testuser',
+        password: 'testpass',
+      }, unicodeError));
       
       const state = store.getState().auth;
       expect(state.error).toBe(unicodeError);
@@ -421,22 +335,35 @@ describe('authSlice', () => {
 
   describe('State Persistence', () => {
     it('should maintain state across multiple actions', () => {
-      // Build up state
-      store.dispatch(setServerUrl('https://example.com'));
-      store.dispatch(setAuthToken('token'));
-      store.dispatch(validateTokenSuccess({
-        isValid: true,
-        isExpired: false,
-        expiresIn: 3600,
+      // Build up state through login
+      const loginPayload = {
+        user: {
+          id: 'user123',
+          username: 'testuser',
+          email: 'test@example.com',
+          serverUrl: 'https://example.com',
+          lastLoginAt: new Date().toISOString(),
+          tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
+        },
+        token: 'auth-token',
+      };
+      
+      store.dispatch(loginUser.fulfilled(loginPayload, '', {
+        serverUrl: 'https://example.com',
+        username: 'testuser',
+        password: 'testpass',
       }));
+      
+      // Clear error to test state persistence
+      store.dispatch(clearError());
       
       // All state should be maintained
       const state = store.getState().auth;
-      expect(state.serverUrl).toBe('https://example.com');
-      expect(state.token).toBe('token');
+      expect(state.user?.serverUrl).toBe('https://example.com');
+      expect(state.token).toBe('auth-token');
       expect(state.isAuthenticated).toBe(true);
-      expect(state.tokenValidation.isValid).toBe(true);
-      expect(state.tokenValidation.expiresIn).toBe(3600);
+      expect(state.error).toBeNull();
+      expect(state.loading).toBe(false);
     });
   });
 });

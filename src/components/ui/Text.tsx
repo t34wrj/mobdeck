@@ -6,7 +6,11 @@ import {
 } from 'react-native';
 import { theme } from './theme';
 
+/**
+ * Props for the Text component
+ */
 export interface TextProps extends Omit<RNTextProps, 'style'> {
+  /** Typography variant for predefined styles */
   variant?:
     | 'h1'
     | 'h2'
@@ -18,12 +22,19 @@ export interface TextProps extends Omit<RNTextProps, 'style'> {
     | 'body2'
     | 'caption'
     | 'overline';
+  /** Text color from theme or custom color */
   color?: keyof typeof theme.colors | string;
+  /** Font size from theme scale */
   size?: keyof typeof theme.typography.fontSize;
+  /** Font weight from theme scale */
   weight?: keyof typeof theme.typography.fontWeight;
+  /** Text alignment */
   align?: 'left' | 'center' | 'right' | 'justify';
+  /** Custom text styles */
   style?: TextStyle | TextStyle[];
+  /** Maximum number of lines to display */
   numberOfLines?: number;
+  /** Text truncation mode */
   ellipsizeMode?: 'head' | 'middle' | 'tail' | 'clip';
 }
 
@@ -118,6 +129,19 @@ const getColorValue = (color: string): string => {
   return color;
 };
 
+/**
+ * Themed Text component with typography variants and customization options
+ * 
+ * @param props - Text component props
+ * @returns Rendered text component with theme-based styling
+ * 
+ * @example
+ * ```tsx
+ * <Text variant="h1" color="primary">Main Title</Text>
+ * <Text variant="body1" numberOfLines={2}>Article content...</Text>
+ * <Text size="lg" weight="semibold" align="center">Custom styled text</Text>
+ * ```
+ */
 export const Text: React.FC<TextProps> = ({
   variant = 'body1',
   color,

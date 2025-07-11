@@ -81,17 +81,21 @@ export const VALIDATION_PATTERNS = {
 // XSS prevention patterns
 export const XSS_PATTERNS = [
   /<script[^>]*>.*?<\/script>/gis,
+  /<script[^>]*>/gi,
   /<iframe[^>]*>.*?<\/iframe>/gis,
   /<embed[^>]*>.*?<\/embed>/gis,
   /<object[^>]*>.*?<\/object>/gis,
   /<applet[^>]*>.*?<\/applet>/gis,
   /<form[^>]*>.*?<\/form>/gis,
+  /<svg[^>]*>/gi,
+  /<body[^>]*>/gi,
+  /<div[^>]*onclick[^>]*>/gi,
+  /<a[^>]*href[\s]*=[\s]*["']?javascript:/gi,
+  /<img[^>]*src[\s]*=[\s]*["']?[^"']*["'][^>]*onerror[^>]*>/gi,
   /javascript:/gi,
   /vbscript:/gi,
   /data:text\/html/gi,
   /on\w+\s*=/gi,
-  /<img[^>]+src[\s]*=[\s]*["']javascript:/gi,
-  /<[^>]*[\s]+(on\w+|href|src)[\s]*=[\s]*["']?javascript:/gi,
 ] as const;
 
 /**
@@ -247,7 +251,7 @@ export function validateLabelName(name: string, options: ValidationOptions = {})
 
   // Validate pattern
   if (opts.pattern && !opts.pattern.test(trimmedName)) {
-    return { isValid: false, error: 'Label name can only contain letters, numbers, spaces, hyphens, and underscores' };
+    return { isValid: false, error: 'Label name contains invalid characters' };
   }
 
   // Sanitize if requested
@@ -449,13 +453,15 @@ export function sanitizeInput(input: string, options: {
     sanitized = sanitized.replace(pattern, '');
   });
 
-  // Handle line breaks
+  // Handle line breaks and normalize whitespace
   if (!opts.preserveLineBreaks) {
+    // Remove line breaks and normalize all whitespace
     sanitized = sanitized.replace(/\n/g, ' ').replace(/\r/g, ' ');
+    sanitized = sanitized.replace(/\s+/g, ' ').trim();
+  } else {
+    // Keep line breaks but normalize other whitespace
+    sanitized = sanitized.replace(/[ \t]+/g, ' ').replace(/^\s+|\s+$/gm, '');
   }
-
-  // Normalize whitespace
-  sanitized = sanitized.replace(/\s+/g, ' ').trim();
 
   return sanitized;
 }
