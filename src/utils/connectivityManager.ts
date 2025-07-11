@@ -1,264 +1,284 @@
-import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
+/**
+ * ConnectivityManager - React Native NetInfo integration
+ * Handles network connectivity detection and management
+ */
+
+import NetInfo, { NetInfoState, NetInfoStateType } from '@react-native-community/netinfo';
 import { logger } from './logger';
-import { readeckApiService } from '../services/ReadeckApiService';
+import { NetworkType } from '../types/sync';
 
-export enum ConnectivityStatus {
-  ONLINE = 'online',
-  OFFLINE = 'offline',
-  SERVER_UNREACHABLE = 'server_unreachable',
-  CHECKING = 'checking',
+export interface ConnectivityStatus {
+  isConnected: boolean;
+  isInternetReachable: boolean;
+  networkType: NetworkType;
+  isConnectionExpensive: boolean;
+  details?: {
+    ssid?: string;
+    ipAddress?: string;
+    subnet?: string;
+    cellularGeneration?: string;
+    isConnectionExpensive?: boolean;
+  };
 }
 
-interface ConnectivityState {
-  networkConnected: boolean;
-  serverReachable: boolean;
-  status: ConnectivityStatus;
-  lastCheckTime: Date;
-  consecutiveFailures: number;
-}
+type ConnectivityListener = (status: ConnectivityStatus) => void;
 
 class ConnectivityManager {
   private static instance: ConnectivityManager;
-  private listeners: { [event: string]: Function[] } = {};
-  private state: ConnectivityState = {
-    networkConnected: true,
-    serverReachable: true,
-    status: ConnectivityStatus.ONLINE,
-    lastCheckTime: new Date(),
-    consecutiveFailures: 0,
+  private listeners: ConnectivityListener[] = [];
+  private netInfoUnsubscribe: (() => void) | null = null;
+  private isMonitoring = false;
+  
+  private currentStatus: ConnectivityStatus = {
+    isConnected: false,
+    isInternetReachable: false,
+    networkType: NetworkType.NONE,
+    isConnectionExpensive: false,
   };
-  
-  private checkInterval: NodeJS.Timeout | null = null;
-  private readonly CHECK_INTERVAL = 30000; // 30 seconds
-  private readonly MAX_CONSECUTIVE_FAILURES = 3;
-  private readonly QUICK_CHECK_TIMEOUT = 5000; // 5 seconds
-  
+
   private constructor() {
-    this.initializeNetworkListener();
+    // Don't start monitoring until first listener is added
   }
-  
-  static getInstance(): ConnectivityManager {
+
+  public static getInstance(): ConnectivityManager {
     if (!ConnectivityManager.instance) {
       ConnectivityManager.instance = new ConnectivityManager();
     }
     return ConnectivityManager.instance;
   }
-  
-  private initializeNetworkListener() {
-    // Listen for network state changes
-    NetInfo.addEventListener((state: NetInfoState) => {
-      this.handleNetworkStateChange(state);
-    });
+
+  /**
+   * Add a listener for connectivity status changes
+   */
+  public addListener(listener: ConnectivityListener): void {
+    this.listeners.push(listener);
     
-    // Initial check
-    this.checkConnectivity();
-    
-    // Start periodic checks
-    this.startPeriodicChecks();
-  }
-  
-  private handleNetworkStateChange(state: NetInfoState) {
-    const wasConnected = this.state.networkConnected;
-    this.state.networkConnected = state.isConnected ?? false;
-    
-    logger.debug('[ConnectivityManager] Network state changed:', {
-      isConnected: state.isConnected,
-      type: state.type,
-      isInternetReachable: state.isInternetReachable,
-    });
-    
-    if (!wasConnected && this.state.networkConnected) {
-      // Network reconnected, check server immediately
-      this.checkConnectivity();
-    } else if (wasConnected && !this.state.networkConnected) {
-      // Network disconnected
-      this.updateStatus(ConnectivityStatus.OFFLINE);
+    // Start monitoring on first listener
+    if (!this.isMonitoring && this.listeners.length === 1) {
+      this.startMonitoring();
     }
   }
-  
-  private startPeriodicChecks() {
-    if (this.checkInterval) {
-      clearInterval(this.checkInterval);
+
+  /**
+   * Remove a specific listener
+   */
+  public removeListener(listener: ConnectivityListener): void {
+    const index = this.listeners.indexOf(listener);
+    if (index > -1) {
+      this.listeners.splice(index, 1);
     }
-    
-    this.checkInterval = setInterval(() => {
-      if (this.state.networkConnected) {
-        this.checkServerReachability();
-      }
-    }, this.CHECK_INTERVAL);
-  }
-  
-  async checkConnectivity(): Promise<ConnectivityStatus> {
-    console.log('[ConnectivityManager] Starting connectivity check...');
-    this.updateStatus(ConnectivityStatus.CHECKING);
-    
-    // First check network connectivity
-    const netInfo = await NetInfo.fetch();
-    this.state.networkConnected = netInfo.isConnected ?? false;
-    console.log('[ConnectivityManager] Network connected:', this.state.networkConnected);
-    
-    if (!this.state.networkConnected) {
-      this.updateStatus(ConnectivityStatus.OFFLINE);
-      return this.state.status;
+
+    // Stop monitoring if no listeners remain
+    if (this.listeners.length === 0) {
+      this.stopMonitoring();
     }
-    
-    // Then check server reachability
-    await this.checkServerReachability();
-    console.log('[ConnectivityManager] Final status:', this.state.status);
-    return this.state.status;
   }
-  
-  private async checkServerReachability() {
+
+  /**
+   * Remove all listeners and stop monitoring
+   */
+  public removeAllListeners(): void {
+    this.listeners = [];
+    this.stopMonitoring();
+  }
+
+  /**
+   * Get current connectivity status
+   */
+  public getStatus(): ConnectivityStatus {
+    return { ...this.currentStatus };
+  }
+
+  /**
+   * Refresh connectivity status
+   */
+  public async refresh(): Promise<void> {
     try {
-      console.log('[ConnectivityManager] Checking server reachability...');
-      // Use a lightweight endpoint for connectivity check
-      const controller = new AbortController();
-      
-      // Set a short timeout for connectivity check
-      const timeoutId = setTimeout(() => controller.abort(), this.QUICK_CHECK_TIMEOUT);
-      
-      try {
-        // Try to validate token as a connectivity check with short timeout
-        // This calls the /profile endpoint which is a good way to check server connectivity
-        await readeckApiService.validateToken(this.QUICK_CHECK_TIMEOUT);
-        clearTimeout(timeoutId);
-        
-        console.log('[ConnectivityManager] Server is reachable');
-        this.state.serverReachable = true;
-        this.state.consecutiveFailures = 0;
-        this.updateStatus(ConnectivityStatus.ONLINE);
-        
-      } catch (error: any) {
-        clearTimeout(timeoutId);
-        
-        console.log('[ConnectivityManager] Server check failed:', { 
-          code: error.code, 
-          message: error.message, 
-          name: error.name,
-          status: error.status
-        });
-        
-        // Handle different error types
-        if (error.code === 'CONNECTION_ERROR' || 
-            error.code === 'ECONNREFUSED' || 
-            error.code === 'ECONNRESET' ||
-            error.message?.includes('Network request failed') ||
-            error.message?.includes('Connection refused') ||
-            error.message?.includes('ECONNREFUSED') ||
-            error.message?.includes('fetch failed') ||
-            error.name === 'AbortError' ||
-            error.name === 'TypeError') {
-          this.handleServerUnreachable();
-        } else if (error.status === 401 || error.code === 'AUTHENTICATION_ERROR') {
-          // Authentication error means server is reachable but token is invalid
-          console.log('[ConnectivityManager] Server reachable (auth error)');
-          this.state.serverReachable = true;
-          this.state.consecutiveFailures = 0;
-          this.updateStatus(ConnectivityStatus.ONLINE);
-        } else {
-          // Other errors, treat as server issue
-          console.log('[ConnectivityManager] Other error, treating as server unreachable');
-          this.handleServerUnreachable();
+      const netInfo = await NetInfo.fetch();
+      this.handleNetworkStateChange(netInfo);
+    } catch (error) {
+      logger.error('[ConnectivityManager] Error refreshing connectivity:', error);
+    }
+  }
+
+  /**
+   * Wait for connection with timeout
+   */
+  public async waitForConnection(timeoutMs: number): Promise<boolean> {
+    return new Promise((resolve) => {
+      // If already connected, resolve immediately
+      if (this.currentStatus.isConnected && this.currentStatus.isInternetReachable) {
+        resolve(true);
+        return;
+      }
+
+      let resolved = false;
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          this.removeListener(connectionListener);
+          resolve(false);
         }
+      }, timeoutMs);
+
+      const connectionListener = (status: ConnectivityStatus) => {
+        if (!resolved && status.isConnected && status.isInternetReachable) {
+          resolved = true;
+          clearTimeout(timeout);
+          this.removeListener(connectionListener);
+          resolve(true);
+        }
+      };
+
+      this.addListener(connectionListener);
+    });
+  }
+
+  /**
+   * Check if current connection is expensive (cellular)
+   */
+  public isConnectionExpensive(): boolean {
+    return this.currentStatus.isConnectionExpensive;
+  }
+
+  /**
+   * Check if connected via WiFi
+   */
+  public isWifi(): boolean {
+    return this.currentStatus.networkType === NetworkType.WIFI;
+  }
+
+  /**
+   * Check if connected via cellular
+   */
+  public isCellular(): boolean {
+    return this.currentStatus.networkType === NetworkType.CELLULAR;
+  }
+
+  /**
+   * Get human-readable connection type string
+   */
+  public getConnectionTypeString(): string {
+    switch (this.currentStatus.networkType) {
+      case NetworkType.WIFI:
+        return 'WiFi';
+      case NetworkType.CELLULAR:
+        return 'Cellular';
+      case NetworkType.ETHERNET:
+        return 'Ethernet';
+      case NetworkType.VPN:
+        return 'VPN';
+      case NetworkType.OTHER:
+        return 'Other';
+      case NetworkType.NONE:
+        return 'None';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  private startMonitoring(): void {
+    if (this.isMonitoring) return;
+
+    this.isMonitoring = true;
+    
+    // Add NetInfo listener
+    this.netInfoUnsubscribe = NetInfo.addEventListener(this.handleNetworkStateChange.bind(this));
+    
+    // Initial fetch
+    NetInfo.fetch().then(this.handleNetworkStateChange.bind(this)).catch((error) => {
+      logger.error('[ConnectivityManager] Error during initial fetch:', error);
+    });
+  }
+
+  private stopMonitoring(): void {
+    if (!this.isMonitoring) return;
+
+    this.isMonitoring = false;
+    
+    if (this.netInfoUnsubscribe) {
+      this.netInfoUnsubscribe();
+      this.netInfoUnsubscribe = null;
+    }
+  }
+
+  private handleNetworkStateChange(state: NetInfoState | null): void {
+    if (!state) {
+      logger.warn('[ConnectivityManager] Received null network state');
+      return;
+    }
+
+    try {
+      const previousStatus = { ...this.currentStatus };
+      
+      // Update connectivity status
+      this.currentStatus = {
+        isConnected: state.isConnected ?? false,
+        isInternetReachable: state.isInternetReachable ?? false,
+        networkType: this.mapNetworkType(state.type),
+        isConnectionExpensive: state.details?.isConnectionExpensive ?? false,
+        details: state.details ? { ...state.details } : undefined,
+      };
+
+      // Log the change
+      logger.debug('[ConnectivityManager] Network state changed:', {
+        type: state.type,
+        isConnected: state.isConnected,
+        isInternetReachable: state.isInternetReachable,
+        isConnectionExpensive: state.details?.isConnectionExpensive,
+      });
+
+      // Notify listeners if status changed
+      if (this.hasStatusChanged(previousStatus, this.currentStatus)) {
+        this.notifyListeners();
       }
     } catch (error) {
-      console.error('[ConnectivityManager] Error checking server reachability:', error);
-      this.handleServerUnreachable();
+      logger.error('[ConnectivityManager] Error handling network state change:', error);
     }
-  }
-  
-  private handleServerUnreachable() {
-    this.state.serverReachable = false;
-    this.state.consecutiveFailures++;
-    
-    // Always set status to SERVER_UNREACHABLE immediately when server is unreachable
-    this.updateStatus(ConnectivityStatus.SERVER_UNREACHABLE);
-  }
-  
-  private updateStatus(newStatus: ConnectivityStatus) {
-    const oldStatus = this.state.status;
-    this.state.status = newStatus;
-    this.state.lastCheckTime = new Date();
-    
-    if (oldStatus !== newStatus) {
-      logger.info(`[ConnectivityManager] Status changed: ${oldStatus} -> ${newStatus}`);
-      this.emit('statusChanged', newStatus, oldStatus);
-    }
-  }
-  
-  getStatus(): ConnectivityStatus {
-    return this.state.status;
-  }
-  
-  isOnline(): boolean {
-    return this.state.status === ConnectivityStatus.ONLINE;
-  }
-  
-  isOffline(): boolean {
-    return this.state.status === ConnectivityStatus.OFFLINE || 
-           this.state.status === ConnectivityStatus.SERVER_UNREACHABLE;
-  }
-  
-  getState(): Readonly<ConnectivityState> {
-    return { ...this.state };
-  }
-  
-  /**
-   * Force an immediate connectivity check
-   */
-  async forceCheck(): Promise<ConnectivityStatus> {
-    logger.debug('[ConnectivityManager] Forcing connectivity check');
-    return this.checkConnectivity();
-  }
-  
-  /**
-   * Add event listener
-   */
-  on(event: string, listener: Function) {
-    if (!this.listeners[event]) {
-      this.listeners[event] = [];
-    }
-    this.listeners[event].push(listener);
   }
 
-  /**
-   * Remove event listener
-   */
-  off(event: string, listener: Function) {
-    if (this.listeners[event]) {
-      const index = this.listeners[event].indexOf(listener);
-      if (index > -1) {
-        this.listeners[event].splice(index, 1);
+  private mapNetworkType(netInfoType: NetInfoStateType): NetworkType {
+    switch (netInfoType) {
+      case 'wifi':
+        return NetworkType.WIFI;
+      case 'cellular':
+        return NetworkType.CELLULAR;
+      case 'ethernet':
+        return NetworkType.ETHERNET;
+      case 'vpn':
+        return NetworkType.VPN;
+      case 'bluetooth':
+      case 'wimax':
+      case 'other':
+        return NetworkType.OTHER;
+      case 'none':
+        return NetworkType.NONE;
+      case 'unknown':
+      default:
+        return NetworkType.OTHER;
+    }
+  }
+
+  private hasStatusChanged(previous: ConnectivityStatus, current: ConnectivityStatus): boolean {
+    return (
+      previous.isConnected !== current.isConnected ||
+      previous.isInternetReachable !== current.isInternetReachable ||
+      previous.networkType !== current.networkType ||
+      previous.isConnectionExpensive !== current.isConnectionExpensive
+    );
+  }
+
+  private notifyListeners(): void {
+    const status = { ...this.currentStatus };
+    this.listeners.forEach((listener) => {
+      try {
+        listener(status);
+      } catch (error) {
+        logger.error('[ConnectivityManager] Error in listener callback:', error);
       }
-    }
-  }
-
-  /**
-   * Emit event
-   */
-  emit(event: string, ...args: any[]) {
-    if (this.listeners[event]) {
-      this.listeners[event].forEach(listener => listener(...args));
-    }
-  }
-
-  /**
-   * Remove all listeners
-   */
-  removeAllListeners() {
-    this.listeners = {};
-  }
-
-  /**
-   * Clean up resources
-   */
-  dispose() {
-    if (this.checkInterval) {
-      clearInterval(this.checkInterval);
-      this.checkInterval = null;
-    }
-    this.removeAllListeners();
+    });
   }
 }
 
 export const connectivityManager = ConnectivityManager.getInstance();
+export default connectivityManager;

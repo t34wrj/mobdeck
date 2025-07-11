@@ -36,6 +36,15 @@ describe('ConnectivityManager', () => {
   afterEach(() => {
     // Clean up listeners
     connectivityManager.removeAllListeners();
+    
+    // Reset the singleton's state for clean test isolation
+    // This is needed because ConnectivityManager is a singleton
+    (connectivityManager as any).currentStatus = {
+      isConnected: false,
+      isInternetReachable: false,
+      networkType: NetworkType.NONE,
+      isConnectionExpensive: false,
+    };
   });
 
   describe('Initialization', () => {
@@ -97,6 +106,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should handle WiFi connection', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -110,6 +122,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should handle cellular connection', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -123,6 +138,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should handle ethernet connection', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -136,6 +154,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should handle bluetooth connection', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -149,6 +170,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should handle no connection', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -163,6 +187,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should handle unknown connection type', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -178,6 +205,9 @@ describe('ConnectivityManager', () => {
 
   describe('Internet Reachability', () => {
     it('should track internet reachability separately from connection', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       // Connected but no internet
@@ -193,6 +223,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should handle null internet reachability', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -208,6 +241,9 @@ describe('ConnectivityManager', () => {
 
   describe('Connection Details', () => {
     it('should track connection expense for cellular', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -226,6 +262,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should include WiFi details when available', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -254,14 +293,19 @@ describe('ConnectivityManager', () => {
       connectivityManager.addListener(listener2);
       
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
+      
+      // Trigger a state change - this should trigger listeners
       netInfoListener({
-        type: 'wifi',
+        type: 'cellular',
         isConnected: true,
         isInternetReachable: true,
+        details: {
+          isConnectionExpensive: true,
+        },
       });
       
-      expect(listener1).toHaveBeenCalledTimes(1);
-      expect(listener2).toHaveBeenCalledTimes(1);
+      expect(listener1).toHaveBeenCalledTimes(1); // Called for the change
+      expect(listener2).toHaveBeenCalledTimes(1); // Called for the change
     });
 
     it('should remove specific listener', () => {
@@ -273,8 +317,10 @@ describe('ConnectivityManager', () => {
       connectivityManager.removeListener(listener1);
       
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
+      
+      // Trigger a state change to test listeners
       netInfoListener({
-        type: 'wifi',
+        type: 'cellular',
         isConnected: true,
         isInternetReachable: true,
       });
@@ -349,6 +395,10 @@ describe('ConnectivityManager', () => {
     });
 
     it('should wait for connection', async () => {
+      // Set up listener first
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       // Start with no connection
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       netInfoListener({
@@ -374,19 +424,34 @@ describe('ConnectivityManager', () => {
     });
 
     it('should timeout waiting for connection', async () => {
-      // Start with no connection
-      const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
-      netInfoListener({
+      // First, override the mock to return disconnected state
+      mockNetInfo.fetch.mockResolvedValue({
         type: 'none',
         isConnected: false,
         isInternetReachable: false,
-      });
+      } as any);
+      
+      // Set up listener (this will trigger startMonitoring and fetch)
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
+      // Wait for the async fetch to complete
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Verify we're actually disconnected before testing timeout
+      const status = connectivityManager.getStatus();
+      expect(status.isConnected).toBe(false);
+      expect(status.isInternetReachable).toBe(false);
       
       const connected = await connectivityManager.waitForConnection(100);
       expect(connected).toBe(false);
     });
 
     it('should resolve immediately if already connected', async () => {
+      // Set up listener first
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       netInfoListener({
         type: 'wifi',
@@ -429,6 +494,9 @@ describe('ConnectivityManager', () => {
 
   describe('Special Cases', () => {
     it('should handle VPN connections', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -442,6 +510,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should handle other connection types', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -455,6 +526,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should provide connection type string', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -468,6 +542,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should check if connection is expensive', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -483,6 +560,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should check if on WiFi', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
@@ -496,6 +576,9 @@ describe('ConnectivityManager', () => {
     });
 
     it('should check if on cellular', () => {
+      const listener = jest.fn();
+      connectivityManager.addListener(listener);
+      
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({

@@ -622,7 +622,9 @@ describe('ArticlesApiService', () => {
       expect(result).toEqual({
         syncedCount: 3,
         conflictCount: 0,
+        articles: expect.any(Array),
       });
+      expect(result.articles).toHaveLength(3);
 
       expect(consoleSpy.log).toHaveBeenCalledWith('[ArticlesApiService] Syncing articles:', params);
       expect(consoleSpy.log).toHaveBeenCalledWith('[ArticlesApiService] Sync completed: 3 articles synced, 0 conflicts');

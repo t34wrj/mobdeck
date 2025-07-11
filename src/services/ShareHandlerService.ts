@@ -120,13 +120,17 @@ class ShareHandlerService {
       const { ShareModule } = NativeModules;
       if (ShareModule && typeof ShareModule.getSharedData === 'function') {
         this.shareModule = ShareModule as ShareModuleInterface;
-        console.log(
-          '[ShareHandlerService] Share module initialized successfully'
-        );
+        if (__DEV__) {
+          console.log(
+            '[ShareHandlerService] Share module initialized successfully'
+          );
+        }
       } else {
-        console.warn(
-          '[ShareHandlerService] Share module not available - running in simulator or module not linked'
-        );
+        if (__DEV__) {
+          console.warn(
+            '[ShareHandlerService] Share module not available - running in simulator or module not linked'
+          );
+        }
       }
     } catch (error) {
       console.error(
@@ -141,7 +145,9 @@ class ShareHandlerService {
    */
   async processSharedData(): Promise<ShareProcessingResult> {
     try {
-      console.log('[ShareHandlerService] Processing shared data');
+      if (__DEV__) {
+        console.log('[ShareHandlerService] Processing shared data');
+      }
 
       // Get shared data from native module
       const sharedData = await this.getSharedData();
@@ -152,10 +158,12 @@ class ShareHandlerService {
         );
       }
 
-      console.log('[ShareHandlerService] Received shared data:', {
-        textLength: sharedData.text?.length || 0,
-        timestamp: sharedData.timestamp,
-      });
+      if (__DEV__) {
+        console.log('[ShareHandlerService] Received shared data:', {
+          textLength: sharedData.text?.length || 0,
+          timestamp: sharedData.timestamp,
+        });
+      }
 
       // Extract and validate URL
       const urlExtractionResult = await this.extractAndValidateUrl(
@@ -188,10 +196,12 @@ class ShareHandlerService {
       // Clear shared data after successful processing
       await this.clearSharedData();
 
-      console.log(
-        '[ShareHandlerService] Successfully processed shared URL:',
-        url
-      );
+      if (__DEV__) {
+        console.log(
+          '[ShareHandlerService] Successfully processed shared URL:',
+          url
+        );
+      }
 
       return {
         success: true,
@@ -273,10 +283,12 @@ class ShareHandlerService {
       validationResult.validationWarnings = validation.warnings;
 
       if (!validation.isValid) {
-        console.log(
-          '[ShareHandlerService] URL validation failed:',
-          validation.errors
-        );
+        if (__DEV__) {
+          console.log(
+            '[ShareHandlerService] URL validation failed:',
+            validation.errors
+          );
+        }
         return {
           success: false,
           error: this.createError(
@@ -297,10 +309,12 @@ class ShareHandlerService {
       ) {
         if (!isLikelyArticleUrl(normalizedUrl)) {
           validationResult.validationWarnings.push('URL may not be an article');
-          console.log(
-            '[ShareHandlerService] URL may not be an article, but processing anyway:',
-            normalizedUrl
-          );
+          if (__DEV__) {
+            console.log(
+              '[ShareHandlerService] URL may not be an article, but processing anyway:',
+              normalizedUrl
+            );
+          }
         }
       }
 
@@ -345,17 +359,21 @@ class ShareHandlerService {
       attempt++
     ) {
       try {
-        console.log(
-          `[ShareHandlerService] Creating article (attempt ${attempt}/${this.config.networking.retryAttempts}):`,
-          params.url
-        );
+        if (__DEV__) {
+          console.log(
+            `[ShareHandlerService] Creating article (attempt ${attempt}/${this.config.networking.retryAttempts}):`,
+            params.url
+          );
+        }
 
         const article = await articlesApiService.createArticle(params);
 
-        console.log(
-          '[ShareHandlerService] Article created successfully:',
-          article.id
-        );
+        if (__DEV__) {
+          console.log(
+            '[ShareHandlerService] Article created successfully:',
+            article.id
+          );
+        }
         return {
           success: true,
           article,
@@ -380,9 +398,11 @@ class ShareHandlerService {
         if (attempt < this.config.networking.retryAttempts) {
           const delay =
             this.config.networking.retryDelay * Math.pow(2, attempt - 1);
-          console.log(
-            `[ShareHandlerService] Waiting ${delay}ms before retry...`
-          );
+          if (__DEV__) {
+            console.log(
+              `[ShareHandlerService] Waiting ${delay}ms before retry...`
+            );
+          }
           await this.delay(delay);
         }
       }
@@ -402,7 +422,9 @@ class ShareHandlerService {
   private async getSharedData(): Promise<SharedData | null> {
     try {
       if (!this.shareModule) {
-        console.warn('[ShareHandlerService] Share module not available');
+        if (__DEV__) {
+          console.warn('[ShareHandlerService] Share module not available');
+        }
         return null;
       }
 
@@ -428,7 +450,9 @@ class ShareHandlerService {
       }
 
       await this.shareModule.clearSharedData();
-      console.log('[ShareHandlerService] Shared data cleared');
+      if (__DEV__) {
+        console.log('[ShareHandlerService] Shared data cleared');
+      }
     } catch (error) {
       console.error('[ShareHandlerService] Error clearing shared data:', error);
       // Don't throw here as it's not critical to the main flow
@@ -557,7 +581,9 @@ class ShareHandlerService {
    */
   updateConfig(config: Partial<ShareHandlerConfig>): void {
     this.config = { ...this.config, ...config };
-    console.log('[ShareHandlerService] Configuration updated');
+    if (__DEV__) {
+      console.log('[ShareHandlerService] Configuration updated');
+    }
   }
 
   /**
@@ -582,7 +608,9 @@ class ShareHandlerService {
     title?: string
   ): Promise<ShareProcessingResult> {
     try {
-      console.log('[ShareHandlerService] Processing URL directly:', url);
+      if (__DEV__) {
+        console.log('[ShareHandlerService] Processing URL directly:', url);
+      }
 
       const urlExtractionResult = await this.extractAndValidateUrl(url);
       if (!urlExtractionResult.success) {

@@ -26,8 +26,8 @@ export const SyncSettings: React.FC = () => {
 
   const [manualSyncLoading, setManualSyncLoading] = useState(false);
 
-  // Debug log the sync state
-  console.log('[SyncSettings] Full sync state:', { status, error, isOnline, lastSyncTime });
+  // Debug log the sync state (development only)
+  __DEV__ && console.log('[SyncSettings] Full sync state:', { status, error, isOnline, lastSyncTime });
 
   const handleManualSync = useCallback(async () => {
     if (!isOnline) {
@@ -39,13 +39,13 @@ export const SyncSettings: React.FC = () => {
     }
 
     try {
-      console.log('[SyncSettings] Starting manual sync...');
+      __DEV__ && console.log('[SyncSettings] Starting manual sync...');
       setManualSyncLoading(true);
       // Reset sync status before starting new sync
-      console.log('[SyncSettings] Resetting sync status...');
+      __DEV__ && console.log('[SyncSettings] Resetting sync status...');
       dispatch(resetSyncStatus());
       
-      console.log('[SyncSettings] Dispatching startSyncOperation...');
+      __DEV__ && console.log('[SyncSettings] Dispatching startSyncOperation...');
       await dispatch(
         startSyncOperation({
           syncOptions: {
@@ -55,7 +55,7 @@ export const SyncSettings: React.FC = () => {
           forceFull: false,
         })
       ).unwrap();
-      console.log('[SyncSettings] Sync completed successfully');
+      __DEV__ && console.log('[SyncSettings] Sync completed successfully');
     } catch (err) {
       console.error('[SyncSettings] Manual sync failed:', err);
       Alert.alert('Sync Error', err?.message || 'Failed to start sync. Please try again.');
@@ -116,7 +116,7 @@ export const SyncSettings: React.FC = () => {
   };
 
   const getSyncStatusText = () => {
-    console.log('[SyncSettings] Current sync status:', status, 'Error:', error);
+    __DEV__ && console.log('[SyncSettings] Current sync status:', status, 'Error:', error);
     switch (status) {
       case SyncStatus.IDLE:
         return 'Ready to sync';

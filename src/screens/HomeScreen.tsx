@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchArticles, selectAllArticles, setFilters } from '../store/slices/articlesSlice';
+import { startSyncOperation } from '../store/thunks/syncThunks';
 import ArticleCard from '../components/ArticleCard';
 import SearchBar from '../components/SearchBar';
 import { Text } from '../components/ui/Text';
 import { MainScreenProps } from '../navigation/types';
 import { RootState, AppDispatch } from '../store';
 import { theme } from '../components/ui/theme';
+import { Article } from '../types';
 
 const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
   navigation: _navigation,
@@ -20,16 +22,30 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
     error: state.articles.error.fetch,
   }));
   const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const { isOnline } = useSelector((state: RootState) => state.sync);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     // Only fetch articles if authenticated
     if (isAuthenticated) {
       dispatch(fetchArticles({}));
+      
+      // Trigger sync when main page loads after authentication
+      if (isOnline) {
+        dispatch(startSyncOperation({
+          syncOptions: {
+            fullTextSync: true,
+            downloadImages: true,
+          },
+          forceFull: false,
+        })).catch((syncError: any) => {
+          console.error('Auto-sync failed on home screen load:', syncError);
+        });
+      }
     }
-  }, [dispatch, isAuthenticated]);
+  }, [dispatch, isAuthenticated, isOnline]);
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }: { item: Article }) => (
     <ArticleCard 
       article={item} 
       onPress={() => {
@@ -65,7 +81,9 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
 
   const handleSearch = () => {
     dispatch(setFilters({ searchQuery }));
-    dispatch(fetchArticles({ searchQuery }));
+    dispatch(fetchArticles({ searchQuery })).catch((searchError: any) => {
+      console.error('Search failed:', searchError);
+    });
   };
 
   return (
@@ -78,7 +96,7 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
       <FlatList
         data={articles}
         renderItem={renderItem}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item: Article) => item.id.toString()}
       />
     </View>
   );

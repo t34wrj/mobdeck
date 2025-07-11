@@ -340,8 +340,8 @@ class ErrorHandler {
     if (sanitized.serverUrl) {
       try {
         const url = new URL(sanitized.serverUrl);
-        // Remove any embedded credentials and sensitive query params
-        sanitized.serverUrl = `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}${url.pathname}`;
+        // Remove any embedded credentials, path, and sensitive query params
+        sanitized.serverUrl = `${url.protocol}//${url.hostname}${url.port ? `:${url.port}` : ''}`;
         // Remove sensitive query parameters
         if (url.search) {
           const searchParams = new URLSearchParams(url.search);

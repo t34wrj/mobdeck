@@ -32,7 +32,9 @@ const AppNavigator: React.FC = () => {
   // Monitor network status
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
-      console.log('AppNavigator: Network state changed:', state);
+      if (__DEV__) {
+        console.log('AppNavigator: Network state changed:', state);
+      }
       setNetworkConnected(state.isConnected ?? false);
     });
 
@@ -41,19 +43,27 @@ const AppNavigator: React.FC = () => {
 
   // Handle shared data when user is authenticated
   useEffect(() => {
-    console.log('AppNavigator: Share effect triggered', {
-      isAuthenticated,
-      hasSharedData: !!sharedData,
-      sharedDataText: `${sharedData?.text?.substring(0, 100)  }...` // Show first 100 chars
-    });
+    if (__DEV__) {
+      console.log('AppNavigator: Share effect triggered', {
+        isAuthenticated,
+        hasSharedData: !!sharedData,
+        sharedDataText: `${sharedData?.text?.substring(0, 100)  }...` // Show first 100 chars
+      });
+    }
 
     if (isAuthenticated && sharedData) {
-      console.log('AppNavigator: Processing shared data...', sharedData);
+      if (__DEV__) {
+        console.log('AppNavigator: Processing shared data...', sharedData);
+      }
       const url = ShareService.extractUrl(sharedData.text);
-      console.log('AppNavigator: Extracted URL:', url);
+      if (__DEV__) {
+        console.log('AppNavigator: Extracted URL:', url);
+      }
 
       if (url) {
-        console.log('AppNavigator: Showing share dialog for URL:', url);
+        if (__DEV__) {
+          console.log('AppNavigator: Showing share dialog for URL:', url);
+        }
         // Add small delay to ensure dialog shows after app is fully loaded
         setTimeout(() => {
           Alert.alert(
@@ -63,7 +73,9 @@ const AppNavigator: React.FC = () => {
             {
               text: 'Cancel',
               onPress: () => {
-                console.log('AppNavigator: User cancelled share');
+                if (__DEV__) {
+                  console.log('AppNavigator: User cancelled share');
+                }
                 clearSharedData();
               },
               style: 'cancel',
@@ -73,10 +85,14 @@ const AppNavigator: React.FC = () => {
               onPress: async () => {
                 try {
                   const articleData = ShareService.formatForArticle(sharedData);
-                  console.log('AppNavigator: Formatted article data:', articleData);
+                  if (__DEV__) {
+                    console.log('AppNavigator: Formatted article data:', articleData);
+                  }
                   
                   if (articleData) {
-                    console.log('AppNavigator: Saving article locally first (offline-first approach)');
+                    if (__DEV__) {
+                      console.log('AppNavigator: Saving article locally first (offline-first approach)');
+                    }
                     
                     // Always save locally first
                     const db = DatabaseService;
@@ -104,7 +120,9 @@ const AppNavigator: React.FC = () => {
                     });
                     
                     if (createResult.success) {
-                      console.log('AppNavigator: Article saved locally:', localId);
+                      if (__DEV__) {
+                        console.log('AppNavigator: Article saved locally:', localId);
+                      }
                       
                       // Add to sync queue for background sync
                       await db.createSyncMetadata({
@@ -120,12 +138,16 @@ const AppNavigator: React.FC = () => {
                       });
                       
                       // Refresh the articles list to show the new article
-                      console.log('AppNavigator: Refreshing articles list to show new article');
+                      if (__DEV__) {
+                        console.log('AppNavigator: Refreshing articles list to show new article');
+                      }
                       if (networkConnected) {
                         dispatch(fetchArticles({ page: 1, forceRefresh: true }));
                         
                         // If online, try to create the article on the server and fetch content
-                        console.log('AppNavigator: Attempting to sync article to server and fetch content...');
+                        if (__DEV__) {
+                          console.log('AppNavigator: Attempting to sync article to server and fetch content...');
+                        }
                         try {
                           const { articlesApiService } = await import('../services/ArticlesApiService');
                           const serverArticle = await articlesApiService.createArticle({
@@ -135,11 +157,15 @@ const AppNavigator: React.FC = () => {
                           
                           // Update local article with server ID and content
                           if (serverArticle) {
-                            console.log('AppNavigator: Article created on server:', serverArticle.id);
+                            if (__DEV__) {
+                              console.log('AppNavigator: Article created on server:', serverArticle.id);
+                            }
                             // Note: Content fetching will be handled by sync service
                           }
                         } catch (syncError) {
-                          console.log('AppNavigator: Server sync failed, will retry later:', syncError);
+                          if (__DEV__) {
+                            console.log('AppNavigator: Server sync failed, will retry later:', syncError);
+                          }
                           // This is okay - sync service will handle it later
                         }
                       } else {
@@ -149,7 +175,9 @@ const AppNavigator: React.FC = () => {
                       Alert.alert('Success', 'Article saved! Content will be downloaded when online.');
                       
                       // Note: Sync will happen automatically in background via sync service
-                      console.log('AppNavigator: Article saved locally, background sync will handle server sync when online');
+                      if (__DEV__) {
+                        console.log('AppNavigator: Article saved locally, background sync will handle server sync when online');
+                      }
                     } else {
                       console.error('AppNavigator: Failed to save article locally:', createResult.error);
                       Alert.alert('Error', 'Failed to save article. Please try again.');
@@ -166,7 +194,9 @@ const AppNavigator: React.FC = () => {
                     Alert.alert('Error', 'Failed to add article. Please try again.');
                   }
                 } finally {
-                  console.log('AppNavigator: Clearing shared data');
+                  if (__DEV__) {
+                    console.log('AppNavigator: Clearing shared data');
+                  }
                   clearSharedData();
                 }
               },
@@ -175,7 +205,9 @@ const AppNavigator: React.FC = () => {
         );
         }, 500); // 500ms delay to ensure app is fully loaded
       } else {
-        console.log('AppNavigator: No valid URL found in shared data, clearing');
+        if (__DEV__) {
+          console.log('AppNavigator: No valid URL found in shared data, clearing');
+        }
         // Clear invalid share data
         clearSharedData();
       }

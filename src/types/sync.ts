@@ -35,6 +35,9 @@ export enum NetworkType {
   WIFI = 'wifi',
   CELLULAR = 'cellular',
   ETHERNET = 'ethernet',
+  VPN = 'vpn',
+  OTHER = 'other',
+  NONE = 'none',
   UNKNOWN = 'unknown',
 }
 

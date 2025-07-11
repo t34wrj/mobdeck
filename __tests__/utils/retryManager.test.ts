@@ -37,7 +37,7 @@ describe('RetryManager', () => {
       const resultPromise = retryManager.retry(operation, { maxAttempts: 3 });
       
       // Fast-forward through retries
-      jest.runAllTimers();
+      await jest.runAllTimersAsync();
       
       const result = await resultPromise;
       
@@ -51,7 +51,7 @@ describe('RetryManager', () => {
       const resultPromise = retryManager.retry(operation, { maxAttempts: 3 });
       
       // Fast-forward through all retries
-      jest.runAllTimers();
+      await jest.runAllTimersAsync();
       
       await expect(resultPromise).rejects.toThrow('Always fails');
       expect(operation).toHaveBeenCalledTimes(3);
@@ -64,7 +64,7 @@ describe('RetryManager', () => {
       
       const resultPromise = retryManager.retry(operation);
       
-      jest.runAllTimers();
+      await jest.runAllTimersAsync();
       
       const result = await resultPromise;
       
@@ -102,7 +102,7 @@ describe('RetryManager', () => {
       
       const resultPromise = retryManager.retry(operation, { maxAttempts: 5 });
       
-      jest.runAllTimers();
+      await jest.runAllTimersAsync();
       
       await resultPromise;
       
@@ -121,7 +121,7 @@ describe('RetryManager', () => {
       
       const resultPromise = retryManager.retry(operation);
       
-      jest.runAllTimers();
+      await jest.runAllTimersAsync();
       
       await resultPromise;
       
@@ -149,11 +149,11 @@ describe('RetryManager', () => {
       expect(operation).toHaveBeenCalledTimes(1);
       
       // Second attempt after 100ms
-      jest.advanceTimersByTime(100);
+      await jest.advanceTimersByTimeAsync(100);
       expect(operation).toHaveBeenCalledTimes(2);
       
       // Third attempt after 200ms more (100 * 2)
-      jest.advanceTimersByTime(200);
+      await jest.advanceTimersByTimeAsync(200);
       expect(operation).toHaveBeenCalledTimes(3);
     });
 
@@ -170,15 +170,15 @@ describe('RetryManager', () => {
       retryManager.retry(operation, options).catch(() => {});
       
       // First retry: 100ms
-      jest.advanceTimersByTime(100);
+      await jest.advanceTimersByTimeAsync(100);
       expect(operation).toHaveBeenCalledTimes(2);
       
       // Second retry: 300ms (would be 300ms but capped)
-      jest.advanceTimersByTime(300);
+      await jest.advanceTimersByTimeAsync(300);
       expect(operation).toHaveBeenCalledTimes(3);
       
       // Third retry: 300ms (capped again)
-      jest.advanceTimersByTime(300);
+      await jest.advanceTimersByTimeAsync(300);
       expect(operation).toHaveBeenCalledTimes(4);
     });
 
@@ -197,7 +197,7 @@ describe('RetryManager', () => {
       retryManager.retry(operation, options).catch(() => {});
       
       // With jitter at 0.5, delay should be 1000 * 0.75 = 750ms
-      jest.advanceTimersByTime(750);
+      await jest.advanceTimersByTimeAsync(750);
       expect(operation).toHaveBeenCalledTimes(2);
       
       randomSpy.mockRestore();
@@ -221,7 +221,7 @@ describe('RetryManager', () => {
       
       const resultPromise = retryManager.retry(operation, options);
       
-      jest.runAllTimers();
+      await jest.runAllTimersAsync();
       
       await expect(resultPromise).rejects.toThrow('Fatal error');
       
@@ -278,7 +278,7 @@ describe('RetryManager', () => {
       
       const resultPromise = retryManager.retry(operation, options);
       
-      jest.runAllTimers();
+      await jest.runAllTimersAsync();
       
       await resultPromise;
       
@@ -306,7 +306,7 @@ describe('RetryManager', () => {
       
       const resultPromise = retryManager.retry(operation, options);
       
-      jest.runAllTimers();
+      await jest.runAllTimersAsync();
       
       // Should continue despite onRetry error
       const result = await resultPromise;
@@ -331,7 +331,7 @@ describe('RetryManager', () => {
       // Abort after starting
       setTimeout(() => abortController.abort(), 100);
       
-      jest.runAllTimers();
+      await jest.runAllTimersAsync();
       
       await expect(resultPromise).rejects.toThrow('aborted');
     });
@@ -348,12 +348,12 @@ describe('RetryManager', () => {
       const resultPromise = retryManager.retry(operation, options);
       
       // Let first attempt fail
-      jest.advanceTimersByTime(100);
+      await jest.advanceTimersByTimeAsync(100);
       
       // Abort before retry
       abortController.abort();
       
-      jest.runAllTimers();
+      await jest.runAllTimersAsync();
       
       await expect(resultPromise).rejects.toThrow();
       
@@ -407,7 +407,7 @@ describe('RetryManager', () => {
       const resultPromise = retryManager.retry(operation, options);
       
       // Should cap to reasonable delay
-      jest.advanceTimersByTime(60000); // 1 minute max
+      await jest.advanceTimersByTimeAsync(60000); // 1 minute max
       
       await resultPromise;
       
@@ -430,11 +430,11 @@ describe('RetryManager', () => {
       retryManager.retry(operation, options);
       
       // First retry after 50ms
-      jest.advanceTimersByTime(50);
+      await jest.advanceTimersByTimeAsync(50);
       expect(operation).toHaveBeenCalledTimes(2);
       
       // Second retry after 100ms
-      jest.advanceTimersByTime(100);
+      await jest.advanceTimersByTimeAsync(100);
       expect(operation).toHaveBeenCalledTimes(3);
     });
 
@@ -451,7 +451,7 @@ describe('RetryManager', () => {
       
       retryManager.retry(operation, options);
       
-      jest.advanceTimersByTime(200);
+      await jest.advanceTimersByTimeAsync(200);
       expect(operation).toHaveBeenCalledTimes(2);
     });
   });

@@ -7,6 +7,7 @@ import {
   loggerMiddleware,
   errorHandlerMiddleware,
   performanceMiddleware,
+  productionErrorMiddleware,
 } from './middleware';
 
 // Root reducer configuration
@@ -19,33 +20,41 @@ const rootReducer = {
 // Store configuration
 const storeConfig: ConfigureStoreOptions = {
   reducer: rootReducer,
-  middleware: getDefaultMiddleware =>
-    getDefaultMiddleware({
-      // Configure RTK default middleware with performance optimizations
-      serializableCheck: {
-        // Ignore specific action types if needed
+  middleware: getDefaultMiddleware => {
+    // Production optimized middleware configuration
+    const middlewareConfig = {
+      // Optimize serializable check for production
+      serializableCheck: __DEV__ ? {
         ignoredActions: [],
-        // Ignore specific paths in state/actions
         ignoredActionsPaths: ['meta.requestId', 'meta.requestStatus'],
         ignoredPaths: ['articles.items.content', 'auth.user'],
-        // Reduce check frequency to improve performance
         warnAfter: 128,
-      },
-      // Optimize immutability check for large state objects
+      } : false,
+      // Disable immutability check in production for performance
       immutableCheck: __DEV__ ? {
         warnAfter: 128,
         ignoredPaths: ['articles.items.content'],
       } : false,
-    }).concat(
-      // Add custom middleware
-      errorHandlerMiddleware,
+      // Disable thunk middleware checks in production
+      thunk: __DEV__ ? {
+        extraArgument: undefined,
+      } : true,
+    };
+
+    const baseMiddleware = getDefaultMiddleware(middlewareConfig);
+    
+    // Add custom middleware - optimized for production vs development
+    return baseMiddleware.concat(
+      __DEV__ ? errorHandlerMiddleware : productionErrorMiddleware,
       ...(__DEV__ ? [loggerMiddleware, performanceMiddleware] : [])
-    ),
-  // Enable Redux DevTools in development
+    );
+  },
+  // Optimize Redux DevTools for development
   devTools: __DEV__ && {
     name: 'Mobdeck Redux Store',
-    trace: true,
-    traceLimit: 25,
+    trace: false, // Disable trace for better performance
+    traceLimit: 10, // Reduce trace limit
+    maxAge: 50, // Limit action history
   },
   // Preloaded state (useful for SSR or state persistence)
   preloadedState: undefined,

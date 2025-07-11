@@ -39,13 +39,7 @@ export class RetryManager {
              error.code === 'TIMEOUT_ERROR' ||
              (error.response?.status >= 500 && error.response?.status < 600);
     },
-    shouldRetry: (error) => {
-      // Retry on network errors and 5xx errors
-      return error.code === 'CONNECTION_ERROR' ||
-             error.code === 'ECONNREFUSED' ||
-             error.code === 'TIMEOUT_ERROR' ||
-             (error.response?.status >= 500 && error.response?.status < 600);
-    },
+    shouldRetry: () => true, // Default to retry all errors unless explicitly overridden
     onRetry: () => {},
     jitter: false,
     getDelay: undefined,
@@ -155,7 +149,7 @@ export class RetryManager {
     options: RetryOptions = {}
   ): Promise<T> {
     const opts = { ...RetryManager.defaultOptions, ...options };
-    const maxAttempts = opts.maxAttempts ?? opts.maxRetries;
+    const maxAttempts = opts.maxAttempts ?? opts.maxRetries ?? 3;
     
     // Handle invalid max attempts
     if (maxAttempts <= 0) {
@@ -164,7 +158,6 @@ export class RetryManager {
     
     let attempt = 0;
     let previousError: any = null;
-    let lastError: any = null;
     
     while (attempt < maxAttempts) {
       attempt++;
@@ -189,8 +182,6 @@ export class RetryManager {
         
         return result;
       } catch (error) {
-        lastError = error;
-        
         // Check if we should retry this error
         let shouldRetryResult = true;
         
@@ -201,26 +192,25 @@ export class RetryManager {
             // If shouldRetry throws, treat as false
             shouldRetryResult = false;
           }
-        } else if (opts.retryCondition) {
-          try {
-            shouldRetryResult = opts.retryCondition(error);
-          } catch (e) {
-            // If retryCondition throws, treat as false
-            shouldRetryResult = false;
-          }
+        } else {
+          // Use default retry logic from retryCondition if no shouldRetry is provided
+          shouldRetryResult = opts.retryCondition ? opts.retryCondition(error) : true;
         }
         
         // If this is the last attempt or we shouldn't retry, throw the error
         if (attempt >= maxAttempts || !shouldRetryResult) {
-          logger.warn(`[RetryManager] Failed after ${attempt} attempts: ${error.message || error}`);
+          if (attempt >= maxAttempts) {
+            logger.warn(`[RetryManager] Failed after ${attempt} attempts: ${error.message || error}`);
+          }
           throw error;
         }
         
-        // Calculate delay
+        // Calculate delay for next retry
         let delay: number;
         if (opts.getDelay) {
           delay = opts.getDelay(attempt);
         } else {
+          // For exponential backoff, use attempt number starting from 1 for the first retry
           delay = opts.initialDelay * Math.pow(opts.backoffMultiplier, attempt - 1);
           delay = Math.min(delay, opts.maxDelay);
           
@@ -236,7 +226,7 @@ export class RetryManager {
           delay = Math.floor(delay * jitterFactor);
         }
         
-        // Call onRetry callback
+        // Call onRetry callback with next attempt number
         if (opts.onRetry) {
           try {
             opts.onRetry(error, attempt + 1, delay);
@@ -247,6 +237,9 @@ export class RetryManager {
         
         logger.debug(`[RetryManager] Attempt ${attempt} failed, will retry in ${delay}ms: ${error.message || error}`);
         
+        // Set previous error for next attempt
+        previousError = error;
+        
         // Wait before retrying
         await this.delay(delay);
         
@@ -254,14 +247,11 @@ export class RetryManager {
         if (opts.signal?.aborted) {
           throw new Error('aborted');
         }
-        
-        // Set previous error for next attempt
-        previousError = error;
       }
     }
     
     // This should never be reached, but just in case
-    throw lastError;
+    throw new Error('Max attempts reached');
   }
 
   private delay(ms: number): Promise<void> {

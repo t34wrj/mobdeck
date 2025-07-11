@@ -24,7 +24,9 @@ export class BackgroundSyncAppIntegration {
    */
   async initializeBackgroundSync() {
     try {
-      console.log('Initializing background sync...');
+      if (__DEV__) {
+        console.log('Initializing background sync...');
+      }
 
       // Initialize the background sync service
       await backgroundSyncService.initialize();
@@ -32,7 +34,9 @@ export class BackgroundSyncAppIntegration {
       // Set up app state monitoring
       this.setupAppStateMonitoring();
 
-      console.log('Background sync initialized successfully');
+      if (__DEV__) {
+        console.log('Background sync initialized successfully');
+      }
     } catch (error) {
       console.error('Failed to initialize background sync:', error);
     }
@@ -52,12 +56,16 @@ export class BackgroundSyncAppIntegration {
    * Handle app state changes
    */
   private handleAppStateChange(nextAppState: AppStateStatus) {
-    console.log(`App state changed to: ${nextAppState}`);
+    if (__DEV__) {
+      console.log(`App state changed to: ${nextAppState}`);
+    }
 
     if (nextAppState === 'background') {
       // App is going to background - no specific action needed
       // Background sync will continue based on configured intervals
-      console.log('App backgrounded - background sync will continue');
+      if (__DEV__) {
+        console.log('App backgrounded - background sync will continue');
+      }
     } else if (nextAppState === 'active') {
       // App is coming to foreground - trigger an immediate sync if needed
       this.handleAppForegrounded();
@@ -80,14 +88,18 @@ export class BackgroundSyncAppIntegration {
 
         // If more than 10 minutes since last sync, trigger manual sync
         if (timeSinceLastSync > 10 * 60 * 1000) {
-          console.log(
-            'Triggering foreground sync - been a while since last sync'
-          );
+          if (__DEV__) {
+            console.log(
+              'Triggering foreground sync - been a while since last sync'
+            );
+          }
           await backgroundSyncService.triggerManualSync();
         }
       } else {
         // No previous sync, trigger one
-        console.log('Triggering initial foreground sync');
+        if (__DEV__) {
+          console.log('Triggering initial foreground sync');
+        }
         await backgroundSyncService.triggerManualSync();
       }
     } catch (error) {
@@ -152,7 +164,9 @@ export class BackgroundSyncConfigHelper {
     const config = configurations[preset];
     await backgroundSyncService.updatePreferences(config);
 
-    console.log(`Background sync configured with ${preset} preset`);
+    if (__DEV__) {
+      console.log(`Background sync configured with ${preset} preset`);
+    }
   }
 
   /**
@@ -286,10 +300,12 @@ export class BackgroundSyncMonitor {
       configuration: await BackgroundSyncConfigHelper.getCurrentConfiguration(),
     };
 
-    console.log(
-      'Background Sync Export Data:',
-      JSON.stringify(exportData, null, 2)
-    );
+    if (__DEV__) {
+      console.log(
+        'Background Sync Export Data:',
+        JSON.stringify(exportData, null, 2)
+      );
+    }
     return exportData;
   }
 }

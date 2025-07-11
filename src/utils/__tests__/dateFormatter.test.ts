@@ -49,9 +49,14 @@ describe('dateFormatter', () => {
 
     it('should fallback to en-US when locale detection fails', () => {
       const originalI18nManager = NativeModules.I18nManager;
+      const originalNavigator = (global as any).navigator;
       NativeModules.I18nManager = undefined;
+      delete (global as any).navigator;
       expect(getDeviceLocale()).toBe('en-US');
       NativeModules.I18nManager = originalI18nManager;
+      if (originalNavigator) {
+        (global as any).navigator = originalNavigator;
+      }
     });
 
     it('should use navigator.language as fallback', () => {

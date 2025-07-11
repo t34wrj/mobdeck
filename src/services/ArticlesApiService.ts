@@ -115,27 +115,29 @@ class ArticlesApiService implements IArticlesApiService {
       return [];
     };
 
-    // Debug: Log the raw API response to understand the field structure
-    console.log('[ArticlesApiService] Converting Readeck article:', {
-      id: readeckArticle.id,
-      hasContent: !!readeckArticle.content,
-      hasHtml: !!readeckArticle.html,
-      hasText: !!readeckArticle.text,
-      hasBody: !!readeckArticle.body,
-      hasDescription: !!readeckArticle.description,
-      fieldKeys: Object.keys(readeckArticle),
-      contentPreview: readeckArticle.content?.substring(0, 100) || 'NO_CONTENT',
-      htmlPreview: readeckArticle.html?.substring(0, 100) || 'NO_HTML',
-      textPreview: readeckArticle.text?.substring(0, 100) || 'NO_TEXT'
-    });
+    if (__DEV__) {
+      // Debug: Log the raw API response to understand the field structure
+      console.log('[ArticlesApiService] Converting Readeck article:', {
+        id: readeckArticle.id,
+        hasContent: !!readeckArticle.content,
+        hasHtml: !!readeckArticle.html,
+        hasText: !!readeckArticle.text,
+        hasBody: !!readeckArticle.body,
+        hasDescription: !!readeckArticle.description,
+        fieldKeys: Object.keys(readeckArticle),
+        contentPreview: readeckArticle.content?.substring(0, 100) || 'NO_CONTENT',
+        htmlPreview: readeckArticle.html?.substring(0, 100) || 'NO_HTML',
+        textPreview: readeckArticle.text?.substring(0, 100) || 'NO_TEXT'
+      });
 
-    // Debug: Print key fields for read/unread analysis
-    console.log('[ArticlesApiService] Read status analysis:', {
-      id: readeckArticle.id,
-      read_progress: readeckArticle.read_progress,
-      read_status: readeckArticle.read_status,
-      isReadComputed: readeckArticle.read_progress !== undefined && readeckArticle.read_progress >= 100
-    });
+      // Debug: Print key fields for read/unread analysis
+      console.log('[ArticlesApiService] Read status analysis:', {
+        id: readeckArticle.id,
+        read_progress: readeckArticle.read_progress,
+        read_status: readeckArticle.read_status,
+        isReadComputed: readeckArticle.read_progress !== undefined && readeckArticle.read_progress >= 100
+      });
+    }
 
     // Extract content from resources.article.src as per Readeck API schema
     let content = '';
@@ -143,7 +145,9 @@ class ArticlesApiService implements IArticlesApiService {
     // Primary: Check resources.article.src field (URL to article content)
     if (readeckArticle.resources?.article?.src) {
       const articleUrl = ensureString(readeckArticle.resources.article.src);
-      console.log('[ArticlesApiService] Found article content URL:', articleUrl);
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Found article content URL:', articleUrl);
+      }
       
       // Note: For now, we'll store the URL and fetch content separately when needed
       // This prevents blocking the article list loading with individual content fetches
@@ -162,12 +166,16 @@ class ArticlesApiService implements IArticlesApiService {
         readeckArticle.cached_content ||
         '' // Empty content if none found
       );
-      console.log('[ArticlesApiService] Using fallback content fields, length:', content.length);
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Using fallback content fields, length:', content.length);
+      }
     }
     
     // Additional fallback: Check if resource field contains content (legacy support)
     if (!content && readeckArticle.resource) {
-      console.log('[ArticlesApiService] Checking legacy resource field for content...');
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Checking legacy resource field for content...');
+      }
       if (typeof readeckArticle.resource === 'string' && readeckArticle.resource.length > 200) {
         // Only use if it looks like actual content, not a short description
         content = ensureString(readeckArticle.resource);
@@ -180,7 +188,9 @@ class ArticlesApiService implements IArticlesApiService {
           ''
         );
       }
-      console.log(`[ArticlesApiService] Legacy resource content length: ${content.length}`);
+      if (__DEV__) {
+        console.log(`[ArticlesApiService] Legacy resource content length: ${content.length}`);
+      }
     }
 
     // Handle the updated API field names to match Readeck API documentation
@@ -207,13 +217,15 @@ class ArticlesApiService implements IArticlesApiService {
       contentUrl: ensureString(readeckArticle.resources?.article?.src),
     };
 
-    console.log('[ArticlesApiService] Converted article:', {
-      id: convertedArticle.id,
-      title: convertedArticle.title,
-      hasContent: !!convertedArticle.content,
-      contentLength: convertedArticle.content.length,
-      contentPreview: convertedArticle.content.substring(0, 100)
-    });
+    if (__DEV__) {
+      console.log('[ArticlesApiService] Converted article:', {
+        id: convertedArticle.id,
+        title: convertedArticle.title,
+        hasContent: !!convertedArticle.content,
+        contentLength: convertedArticle.content.length,
+        contentPreview: convertedArticle.content.substring(0, 100)
+      });
+    }
 
     return convertedArticle;
   }
@@ -270,24 +282,28 @@ class ArticlesApiService implements IArticlesApiService {
       if (params.filters.isRead !== undefined) {
         // Map isRead to read_status array
         filters.read_status = params.filters.isRead ? ['read'] : ['unread', 'reading'];
-        console.log('[ArticlesApiService] Read filter applied:', {
-          isRead: params.filters.isRead,
-          read_status: filters.read_status
-        });
+        if (__DEV__) {
+          console.log('[ArticlesApiService] Read filter applied:', {
+            isRead: params.filters.isRead,
+            read_status: filters.read_status
+          });
+        }
       }
       if (params.filters.tags && params.filters.tags.length > 0) {
         filters.labels = params.filters.tags.join(','); // Note: API uses labels and expects comma-separated string
       }
     }
 
-    console.log('[ArticlesApiService] Final filters being sent to API:', {
-      ...filters,
-      'FILTER_ANALYSIS': {
-        hasReadFilter: filters.read_status !== undefined,
-        readFilterValue: filters.read_status,
-        originalIsReadParam: params.filters?.isRead
-      }
-    });
+    if (__DEV__) {
+      console.log('[ArticlesApiService] Final filters being sent to API:', {
+        ...filters,
+        'FILTER_ANALYSIS': {
+          hasReadFilter: filters.read_status !== undefined,
+          readFilterValue: filters.read_status,
+          originalIsReadParam: params.filters?.isRead
+        }
+      });
+    }
     return filters;
   }
 
@@ -298,7 +314,12 @@ class ArticlesApiService implements IArticlesApiService {
   private handleApiError(error: any, operation: string): never {
     // Don't log here as error will be handled by calling code
     if (error.code && error.message) {
-      // ReadeckApiError - pass through
+      // ReadeckApiError - for specific operations, wrap the error message
+      const wrapperOperations = ['Update article', 'Get article'];
+      if (wrapperOperations.includes(operation)) {
+        throw new Error(`${operation} failed: ${error.message}`);
+      }
+      // Otherwise pass through
       throw error;
     } else {
       // Unknown error - wrap in standard format
@@ -323,57 +344,61 @@ class ArticlesApiService implements IArticlesApiService {
     return RetryManager.withRetry(
       async () => {
         try {
-          console.log(
-            '[ArticlesApiService] Fetching articles with params:',
-            params
-          );
+          if (__DEV__) {
+            console.log(
+              '[ArticlesApiService] Fetching articles with params:',
+              params
+            );
+          }
 
           const filters = this.convertFiltersToReadeckFilters(params);
           const response: ReadeckApiResponse<ReadeckArticleList> =
             await readeckApiService.getArticles(filters);
 
-      // Debug log the response structure and first few articles
-      console.log('[ArticlesApiService] API Response structure:', {
-        hasResponse: !!response,
-        hasData: !!response?.data,
-        dataType: Array.isArray(response?.data) ? 'array' : typeof response?.data,
-        dataKeys: response?.data && typeof response.data === 'object' ? Object.keys(response.data) : [],
-        filtersSent: filters,
-        paramsReceived: params
-      });
-
-      // Log the first few articles to see their read status
-      if (response?.data) {
-        const articles = Array.isArray(response.data) ? response.data : 
-                        response.data.articles || (response.data as any).bookmarks || [];
-        console.log('[ArticlesApiService] First 3 articles read status analysis:', 
-          articles.slice(0, 3).map((article: any) => ({
-            id: article.id,
-            title: `${article.title?.substring(0, 50)  }...`,
-            read_progress: article.read_progress,
-            computedIsRead: article.read_progress !== undefined && article.read_progress >= 100
-          }))
-        );
-        
-        // Summary of all articles' read status
-        const readStatusSummary = articles.reduce((acc: any, article: any) => {
-          const progress = article.read_progress;
-          if (progress === undefined || progress === null) {
-            acc.undefined++;
-          } else if (progress === 0) {
-            acc.zero++;
-          } else if (progress > 0 && progress < 100) {
-            acc.inProgress++;
-          } else if (progress >= 100) {
-            acc.completed++;
-          }
-          return acc;
-        }, { undefined: 0, zero: 0, inProgress: 0, completed: 0 });
-        
-        console.log('[ArticlesApiService] Read progress summary for all articles:', {
-          total: articles.length,
-          ...readStatusSummary
+      if (__DEV__) {
+        // Debug log the response structure and first few articles
+        console.log('[ArticlesApiService] API Response structure:', {
+          hasResponse: !!response,
+          hasData: !!response?.data,
+          dataType: Array.isArray(response?.data) ? 'array' : typeof response?.data,
+          dataKeys: response?.data && typeof response.data === 'object' ? Object.keys(response.data) : [],
+          filtersSent: filters,
+          paramsReceived: params
         });
+
+        // Log the first few articles to see their read status
+        if (response?.data) {
+          const articles = Array.isArray(response.data) ? response.data : 
+                          response.data.articles || (response.data as any).bookmarks || [];
+          console.log('[ArticlesApiService] First 3 articles read status analysis:', 
+            articles.slice(0, 3).map((article: any) => ({
+              id: article.id,
+              title: `${article.title?.substring(0, 50)  }...`,
+              read_progress: article.read_progress,
+              computedIsRead: article.read_progress !== undefined && article.read_progress >= 100
+            }))
+          );
+          
+          // Summary of all articles' read status
+          const readStatusSummary = articles.reduce((acc: any, article: any) => {
+            const progress = article.read_progress;
+            if (progress === undefined || progress === null) {
+              acc.undefined++;
+            } else if (progress === 0) {
+              acc.zero++;
+            } else if (progress > 0 && progress < 100) {
+              acc.inProgress++;
+            } else if (progress >= 100) {
+              acc.completed++;
+            }
+            return acc;
+          }, { undefined: 0, zero: 0, inProgress: 0, completed: 0 });
+          
+          console.log('[ArticlesApiService] Read progress summary for all articles:', {
+            total: articles.length,
+            ...readStatusSummary
+          });
+        }
       }
 
       // Check if response has the expected structure
@@ -430,32 +455,42 @@ class ArticlesApiService implements IArticlesApiService {
 
       // Fetch full content for articles if requested and content is missing
       if (params.fetchFullContent) {
-        console.log('[ArticlesApiService] fetchFullContent enabled, checking articles for missing content...');
+        if (__DEV__) {
+          console.log('[ArticlesApiService] fetchFullContent enabled, checking articles for missing content...');
+        }
         
         const articlesWithFullContent = await Promise.all(
           articles.map(async (article) => {
             // Check cache first
             const cachedArticle = cacheService.getArticle(article.id);
             if (cachedArticle && cachedArticle.content) {
-              console.log(`[ArticlesApiService] Using cached content for article: ${article.id}`);
+              if (__DEV__) {
+                console.log(`[ArticlesApiService] Using cached content for article: ${article.id}`);
+              }
               return { ...article, content: cachedArticle.content };
             }
             
             // Check if article needs full content
             if (!article.content || article.content.trim() === '') {
               try {
-                console.log(`[ArticlesApiService] Fetching full content for article: ${article.id}`);
+                if (__DEV__) {
+                  console.log(`[ArticlesApiService] Fetching full content for article: ${article.id}`);
+                }
                 const fullContentResponse = await readeckApiService.getArticle(article.id);
                 
-                console.log(`[ArticlesApiService] Full content response:`, {
-                  hasData: !!fullContentResponse?.data,
-                  status: fullContentResponse?.status
-                });
+                if (__DEV__) {
+                  console.log(`[ArticlesApiService] Full content response:`, {
+                    hasData: !!fullContentResponse?.data,
+                    status: fullContentResponse?.status
+                  });
+                }
                 
                 if (fullContentResponse.data) {
                   // Convert and merge full content
                   const fullArticle = this.convertReadeckArticleToArticle(fullContentResponse.data);
-                  console.log(`[ArticlesApiService] Full content fetched for article: ${article.id}, content length: ${fullArticle.content?.length || 0}`);
+                  if (__DEV__) {
+                    console.log(`[ArticlesApiService] Full content fetched for article: ${article.id}, content length: ${fullArticle.content?.length || 0}`);
+                  }
                   const updatedArticle = { ...article, content: fullArticle.content };
                   // Cache the complete article
                   cacheService.setArticle(article.id, updatedArticle);
@@ -474,7 +509,9 @@ class ArticlesApiService implements IArticlesApiService {
         );
         
         articles = articlesWithFullContent;
-        console.log(`[ArticlesApiService] Completed full content fetch for ${articles.length} articles`);
+        if (__DEV__) {
+          console.log(`[ArticlesApiService] Completed full content fetch for ${articles.length} articles`);
+        }
       }
 
       // Client-side filtering as fallback for read/unread status
@@ -487,7 +524,7 @@ class ArticlesApiService implements IArticlesApiService {
           const articleIsRead = article.isRead;
           const shouldInclude = articleIsRead === targetReadStatus;
           
-          if (!shouldInclude) {
+          if (!shouldInclude && __DEV__) {
             console.log(`[ArticlesApiService] Client-side filter excluding article:`, {
               id: article.id,
               title: `${article.title?.substring(0, 30)  }...`,
@@ -500,12 +537,14 @@ class ArticlesApiService implements IArticlesApiService {
           return shouldInclude;
         });
         
-        console.log(`[ArticlesApiService] Client-side read filter applied:`, {
-          originalCount,
-          filteredCount: articles.length,
-          targetReadStatus,
-          articlesRemoved: originalCount - articles.length
-        });
+        if (__DEV__) {
+          console.log(`[ArticlesApiService] Client-side read filter applied:`, {
+            originalCount,
+            filteredCount: articles.length,
+            targetReadStatus,
+            articlesRemoved: originalCount - articles.length
+          });
+        }
       }
 
       const paginatedResponse: PaginatedResponse<Article> = {
@@ -515,9 +554,11 @@ class ArticlesApiService implements IArticlesApiService {
         totalItems: pagination.totalItems,
       };
 
-      console.log(
-        `[ArticlesApiService] Successfully fetched ${articles.length} articles (page ${paginatedResponse.page}/${paginatedResponse.totalPages})`
-      );
+      if (__DEV__) {
+        console.log(
+          `[ArticlesApiService] Successfully fetched ${articles.length} articles (page ${paginatedResponse.page}/${paginatedResponse.totalPages})`
+        );
+      }
       return paginatedResponse;
     } catch (error: any) {
       // Check for connection errors and provide better error messages
@@ -544,10 +585,12 @@ class ArticlesApiService implements IArticlesApiService {
    */
   async createArticle(params: CreateArticleParams): Promise<Article> {
     try {
-      console.log('[ArticlesApiService] Creating article:', {
-        url: params.url,
-        title: params.title,
-      });
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Creating article:', {
+          url: params.url,
+          title: params.title,
+        });
+      }
 
       const createRequest: CreateArticleRequest = {
         url: params.url,
@@ -559,10 +602,12 @@ class ArticlesApiService implements IArticlesApiService {
         await readeckApiService.createArticle(createRequest);
       const article = this.convertReadeckArticleToArticle(response.data);
 
-      console.log(
-        '[ArticlesApiService] Successfully created article:',
-        article.id
-      );
+      if (__DEV__) {
+        console.log(
+          '[ArticlesApiService] Successfully created article:',
+          article.id
+        );
+      }
       return article;
     } catch (error) {
       throw this.handleApiError(error, 'Create article');
@@ -574,10 +619,12 @@ class ArticlesApiService implements IArticlesApiService {
    */
   async updateArticle(params: UpdateArticleParams): Promise<Article> {
     try {
-      console.log('[ArticlesApiService] Updating article:', {
-        id: params.id,
-        updates: Object.keys(params.updates),
-      });
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Updating article:', {
+          id: params.id,
+          updates: Object.keys(params.updates),
+        });
+      }
 
       const updateRequest = this.convertArticleToUpdateRequest(params.updates);
       const response: ReadeckApiResponse<ReadeckArticle> =
@@ -587,10 +634,12 @@ class ArticlesApiService implements IArticlesApiService {
       // Update cache with new article data
       cacheService.setArticle(params.id, article);
 
-      console.log(
-        '[ArticlesApiService] Successfully updated article:',
-        article.id
-      );
+      if (__DEV__) {
+        console.log(
+          '[ArticlesApiService] Successfully updated article:',
+          article.id
+        );
+      }
       return article;
     } catch (error) {
       throw this.handleApiError(error, 'Update article');
@@ -602,20 +651,24 @@ class ArticlesApiService implements IArticlesApiService {
    */
   async deleteArticle(params: DeleteArticleParams): Promise<void> {
     try {
-      console.log('[ArticlesApiService] Deleting article:', {
-        id: params.id,
-        permanent: params.permanent,
-      });
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Deleting article:', {
+          id: params.id,
+          permanent: params.permanent,
+        });
+      }
 
       await readeckApiService.deleteArticle(params.id);
 
       // Remove from cache
       cacheService.deleteArticle(params.id);
 
-      console.log(
-        '[ArticlesApiService] Successfully deleted article:',
-        params.id
-      );
+      if (__DEV__) {
+        console.log(
+          '[ArticlesApiService] Successfully deleted article:',
+          params.id
+        );
+      }
     } catch (error) {
       throw this.handleApiError(error, 'Delete article');
     }
@@ -628,20 +681,26 @@ class ArticlesApiService implements IArticlesApiService {
     params: SyncArticlesParams
   ): Promise<{ syncedCount: number; conflictCount: number; articles: Article[] }> {
     try {
-      console.log('[ArticlesApiService] Syncing articles:', params);
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Syncing articles:', params);
+      }
 
       const syncRequest = {
         limit: params.fullSync ? undefined : 100,
         include_deleted: params.fullSync || false,
       };
 
-      console.log('[ArticlesApiService] Calling readeckApiService.syncArticles with:', syncRequest);
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Calling readeckApiService.syncArticles with:', syncRequest);
+      }
       const response = await readeckApiService.syncArticles(syncRequest);
-      console.log('[ArticlesApiService] Sync response received:', {
-        hasData: !!response?.data,
-        responseKeys: response ? Object.keys(response) : [],
-        dataKeys: response?.data ? Object.keys(response.data) : []
-      });
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Sync response received:', {
+          hasData: !!response?.data,
+          responseKeys: response ? Object.keys(response) : [],
+          dataKeys: response?.data ? Object.keys(response.data) : []
+        });
+      }
 
       // Validate response structure
       if (!response || !response.data) {
@@ -651,11 +710,13 @@ class ArticlesApiService implements IArticlesApiService {
 
       // Safely access articles array with validation
       const readeckArticles = response.data.articles || [];
-      console.log('[ArticlesApiService] Extracted articles:', {
-        articlesCount: readeckArticles.length,
-        isArray: Array.isArray(readeckArticles),
-        firstArticleKeys: readeckArticles[0] ? Object.keys(readeckArticles[0]) : []
-      });
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Extracted articles:', {
+          articlesCount: readeckArticles.length,
+          isArray: Array.isArray(readeckArticles),
+          firstArticleKeys: readeckArticles[0] ? Object.keys(readeckArticles[0]) : []
+        });
+      }
 
       if (!Array.isArray(readeckArticles)) {
         console.error('[ArticlesApiService] Expected articles array, got:', typeof readeckArticles, readeckArticles);
@@ -667,11 +728,13 @@ class ArticlesApiService implements IArticlesApiService {
         this.convertReadeckArticleToArticle(readeckArticle)
       );
 
-      console.log('[ArticlesApiService] Converted articles:', {
-        convertedCount: articles.length,
-        firstArticleTitle: articles[0]?.title,
-        firstArticleId: articles[0]?.id
-      });
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Converted articles:', {
+          convertedCount: articles.length,
+          firstArticleTitle: articles[0]?.title,
+          firstArticleId: articles[0]?.id
+        });
+      }
 
       // Save articles to local database
       for (const article of articles) {
@@ -683,10 +746,14 @@ class ArticlesApiService implements IArticlesApiService {
           const createResult = await DatabaseService.createArticle(dbArticle);
           
           if (createResult.success) {
-            console.log(`[ArticlesApiService] Created article in database: ${article.id}`);
+            if (__DEV__) {
+              console.log(`[ArticlesApiService] Created article in database: ${article.id}`);
+            }
           } else {
             // If creation failed, try to update existing article
-            console.log(`[ArticlesApiService] Article exists, updating: ${article.id}`);
+            if (__DEV__) {
+              console.log(`[ArticlesApiService] Article exists, updating: ${article.id}`);
+            }
             await DatabaseService.updateArticle(article.id, dbArticle);
           }
         } catch (dbError) {
@@ -699,20 +766,15 @@ class ArticlesApiService implements IArticlesApiService {
       const syncedCount = articles.length;
       const conflictCount = 0; // Readeck API doesn't report conflicts directly
 
-      console.log(
-        `[ArticlesApiService] Sync completed: ${syncedCount} articles synced, ${conflictCount} conflicts`
-      );
+      if (__DEV__) {
+        console.log(
+          `[ArticlesApiService] Sync completed: ${syncedCount} articles synced, ${conflictCount} conflicts`
+        );
+      }
 
       return { syncedCount, conflictCount, articles };
     } catch (error) {
-      console.error('[ArticlesApiService] Sync error:', error);
-      
-      // Return empty result instead of throwing to prevent app crash
-      return { 
-        syncedCount: 0, 
-        conflictCount: 0, 
-        articles: [] 
-      };
+      return this.handleApiError(error, 'Sync articles');
     }
   }
 
@@ -724,11 +786,15 @@ class ArticlesApiService implements IArticlesApiService {
       // Check cache first for optimal performance
       const cachedArticle = cacheService.getArticle(id);
       if (cachedArticle) {
-        console.log('[ArticlesApiService] Cache hit for article:', id);
+        if (__DEV__) {
+          console.log('[ArticlesApiService] Cache hit for article:', id);
+        }
         return cachedArticle;
       }
 
-      console.log('[ArticlesApiService] Cache miss, fetching article:', id);
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Cache miss, fetching article:', id);
+      }
 
       const response: ReadeckApiResponse<ReadeckArticle> =
         await readeckApiService.getArticle(id);
@@ -736,11 +802,15 @@ class ArticlesApiService implements IArticlesApiService {
 
       // If article has a contentUrl but no content, fetch the content
       if (article.contentUrl && !article.content) {
-        console.log('[ArticlesApiService] Article has contentUrl, fetching content...');
+        if (__DEV__) {
+          console.log('[ArticlesApiService] Article has contentUrl, fetching content...');
+        }
         try {
           const htmlContent = await this.getArticleContent(article.contentUrl);
           article.content = htmlContent;
-          console.log('[ArticlesApiService] Successfully fetched article content, length:', htmlContent.length);
+          if (__DEV__) {
+            console.log('[ArticlesApiService] Successfully fetched article content, length:', htmlContent.length);
+          }
         } catch (error) {
           console.error('[ArticlesApiService] Failed to fetch article content:', error);
           // Continue without content on error
@@ -750,12 +820,14 @@ class ArticlesApiService implements IArticlesApiService {
       // Cache the article for subsequent requests
       cacheService.setArticle(id, article);
 
-      console.log(
-        '[ArticlesApiService] Successfully fetched article:',
-        article.id,
-        'with content length:',
-        article.content?.length || 0
-      );
+      if (__DEV__) {
+        console.log(
+          '[ArticlesApiService] Successfully fetched article:',
+          article.id,
+          'with content length:',
+          article.content?.length || 0
+        );
+      }
       return article;
     } catch (error) {
       throw this.handleApiError(error, 'Get article');
@@ -767,12 +839,16 @@ class ArticlesApiService implements IArticlesApiService {
    */
   async getArticleContent(contentUrl: string): Promise<string> {
     try {
-      console.log('[ArticlesApiService] Fetching article content from:', contentUrl);
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Fetching article content from:', contentUrl);
+      }
 
       // Use the readeck API service to fetch content
       const response = await readeckApiService.getArticleContent(contentUrl);
       
-      console.log('[ArticlesApiService] Successfully fetched article content, length:', response.length);
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Successfully fetched article content, length:', response.length);
+      }
       return response;
     } catch (error) {
       console.error('[ArticlesApiService] Failed to fetch article content:', error);
@@ -788,10 +864,12 @@ class ArticlesApiService implements IArticlesApiService {
     updates: Array<{ id: string; updates: Partial<Article> }>
   ): Promise<Article[]> {
     try {
-      console.log(
-        '[ArticlesApiService] Batch updating articles:',
-        updates.length
-      );
+      if (__DEV__) {
+        console.log(
+          '[ArticlesApiService] Batch updating articles:',
+          updates.length
+        );
+      }
 
       const updatePromises = updates.map(({ id, updates: articleUpdates }) =>
         this.updateArticle({ id, updates: articleUpdates })
@@ -799,10 +877,12 @@ class ArticlesApiService implements IArticlesApiService {
 
       const articles = await Promise.all(updatePromises);
 
-      console.log(
-        '[ArticlesApiService] Successfully batch updated articles:',
-        articles.length
-      );
+      if (__DEV__) {
+        console.log(
+          '[ArticlesApiService] Successfully batch updated articles:',
+          articles.length
+        );
+      }
       return articles;
     } catch (error) {
       throw this.handleApiError(error, 'Batch update articles');
@@ -814,15 +894,19 @@ class ArticlesApiService implements IArticlesApiService {
    */
   async batchDeleteArticles(ids: string[]): Promise<void> {
     try {
-      console.log('[ArticlesApiService] Batch deleting articles:', ids.length);
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Batch deleting articles:', ids.length);
+      }
 
       const deletePromises = ids.map(id => this.deleteArticle({ id }));
       await Promise.all(deletePromises);
 
-      console.log(
-        '[ArticlesApiService] Successfully batch deleted articles:',
-        ids.length
-      );
+      if (__DEV__) {
+        console.log(
+          '[ArticlesApiService] Successfully batch deleted articles:',
+          ids.length
+        );
+      }
     } catch (error) {
       throw this.handleApiError(error, 'Batch delete articles');
     }
@@ -838,7 +922,9 @@ class ArticlesApiService implements IArticlesApiService {
     archived: number;
   }> {
     try {
-      console.log('[ArticlesApiService] Fetching article statistics');
+      if (__DEV__) {
+        console.log('[ArticlesApiService] Fetching article statistics');
+      }
 
       // Fetch user profile which contains article stats
       const response = await readeckApiService.getUserProfile();
@@ -859,7 +945,9 @@ class ArticlesApiService implements IArticlesApiService {
    * Clear article cache
    */
   clearCache(): void {
-    console.log('[ArticlesApiService] Clearing article cache');
+    if (__DEV__) {
+      console.log('[ArticlesApiService] Clearing article cache');
+    }
     cacheService.clearArticles();
   }
 

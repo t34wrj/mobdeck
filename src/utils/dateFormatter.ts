@@ -35,16 +35,20 @@ export interface LocaleInfo {
  */
 export const getDeviceLocale = (): string => {
   try {
+    // Primary: Use Android I18nManager locale
     if (Platform.OS === 'android' && NativeModules.I18nManager) {
-      const locale = NativeModules.I18nManager.localeIdentifier || 'en-US';
-      return locale.replace('_', '-'); // Convert en_US to en-US format
+      const locale = NativeModules.I18nManager.localeIdentifier;
+      if (locale) {
+        return locale.replace('_', '-'); // Convert en_US to en-US format
+      }
     }
     
-    // Fallback to navigator locale if available
+    // Secondary: Use navigator locale as fallback (for web environments and tests)
     if (typeof navigator !== 'undefined' && navigator.language) {
       return navigator.language;
     }
     
+    // Final fallback: Always return en-US
     return 'en-US';
   } catch (error) {
     console.warn('Failed to detect device locale:', error);
@@ -142,7 +146,7 @@ const fallbackDateFormat = (
       formatted = `${month}/${day}/${year}`;
   }
   
-  if (!options.includeYear) {
+  if (options.includeYear === false) {
     // Remove year from formatted string
     formatted = formatted.substring(0, formatted.lastIndexOf('/'));
   }

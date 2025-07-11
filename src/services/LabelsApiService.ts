@@ -241,7 +241,9 @@ class LabelsApiService implements ILabelsApiService {
     params: FetchLabelsParams
   ): Promise<PaginatedResponse<Label>> {
     try {
-      console.log('[LabelsApiService] Fetching labels with params:', params);
+      if (__DEV__) {
+        console.log('[LabelsApiService] Fetching labels with params:', params);
+      }
 
       const filters = this.convertFiltersToReadeckFilters(params);
       const response: ReadeckApiResponse<ReadeckLabelList> =
@@ -249,7 +251,9 @@ class LabelsApiService implements ILabelsApiService {
 
       // Ensure response.data and response.data.labels exist
       if (!response.data || !response.data.labels || !Array.isArray(response.data.labels)) {
-        console.warn('[LabelsApiService] Invalid response structure:', response.data);
+        if (__DEV__) {
+          console.warn('[LabelsApiService] Invalid response structure:', response.data);
+        }
         return {
           items: [],
           page: 1,
@@ -273,9 +277,11 @@ class LabelsApiService implements ILabelsApiService {
         totalItems: response.data.pagination?.total_count || labels.length,
       };
 
-      console.log(
-        `[LabelsApiService] Successfully fetched ${labels.length} labels (page ${paginatedResponse.page}/${paginatedResponse.totalPages})`
-      );
+      if (__DEV__) {
+        console.log(
+          `[LabelsApiService] Successfully fetched ${labels.length} labels (page ${paginatedResponse.page}/${paginatedResponse.totalPages})`
+        );
+      }
       return paginatedResponse;
     } catch (error) {
       return this.handleApiError(error, 'Fetch labels');
@@ -287,10 +293,12 @@ class LabelsApiService implements ILabelsApiService {
    */
   async createLabel(params: CreateLabelParams): Promise<Label> {
     try {
-      console.log('[LabelsApiService] Creating label:', {
-        name: params.name,
-        color: params.color,
-      });
+      if (__DEV__) {
+        console.log('[LabelsApiService] Creating label:', {
+          name: params.name,
+          color: params.color,
+        });
+      }
 
       const createRequest: CreateLabelRequest = {
         name: params.name,
@@ -307,7 +315,9 @@ class LabelsApiService implements ILabelsApiService {
       // Invalidate list cache since we added a new label
       this.invalidateCache();
 
-      console.log('[LabelsApiService] Successfully created label:', label.id);
+      if (__DEV__) {
+        console.log('[LabelsApiService] Successfully created label:', label.id);
+      }
       return label;
     } catch (error) {
       return this.handleApiError(error, 'Create label');
@@ -319,10 +329,12 @@ class LabelsApiService implements ILabelsApiService {
    */
   async updateLabel(params: UpdateLabelParams): Promise<Label> {
     try {
-      console.log('[LabelsApiService] Updating label:', {
-        id: params.id,
-        updates: Object.keys(params.updates),
-      });
+      if (__DEV__) {
+        console.log('[LabelsApiService] Updating label:', {
+          id: params.id,
+          updates: Object.keys(params.updates),
+        });
+      }
 
       const updateRequest = this.convertLabelToUpdateRequest(params.updates);
       const response: ReadeckApiResponse<ReadeckLabel> =
@@ -331,7 +343,9 @@ class LabelsApiService implements ILabelsApiService {
       const label = this.convertReadeckLabelToLabel(response.data);
       this.cacheLabel(label);
 
-      console.log('[LabelsApiService] Successfully updated label:', label.id);
+      if (__DEV__) {
+        console.log('[LabelsApiService] Successfully updated label:', label.id);
+      }
       return label;
     } catch (error) {
       return this.handleApiError(error, 'Update label', params.id);
@@ -343,10 +357,12 @@ class LabelsApiService implements ILabelsApiService {
    */
   async deleteLabel(params: DeleteLabelParams): Promise<void> {
     try {
-      console.log('[LabelsApiService] Deleting label:', {
-        id: params.id,
-        transferTo: params.transferToLabel,
-      });
+      if (__DEV__) {
+        console.log('[LabelsApiService] Deleting label:', {
+          id: params.id,
+          transferTo: params.transferToLabel,
+        });
+      }
 
       const deleteParams: any = {};
       if (params.transferToLabel) {
@@ -356,7 +372,9 @@ class LabelsApiService implements ILabelsApiService {
       await readeckApiService.deleteLabel(params.id, deleteParams);
 
       this.invalidateCache(params.id);
-      console.log('[LabelsApiService] Successfully deleted label:', params.id);
+      if (__DEV__) {
+        console.log('[LabelsApiService] Successfully deleted label:', params.id);
+      }
       return; // Explicitly return void
     } catch (error) {
       throw this.handleApiError(error, 'Delete label', params.id);
@@ -368,10 +386,12 @@ class LabelsApiService implements ILabelsApiService {
    */
   async assignToArticle(params: AssignLabelToArticleParams): Promise<void> {
     try {
-      console.log('[LabelsApiService] Assigning label to article:', {
-        labelId: params.labelId,
-        articleId: params.articleId,
-      });
+      if (__DEV__) {
+        console.log('[LabelsApiService] Assigning label to article:', {
+          labelId: params.labelId,
+          articleId: params.articleId,
+        });
+      }
 
       const assignRequest: AssignLabelRequest = {
         article_id: params.articleId,
@@ -383,7 +403,9 @@ class LabelsApiService implements ILabelsApiService {
       // Invalidate cache for the affected label
       this.invalidateCache(params.labelId);
 
-      console.log('[LabelsApiService] Successfully assigned label to article');
+      if (__DEV__) {
+        console.log('[LabelsApiService] Successfully assigned label to article');
+      }
       return; // Explicitly return void
     } catch (error) {
       throw this.handleApiError(
@@ -400,10 +422,12 @@ class LabelsApiService implements ILabelsApiService {
    */
   async removeFromArticle(params: RemoveLabelFromArticleParams): Promise<void> {
     try {
-      console.log('[LabelsApiService] Removing label from article:', {
-        labelId: params.labelId,
-        articleId: params.articleId,
-      });
+      if (__DEV__) {
+        console.log('[LabelsApiService] Removing label from article:', {
+          labelId: params.labelId,
+          articleId: params.articleId,
+        });
+      }
 
       const removeRequest: RemoveLabelRequest = {
         article_id: params.articleId,
@@ -415,7 +439,9 @@ class LabelsApiService implements ILabelsApiService {
       // Invalidate cache for the affected label
       this.invalidateCache(params.labelId);
 
-      console.log('[LabelsApiService] Successfully removed label from article');
+      if (__DEV__) {
+        console.log('[LabelsApiService] Successfully removed label from article');
+      }
       return; // Explicitly return void
     } catch (error) {
       throw this.handleApiError(
@@ -435,11 +461,15 @@ class LabelsApiService implements ILabelsApiService {
       // Check cache first
       const cachedLabel = this.getCachedLabel(id);
       if (cachedLabel) {
-        console.log('[LabelsApiService] Returning cached label:', id);
+        if (__DEV__) {
+          console.log('[LabelsApiService] Returning cached label:', id);
+        }
         return cachedLabel;
       }
 
-      console.log('[LabelsApiService] Fetching label:', id);
+      if (__DEV__) {
+        console.log('[LabelsApiService] Fetching label:', id);
+      }
 
       const response: ReadeckApiResponse<ReadeckLabel> =
         await readeckApiService.getLabel(id);
@@ -447,7 +477,9 @@ class LabelsApiService implements ILabelsApiService {
       const label = this.convertReadeckLabelToLabel(response.data);
       this.cacheLabel(label);
 
-      console.log('[LabelsApiService] Successfully fetched label:', label.id);
+      if (__DEV__) {
+        console.log('[LabelsApiService] Successfully fetched label:', label.id);
+      }
       return label;
     } catch (error) {
       return this.handleApiError(error, 'Get label', id);
@@ -461,14 +493,16 @@ class LabelsApiService implements ILabelsApiService {
     params: BatchAssignLabelsParams
   ): Promise<BatchLabelAssignmentResult> {
     try {
-      console.log(
-        '[LabelsApiService] Batch label operation:',
-        params.operation,
-        {
-          labelIds: params.labelIds.length,
-          articleIds: params.articleIds.length,
-        }
-      );
+      if (__DEV__) {
+        console.log(
+          '[LabelsApiService] Batch label operation:',
+          params.operation,
+          {
+            labelIds: params.labelIds.length,
+            articleIds: params.articleIds.length,
+          }
+        );
+      }
 
       const batchRequest: BatchLabelAssignmentRequest = {
         label_ids: params.labelIds,
@@ -482,9 +516,11 @@ class LabelsApiService implements ILabelsApiService {
       // Invalidate cache for all affected labels
       params.labelIds.forEach(labelId => this.invalidateCache(labelId));
 
-      console.log(
-        `[LabelsApiService] Batch operation completed: ${response.data.successful.length} successful, ${response.data.failed.length} failed`
-      );
+      if (__DEV__) {
+        console.log(
+          `[LabelsApiService] Batch operation completed: ${response.data.successful.length} successful, ${response.data.failed.length} failed`
+        );
+      }
 
       return response.data;
     } catch (error) {
@@ -497,7 +533,9 @@ class LabelsApiService implements ILabelsApiService {
    */
   async getLabelStats(): Promise<LabelStats> {
     try {
-      console.log('[LabelsApiService] Fetching label statistics');
+      if (__DEV__) {
+        console.log('[LabelsApiService] Fetching label statistics');
+      }
 
       const response: ReadeckApiResponse<{
         total_labels: number;
@@ -534,7 +572,9 @@ class LabelsApiService implements ILabelsApiService {
     updates: Array<{ id: string; updates: Partial<Label> }>
   ): Promise<Label[]> {
     try {
-      console.log('[LabelsApiService] Batch updating labels:', updates.length);
+      if (__DEV__) {
+        console.log('[LabelsApiService] Batch updating labels:', updates.length);
+      }
 
       const updatePromises = updates.map(({ id, updates: labelUpdates }) =>
         this.updateLabel({ id, updates: labelUpdates })
@@ -542,10 +582,12 @@ class LabelsApiService implements ILabelsApiService {
 
       const labels = await Promise.all(updatePromises);
 
-      console.log(
-        '[LabelsApiService] Successfully batch updated labels:',
-        labels.length
-      );
+      if (__DEV__) {
+        console.log(
+          '[LabelsApiService] Successfully batch updated labels:',
+          labels.length
+        );
+      }
       return labels;
     } catch (error) {
       return this.handleApiError(error, 'Batch update labels');
@@ -560,17 +602,21 @@ class LabelsApiService implements ILabelsApiService {
     transferToLabel?: string
   ): Promise<void> {
     try {
-      console.log('[LabelsApiService] Batch deleting labels:', ids.length);
+      if (__DEV__) {
+        console.log('[LabelsApiService] Batch deleting labels:', ids.length);
+      }
 
       const deletePromises = ids.map(id =>
         this.deleteLabel({ id, transferToLabel })
       );
       await Promise.all(deletePromises);
 
-      console.log(
-        '[LabelsApiService] Successfully batch deleted labels:',
-        ids.length
-      );
+      if (__DEV__) {
+        console.log(
+          '[LabelsApiService] Successfully batch deleted labels:',
+          ids.length
+        );
+      }
     } catch (error) {
       this.handleApiError(error, 'Batch delete labels');
     }
@@ -581,7 +627,9 @@ class LabelsApiService implements ILabelsApiService {
    */
   async searchLabels(query: string, limit: number = 20): Promise<Label[]> {
     try {
-      console.log('[LabelsApiService] Searching labels:', query);
+      if (__DEV__) {
+        console.log('[LabelsApiService] Searching labels:', query);
+      }
 
       const response = await this.fetchLabels({
         searchQuery: query,
@@ -601,14 +649,18 @@ class LabelsApiService implements ILabelsApiService {
    */
   async getLabelsForArticle(articleId: string): Promise<Label[]> {
     try {
-      console.log('[LabelsApiService] Fetching labels for article:', articleId);
+      if (__DEV__) {
+        console.log('[LabelsApiService] Fetching labels for article:', articleId);
+      }
 
       const response: ReadeckApiResponse<{ labels: ReadeckLabel[] }> =
         await readeckApiService.getArticleLabels(articleId);
 
       // Ensure response.data and response.data.labels exist
       if (!response.data || !response.data.labels || !Array.isArray(response.data.labels)) {
-        console.warn('[LabelsApiService] Invalid article labels response structure:', response.data);
+        if (__DEV__) {
+          console.warn('[LabelsApiService] Invalid article labels response structure:', response.data);
+        }
         return [];
       }
 
@@ -618,10 +670,12 @@ class LabelsApiService implements ILabelsApiService {
         return label;
       });
 
-      console.log(
-        '[LabelsApiService] Successfully fetched labels for article:',
-        labels.length
-      );
+      if (__DEV__) {
+        console.log(
+          '[LabelsApiService] Successfully fetched labels for article:',
+          labels.length
+        );
+      }
       return labels;
     } catch (error) {
       return this.handleApiError(
@@ -637,7 +691,9 @@ class LabelsApiService implements ILabelsApiService {
    * Clear all caches
    */
   clearCache(): void {
-    console.log('[LabelsApiService] Clearing all caches');
+    if (__DEV__) {
+      console.log('[LabelsApiService] Clearing all caches');
+    }
     this.invalidateCache();
   }
 
