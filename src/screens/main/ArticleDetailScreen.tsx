@@ -8,6 +8,7 @@ import {
   Share,
   Alert,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,6 +48,11 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   const [showActions, setShowActions] = useState(false);
   const [showLabelModal, setShowLabelModal] = useState(false);
   const [contentFetched, setContentFetched] = useState(false);
+  
+  // Reset contentFetched when article changes
+  useEffect(() => {
+    setContentFetched(false);
+  }, [articleId]);
 
   // Set navigation title
   useEffect(() => {
@@ -64,46 +70,28 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   // Fetch content on first load if not already present
   useEffect(() => {
     const fetchContentIfNeeded = async () => {
-      if (!article || contentFetched) return;
+      if (!article) return;
       
-      // Check if article has no content
-      if (!article.content) {
+      // Check if article has no content and we haven't tried fetching yet
+      if (!article.content && !contentFetched) {
         setContentFetched(true);
         console.log('[ArticleDetailScreen] Article has no content, attempting to fetch...');
         
         // If it's a local article (offline-saved), try to sync to server first
         if (article.id.startsWith('local_')) {
           console.log('[ArticleDetailScreen] Local article detected, attempting to sync to server...');
-          console.log('[ArticleDetailScreen] Article details:', {
-            id: article.id,
-            title: article.title,
-            url: article.url,
-            hasContent: !!article.content,
-            contentLength: article.content?.length || 0
-          });
           
           try {
             // Create article on server first
-            console.log('[ArticleDetailScreen] Creating article on server...');
             const createdArticle = await articlesApiService.createArticle({
               title: article.title,
               url: article.url,
             });
             
-            console.log('[ArticleDetailScreen] Article created on server, now fetching full content...');
             // Fetch the full article with content
             const serverArticle = await articlesApiService.getArticle(createdArticle.id);
             
-            console.log('[ArticleDetailScreen] Article with content fetched successfully!');
-            console.log('[ArticleDetailScreen] Server article:', {
-              id: serverArticle.id,
-              title: serverArticle.title,
-              hasContent: !!serverArticle.content,
-              contentLength: serverArticle.content?.length || 0,
-              contentPreview: serverArticle.content?.substring(0, 100) || 'NO_CONTENT',
-              hasImageUrl: !!serverArticle.imageUrl,
-              hasSummary: !!serverArticle.summary
-            });
+            console.log('[ArticleDetailScreen] Article content fetched from server');
             
             // Update local article with server data and content
             const updateData = {
@@ -112,12 +100,6 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
               imageUrl: serverArticle.imageUrl || '',
             };
             
-            console.log('[ArticleDetailScreen] Updating local article with server data:', {
-              contentLength: updateData.content.length,
-              summaryLength: updateData.summary.length,
-              hasImageUrl: !!updateData.imageUrl
-            });
-            
             dispatch(
               updateArticleLocalWithDB({
                 id: articleId,
@@ -125,33 +107,15 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
               })
             );
             
-            // Show success message to user
-            setTimeout(() => {
-              if (serverArticle.content && serverArticle.content.length > 0) {
-                console.log('[ArticleDetailScreen] Content fetched successfully, length:', serverArticle.content.length);
-              } else {
-                console.log('[ArticleDetailScreen] No content was fetched from server');
-              }
-            }, 1000);
             
           } catch (syncErr) {
             console.error('[ArticleDetailScreen] Failed to sync local article to server:', syncErr);
-            console.error('[ArticleDetailScreen] Error details:', {
-              message: syncErr.message,
-              stack: syncErr.stack,
-              name: syncErr.name
-            });
-            
-            // Show user-friendly error message
-            console.log('[ArticleDetailScreen] Will try again on manual refresh');
           }
         } 
         // If it's a server article with contentUrl, fetch content
         else if (article.contentUrl) {
-          console.log('[ArticleDetailScreen] Server article with contentUrl, fetching content...');
           try {
             const htmlContent = await articlesApiService.getArticleContent(article.contentUrl);
-            console.log('[ArticleDetailScreen] Auto-fetched content, length:', htmlContent.length);
             
             dispatch(
               updateArticleLocalWithDB({
@@ -174,45 +138,26 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
     if (!article) return;
 
     setRefreshing(true);
+    setContentFetched(false); // Reset to allow refetching content
     try {
       console.log('[ArticleDetailScreen] Manual refresh - fetching full content...');
-      console.log('[ArticleDetailScreen] Current article state:', {
-        id: article.id,
-        title: article.title,
-        hasContent: !!article.content,
-        contentLength: article.content?.length || 0,
-        contentPreview: article.content?.substring(0, 50) || 'NO_CONTENT'
-      });
       
       let updatedArticle;
       
       // Handle local articles differently
       if (article.id.startsWith('local_')) {
-        console.log('[ArticleDetailScreen] Refreshing local article - creating on server first...');
         // For local articles, create on server first, then fetch full content
         const createdArticle = await articlesApiService.createArticle({
           title: article.title,
           url: article.url,
         });
-        console.log('[ArticleDetailScreen] Article created, now fetching full content...');
         updatedArticle = await articlesApiService.getArticle(createdArticle.id);
       } else {
         // For server articles, fetch existing article
         updatedArticle = await articlesApiService.getArticle(article.id);
       }
       
-      console.log('[ArticleDetailScreen] Refresh response:', {
-        hasContent: !!updatedArticle.content,
-        contentLength: updatedArticle.content?.length || 0,
-        contentPreview: updatedArticle.content?.substring(0, 100) || 'NO_CONTENT',
-        fullArticleKeys: Object.keys(updatedArticle),
-        hasContentUrl: !!updatedArticle.contentUrl
-      });
-      
-      // Content should already be fetched by getArticle method
-      // Log the result for debugging
-      
-      // Debug: Show all fields being updated
+      // Update article with fresh data
       const updateData = {
         content: updatedArticle.content,
         summary: updatedArticle.summary,
@@ -220,13 +165,6 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
         imageUrl: updatedArticle.imageUrl,
         updatedAt: updatedArticle.updatedAt,
       };
-      
-      console.log('[ArticleDetailScreen] Dispatching updates:', {
-        content: updateData.content?.substring(0, 100) || 'NO_CONTENT',
-        contentLength: updateData.content?.length || 0,
-        summary: updateData.summary?.substring(0, 50) || 'NO_SUMMARY',
-        title: updateData.title
-      });
       
       // Update local state with fresh content
       dispatch(
@@ -237,13 +175,6 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
       );
       
       console.log('[ArticleDetailScreen] Article updated via refresh');
-      
-      // Show alert with debugging info to user
-      Alert.alert(
-        'Refresh Complete',
-        `Content fetched: ${updatedArticle.content ? 'YES' : 'NO'}\nContent length: ${updatedArticle.content?.length || 0} chars\nFields available: ${Object.keys(updatedArticle).join(', ')}`,
-        [{ text: 'OK' }]
-      );
     } catch (refreshErr) {
       console.error('[ArticleDetailScreen] Failed to refresh article:', refreshErr);
       Alert.alert(
@@ -486,8 +417,11 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
             <TouchableOpacity
               style={styles.sourceContainer}
               onPress={() => {
-                // TODO: Open source URL in browser
-                Alert.alert('Source', article.sourceUrl);
+                if (article.sourceUrl) {
+                  Linking.openURL(article.sourceUrl).catch(() => {
+                    Alert.alert('Error', 'Unable to open link');
+                  });
+                }
               }}
             >
               <Text variant='caption' style={styles.sourceUrl}>

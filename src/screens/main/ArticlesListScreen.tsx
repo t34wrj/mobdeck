@@ -23,8 +23,8 @@ import {
   setPage,
   syncArticles,
   fetchArticles,
-  selectAllArticles,
 } from '../../store/slices/articlesSlice';
+import { selectFilteredArticles } from '../../store/selectors/articlesSelectors';
 import { selectIsUserAuthenticated } from '../../store/selectors/authSelectors';
 import { Article } from '../../types';
 import { useNetworkStatus } from '../../hooks/useNetworkStatus';
@@ -43,7 +43,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
     (state: RootState) => state.articles
   );
 
-  const articles = useSelector(selectAllArticles);
+  const articles = useSelector(selectFilteredArticles);
   const isAuthenticated = useSelector(selectIsUserAuthenticated);
   const { isOnline } = useNetworkStatus();
 
@@ -272,27 +272,81 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   );
 
   // Render empty state
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Text variant='h4' style={styles.emptyTitle}>
-        {searchQuery ? 'No articles found' : 'No articles yet'}
-      </Text>
-      <Text variant='body1' style={styles.emptyMessage}>
-        {searchQuery
-          ? `No articles match "${searchQuery}"`
-          : 'Pull down to sync your articles from Readeck'}
-      </Text>
-      {searchQuery && (
-        <Button
-          variant='outline'
-          onPress={handleClearSearch}
-          style={styles.clearButton}
-        >
-          <Text>Clear Search</Text>
-        </Button>
-      )}
-    </View>
-  );
+  const renderEmptyState = () => {
+    const getEmptyStateContent = () => {
+      if (searchQuery) {
+        return {
+          title: 'No articles found',
+          message: `No articles match "${searchQuery}"`,
+          showClearButton: true,
+        };
+      }
+
+      // Check which filter is active
+      const { isRead, isFavorite, isArchived } = filters;
+      
+      if (isRead === false) {
+        return {
+          title: 'No unread articles',
+          message: 'All your articles have been read',
+          showClearButton: false,
+        };
+      }
+      
+      if (isRead === true) {
+        return {
+          title: 'No read articles',
+          message: 'You haven\'t read any articles yet',
+          showClearButton: false,
+        };
+      }
+      
+      if (isFavorite === true) {
+        return {
+          title: 'No favorite articles',
+          message: 'You haven\'t marked any articles as favorites yet',
+          showClearButton: false,
+        };
+      }
+      
+      if (isArchived === true) {
+        return {
+          title: 'No archived articles',
+          message: 'You haven\'t archived any articles yet',
+          showClearButton: false,
+        };
+      }
+
+      // Default state (All filter)
+      return {
+        title: 'No articles yet',
+        message: 'Pull down to sync your articles from Readeck',
+        showClearButton: false,
+      };
+    };
+
+    const { title, message, showClearButton } = getEmptyStateContent();
+
+    return (
+      <View style={styles.emptyContainer}>
+        <Text variant='h4' style={styles.emptyTitle}>
+          {title}
+        </Text>
+        <Text variant='body1' style={styles.emptyMessage}>
+          {message}
+        </Text>
+        {showClearButton && (
+          <Button
+            variant='outline'
+            onPress={handleClearSearch}
+            style={styles.clearButton}
+          >
+            <Text>Clear Search</Text>
+          </Button>
+        )}
+      </View>
+    );
+  };
 
   // Render footer with loading indicator for pagination
   const renderFooter = () => {

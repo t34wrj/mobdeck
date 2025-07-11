@@ -71,7 +71,20 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
+      .replace(/&#34;/g, '"')
+      .replace(/&#8216;/g, "'")
+      .replace(/&#8217;/g, "'")
+      .replace(/&#8220;/g, '"')
+      .replace(/&#8221;/g, '"')
+      .replace(/&#8212;/g, '—')
+      .replace(/&#8211;/g, '–')
       .replace(/&nbsp;/g, ' ')
+      .replace(/&rsquo;/g, "'")
+      .replace(/&lsquo;/g, "'")
+      .replace(/&rdquo;/g, '"')
+      .replace(/&ldquo;/g, '"')
+      .replace(/&mdash;/g, '—')
+      .replace(/&ndash;/g, '–')
       .trim();
 
     // Split into paragraphs and render
@@ -172,11 +185,11 @@ export const ArticleContent: React.FC<ArticleContentProps> = ({
 
       {/* Content */}
       <View style={styles.contentContainer}>
-        {content ? (
+        {content && content.trim() ? (
           parseContent(content)
         ) : (
           <Text variant='body1' style={[styles.noContent, contentStyles]}>
-            No content available for this article.{'\n\n'}Pull down to refresh and load content.
+            No content available for this article.{'\n\n'}Pull down to refresh to try loading the content from the server.
           </Text>
         )}
       </View>

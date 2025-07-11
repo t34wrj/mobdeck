@@ -8,14 +8,11 @@ import { RootState } from './index';
 export const loggerMiddleware: Middleware<{}, RootState> =
   store => next => (action: AnyAction) => {
     if (__DEV__) {
+      // Only log action type for performance, skip heavy state logging
       console.log(`🔥 Action: ${action.type}`);
-      console.log('Payload:', action.payload);
-      const prevState = store.getState();
-      console.log('Previous State:', prevState);
       
       const result = next(action);
       
-      console.log('New State:', store.getState());
       return result;
     }
 

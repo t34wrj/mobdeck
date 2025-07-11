@@ -89,7 +89,13 @@ export class RetryManager {
         
         // Check if we should retry
         if (state.attempts > opts.maxRetries || !opts.retryCondition(error)) {
-          logger.warn(`[RetryManager] Failed after ${state.attempts} attempts: ${error.message || error}`);
+          // Only log as warning if it's not a 404 error (which may be expected)
+          const is404 = error.message?.includes('404') || error.status === 404;
+          if (is404) {
+            logger.debug(`[RetryManager] Resource not found after ${state.attempts} attempts: ${error.message || error}`);
+          } else {
+            logger.warn(`[RetryManager] Failed after ${state.attempts} attempts: ${error.message || error}`);
+          }
           throw error;
         }
         

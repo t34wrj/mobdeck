@@ -379,8 +379,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
         {/* App Information */}
         <SettingsSection title='About'>
-          <SettingsRow label='App Version' value='1.0.0' />
-          <SettingsRow label='Build' value='Development' />
+          <SettingsRow label='App Version' value='0.1.0' />
+          <SettingsRow label='Build' value={__DEV__ ? 'Development' : 'Release'} />
         </SettingsSection>
       </ScrollView>
     </View>
