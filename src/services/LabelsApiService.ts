@@ -247,6 +247,17 @@ class LabelsApiService implements ILabelsApiService {
       const response: ReadeckApiResponse<ReadeckLabelList> =
         await readeckApiService.getLabels(filters);
 
+      // Ensure response.data and response.data.labels exist
+      if (!response.data || !response.data.labels || !Array.isArray(response.data.labels)) {
+        console.warn('[LabelsApiService] Invalid response structure:', response.data);
+        return {
+          items: [],
+          page: 1,
+          totalPages: 1,
+          totalItems: 0,
+        };
+      }
+
       const labels = response.data.labels.map(readeckLabel => {
         const label = this.convertReadeckLabelToLabel(readeckLabel);
         if (!params.forceRefresh) {
@@ -257,9 +268,9 @@ class LabelsApiService implements ILabelsApiService {
 
       const paginatedResponse: PaginatedResponse<Label> = {
         items: labels,
-        page: response.data.pagination.page,
-        totalPages: response.data.pagination.total_pages,
-        totalItems: response.data.pagination.total_count,
+        page: response.data.pagination?.page || 1,
+        totalPages: response.data.pagination?.total_pages || 1,
+        totalItems: response.data.pagination?.total_count || labels.length,
       };
 
       console.log(
@@ -594,6 +605,12 @@ class LabelsApiService implements ILabelsApiService {
 
       const response: ReadeckApiResponse<{ labels: ReadeckLabel[] }> =
         await readeckApiService.getArticleLabels(articleId);
+
+      // Ensure response.data and response.data.labels exist
+      if (!response.data || !response.data.labels || !Array.isArray(response.data.labels)) {
+        console.warn('[LabelsApiService] Invalid article labels response structure:', response.data);
+        return [];
+      }
 
       const labels = response.data.labels.map(readeckLabel => {
         const label = this.convertReadeckLabelToLabel(readeckLabel);

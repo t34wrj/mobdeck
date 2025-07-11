@@ -217,7 +217,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             label='Last Login'
             value={
               user?.lastLoginAt
-                ? formatDate(user.lastLoginAt, { includeTime: false })
+                ? formatDate(user.lastLoginAt, { 
+                    includeTime: false, 
+                    includeYear: true 
+                  })
                 : 'Never'
             }
           />

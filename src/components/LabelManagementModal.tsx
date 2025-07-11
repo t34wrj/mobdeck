@@ -70,7 +70,8 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       setAvailableLabels(response.items);
     } catch (error) {
       console.error('Failed to load labels:', error);
-      Alert.alert('Error', 'Failed to load labels. Please try again.', [
+      const errorMessage = error?.message || 'Failed to load labels. Please try again.';
+      Alert.alert('Error', errorMessage, [
         { text: 'OK' },
       ]);
     } finally {
@@ -130,7 +131,8 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       Alert.alert('Success', `Label "${newLabel.name}" created successfully!`);
     } catch (error) {
       console.error('Failed to create label:', error);
-      Alert.alert('Error', 'Failed to create label. Please try again.', [
+      const errorMessage = error?.message || 'Failed to create label. Please try again.';
+      Alert.alert('Error', errorMessage, [
         { text: 'OK' },
       ]);
     } finally {
@@ -174,7 +176,8 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       ]);
     } catch (error) {
       console.error('Failed to update labels:', error);
-      Alert.alert('Error', 'Failed to update labels. Please try again.', [
+      const errorMessage = error?.message || 'Failed to update labels. Please try again.';
+      Alert.alert('Error', errorMessage, [
         { text: 'OK' },
       ]);
     } finally {

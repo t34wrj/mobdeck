@@ -403,8 +403,8 @@ class Logger {
       context,
     });
     
-    // Log slow operations as warning
-    if (duration > 1000) { // > 1 second
+    // Log slow operations as warning (increased threshold for mobile networks)
+    if (duration > 5000) { // > 5 seconds
       this.warn('Slow operation detected', {
         operation,
         duration: `${duration}ms`,
