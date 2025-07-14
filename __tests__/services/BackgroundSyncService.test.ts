@@ -72,7 +72,7 @@ describe('BackgroundSyncService', () => {
     });
     
     mockNetInfo.fetch.mockResolvedValue({
-      type: 'wifi',
+      type: 'wifi' as any,
       isConnected: true,
       isInternetReachable: true,
       details: { isConnectionExpensive: false },
@@ -105,7 +105,7 @@ describe('BackgroundSyncService', () => {
     it('should initialize successfully with default preferences', async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
 
       await service.initialize();
 
@@ -125,7 +125,7 @@ describe('BackgroundSyncService', () => {
     it('should not reinitialize if already initialized', async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
 
       await service.initialize();
       const firstCallCount = mockNetInfo.addEventListener.mock.calls.length;
@@ -148,7 +148,7 @@ describe('BackgroundSyncService', () => {
       mockAsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(savedPreferences));
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
 
       await service.initialize();
 
@@ -181,7 +181,7 @@ describe('BackgroundSyncService', () => {
       mockAsyncStorage.getItem.mockRejectedValueOnce(new Error('Storage read error'));
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
 
       await service.initialize();
 
@@ -196,7 +196,7 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
       await service.initialize();
     });
 
@@ -379,7 +379,7 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
       await service.initialize();
     });
 
@@ -450,7 +450,7 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
       await service.initialize();
     });
 
@@ -572,7 +572,7 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
       await service.initialize();
     });
 
@@ -697,7 +697,7 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
       await service.initialize();
     });
 
@@ -849,7 +849,7 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
       await service.initialize();
     });
 

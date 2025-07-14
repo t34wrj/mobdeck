@@ -599,7 +599,9 @@ describe('ArticlesApiService', () => {
           createMockReadeckArticle({ id: '2' }),
           createMockReadeckArticle({ id: '3' }),
         ],
+        last_updated: '2023-01-01T00:00:00Z',
         last_sync: '2023-01-01T00:00:00Z',
+        total_count: 3,
         has_more: false,
       };
 
@@ -633,7 +635,9 @@ describe('ArticlesApiService', () => {
     it('should handle full sync', async () => {
       const syncResponse: ReadeckSyncResponse = {
         articles: [createMockReadeckArticle()],
+        last_updated: '2023-01-01T00:00:00Z',
         last_sync: '2023-01-01T00:00:00Z',
+        total_count: 1,
         has_more: true,
       };
 
@@ -778,22 +782,27 @@ describe('ArticlesApiService', () => {
       const userProfile: ReadeckUserProfile = {
         id: '1',
         username: 'testuser',
-        email: 'test@example.com',
-        display_name: 'Test User',
-        bio: 'Test bio',
-        avatar_url: null,
-        settings: {
-          theme: 'light',
-          language: 'en',
+        provider: {
+          application: 'mobdeck',
+          id: 'provider-id',
+          name: 'test-provider',
+          permissions: ['read'],
+          roles: ['user']
         },
-        stats: {
-          total_articles: 100,
-          read_articles: 75,
-          favorite_articles: 25,
-          archived_articles: 10,
-        },
-        created_at: '2023-01-01T00:00:00Z',
-        updated_at: '2023-01-01T00:00:00Z',
+        user: {
+          created: '2023-01-01T00:00:00Z',
+          email: 'test@example.com',
+          username: 'testuser',
+          updated: '2023-01-01T00:00:00Z',
+          settings: {
+            debug_info: false
+          },
+          reader_settings: {
+            font: 'Arial',
+            font_size: 16,
+            line_height: 1.5
+          }
+        }
       };
 
       mockReadeckApiService.getUserProfile.mockResolvedValue(

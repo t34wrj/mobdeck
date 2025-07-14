@@ -290,7 +290,7 @@ describe('AuthStorageService', () => {
 
     it('should handle non-existent token deletion', async () => {
       // Arrange
-      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(false);
+      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(false as any);
       
       // Act
       const result = await authStorageService.deleteToken();
@@ -671,7 +671,9 @@ describe('AuthStorageService', () => {
           username: 'api_token',
           password: JSON.stringify(authDataWithUser),
           server: 'mobdeck_auth_tokens',
-        });
+          service: 'mobdeck_auth_tokens',
+          storage: 'InternetPassword'
+        } as Keychain.SharedWebCredentials);
         
         // Act
         const result = await authStorageService.retrieveAuthData();
@@ -693,7 +695,9 @@ describe('AuthStorageService', () => {
           username: 'api_token',
           password: JSON.stringify(legacyTokenData),
           server: 'mobdeck_auth_tokens',
-        });
+          service: 'mobdeck_auth_tokens',
+          storage: 'InternetPassword'
+        } as Keychain.SharedWebCredentials);
         
         // Act
         const result = await authStorageService.retrieveAuthData();
@@ -713,7 +717,9 @@ describe('AuthStorageService', () => {
           username: 'api_token',
           password: JSON.stringify(tokenWithChecksum),
           server: 'mobdeck_auth_tokens',
-        });
+          service: 'mobdeck_auth_tokens',
+          storage: 'InternetPassword'
+        } as Keychain.SharedWebCredentials);
         
         // Act
         const result = await authStorageService.retrieveAuthData();
