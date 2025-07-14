@@ -11,7 +11,7 @@
  */
 
 // Set __DEV__ global before importing DatabaseService
-global.__DEV__ = false;
+(global as any).__DEV__ = false;
 
 // Mock react-native-sqlite-storage before any imports
 jest.mock('react-native-sqlite-storage', () => {
@@ -619,7 +619,7 @@ describe('DatabaseService', () => {
         });
 
         it('should execute operations in transaction', async () => {
-            mockDb.transaction.mockImplementation((callback, errorCallback, successCallback) => {
+            mockDb.transaction.mockImplementation((callback: any, errorCallback: any, successCallback: any) => {
                 const mockTx = {
                     executeSql: jest.fn((sql, params, success) => {
                         success(mockTx, { rows: { length: 0 }, rowsAffected: 1 });
@@ -629,7 +629,7 @@ describe('DatabaseService', () => {
                 if (successCallback) successCallback();
             });
 
-            const result = await dbService.executeInTransaction(async (ctx) => {
+            const result = await dbService.executeInTransaction(async (ctx: any) => {
                 await ctx.executeSql('INSERT INTO articles (id, title, url, created_at, updated_at) VALUES (?, ?, ?, ?, ?)', 
                     ['test-1', 'Test', 'https://example.com', 1640995200, 1640995200]);
                 await ctx.executeSql('INSERT INTO articles (id, title, url, created_at, updated_at) VALUES (?, ?, ?, ?, ?)', 
@@ -642,7 +642,7 @@ describe('DatabaseService', () => {
         });
 
         it('should rollback transaction on error', async () => {
-            mockDb.transaction.mockImplementation((callback, errorCallback) => {
+            mockDb.transaction.mockImplementation((callback: any, errorCallback: any) => {
                 const mockTx = {
                     executeSql: jest.fn((sql, params, success, error) => {
                         if (sql.includes('FAIL')) {
@@ -661,7 +661,7 @@ describe('DatabaseService', () => {
                 }
             });
 
-            await expect(dbService.executeInTransaction(async (ctx) => {
+            await expect(dbService.executeInTransaction(async (ctx: any) => {
                 await ctx.executeSql('INSERT INTO articles (id, title, url, created_at, updated_at) VALUES (?, ?, ?, ?, ?)', 
                     ['test-1', 'Test', 'https://example.com', 1640995200, 1640995200]);
                 await ctx.executeSql('FAIL');

@@ -792,7 +792,7 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
       await service.initialize();
     });
 
@@ -857,7 +857,7 @@ describe('BackgroundSyncService', () => {
       removeSubscription = jest.fn();
       
       mockNetInfo.addEventListener.mockReturnValue(unsubscribe);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: removeSubscription });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: removeSubscription } as any);
       
       await service.initialize();
     });
