@@ -163,9 +163,9 @@ const createTestArticle = (id: string): Article => ({
   isRead: false,
   tags: ['test'],
   sourceUrl: 'https://example.com',
-  createdAt: new Date(),
-  updatedAt: new Date(),
-  syncedAt: new Date(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  syncedAt: new Date().toISOString(),
   isModified: false,
 });
 

@@ -76,14 +76,14 @@ const setupRealDeviceTesting = async () => {
     return true;
   } catch (error) {
     console.error('Failed to setup real device testing:', error);
-    console.error('Error details:', error.message);
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
     
     // Provide helpful debugging information
     try {
       const devices = await adbHelper.getDevices();
       console.log('Available devices for debugging:', devices);
     } catch (deviceError) {
-      console.error('Could not even check for devices:', deviceError.message);
+      console.error('Could not even check for devices:', deviceError instanceof Error ? deviceError.message : String(deviceError));
     }
     
     return false;
