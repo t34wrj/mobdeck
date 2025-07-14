@@ -124,7 +124,6 @@ metro-*.log
 # Dependencies and package managers
 node_modules/
 yarn.lock
-package-lock.json
 pnpm-lock.yaml
 .yarn-integrity
 .pnp
