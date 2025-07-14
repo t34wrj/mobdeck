@@ -131,10 +131,10 @@ const getColorValue = (color: string): string => {
 
 /**
  * Themed Text component with typography variants and customization options
- * 
+ *
  * @param props - Text component props
  * @returns Rendered text component with theme-based styling
- * 
+ *
  * @example
  * ```tsx
  * <Text variant="h1" color="primary">Main Title</Text>

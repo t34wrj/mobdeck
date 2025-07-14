@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, Switch, TextInput, TouchableOpacity } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Switch,
+  TextInput,
+  TouchableOpacity,
+} from 'react-native';
 import { Text } from '../ui/Text';
 import { Button } from '../ui/Button';
 import { theme } from '../ui/theme';
@@ -140,11 +146,7 @@ export const SyncConfigSection: React.FC<SyncConfigSectionProps> = ({
             .toLowerCase()}
         />
         <View style={styles.buttonContainer}>
-          <Button
-            variant='outline'
-            onPress={onResetSyncSettings}
-            fullWidth
-          >
+          <Button variant='outline' onPress={onResetSyncSettings} fullWidth>
             <Text>Reset to Defaults</Text>
           </Button>
         </View>

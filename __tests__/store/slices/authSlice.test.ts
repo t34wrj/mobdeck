@@ -17,7 +17,7 @@ import { AuthState, AuthenticatedUser } from '../../../src/types/auth';
 
 describe('authSlice', () => {
   let store: ReturnType<typeof configureStore>;
-  
+
   const initialState: AuthState = {
     user: null,
     token: null,
@@ -52,9 +52,9 @@ describe('authSlice', () => {
         lastLoginAt: new Date().toISOString(),
         tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
       };
-      
+
       store.dispatch(setUser(user));
-      
+
       const state = store.getState().auth;
       expect(state.user).toEqual(user);
       expect(state.isAuthenticated).toBe(true);
@@ -73,10 +73,10 @@ describe('authSlice', () => {
         tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
       };
       store.dispatch(setUser(user));
-      
+
       // Then clear
       store.dispatch(clearAuth());
-      
+
       const state = store.getState().auth;
       expect(state.isAuthenticated).toBe(false);
       expect(state.token).toBeNull();
@@ -90,10 +90,10 @@ describe('authSlice', () => {
     it('should clear error state', () => {
       // Simulate an error state by attempting a failed login
       const mockError = 'Authentication failed';
-      
+
       // We'll test error clearing after setting up error state through async action
       store.dispatch(clearError());
-      
+
       const state = store.getState().auth;
       expect(state.error).toBeNull();
     });
@@ -106,9 +106,9 @@ describe('authSlice', () => {
         username: 'testuser',
         password: 'testpass',
       };
-      
+
       store.dispatch(loginUser.pending('', credentials));
-      
+
       const state = store.getState().auth;
       expect(state.loading).toBe(true);
       expect(state.error).toBeNull();
@@ -126,13 +126,15 @@ describe('authSlice', () => {
         },
         token: 'test-token-123',
       };
-      
-      store.dispatch(loginUser.fulfilled(payload, '', {
-        serverUrl: 'https://readeck.example.com',
-        username: 'testuser',
-        password: 'testpass',
-      }));
-      
+
+      store.dispatch(
+        loginUser.fulfilled(payload, '', {
+          serverUrl: 'https://readeck.example.com',
+          username: 'testuser',
+          password: 'testpass',
+        })
+      );
+
       const state = store.getState().auth;
       expect(state.loading).toBe(false);
       expect(state.user).toEqual(payload.user);
@@ -143,13 +145,20 @@ describe('authSlice', () => {
 
     it('should handle rejected state', () => {
       const errorMessage = 'Invalid credentials';
-      
-      store.dispatch(loginUser.rejected(null, '', {
-        serverUrl: 'https://readeck.example.com',
-        username: 'testuser',
-        password: 'testpass',
-      }, errorMessage));
-      
+
+      store.dispatch(
+        loginUser.rejected(
+          null,
+          '',
+          {
+            serverUrl: 'https://readeck.example.com',
+            username: 'testuser',
+            password: 'testpass',
+          },
+          errorMessage
+        )
+      );
+
       const state = store.getState().auth;
       expect(state.loading).toBe(false);
       expect(state.user).toBeNull();
@@ -162,7 +171,7 @@ describe('authSlice', () => {
   describe('Async Actions - logoutUser', () => {
     it('should handle pending state', () => {
       store.dispatch(logoutUser.pending(''));
-      
+
       const state = store.getState().auth;
       expect(state.loading).toBe(true);
       expect(state.error).toBeNull();
@@ -179,10 +188,10 @@ describe('authSlice', () => {
         tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
       };
       store.dispatch(setUser(user));
-      
+
       // Then logout
       store.dispatch(logoutUser.fulfilled(undefined, ''));
-      
+
       const state = store.getState().auth;
       expect(state.loading).toBe(false);
       expect(state.user).toBeNull();
@@ -194,9 +203,9 @@ describe('authSlice', () => {
 
     it('should handle rejected state', () => {
       const errorMessage = 'Logout failed';
-      
+
       store.dispatch(logoutUser.rejected(null, '', undefined, errorMessage));
-      
+
       const state = store.getState().auth;
       expect(state.loading).toBe(false);
       expect(state.error).toBe(errorMessage);
@@ -206,7 +215,6 @@ describe('authSlice', () => {
       expect(state.isAuthenticated).toBe(false);
     });
   });
-
 
   describe('Complex State Transitions', () => {
     it('should handle auth initialization with stored data', () => {
@@ -221,9 +229,9 @@ describe('authSlice', () => {
         },
         token: 'stored-token',
       };
-      
+
       store.dispatch(initializeAuth.fulfilled(storedAuth, ''));
-      
+
       const state = store.getState().auth;
       expect(state.isAuthenticated).toBe(true);
       expect(state.user).toEqual(storedAuth.user);
@@ -241,10 +249,16 @@ describe('authSlice', () => {
         tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
       };
       store.dispatch(setUser(user));
-      
+
       // Then refresh token
-      store.dispatch(refreshToken.fulfilled({ token: 'new-token' }, '', 'https://readeck.example.com'));
-      
+      store.dispatch(
+        refreshToken.fulfilled(
+          { token: 'new-token' },
+          '',
+          'https://readeck.example.com'
+        )
+      );
+
       const state = store.getState().auth;
       expect(state.isAuthenticated).toBe(true);
       expect(state.token).toBe('new-token');
@@ -265,13 +279,15 @@ describe('authSlice', () => {
         },
         token: '',
       };
-      
-      store.dispatch(loginUser.fulfilled(loginPayload, '', {
-        serverUrl: 'https://readeck.example.com',
-        username: 'testuser',
-        password: 'testpass',
-      }));
-      
+
+      store.dispatch(
+        loginUser.fulfilled(loginPayload, '', {
+          serverUrl: 'https://readeck.example.com',
+          username: 'testuser',
+          password: 'testpass',
+        })
+      );
+
       const state = store.getState().auth;
       expect(state.token).toBe('');
       expect(state.isAuthenticated).toBe(true);
@@ -290,20 +306,23 @@ describe('authSlice', () => {
         },
         token: longToken,
       };
-      
-      store.dispatch(loginUser.fulfilled(loginPayload, '', {
-        serverUrl: 'https://readeck.example.com',
-        username: 'testuser',
-        password: 'testpass',
-      }));
-      
+
+      store.dispatch(
+        loginUser.fulfilled(loginPayload, '', {
+          serverUrl: 'https://readeck.example.com',
+          username: 'testuser',
+          password: 'testpass',
+        })
+      );
+
       const state = store.getState().auth;
       expect(state.token).toBe(longToken);
       expect(state.isAuthenticated).toBe(true);
     });
 
     it('should handle special characters in server URL', () => {
-      const specialUrl = 'https://readeck.example.com:8080/path?param=value#hash';
+      const specialUrl =
+        'https://readeck.example.com:8080/path?param=value#hash';
       const user: AuthenticatedUser = {
         id: 'user123',
         username: 'testuser',
@@ -312,22 +331,29 @@ describe('authSlice', () => {
         lastLoginAt: new Date().toISOString(),
         tokenExpiresAt: new Date(Date.now() + 3600000).toISOString(),
       };
-      
+
       store.dispatch(setUser(user));
-      
+
       const state = store.getState().auth;
       expect(state.user?.serverUrl).toBe(specialUrl);
     });
 
     it('should handle unicode characters in error messages', () => {
       const unicodeError = 'Authentication failed: ñáéíóú 中文 🔒';
-      
-      store.dispatch(loginUser.rejected(null, '', {
-        serverUrl: 'https://readeck.example.com',
-        username: 'testuser',
-        password: 'testpass',
-      }, unicodeError));
-      
+
+      store.dispatch(
+        loginUser.rejected(
+          null,
+          '',
+          {
+            serverUrl: 'https://readeck.example.com',
+            username: 'testuser',
+            password: 'testpass',
+          },
+          unicodeError
+        )
+      );
+
       const state = store.getState().auth;
       expect(state.error).toBe(unicodeError);
     });
@@ -347,16 +373,18 @@ describe('authSlice', () => {
         },
         token: 'auth-token',
       };
-      
-      store.dispatch(loginUser.fulfilled(loginPayload, '', {
-        serverUrl: 'https://example.com',
-        username: 'testuser',
-        password: 'testpass',
-      }));
-      
+
+      store.dispatch(
+        loginUser.fulfilled(loginPayload, '', {
+          serverUrl: 'https://example.com',
+          username: 'testuser',
+          password: 'testpass',
+        })
+      );
+
       // Clear error to test state persistence
       store.dispatch(clearError());
-      
+
       // All state should be maintained
       const state = store.getState().auth;
       expect(state.user?.serverUrl).toBe('https://example.com');

@@ -7,9 +7,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundService from 'react-native-background-actions';
 import NetInfo from '@react-native-community/netinfo';
 import { DeviceEventEmitter } from 'react-native';
-import BackgroundSyncService, { 
-  backgroundSyncService, 
-  SYNC_INTERVALS 
+import BackgroundSyncService, {
+  backgroundSyncService,
+  SYNC_INTERVALS,
 } from '../../src/services/BackgroundSyncService';
 import { syncService } from '../../src/services/SyncService';
 import { store } from '../../src/store';
@@ -50,11 +50,15 @@ jest.mock('react-native', () => ({
 describe('BackgroundSyncService', () => {
   let service: BackgroundSyncService;
   const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
-  const mockBackgroundService = BackgroundService as jest.Mocked<typeof BackgroundService>;
+  const mockBackgroundService = BackgroundService as jest.Mocked<
+    typeof BackgroundService
+  >;
   const mockNetInfo = NetInfo as jest.Mocked<typeof NetInfo>;
   const mockSyncService = syncService as jest.Mocked<typeof syncService>;
   const mockStore = store as jest.Mocked<typeof store>;
-  const mockDeviceEventEmitter = DeviceEventEmitter as jest.Mocked<typeof DeviceEventEmitter>;
+  const mockDeviceEventEmitter = DeviceEventEmitter as jest.Mocked<
+    typeof DeviceEventEmitter
+  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -62,24 +66,24 @@ describe('BackgroundSyncService', () => {
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
     jest.spyOn(console, 'debug').mockImplementation(() => {});
-    
+
     // Reset singleton instance for testing
     (BackgroundSyncService as any).instance = undefined;
     service = BackgroundSyncService.getInstance();
-    
+
     // Setup default mocks
     mockStore.getState.mockReturnValue({
       auth: { isAuthenticated: true },
       sync: { status: SyncStatus.IDLE },
     });
-    
+
     mockNetInfo.fetch.mockResolvedValue({
       type: 'wifi' as any,
       isConnected: true,
       isInternetReachable: true,
       details: { isConnectionExpensive: false },
     });
-    
+
     mockBackgroundService.isRunning.mockReturnValue(false);
     mockBackgroundService.start.mockResolvedValue();
     mockBackgroundService.stop.mockResolvedValue();
@@ -97,7 +101,7 @@ describe('BackgroundSyncService', () => {
     it('should return the same instance', () => {
       const instance1 = BackgroundSyncService.getInstance();
       const instance2 = BackgroundSyncService.getInstance();
-      
+
       expect(instance1).toBe(instance2);
     });
 
@@ -110,11 +114,15 @@ describe('BackgroundSyncService', () => {
     it('should initialize successfully with default preferences', async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
 
       await service.initialize();
 
-      expect(mockAsyncStorage.getItem).toHaveBeenCalledWith('@mobdeck/sync_preferences');
+      expect(mockAsyncStorage.getItem).toHaveBeenCalledWith(
+        '@mobdeck/sync_preferences'
+      );
       expect(mockNetInfo.addEventListener).toHaveBeenCalled();
       expect(mockNetInfo.fetch).toHaveBeenCalled();
       expect(mockDeviceEventEmitter.addListener).toHaveBeenCalledWith(
@@ -130,15 +138,21 @@ describe('BackgroundSyncService', () => {
     it('should not reinitialize if already initialized', async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
 
       await service.initialize();
       const firstCallCount = mockNetInfo.addEventListener.mock.calls.length;
-      
+
       await service.initialize();
-      
-      expect(mockNetInfo.addEventListener).toHaveBeenCalledTimes(firstCallCount);
-      expect(console.log).toHaveBeenCalledWith('[BackgroundSyncService] Already initialized');
+
+      expect(mockNetInfo.addEventListener).toHaveBeenCalledTimes(
+        firstCallCount
+      );
+      expect(console.log).toHaveBeenCalledWith(
+        '[BackgroundSyncService] Already initialized'
+      );
     });
 
     it('should load saved preferences during initialization', async () => {
@@ -149,11 +163,15 @@ describe('BackgroundSyncService', () => {
         allowCellular: false,
         allowMetered: false,
       };
-      
-      mockAsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(savedPreferences));
+
+      mockAsyncStorage.getItem.mockResolvedValueOnce(
+        JSON.stringify(savedPreferences)
+      );
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
 
       await service.initialize();
 
@@ -176,7 +194,9 @@ describe('BackgroundSyncService', () => {
       mockAsyncStorage.getItem.mockRejectedValue(new Error('Storage error'));
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
 
       // The service should handle errors gracefully and not throw
       await expect(service.initialize()).resolves.not.toThrow();
@@ -187,10 +207,14 @@ describe('BackgroundSyncService', () => {
     });
 
     it('should handle preferences loading errors gracefully', async () => {
-      mockAsyncStorage.getItem.mockRejectedValueOnce(new Error('Storage read error'));
+      mockAsyncStorage.getItem.mockRejectedValueOnce(
+        new Error('Storage read error')
+      );
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
 
       await service.initialize();
 
@@ -205,7 +229,9 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
       await service.initialize();
     });
 
@@ -322,15 +348,17 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockImplementation((event: string, handler: (data: any) => void) => {
-        if (event === 'DeviceBootCompleted') {
-          bootHandler = handler;
-        } else if (event === 'BackgroundSyncEvent') {
-          syncEventHandler = handler;
+      mockDeviceEventEmitter.addListener.mockImplementation(
+        (event: string, handler: (data: any) => void) => {
+          if (event === 'DeviceBootCompleted') {
+            bootHandler = handler;
+          } else if (event === 'BackgroundSyncEvent') {
+            syncEventHandler = handler;
+          }
+          return { remove: jest.fn() } as any;
         }
-        return { remove: jest.fn() } as any;
-      });
-      
+      );
+
       await service.initialize();
     });
 
@@ -342,13 +370,19 @@ describe('BackgroundSyncService', () => {
         allowCellular: true,
         allowMetered: true,
       };
-      
-      mockAsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(savedPreferences));
+
+      mockAsyncStorage.getItem.mockResolvedValueOnce(
+        JSON.stringify(savedPreferences)
+      );
 
       await bootHandler('boot_completed');
 
-      expect(mockAsyncStorage.getItem).toHaveBeenCalledWith('@mobdeck/sync_preferences');
-      expect(console.log).toHaveBeenCalledWith('[BackgroundSyncService] Handling device boot completion');
+      expect(mockAsyncStorage.getItem).toHaveBeenCalledWith(
+        '@mobdeck/sync_preferences'
+      );
+      expect(console.log).toHaveBeenCalledWith(
+        '[BackgroundSyncService] Handling device boot completion'
+      );
     });
 
     it('should handle boot completion errors', async () => {
@@ -366,13 +400,17 @@ describe('BackgroundSyncService', () => {
     it('should handle background sync start events', () => {
       syncEventHandler('start');
 
-      expect(console.log).toHaveBeenCalledWith('[BackgroundSyncService] Android background job started');
+      expect(console.log).toHaveBeenCalledWith(
+        '[BackgroundSyncService] Android background job started'
+      );
     });
 
     it('should handle background sync stop events', () => {
       syncEventHandler('stop');
 
-      expect(console.log).toHaveBeenCalledWith('[BackgroundSyncService] Android background job stopped');
+      expect(console.log).toHaveBeenCalledWith(
+        '[BackgroundSyncService] Android background job stopped'
+      );
     });
 
     it('should handle unknown sync events', () => {
@@ -389,7 +427,9 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
       await service.initialize();
     });
 
@@ -411,7 +451,7 @@ describe('BackgroundSyncService', () => {
     it('should cancel sync when disabled', async () => {
       // Mock that service is currently running
       mockBackgroundService.isRunning.mockReturnValue(true);
-      
+
       await service.updatePreferences({ enabled: false });
 
       expect(mockBackgroundService.stop).toHaveBeenCalled();
@@ -420,10 +460,10 @@ describe('BackgroundSyncService', () => {
     it('should cancel sync for manual interval', async () => {
       // Mock that service is currently running
       mockBackgroundService.isRunning.mockReturnValue(true);
-      
-      await service.updatePreferences({ 
-        enabled: true, 
-        interval: SYNC_INTERVALS.MANUAL 
+
+      await service.updatePreferences({
+        enabled: true,
+        interval: SYNC_INTERVALS.MANUAL,
       });
 
       expect(mockBackgroundService.stop).toHaveBeenCalled();
@@ -441,21 +481,25 @@ describe('BackgroundSyncService', () => {
     it('should handle scheduling errors', async () => {
       // Temporarily change the mock behavior for this test only
       const originalStart = mockBackgroundService.start;
-      mockBackgroundService.start = jest.fn().mockRejectedValue(new Error('Start failed'));
+      mockBackgroundService.start = jest
+        .fn()
+        .mockRejectedValue(new Error('Start failed'));
 
       await expect(service.scheduleSync()).rejects.toThrow('Start failed');
       expect(console.error).toHaveBeenCalledWith(
         '[BackgroundSyncService] Failed to schedule sync:',
         expect.any(Error)
       );
-      
+
       // Restore the original mock
       mockBackgroundService.start = originalStart;
     });
 
     it('should save next sync time', async () => {
       const fixedDate = new Date('2023-01-01T12:00:00Z');
-      const mockDateNow = jest.spyOn(Date, 'now').mockReturnValue(fixedDate.getTime());
+      const mockDateNow = jest
+        .spyOn(Date, 'now')
+        .mockReturnValue(fixedDate.getTime());
       mockBackgroundService.start.mockResolvedValue(undefined);
 
       await service.updatePreferences({ enabled: true, interval: 60 });
@@ -465,7 +509,7 @@ describe('BackgroundSyncService', () => {
         '@mobdeck/next_sync_time',
         expectedNextSync.toISOString()
       );
-      
+
       mockDateNow.mockRestore();
     });
   });
@@ -474,7 +518,9 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
       await service.initialize();
     });
 
@@ -501,7 +547,7 @@ describe('BackgroundSyncService', () => {
     it('should skip sync when user not authenticated', async () => {
       // Clear previous mock calls first
       mockSyncService.startFullSync.mockClear();
-      
+
       mockStore.getState.mockReturnValue({
         auth: { isAuthenticated: false },
         sync: { status: SyncStatus.IDLE },
@@ -518,7 +564,7 @@ describe('BackgroundSyncService', () => {
     it('should skip sync when already syncing', async () => {
       // Clear previous mock calls first
       mockSyncService.startFullSync.mockClear();
-      
+
       mockStore.getState.mockReturnValue({
         auth: { isAuthenticated: true },
         sync: { status: SyncStatus.SYNCING },
@@ -576,20 +622,24 @@ describe('BackgroundSyncService', () => {
       // Initialize service first
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
       await service.initialize();
 
-      const existingHistory = Array(25).fill(null).map((_, i) => ({
-        timestamp: new Date().toISOString(),
-        success: true,
-        itemsSynced: i,
-        duration: 100,
-        networkType: NetworkType.WIFI,
-      }));
-      
+      const existingHistory = Array(25)
+        .fill(null)
+        .map((_, i) => ({
+          timestamp: new Date().toISOString(),
+          success: true,
+          itemsSynced: i,
+          duration: 100,
+          networkType: NetworkType.WIFI,
+        }));
+
       // Clear previous mocks and set up new implementation
       mockAsyncStorage.getItem.mockReset();
-      mockAsyncStorage.getItem.mockImplementation((key) => {
+      mockAsyncStorage.getItem.mockImplementation(key => {
         if (key === '@mobdeck/sync_history') {
           return Promise.resolve(JSON.stringify(existingHistory));
         }
@@ -609,17 +659,22 @@ describe('BackgroundSyncService', () => {
       });
 
       await service.triggerManualSync();
-      
+
       // Wait for async history saving to complete
       await new Promise(resolve => setTimeout(resolve, 10));
 
       // Debug: Check all setItem calls
       const allSetItemCalls = mockAsyncStorage.setItem.mock.calls;
-      console.log('All setItem calls:', allSetItemCalls.map(call => [call[0], typeof call[1]]));
-      
-      const historyCall = allSetItemCalls.find(call => call[0] === '@mobdeck/sync_history');
+      console.log(
+        'All setItem calls:',
+        allSetItemCalls.map(call => [call[0], typeof call[1]])
+      );
+
+      const historyCall = allSetItemCalls.find(
+        call => call[0] === '@mobdeck/sync_history'
+      );
       console.log('History call found:', !!historyCall);
-      
+
       if (historyCall) {
         const savedHistory = JSON.parse(historyCall[1]);
         console.log('Saved history length:', savedHistory.length);
@@ -636,13 +691,15 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
       await service.initialize();
     });
 
     it('should allow sync on WiFi', async () => {
       await service.updatePreferences({ wifiOnly: true });
-      
+
       // Simulate WiFi network
       const networkState = {
         type: 'wifi',
@@ -650,7 +707,7 @@ describe('BackgroundSyncService', () => {
         isInternetReachable: true,
         details: { isConnectionExpensive: false },
       } as any;
-      
+
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
 
@@ -672,9 +729,9 @@ describe('BackgroundSyncService', () => {
     it('should block sync on cellular when WiFi-only enabled', async () => {
       // Clear any previous calls
       mockSyncService.startFullSync.mockClear();
-      
+
       await service.updatePreferences({ wifiOnly: true });
-      
+
       // Simulate cellular network
       const networkState = {
         type: 'cellular',
@@ -682,7 +739,7 @@ describe('BackgroundSyncService', () => {
         isInternetReachable: true,
         details: { isConnectionExpensive: true },
       } as any;
-      
+
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
 
@@ -697,12 +754,12 @@ describe('BackgroundSyncService', () => {
     it('should block sync on cellular when cellular disabled', async () => {
       // Clear any previous calls
       mockSyncService.startFullSync.mockClear();
-      
-      await service.updatePreferences({ 
-        wifiOnly: false, 
-        allowCellular: false 
+
+      await service.updatePreferences({
+        wifiOnly: false,
+        allowCellular: false,
       });
-      
+
       // Simulate cellular network
       const networkState = {
         type: 'cellular',
@@ -710,7 +767,7 @@ describe('BackgroundSyncService', () => {
         isInternetReachable: true,
         details: { isConnectionExpensive: false },
       } as any;
-      
+
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
 
@@ -725,11 +782,11 @@ describe('BackgroundSyncService', () => {
     it('should block sync on metered when metered disabled', async () => {
       // Clear any previous calls
       mockSyncService.startFullSync.mockClear();
-      
-      await service.updatePreferences({ 
-        allowMetered: false 
+
+      await service.updatePreferences({
+        allowMetered: false,
       });
-      
+
       // Simulate metered connection
       const networkState = {
         type: 'cellular',
@@ -737,7 +794,7 @@ describe('BackgroundSyncService', () => {
         isInternetReachable: true,
         details: { isConnectionExpensive: true },
       } as any;
-      
+
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
 
@@ -752,7 +809,7 @@ describe('BackgroundSyncService', () => {
     it('should block sync when offline', async () => {
       // Clear previous mock calls
       mockSyncService.startFullSync.mockClear();
-      
+
       // Simulate offline state
       const networkState = {
         type: 'none',
@@ -760,7 +817,7 @@ describe('BackgroundSyncService', () => {
         isInternetReachable: false,
         details: {},
       } as any;
-      
+
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
 
@@ -777,7 +834,9 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
       await service.initialize();
     });
 
@@ -835,7 +894,9 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
       await service.initialize();
     });
 
@@ -852,7 +913,7 @@ describe('BackgroundSyncService', () => {
         },
       ];
 
-      mockAsyncStorage.getItem.mockImplementation((key) => {
+      mockAsyncStorage.getItem.mockImplementation(key => {
         switch (key) {
           case '@mobdeck/last_sync_time':
             return Promise.resolve(lastSyncTime);
@@ -898,17 +959,19 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       unsubscribe = jest.fn();
       removeSubscription = jest.fn();
-      
+
       mockNetInfo.addEventListener.mockReturnValue(unsubscribe);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: removeSubscription } as any);
-      
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: removeSubscription,
+      } as any);
+
       await service.initialize();
     });
 
     it('should cleanup resources', () => {
       // Mock BackgroundService.isRunning to return true so stop gets called
       mockBackgroundService.isRunning.mockReturnValue(true);
-      
+
       service.cleanup();
 
       expect(unsubscribe).toHaveBeenCalled();
@@ -919,13 +982,15 @@ describe('BackgroundSyncService', () => {
     it('should handle cleanup errors gracefully', async () => {
       // Mock BackgroundService.isRunning to return true so stop gets called
       mockBackgroundService.isRunning.mockReturnValue(true);
-      
+
       // Temporarily change the mock behavior for this test only
       const originalStop = mockBackgroundService.stop;
-      mockBackgroundService.stop = jest.fn().mockRejectedValue(new Error('Stop failed'));
+      mockBackgroundService.stop = jest
+        .fn()
+        .mockRejectedValue(new Error('Stop failed'));
 
       service.cleanup();
-      
+
       // Wait for the async cancelSync to complete
       await new Promise(resolve => setTimeout(resolve, 10));
 
@@ -933,7 +998,7 @@ describe('BackgroundSyncService', () => {
         '[BackgroundSyncService] Failed to cancel sync:',
         expect.any(Error)
       );
-      
+
       // Restore the original mock
       mockBackgroundService.stop = originalStop;
     });
@@ -943,12 +1008,14 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
+      mockDeviceEventEmitter.addListener.mockReturnValue({
+        remove: jest.fn(),
+      } as any);
       await service.initialize();
     });
 
     it('should handle malformed sync history', async () => {
-      mockAsyncStorage.getItem.mockImplementation((key) => {
+      mockAsyncStorage.getItem.mockImplementation(key => {
         if (key === '@mobdeck/sync_history') {
           return Promise.resolve('invalid json');
         }
@@ -970,7 +1037,7 @@ describe('BackgroundSyncService', () => {
 
     it('should throttle rapid sync attempts', async () => {
       const lastSyncTime = new Date(Date.now() - 1000).toISOString(); // 1 second ago
-      mockAsyncStorage.getItem.mockImplementation((key) => {
+      mockAsyncStorage.getItem.mockImplementation(key => {
         if (key === '@mobdeck/last_sync_time') {
           return Promise.resolve(lastSyncTime);
         }
@@ -984,10 +1051,10 @@ describe('BackgroundSyncService', () => {
         isInternetReachable: true,
         details: { isConnectionExpensive: false },
       } as any;
-      
+
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
-      
+
       // Wait for async checkAndTriggerSync to complete
       await new Promise(resolve => setTimeout(resolve, 10));
 

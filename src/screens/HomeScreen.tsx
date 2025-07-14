@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchArticles, selectAllArticles, setFilters } from '../store/slices/articlesSlice';
+import {
+  fetchArticles,
+  selectAllArticles,
+  setFilters,
+} from '../store/slices/articlesSlice';
 import { startSyncOperation } from '../store/thunks/syncThunks';
 import ArticleCard from '../components/ArticleCard';
 import SearchBar from '../components/SearchBar';
@@ -21,7 +25,9 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
     loading: state.articles.loading.fetch,
     error: state.articles.error.fetch,
   }));
-  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated
+  );
   const { isOnline } = useSelector((state: RootState) => state.sync);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -29,16 +35,18 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
     // Only fetch articles if authenticated
     if (isAuthenticated) {
       dispatch(fetchArticles({}));
-      
+
       // Trigger sync when main page loads after authentication
       if (isOnline) {
-        dispatch(startSyncOperation({
-          syncOptions: {
-            fullTextSync: true,
-            downloadImages: true,
-          },
-          forceFull: false,
-        })).catch((syncError: any) => {
+        dispatch(
+          startSyncOperation({
+            syncOptions: {
+              fullTextSync: true,
+              downloadImages: true,
+            },
+            forceFull: false,
+          })
+        ).catch((syncError: any) => {
           console.error('Auto-sync failed on home screen load:', syncError);
         });
       }
@@ -46,8 +54,8 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
   }, [dispatch, isAuthenticated, isOnline]);
 
   const renderItem = ({ item }: { item: Article }) => (
-    <ArticleCard 
-      article={item} 
+    <ArticleCard
+      article={item}
       onPress={() => {
         // TODO: Navigate to article detail screen
         console.log('Article pressed:', item.id);
@@ -58,7 +66,9 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
   if (!isAuthenticated) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Please log in to view your articles</Text>
+        <Text style={styles.errorText}>
+          Please log in to view your articles
+        </Text>
       </View>
     );
   }
@@ -66,7 +76,7 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+        <ActivityIndicator size='large' color={theme.colors.primary[500]} />
       </View>
     );
   }
@@ -88,7 +98,7 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
 
   return (
     <View style={styles.container}>
-      <SearchBar 
+      <SearchBar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onSearchSubmit={handleSearch}

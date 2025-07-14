@@ -41,7 +41,10 @@ export interface MockSQLiteDatabase {
 // Mock database storage
 const mockTables: { [tableName: string]: any[] } = {};
 
-const createMockResult = (rows: any[] = [], rowsAffected: number = 0): MockSQLiteResult => ({
+const createMockResult = (
+  rows: any[] = [],
+  rowsAffected: number = 0
+): MockSQLiteResult => ({
   rows: {
     _array: rows,
     length: rows.length,
@@ -53,7 +56,7 @@ const createMockResult = (rows: any[] = [], rowsAffected: number = 0): MockSQLit
 
 const executeMockSql = (sql: string, params: any[] = []): MockSQLiteResult => {
   const normalizedSql = sql.toLowerCase().trim();
-  
+
   if (normalizedSql.startsWith('create table')) {
     const match = sql.match(/create table\s+(\w+)/i);
     if (match) {
@@ -64,7 +67,7 @@ const executeMockSql = (sql: string, params: any[] = []): MockSQLiteResult => {
     }
     return createMockResult([], 0);
   }
-  
+
   if (normalizedSql.startsWith('insert into')) {
     const match = sql.match(/insert into\s+(\w+)/i);
     if (match) {
@@ -77,7 +80,7 @@ const executeMockSql = (sql: string, params: any[] = []): MockSQLiteResult => {
       return createMockResult([], 1);
     }
   }
-  
+
   if (normalizedSql.startsWith('select')) {
     const match = sql.match(/from\s+(\w+)/i);
     if (match) {
@@ -86,7 +89,7 @@ const executeMockSql = (sql: string, params: any[] = []): MockSQLiteResult => {
       return createMockResult(rows, 0);
     }
   }
-  
+
   if (normalizedSql.startsWith('update')) {
     const match = sql.match(/update\s+(\w+)/i);
     if (match) {
@@ -95,7 +98,7 @@ const executeMockSql = (sql: string, params: any[] = []): MockSQLiteResult => {
       return createMockResult([], rows.length);
     }
   }
-  
+
   if (normalizedSql.startsWith('delete')) {
     const match = sql.match(/from\s+(\w+)/i);
     if (match) {
@@ -105,7 +108,7 @@ const executeMockSql = (sql: string, params: any[] = []): MockSQLiteResult => {
       return createMockResult([], rowCount);
     }
   }
-  
+
   return createMockResult([], 0);
 };
 
@@ -158,7 +161,7 @@ export const mockSQLiteStorage = {
   openDatabase: jest.fn(() => createMockDatabase()),
   enablePromise: jest.fn(),
   DEBUG: jest.fn(),
-  
+
   // Test utilities
   __clearMockTables: () => {
     Object.keys(mockTables).forEach(key => delete mockTables[key]);

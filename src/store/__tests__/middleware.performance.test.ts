@@ -15,7 +15,7 @@ describe('Middleware Performance Tests', () => {
       reducer: {
         auth: authReducer,
       },
-      middleware: (getDefaultMiddleware) =>
+      middleware: getDefaultMiddleware =>
         getDefaultMiddleware({
           serializableCheck: false,
           immutableCheck: false,
@@ -25,28 +25,34 @@ describe('Middleware Performance Tests', () => {
     });
 
     const startTime = performance.now();
-    
+
     // Dispatch auth action (will fail due to network, but we're testing middleware overhead)
     try {
-      await productionStore.dispatch(loginUser({
-        serverUrl: 'https://test.example.com',
-        username: 'test',
-        password: 'test',
-      }));
+      await productionStore.dispatch(
+        loginUser({
+          serverUrl: 'https://test.example.com',
+          username: 'test',
+          password: 'test',
+        })
+      );
     } catch (error) {
       // Expected to fail, we're testing middleware performance
     }
-    
+
     const endTime = performance.now();
     const middlewareOverhead = endTime - startTime;
-    
+
     // Should complete in <100ms (most time is network, but middleware should be minimal)
     expect(middlewareOverhead).toBeLessThan(100);
   });
 
   it('should have fewer middleware in production than development', () => {
     // Test middleware count difference
-    const devMiddleware = [errorHandlerMiddleware, loggerMiddleware, performanceMiddleware];
+    const devMiddleware = [
+      errorHandlerMiddleware,
+      loggerMiddleware,
+      performanceMiddleware,
+    ];
     const prodMiddleware = [productionErrorMiddleware];
 
     // Production middleware should have fewer components
@@ -69,7 +75,7 @@ describe('Middleware Performance Tests', () => {
     const endTime = performance.now();
 
     const executionTime = endTime - startTime;
-    
+
     // Production middleware should execute in <1ms
     expect(executionTime).toBeLessThan(1);
     expect(mockNext).toHaveBeenCalledWith(mockAction);

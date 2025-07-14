@@ -181,7 +181,7 @@ describe('ReadeckApiService Core Functionality', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockAxios = axios as jest.Mocked<typeof axios>;
-    
+
     // Create a consistent mock client that will be used across tests
     mockClient = {
       request: jest.fn(),
@@ -195,10 +195,10 @@ describe('ReadeckApiService Core Functionality', () => {
         response: { use: jest.fn() },
       },
     };
-    
+
     // Ensure axios.create returns our consistent mock client
     mockAxios.create.mockReturnValue(mockClient);
-    
+
     service = new TestableReadeckApiService();
   });
 
@@ -213,7 +213,7 @@ describe('ReadeckApiService Core Functionality', () => {
   describe('Configuration Management', () => {
     it('should initialize with default configuration', () => {
       const config = service.getConfig();
-      
+
       expect(config.baseUrl).toBe('http://localhost:8000/api/v1');
       expect(config.timeout).toBe(30000);
       expect(config.retryAttempts).toBe(3);
@@ -257,7 +257,7 @@ describe('ReadeckApiService Core Functionality', () => {
   describe('Network State Management', () => {
     it('should get initial network state', () => {
       const state = service.getNetworkState();
-      
+
       expect(state.isConnected).toBe(true);
       expect(state.isWifiEnabled).toBe(false);
       expect(state.isCellularEnabled).toBe(false);
@@ -325,7 +325,9 @@ describe('ReadeckApiService Core Functionality', () => {
 
       expect(result.data).toEqual(mockResponse.data);
       expect(result.status).toBe(200);
-      expect(result.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      expect(result.timestamp).toMatch(
+        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+      );
     });
 
     it('should validate token successfully', async () => {
@@ -602,7 +604,9 @@ describe('ReadeckApiService Core Functionality', () => {
         });
       });
 
-      const promises = Array(10).fill(null).map(() => service.getArticles());
+      const promises = Array(10)
+        .fill(null)
+        .map(() => service.getArticles());
       const results = await Promise.all(promises);
 
       expect(results).toHaveLength(10);
@@ -654,11 +658,13 @@ describe('ReadeckApiService Core Functionality', () => {
     it('should handle streaming large responses', async () => {
       const mockClient = (service as any).client;
       const largeResponse = {
-        articles: Array(1000).fill(null).map((_, i) => ({
-          id: `article-${i}`,
-          title: `Article ${i}`,
-          content: 'X'.repeat(1000),
-        })),
+        articles: Array(1000)
+          .fill(null)
+          .map((_, i) => ({
+            id: `article-${i}`,
+            title: `Article ${i}`,
+            content: 'X'.repeat(1000),
+          })),
       };
 
       mockClient.request.mockResolvedValue({
@@ -678,11 +684,11 @@ describe('ReadeckApiService Core Functionality', () => {
       });
 
       const startTime = Date.now();
-      
+
       for (let i = 0; i < 100; i++) {
         await service.getArticles();
       }
-      
+
       const endTime = Date.now();
       expect(endTime - startTime).toBeLessThan(5000); // Should complete within 5 seconds
     });

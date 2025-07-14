@@ -1,6 +1,6 @@
 /**
  * Conflict Resolution Unit Tests
- * 
+ *
  * Tests for the conflict resolution utilities including:
  * - Last-Write-Wins strategy
  * - Local-Wins and Remote-Wins strategies
@@ -202,7 +202,7 @@ describe('ConflictResolution', () => {
   describe('detectConflicts', () => {
     it('should detect title conflicts', () => {
       const conflicts = detectConflicts(localArticle, remoteArticle);
-      
+
       const titleConflict = conflicts.find(c => c.field === 'title');
       expect(titleConflict).toBeDefined();
       expect(titleConflict!.conflictType).toBe(ConflictType.CONTENT_MODIFIED);
@@ -213,21 +213,21 @@ describe('ConflictResolution', () => {
 
     it('should detect status conflicts', () => {
       const conflicts = detectConflicts(localArticle, remoteArticle);
-      
+
       const readConflict = conflicts.find(c => c.field === 'isRead');
       const favoriteConflict = conflicts.find(c => c.field === 'isFavorite');
-      
+
       expect(readConflict).toBeDefined();
       expect(readConflict!.conflictType).toBe(ConflictType.STATUS_CHANGED);
       expect(readConflict!.severity).toBe('low');
-      
+
       expect(favoriteConflict).toBeDefined();
       expect(favoriteConflict!.conflictType).toBe(ConflictType.STATUS_CHANGED);
     });
 
     it('should detect tag conflicts', () => {
       const conflicts = detectConflicts(localArticle, remoteArticle);
-      
+
       const tagConflict = conflicts.find(c => c.field === 'tags');
       expect(tagConflict).toBeDefined();
       expect(tagConflict!.conflictType).toBe(ConflictType.TAGS_UPDATED);
@@ -248,7 +248,7 @@ describe('ConflictResolution', () => {
       };
 
       const conflicts = detectConflicts(articleWithNulls as any, remoteArticle);
-      
+
       // Should detect conflicts for fields with different null/undefined vs actual values
       expect(conflicts.length).toBeGreaterThan(0);
     });
@@ -257,7 +257,7 @@ describe('ConflictResolution', () => {
   describe('mergeArticles', () => {
     it('should perform two-way merge using Last-Write-Wins when no base article', () => {
       const merged = mergeArticles(olderLocalArticle, remoteArticle);
-      
+
       // Remote should win due to later timestamp
       expect(merged.title).toBe(remoteArticle.title);
       expect(merged.isFavorite).toBe(remoteArticle.isFavorite);
@@ -271,15 +271,19 @@ describe('ConflictResolution', () => {
         title: 'New Local Title',
         updatedAt: new Date('2023-01-02T10:00:00Z'),
       };
-      
+
       const remoteWithFavoriteChange = {
         ...baseArticle,
         isFavorite: true,
         updatedAt: new Date('2023-01-02T11:00:00Z'),
       };
 
-      const merged = mergeArticles(localWithTitleChange, remoteWithFavoriteChange, baseArticle);
-      
+      const merged = mergeArticles(
+        localWithTitleChange,
+        remoteWithFavoriteChange,
+        baseArticle
+      );
+
       // Should combine both changes
       expect(merged.title).toBe('New Local Title'); // From local
       expect(merged.isFavorite).toBe(true); // From remote
@@ -293,15 +297,19 @@ describe('ConflictResolution', () => {
         title: 'Local Title Change',
         updatedAt: new Date('2023-01-02T10:00:00Z'), // Earlier
       };
-      
+
       const remoteWithTitleChange = {
         ...baseArticle,
         title: 'Remote Title Change',
         updatedAt: new Date('2023-01-02T11:00:00Z'), // Later
       };
 
-      const merged = mergeArticles(localWithTitleChange, remoteWithTitleChange, baseArticle);
-      
+      const merged = mergeArticles(
+        localWithTitleChange,
+        remoteWithTitleChange,
+        baseArticle
+      );
+
       // Remote should win due to later timestamp
       expect(merged.title).toBe('Remote Title Change');
     });
@@ -315,8 +323,12 @@ describe('ConflictResolution', () => {
         isModified: false,
       };
 
-      const validation = validateResolution(localArticle, remoteArticle, validResolution);
-      
+      const validation = validateResolution(
+        localArticle,
+        remoteArticle,
+        validResolution
+      );
+
       expect(validation.valid).toBe(true);
       expect(validation.errors).toHaveLength(0);
     });
@@ -329,8 +341,12 @@ describe('ConflictResolution', () => {
         url: '', // Empty URL
       };
 
-      const validation = validateResolution(localArticle, remoteArticle, invalidResolution);
-      
+      const validation = validateResolution(
+        localArticle,
+        remoteArticle,
+        invalidResolution
+      );
+
       expect(validation.valid).toBe(false);
       expect(validation.errors.length).toBeGreaterThan(0);
       expect(validation.errors.some(e => e.includes('ID'))).toBe(true);
@@ -346,8 +362,12 @@ describe('ConflictResolution', () => {
         updatedAt: futureDate,
       };
 
-      const validation = validateResolution(localArticle, remoteArticle, invalidResolution);
-      
+      const validation = validateResolution(
+        localArticle,
+        remoteArticle,
+        invalidResolution
+      );
+
       expect(validation.valid).toBe(false);
       expect(validation.errors.some(e => e.includes('future'))).toBe(true);
     });
@@ -357,10 +377,10 @@ describe('ConflictResolution', () => {
     it('should generate human-readable conflict descriptions', () => {
       const conflicts = detectConflicts(localArticle, remoteArticle);
       const descriptions = describeConflicts(conflicts);
-      
+
       expect(descriptions).toBeInstanceOf(Array);
       expect(descriptions.length).toBeGreaterThan(0);
-      
+
       // Check that descriptions are readable
       descriptions.forEach(description => {
         expect(typeof description).toBe('string');
@@ -394,7 +414,7 @@ describe('ConflictResolution', () => {
       ];
 
       const descriptions = describeConflicts(testConflicts);
-      
+
       expect(descriptions).toHaveLength(3);
       expect(descriptions[0]).toContain('Content in field "title"');
       expect(descriptions[1]).toContain('Status "isRead"');
@@ -407,9 +427,13 @@ describe('ConflictResolution', () => {
       expect(ConflictResolutionUtils.resolveConflict).toBe(resolveConflict);
       expect(ConflictResolutionUtils.detectConflicts).toBe(detectConflicts);
       expect(ConflictResolutionUtils.mergeArticles).toBe(mergeArticles);
-      expect(ConflictResolutionUtils.validateResolution).toBe(validateResolution);
+      expect(ConflictResolutionUtils.validateResolution).toBe(
+        validateResolution
+      );
       expect(ConflictResolutionUtils.describeConflicts).toBe(describeConflicts);
-      expect(ConflictResolutionUtils.createConflictResolutionResult).toBeDefined();
+      expect(
+        ConflictResolutionUtils.createConflictResolutionResult
+      ).toBeDefined();
     });
   });
 
@@ -445,16 +469,27 @@ describe('ConflictResolution', () => {
       const localWithEmptyTags = { ...localArticle, tags: [] };
       const remoteWithNullTags = { ...remoteArticle, tags: undefined };
 
-      const conflicts = detectConflicts(localWithEmptyTags, remoteWithNullTags as any);
+      const conflicts = detectConflicts(
+        localWithEmptyTags,
+        remoteWithNullTags as any
+      );
       const tagConflict = conflicts.find(c => c.field === 'tags');
-      
+
       expect(tagConflict).toBeDefined();
     });
 
     it('should handle very long titles and content', () => {
       const longText = 'a'.repeat(10000);
-      const localWithLongText = { ...localArticle, title: longText, content: longText };
-      const remoteWithDifferentText = { ...remoteArticle, title: 'short', content: 'short' };
+      const localWithLongText = {
+        ...localArticle,
+        title: longText,
+        content: longText,
+      };
+      const remoteWithDifferentText = {
+        ...remoteArticle,
+        title: 'short',
+        content: 'short',
+      };
 
       const resolved = resolveConflict(
         localWithLongText,

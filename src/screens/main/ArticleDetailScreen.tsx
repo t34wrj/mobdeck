@@ -6,7 +6,10 @@ import { ArticleContent } from '../../components/ArticleContent';
 import { LabelManagementModal } from '../../components/LabelManagementModal';
 import { ArticleHeader } from '../../components/article/ArticleHeader';
 import { ArticleActions } from '../../components/article/ArticleActions';
-import { ArticleLoadingState, ArticleErrorState } from '../../components/article/ArticleErrorStates';
+import {
+  ArticleLoadingState,
+  ArticleErrorState,
+} from '../../components/article/ArticleErrorStates';
 import { theme } from '../../components/ui/theme';
 import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
@@ -78,7 +81,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   if (error.fetch && !article) {
     return (
       <ArticleErrorState
-        title="Article Not Found"
+        title='Article Not Found'
         message="The article you're looking for could not be loaded."
         onGoBack={() => navigation.goBack()}
       />
@@ -89,8 +92,8 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   if (!article) {
     return (
       <ArticleErrorState
-        title="Article Not Found"
-        message="This article may have been deleted or moved."
+        title='Article Not Found'
+        message='This article may have been deleted or moved.'
         onGoBack={() => navigation.goBack()}
       />
     );

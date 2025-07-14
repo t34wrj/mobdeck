@@ -388,51 +388,55 @@ class BackgroundSyncService {
 
       // Define the background task
       const backgroundTask = async (taskDataArguments: any) => {
-        const { syncInterval, wifiOnly, allowCellular, allowMetered } = taskDataArguments;
-        
+        const { syncInterval, wifiOnly, allowCellular, allowMetered } =
+          taskDataArguments;
+
         // Helper function for delays
-        const sleep = (time: number) => new Promise<void>((resolve) => setTimeout(resolve, time));
-        
+        const sleep = (time: number) =>
+          new Promise<void>(resolve => setTimeout(resolve, time));
+
         while (BackgroundService.isRunning()) {
           try {
             // Check network conditions
             const networkState = await NetInfo.fetch();
-            
+
             if (!networkState.isConnected) {
               await sleep(syncInterval);
               continue;
             }
-            
+
             // Check WiFi-only preference
             if (wifiOnly && networkState.type !== 'wifi') {
               await sleep(syncInterval);
               continue;
             }
-            
+
             // Check cellular preference
             if (!allowCellular && networkState.type === 'cellular') {
               await sleep(syncInterval);
               continue;
             }
-            
+
             // Check metered connection preference
             if (!allowMetered && networkState.details?.isConnectionExpensive) {
               await sleep(syncInterval);
               continue;
             }
-            
+
             // Perform the actual sync
             await this.performBackgroundSync();
-            
+
             // Update notification with last sync time
             await BackgroundService.updateNotification({
               taskDesc: `Last sync: ${new Date().toLocaleTimeString()}`,
             });
-            
           } catch (error) {
-            console.error('[BackgroundSyncService] Error in background task:', error instanceof Error ? error.message : String(error));
+            console.error(
+              '[BackgroundSyncService] Error in background task:',
+              error instanceof Error ? error.message : String(error)
+            );
           }
-          
+
           await sleep(syncInterval);
         }
       };
@@ -440,7 +444,9 @@ class BackgroundSyncService {
       // Start the background service
       await BackgroundService.start(backgroundTask, options);
 
-      const nextSyncTime = new Date(Date.now() + this.syncPreferences.interval * 60 * 1000);
+      const nextSyncTime = new Date(
+        Date.now() + this.syncPreferences.interval * 60 * 1000
+      );
       console.log(
         `[BackgroundSyncService] Sync service started, next sync around ${nextSyncTime.toISOString()}`
       );
@@ -490,7 +496,9 @@ class BackgroundSyncService {
       // Check if user is authenticated first
       const state = store.getState();
       if (!state.auth.isAuthenticated) {
-        console.log('[BackgroundSyncService] User not authenticated, skipping sync');
+        console.log(
+          '[BackgroundSyncService] User not authenticated, skipping sync'
+        );
         return;
       }
 
@@ -529,7 +537,8 @@ class BackgroundSyncService {
       );
     } catch (error) {
       console.error('[BackgroundSyncService] Background sync failed:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       syncHistory.error = errorMessage;
 
       // Dispatch error to Redux store
@@ -660,19 +669,23 @@ class BackgroundSyncService {
     const lastSyncTime = await AsyncStorage.getItem(LAST_SYNC_KEY);
     const nextSyncTime = await AsyncStorage.getItem('@mobdeck/next_sync_time');
     const historyData = await AsyncStorage.getItem('@mobdeck/sync_history');
-    
+
     let history: SyncHistoryEntry[] = [];
     if (historyData) {
       try {
         history = JSON.parse(historyData);
       } catch (error) {
-        console.warn('[BackgroundSyncService] Failed to parse sync history, using empty array');
+        console.warn(
+          '[BackgroundSyncService] Failed to parse sync history, using empty array'
+        );
         history = [];
       }
     }
 
     return {
-      isRunning: BackgroundService.isRunning() || store.getState().sync.status === SyncStatus.SYNCING,
+      isRunning:
+        BackgroundService.isRunning() ||
+        store.getState().sync.status === SyncStatus.SYNCING,
       lastSyncTime,
       nextScheduledSync: nextSyncTime,
       currentNetworkType: this.getNetworkType(),

@@ -8,8 +8,8 @@ interface ArticleLoadingStateProps {
   message?: string;
 }
 
-export const ArticleLoadingState: React.FC<ArticleLoadingStateProps> = ({ 
-  message = 'Loading article...' 
+export const ArticleLoadingState: React.FC<ArticleLoadingStateProps> = ({
+  message = 'Loading article...',
 }) => (
   <View style={[styles.container, styles.centeredContainer]}>
     <ActivityIndicator size='large' color={theme.colors.primary[500]} />
@@ -37,11 +37,7 @@ export const ArticleErrorState: React.FC<ArticleErrorStateProps> = ({
     <Text variant='body1' style={styles.errorMessage}>
       {message}
     </Text>
-    <Button
-      variant='outline'
-      onPress={onGoBack}
-      style={styles.backButton}
-    >
+    <Button variant='outline' onPress={onGoBack} style={styles.backButton}>
       <Text>Go Back</Text>
     </Button>
   </View>

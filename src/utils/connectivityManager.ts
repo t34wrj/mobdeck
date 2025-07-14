@@ -3,7 +3,10 @@
  * Handles network connectivity detection and management
  */
 
-import NetInfo, { NetInfoState, NetInfoStateType } from '@react-native-community/netinfo';
+import NetInfo, {
+  NetInfoState,
+  NetInfoStateType,
+} from '@react-native-community/netinfo';
 import { logger } from './logger';
 import { NetworkType } from '../types/sync';
 
@@ -11,7 +14,7 @@ export enum ConnectivityStatus {
   ONLINE = 'online',
   OFFLINE = 'offline',
   SERVER_UNREACHABLE = 'server_unreachable',
-  CHECKING = 'checking'
+  CHECKING = 'checking',
 }
 
 export interface ConnectivityDetails {
@@ -35,7 +38,7 @@ class ConnectivityManager {
   private listeners: ConnectivityListener[] = [];
   private netInfoUnsubscribe: (() => void) | null = null;
   private isMonitoring = false;
-  
+
   private currentStatus: ConnectivityDetails = {
     isConnected: false,
     isInternetReachable: false,
@@ -59,7 +62,7 @@ class ConnectivityManager {
    */
   public addListener(listener: ConnectivityListener): void {
     this.listeners.push(listener);
-    
+
     // Start monitoring on first listener
     if (!this.isMonitoring && this.listeners.length === 1) {
       this.startMonitoring();
@@ -111,7 +114,10 @@ class ConnectivityManager {
    * Get current connectivity status
    */
   public getStatus(): ConnectivityStatus {
-    if (!this.currentStatus.isConnected || !this.currentStatus.isInternetReachable) {
+    if (
+      !this.currentStatus.isConnected ||
+      !this.currentStatus.isInternetReachable
+    ) {
       return ConnectivityStatus.OFFLINE;
     }
     return ConnectivityStatus.ONLINE;
@@ -132,7 +138,10 @@ class ConnectivityManager {
       const netInfo = await NetInfo.fetch();
       this.handleNetworkStateChange(netInfo);
     } catch (error) {
-      logger.error('[ConnectivityManager] Error refreshing connectivity:', error);
+      logger.error(
+        '[ConnectivityManager] Error refreshing connectivity:',
+        error
+      );
     }
   }
 
@@ -148,9 +157,12 @@ class ConnectivityManager {
    * Wait for connection with timeout
    */
   public async waitForConnection(timeoutMs: number): Promise<boolean> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       // If already connected, resolve immediately
-      if (this.currentStatus.isConnected && this.currentStatus.isInternetReachable) {
+      if (
+        this.currentStatus.isConnected &&
+        this.currentStatus.isInternetReachable
+      ) {
         resolve(true);
         return;
       }
@@ -224,21 +236,28 @@ class ConnectivityManager {
     if (this.isMonitoring) return;
 
     this.isMonitoring = true;
-    
+
     // Add NetInfo listener
-    this.netInfoUnsubscribe = NetInfo.addEventListener(this.handleNetworkStateChange.bind(this));
-    
+    this.netInfoUnsubscribe = NetInfo.addEventListener(
+      this.handleNetworkStateChange.bind(this)
+    );
+
     // Initial fetch
-    NetInfo.fetch().then(this.handleNetworkStateChange.bind(this)).catch((error) => {
-      logger.error('[ConnectivityManager] Error during initial fetch:', error);
-    });
+    NetInfo.fetch()
+      .then(this.handleNetworkStateChange.bind(this))
+      .catch(error => {
+        logger.error(
+          '[ConnectivityManager] Error during initial fetch:',
+          error
+        );
+      });
   }
 
   private stopMonitoring(): void {
     if (!this.isMonitoring) return;
 
     this.isMonitoring = false;
-    
+
     if (this.netInfoUnsubscribe) {
       this.netInfoUnsubscribe();
       this.netInfoUnsubscribe = null;
@@ -253,7 +272,7 @@ class ConnectivityManager {
 
     try {
       const previousStatus = { ...this.currentStatus };
-      
+
       // Update connectivity status
       this.currentStatus = {
         isConnected: state.isConnected ?? false,
@@ -276,7 +295,10 @@ class ConnectivityManager {
         this.notifyListeners();
       }
     } catch (error) {
-      logger.error('[ConnectivityManager] Error handling network state change:', error);
+      logger.error(
+        '[ConnectivityManager] Error handling network state change:',
+        error
+      );
     }
   }
 
@@ -302,7 +324,10 @@ class ConnectivityManager {
     }
   }
 
-  private hasStatusChanged(previous: ConnectivityDetails, current: ConnectivityDetails): boolean {
+  private hasStatusChanged(
+    previous: ConnectivityDetails,
+    current: ConnectivityDetails
+  ): boolean {
     return (
       previous.isConnected !== current.isConnected ||
       previous.isInternetReachable !== current.isInternetReachable ||
@@ -313,11 +338,14 @@ class ConnectivityManager {
 
   private notifyListeners(): void {
     const details = { ...this.currentStatus };
-    this.listeners.forEach((listener) => {
+    this.listeners.forEach(listener => {
       try {
         listener(details);
       } catch (error) {
-        logger.error('[ConnectivityManager] Error in listener callback:', error);
+        logger.error(
+          '[ConnectivityManager] Error in listener callback:',
+          error
+        );
       }
     });
   }

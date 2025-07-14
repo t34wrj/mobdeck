@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { saveUserPreferences, getUserPreferences } from '../../src/utils/storage';
+import {
+  saveUserPreferences,
+  getUserPreferences,
+} from '../../src/utils/storage';
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -8,8 +11,12 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 describe('Storage Utils', () => {
-  const mockSetItem = AsyncStorage.setItem as jest.MockedFunction<typeof AsyncStorage.setItem>;
-  const mockGetItem = AsyncStorage.getItem as jest.MockedFunction<typeof AsyncStorage.getItem>;
+  const mockSetItem = AsyncStorage.setItem as jest.MockedFunction<
+    typeof AsyncStorage.setItem
+  >;
+  const mockGetItem = AsyncStorage.getItem as jest.MockedFunction<
+    typeof AsyncStorage.getItem
+  >;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -41,7 +48,7 @@ describe('Storage Utils', () => {
 
       // Should not throw
       await expect(saveUserPreferences(preferences)).resolves.toBeUndefined();
-      
+
       expect(console.error).toHaveBeenCalledWith(
         'Failed to save user preferences:',
         error
@@ -54,16 +61,16 @@ describe('Storage Utils', () => {
         notifications: {
           enabled: true,
           frequency: 'daily',
-          types: ['sync', 'error']
+          types: ['sync', 'error'],
         },
         sync: {
           interval: 300000,
-          autoSync: false
+          autoSync: false,
         },
         ui: {
           density: 'compact',
-          showImages: true
-        }
+          showImages: true,
+        },
       };
       mockSetItem.mockResolvedValue();
 
@@ -100,8 +107,10 @@ describe('Storage Utils', () => {
     it('should handle circular reference objects safely', async () => {
       const circularObject: any = { name: 'test' };
       circularObject.self = circularObject;
-      
-      mockSetItem.mockRejectedValue(new TypeError('Converting circular structure to JSON'));
+
+      mockSetItem.mockRejectedValue(
+        new TypeError('Converting circular structure to JSON')
+      );
 
       await saveUserPreferences(circularObject);
 
@@ -178,12 +187,12 @@ describe('Storage Utils', () => {
         notifications: {
           enabled: true,
           frequency: 'daily',
-          types: ['sync', 'error']
+          types: ['sync', 'error'],
         },
         sync: {
           interval: 300000,
-          autoSync: false
-        }
+          autoSync: false,
+        },
       };
       mockGetItem.mockResolvedValue(JSON.stringify(complexPreferences));
 
@@ -221,9 +230,9 @@ describe('Storage Utils', () => {
   describe('Edge Cases and Error Scenarios', () => {
     it('should handle AsyncStorage being unavailable', async () => {
       mockSetItem.mockRejectedValue(new Error('AsyncStorage is not available'));
-      
+
       await saveUserPreferences({ theme: 'dark' });
-      
+
       expect(console.error).toHaveBeenCalledWith(
         'Failed to save user preferences:',
         expect.any(Error)
@@ -232,9 +241,9 @@ describe('Storage Utils', () => {
 
     it('should handle storage quota exceeded', async () => {
       mockSetItem.mockRejectedValue(new Error('Storage quota exceeded'));
-      
+
       await saveUserPreferences({ largeData: 'x'.repeat(10000) });
-      
+
       expect(console.error).toHaveBeenCalledWith(
         'Failed to save user preferences:',
         expect.any(Error)
@@ -243,9 +252,9 @@ describe('Storage Utils', () => {
 
     it('should handle storage permission denied', async () => {
       mockGetItem.mockRejectedValue(new Error('Permission denied'));
-      
+
       const result = await getUserPreferences();
-      
+
       expect(result).toBeNull();
       expect(console.error).toHaveBeenCalledWith(
         'Failed to fetch user preferences:',
@@ -256,17 +265,17 @@ describe('Storage Utils', () => {
     it('should handle concurrent access patterns', async () => {
       const preferences1 = { theme: 'dark' };
       const preferences2 = { theme: 'light' };
-      
+
       mockSetItem.mockResolvedValue();
-      
+
       // Simulate concurrent saves
       const promises = [
         saveUserPreferences(preferences1),
-        saveUserPreferences(preferences2)
+        saveUserPreferences(preferences2),
       ];
-      
+
       await Promise.all(promises);
-      
+
       expect(mockSetItem).toHaveBeenCalledTimes(2);
     });
   });

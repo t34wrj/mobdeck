@@ -42,12 +42,15 @@ export const getDeviceLocale = (): string => {
         return locale.replace('_', '-'); // Convert en_US to en-US format
       }
     }
-    
+
     // Secondary: Use navigator locale as fallback (for web environments and tests)
-    if (typeof (global as any)?.navigator !== 'undefined' && (global as any).navigator.language) {
+    if (
+      typeof (global as any)?.navigator !== 'undefined' &&
+      (global as any).navigator.language
+    ) {
       return (global as any).navigator.language;
     }
-    
+
     // Final fallback: Always return en-US
     return 'en-US';
   } catch (error) {
@@ -60,14 +63,27 @@ export const getDeviceLocale = (): string => {
  * Determines the appropriate date format pattern based on locale
  * US locales use MM/DD/YYYY, most others use DD/MM/YYYY
  */
-export const getDateFormatPattern = (locale: string = getDeviceLocale()): DateFormatPattern => {
+export const getDateFormatPattern = (
+  locale: string = getDeviceLocale()
+): DateFormatPattern => {
   // List of locales that use MM/DD/YYYY format
-  const usFormatLocales = ['en-US', 'en-AS', 'en-GU', 'en-MH', 'en-MP', 'en-PR', 'en-UM', 'en-VI'];
-  
+  const usFormatLocales = [
+    'en-US',
+    'en-AS',
+    'en-GU',
+    'en-MH',
+    'en-MP',
+    'en-PR',
+    'en-UM',
+    'en-VI',
+  ];
+
   // Check if the locale uses US date format
   const localeUpper = locale.toUpperCase();
-  const usesUSFormat = usFormatLocales.some(usLocale => localeUpper.startsWith(usLocale.toUpperCase()));
-  
+  const usesUSFormat = usFormatLocales.some(usLocale =>
+    localeUpper.startsWith(usLocale.toUpperCase())
+  );
+
   return usesUSFormat ? DateFormatPattern.US : DateFormatPattern.EU;
 };
 
@@ -84,15 +100,15 @@ export const formatDate = (
   try {
     // Convert input to Date object
     const dateObj = date instanceof Date ? date : new Date(date);
-    
+
     // Validate date
     if (isNaN(dateObj.getTime())) {
       console.warn('Invalid date provided to formatDate:', date);
       return 'Invalid Date';
     }
-    
+
     const locale = options.fallbackLocale || getDeviceLocale();
-    
+
     // Use Intl.DateTimeFormat for native locale formatting
     try {
       const formatOptions: Intl.DateTimeFormatOptions = {
@@ -100,16 +116,19 @@ export const formatDate = (
         month: options.shortFormat ? 'short' : '2-digit',
         day: '2-digit',
       };
-      
+
       if (options.includeTime) {
         formatOptions.hour = '2-digit';
         formatOptions.minute = '2-digit';
       }
-      
+
       return new Intl.DateTimeFormat(locale, formatOptions).format(dateObj);
     } catch (intlError) {
       // Fallback to manual formatting if Intl is not available
-      console.warn('Intl.DateTimeFormat not available, using fallback:', intlError);
+      console.warn(
+        'Intl.DateTimeFormat not available, using fallback:',
+        intlError
+      );
       return fallbackDateFormat(dateObj, getDateFormatPattern(locale), options);
     }
   } catch (error) {
@@ -129,9 +148,9 @@ const fallbackDateFormat = (
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
-  
+
   let formatted: string;
-  
+
   switch (pattern) {
     case DateFormatPattern.US:
       formatted = `${month}/${day}/${year}`;
@@ -145,18 +164,18 @@ const fallbackDateFormat = (
     default:
       formatted = `${month}/${day}/${year}`;
   }
-  
+
   if (options.includeYear === false) {
     // Remove year from formatted string
     formatted = formatted.substring(0, formatted.lastIndexOf('/'));
   }
-  
+
   if (options.includeTime) {
     const hours = String(date.getHours()).padStart(2, '0');
     const minutes = String(date.getMinutes()).padStart(2, '0');
     formatted += ` ${hours}:${minutes}`;
   }
-  
+
   return formatted;
 };
 
@@ -173,7 +192,7 @@ export const formatRelativeDate = (
     const now = new Date();
     const diffMs = now.getTime() - dateObj.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 0) {
       // Today
       const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -202,7 +221,7 @@ export const formatRelativeDate = (
 export const getLocaleInfo = (): LocaleInfo => {
   const currentLocale = getDeviceLocale();
   const [language, country] = currentLocale.split('-');
-  
+
   return {
     locale: currentLocale,
     language,

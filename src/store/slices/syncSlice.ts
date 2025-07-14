@@ -236,7 +236,10 @@ const syncSlice = createSlice({
 
     clearSyncError: state => {
       state.error = null;
-      if (state.status === SyncStatus.ERROR || state.status === SyncStatus.SUCCESS) {
+      if (
+        state.status === SyncStatus.ERROR ||
+        state.status === SyncStatus.SUCCESS
+      ) {
         state.status = SyncStatus.IDLE;
       }
     },
@@ -307,11 +310,11 @@ const syncSlice = createSlice({
       state.stats = initialState.stats;
     },
   },
-  extraReducers: (builder) => {
+  extraReducers: builder => {
     // Handle async thunk actions
     builder
       // Start sync operation
-      .addCase('sync/startOperation/pending', (state) => {
+      .addCase('sync/startOperation/pending', state => {
         state.status = SyncStatus.SYNCING;
         state.error = null;
         state.progress = {
@@ -323,7 +326,7 @@ const syncSlice = createSlice({
         };
         state.stats.totalSyncs += 1;
       })
-      .addCase('sync/startOperation/fulfilled', (_state) => {
+      .addCase('sync/startOperation/fulfilled', _state => {
         // Success is handled by the sync service dispatching syncSuccess
       })
       .addCase('sync/startOperation/rejected', (state, action) => {
@@ -332,13 +335,13 @@ const syncSlice = createSlice({
         state.stats.failedSyncs += 1;
       })
       // Pause sync operation
-      .addCase('sync/pauseOperation/fulfilled', (state) => {
+      .addCase('sync/pauseOperation/fulfilled', state => {
         if (state.status === SyncStatus.SYNCING) {
           state.status = SyncStatus.PAUSED;
         }
       })
       // Resume sync operation
-      .addCase('sync/resumeOperation/pending', (state) => {
+      .addCase('sync/resumeOperation/pending', state => {
         if (state.status === SyncStatus.PAUSED) {
           state.status = SyncStatus.SYNCING;
         }
@@ -348,7 +351,7 @@ const syncSlice = createSlice({
         state.error = action.error.message || 'Resume sync failed';
       })
       // Cancel sync operation
-      .addCase('sync/cancelOperation/fulfilled', (state) => {
+      .addCase('sync/cancelOperation/fulfilled', state => {
         state.status = SyncStatus.IDLE;
         state.error = null;
         state.progress = {

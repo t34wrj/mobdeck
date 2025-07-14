@@ -45,14 +45,14 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
 
   // Predefined colors for new labels - using theme colors
   const LABEL_COLORS = [
-    theme.colors.primary[500],   // Giants Orange
+    theme.colors.primary[500], // Giants Orange
     theme.colors.secondary[500], // Xanthous Yellow
-    theme.colors.accent[500],    // Tiffany Blue
-    theme.colors.success[600],   // Castleton Green
-    theme.colors.error[500],     // Error Red
-    theme.colors.dark[600],      // Yale Blue (darker shade)
-    theme.colors.warning[600],   // Warning Orange
-    theme.colors.info[600],      // Info Cyan
+    theme.colors.accent[500], // Tiffany Blue
+    theme.colors.success[600], // Castleton Green
+    theme.colors.error[500], // Error Red
+    theme.colors.dark[600], // Yale Blue (darker shade)
+    theme.colors.warning[600], // Warning Orange
+    theme.colors.info[600], // Info Cyan
   ];
 
   // Load available labels
@@ -70,10 +70,9 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       setAvailableLabels(response.items);
     } catch (error) {
       console.error('Failed to load labels:', error);
-      const errorMessage = error?.message || 'Failed to load labels. Please try again.';
-      Alert.alert('Error', errorMessage, [
-        { text: 'OK' },
-      ]);
+      const errorMessage =
+        error?.message || 'Failed to load labels. Please try again.';
+      Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     } finally {
       setLoading(false);
     }
@@ -131,10 +130,9 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       Alert.alert('Success', `Label "${newLabel.name}" created successfully!`);
     } catch (error) {
       console.error('Failed to create label:', error);
-      const errorMessage = error?.message || 'Failed to create label. Please try again.';
-      Alert.alert('Error', errorMessage, [
-        { text: 'OK' },
-      ]);
+      const errorMessage =
+        error?.message || 'Failed to create label. Please try again.';
+      Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     } finally {
       setLoading(false);
     }
@@ -176,10 +174,9 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       ]);
     } catch (error) {
       console.error('Failed to update labels:', error);
-      const errorMessage = error?.message || 'Failed to update labels. Please try again.';
-      Alert.alert('Error', errorMessage, [
-        { text: 'OK' },
-      ]);
+      const errorMessage =
+        error?.message || 'Failed to update labels. Please try again.';
+      Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     } finally {
       setSaving(false);
     }
@@ -256,9 +253,9 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       presentationStyle='pageSheet'
       onRequestClose={onClose}
     >
-      <StatusBar 
-        backgroundColor={theme.colors.neutral[100]} 
-        barStyle="dark-content"
+      <StatusBar
+        backgroundColor={theme.colors.neutral[100]}
+        barStyle='dark-content'
       />
       <View style={styles.container}>
         {/* Header */}

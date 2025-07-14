@@ -4,7 +4,12 @@ export * from './async-storage';
 export * from './sqlite-storage';
 export * from './navigation';
 
-import { AxiosStatic, AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios';
+import {
+  AxiosStatic,
+  AxiosInstance,
+  AxiosResponse,
+  AxiosRequestConfig,
+} from 'axios';
 
 // Additional utility mocks
 export const mockAxios = {
@@ -64,42 +69,48 @@ export const mockAxios = {
   Cancel: jest.fn(),
   isAxiosError: jest.fn(() => false),
   all: jest.fn(() => Promise.resolve([])),
-  spread: jest.fn((callback) => callback),
+  spread: jest.fn(callback => callback),
 } as unknown as jest.Mocked<AxiosStatic>;
 
 export const mockNetInfo = {
   addEventListener: jest.fn(() => jest.fn()),
-  fetch: jest.fn(() => Promise.resolve({
-    type: 'wifi',
-    isConnected: true,
-    isInternetReachable: true,
-    details: {
-      isConnectionExpensive: false,
-      ssid: 'MockWiFi',
-      bssid: '00:00:00:00:00:00',
-      strength: 99,
-      ipAddress: '192.168.1.100',
-      subnet: '255.255.255.0',
-    },
-  })),
+  fetch: jest.fn(() =>
+    Promise.resolve({
+      type: 'wifi',
+      isConnected: true,
+      isInternetReachable: true,
+      details: {
+        isConnectionExpensive: false,
+        ssid: 'MockWiFi',
+        bssid: '00:00:00:00:00:00',
+        strength: 99,
+        ipAddress: '192.168.1.100',
+        subnet: '255.255.255.0',
+      },
+    })
+  ),
   refresh: jest.fn(() => Promise.resolve()),
   configure: jest.fn(),
 };
 
 export const mockKeychain = {
   setInternetCredentials: jest.fn(() => Promise.resolve()),
-  getInternetCredentials: jest.fn(() => Promise.resolve({
-    username: 'test-user',
-    password: 'test-password',
-    server: 'test-server',
-  })),
+  getInternetCredentials: jest.fn(() =>
+    Promise.resolve({
+      username: 'test-user',
+      password: 'test-password',
+      server: 'test-server',
+    })
+  ),
   resetInternetCredentials: jest.fn(() => Promise.resolve()),
   hasInternetCredentials: jest.fn(() => Promise.resolve(true)),
   setGenericPassword: jest.fn(() => Promise.resolve()),
-  getGenericPassword: jest.fn(() => Promise.resolve({
-    username: 'test-user',
-    password: 'test-password',
-  })),
+  getGenericPassword: jest.fn(() =>
+    Promise.resolve({
+      username: 'test-user',
+      password: 'test-password',
+    })
+  ),
   resetGenericPassword: jest.fn(() => Promise.resolve()),
   canImplyAuthentication: jest.fn(() => Promise.resolve(true)),
   getSupportedBiometryType: jest.fn(() => Promise.resolve('FaceID')),
@@ -117,16 +128,18 @@ export const mockRNFS = {
   unlink: jest.fn(() => Promise.resolve()),
   mkdir: jest.fn(() => Promise.resolve()),
   readDir: jest.fn(() => Promise.resolve([])),
-  stat: jest.fn(() => Promise.resolve({
-    path: '/mock/path',
-    ctime: new Date(),
-    mtime: new Date(),
-    size: 1024,
-    mode: 33188,
-    originalFilepath: '/mock/path',
-    isFile: () => true,
-    isDirectory: () => false,
-  })),
+  stat: jest.fn(() =>
+    Promise.resolve({
+      path: '/mock/path',
+      ctime: new Date(),
+      mtime: new Date(),
+      size: 1024,
+      mode: 33188,
+      originalFilepath: '/mock/path',
+      isFile: () => true,
+      isDirectory: () => false,
+    })
+  ),
   copyFile: jest.fn(() => Promise.resolve()),
   moveFile: jest.fn(() => Promise.resolve()),
   downloadFile: jest.fn(() => ({

@@ -5,14 +5,18 @@
 
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import { ArticleCard, ArticleCardProps } from '../../src/components/ArticleCard';
+import {
+  ArticleCard,
+  ArticleCardProps,
+} from '../../src/components/ArticleCard';
 import { Article } from '../../src/types';
 
 describe('ArticleCard', () => {
   const mockArticle: Article = {
     id: 'test-article-1',
     title: 'Test Article Title',
-    summary: 'This is a test article summary that should be displayed in the card',
+    summary:
+      'This is a test article summary that should be displayed in the card',
     content: 'Full article content',
     url: 'https://example.com/article',
     imageUrl: 'https://example.com/image.jpg',
@@ -48,7 +52,7 @@ describe('ArticleCard', () => {
   describe('Rendering', () => {
     it('should render article card with basic information', () => {
       const { getByText } = render(<ArticleCard {...defaultProps} />);
-      
+
       expect(getByText(mockArticle.title)).toBeTruthy();
       expect(getByText(mockArticle.summary!)).toBeTruthy();
       expect(getByText('5 min read')).toBeTruthy();
@@ -56,7 +60,7 @@ describe('ArticleCard', () => {
 
     it('should render article with image when imageUrl is provided', () => {
       const { getByTestId } = render(<ArticleCard {...defaultProps} />);
-      
+
       const image = getByTestId('article-image');
       expect(image.props.source).toEqual({ uri: mockArticle.imageUrl });
     });
@@ -66,7 +70,7 @@ describe('ArticleCard', () => {
       const { queryByTestId } = render(
         <ArticleCard {...defaultProps} article={articleWithoutImage} />
       );
-      
+
       expect(queryByTestId('article-image')).toBeNull();
     });
 
@@ -75,10 +79,15 @@ describe('ArticleCard', () => {
       const { getByTestId } = render(
         <ArticleCard {...defaultProps} article={readArticle} />
       );
-      
+
       const container = getByTestId('article-card-container');
-      const styles = Array.isArray(container.props.style) ? container.props.style : [container.props.style];
-      const hasOpacity = styles.some((style: any) => style && typeof style === 'object' && style.opacity === 0.7);
+      const styles = Array.isArray(container.props.style)
+        ? container.props.style
+        : [container.props.style];
+      const hasOpacity = styles.some(
+        (style: any) =>
+          style && typeof style === 'object' && style.opacity === 0.7
+      );
       expect(hasOpacity).toBe(true);
     });
 
@@ -87,7 +96,7 @@ describe('ArticleCard', () => {
       const { getByTestId } = render(
         <ArticleCard {...defaultProps} article={favoriteArticle} />
       );
-      
+
       expect(getByTestId('favorite-indicator')).toBeTruthy();
     });
 
@@ -96,13 +105,13 @@ describe('ArticleCard', () => {
       const { getByTestId } = render(
         <ArticleCard {...defaultProps} article={archivedArticle} />
       );
-      
+
       expect(getByTestId('archive-indicator')).toBeTruthy();
     });
 
     it('should display tags when present', () => {
       const { getByText } = render(<ArticleCard {...defaultProps} />);
-      
+
       mockArticle.tags?.forEach(tag => {
         expect(getByText(tag)).toBeTruthy();
       });
@@ -113,7 +122,7 @@ describe('ArticleCard', () => {
       const { queryByText } = render(
         <ArticleCard {...defaultProps} article={articleWithoutSummary} />
       );
-      
+
       expect(queryByText('This is a test article summary')).toBeNull();
     });
 
@@ -122,7 +131,7 @@ describe('ArticleCard', () => {
       const { queryByText } = render(
         <ArticleCard {...defaultProps} article={articleWithoutReadTime} />
       );
-      
+
       expect(queryByText('min read')).toBeNull();
     });
 
@@ -131,13 +140,14 @@ describe('ArticleCard', () => {
       const { getByTestId } = render(
         <ArticleCard {...defaultProps} style={customStyle} />
       );
-      
+
       const container = getByTestId('article-card-container');
-      const styles = Array.isArray(container.props.style) ? container.props.style : [container.props.style];
-      const hasCustomStyle = styles.some((style: any) => 
-        style && 
-        typeof style === 'object' && 
-        style.backgroundColor === 'red'
+      const styles = Array.isArray(container.props.style)
+        ? container.props.style
+        : [container.props.style];
+      const hasCustomStyle = styles.some(
+        (style: any) =>
+          style && typeof style === 'object' && style.backgroundColor === 'red'
       );
       expect(hasCustomStyle).toBe(true);
     });
@@ -149,11 +159,11 @@ describe('ArticleCard', () => {
         ...mockArticle,
         createdAt: new Date('2024-01-10T11:30:00Z').toISOString(),
       };
-      
+
       const { getByText } = render(
         <ArticleCard {...defaultProps} article={recentArticle} />
       );
-      
+
       expect(getByText('Just now')).toBeTruthy();
     });
 
@@ -162,11 +172,11 @@ describe('ArticleCard', () => {
         ...mockArticle,
         createdAt: new Date('2024-01-10T09:00:00Z').toISOString(),
       };
-      
+
       const { getByText } = render(
         <ArticleCard {...defaultProps} article={todayArticle} />
       );
-      
+
       expect(getByText('3h ago')).toBeTruthy();
     });
 
@@ -175,11 +185,11 @@ describe('ArticleCard', () => {
         ...mockArticle,
         createdAt: new Date('2024-01-07T12:00:00Z').toISOString(),
       };
-      
+
       const { getByText } = render(
         <ArticleCard {...defaultProps} article={thisWeekArticle} />
       );
-      
+
       expect(getByText('3d ago')).toBeTruthy();
     });
 
@@ -188,11 +198,11 @@ describe('ArticleCard', () => {
         ...mockArticle,
         createdAt: new Date('2023-12-01T12:00:00Z').toISOString(),
       };
-      
+
       const { getByText } = render(
         <ArticleCard {...defaultProps} article={oldArticle} />
       );
-      
+
       // Date format may vary by locale
       expect(getByText(/2023/)).toBeTruthy();
     });
@@ -201,52 +211,56 @@ describe('ArticleCard', () => {
   describe('Interactions', () => {
     it('should handle press events', () => {
       const { getByTestId } = render(<ArticleCard {...defaultProps} />);
-      
+
       fireEvent.press(getByTestId('article-card-container'));
-      
+
       expect(defaultProps.onPress).toHaveBeenCalledTimes(1);
     });
 
     it('should handle long press events', () => {
       const { getByTestId } = render(<ArticleCard {...defaultProps} />);
-      
+
       fireEvent(getByTestId('article-card-container'), 'longPress');
-      
+
       expect(defaultProps.onLongPress).toHaveBeenCalledTimes(1);
     });
 
     it('should not call long press if not provided', () => {
       const propsWithoutLongPress = { ...defaultProps, onLongPress: undefined };
-      const { getByTestId } = render(<ArticleCard {...propsWithoutLongPress} />);
-      
+      const { getByTestId } = render(
+        <ArticleCard {...propsWithoutLongPress} />
+      );
+
       // Should not throw
       fireEvent(getByTestId('article-card-container'), 'longPress');
     });
 
     it('should handle favorite toggle', () => {
       const { getByTestId } = render(<ArticleCard {...defaultProps} />);
-      
+
       const favoriteButton = getByTestId('favorite-button');
       fireEvent.press(favoriteButton);
-      
+
       expect(defaultProps.onToggleFavorite).toHaveBeenCalledTimes(1);
     });
 
     it('should handle archive toggle', () => {
       const { getByTestId } = render(<ArticleCard {...defaultProps} />);
-      
+
       const archiveButton = getByTestId('archive-button');
       fireEvent.press(archiveButton);
-      
+
       expect(defaultProps.onToggleArchive).toHaveBeenCalledTimes(1);
     });
 
     it('should disable interactions when loading', () => {
-      const { getByTestId, rerender } = render(<ArticleCard {...defaultProps} />);
-      
+      const { getByTestId, rerender } = render(
+        <ArticleCard {...defaultProps} />
+      );
+
       // Add loading state
       rerender(<ArticleCard {...defaultProps} loading />);
-      
+
       const container = getByTestId('article-card-container');
       expect(container.props.disabled).toBe(true);
     });
@@ -256,13 +270,14 @@ describe('ArticleCard', () => {
     it('should handle very long titles', () => {
       const longTitleArticle = {
         ...mockArticle,
-        title: 'This is a very long title that should be truncated when it exceeds the maximum number of lines allowed in the card display',
+        title:
+          'This is a very long title that should be truncated when it exceeds the maximum number of lines allowed in the card display',
       };
-      
+
       const { getByText } = render(
         <ArticleCard {...defaultProps} article={longTitleArticle} />
       );
-      
+
       const titleElement = getByText(longTitleArticle.title);
       expect(titleElement.props.numberOfLines).toBe(2);
     });
@@ -272,11 +287,11 @@ describe('ArticleCard', () => {
         ...mockArticle,
         summary: 'This is a very long summary '.repeat(20),
       };
-      
+
       const { getByText } = render(
         <ArticleCard {...defaultProps} article={longSummaryArticle} />
       );
-      
+
       const summaryElement = getByText(longSummaryArticle.summary);
       expect(summaryElement.props.numberOfLines).toBe(3);
     });
@@ -286,11 +301,11 @@ describe('ArticleCard', () => {
         ...mockArticle,
         readTime: -5,
       };
-      
+
       const { queryByText } = render(
         <ArticleCard {...defaultProps} article={invalidReadTimeArticle} />
       );
-      
+
       expect(queryByText('min read')).toBeNull();
     });
 
@@ -299,11 +314,11 @@ describe('ArticleCard', () => {
         ...mockArticle,
         readTime: NaN,
       };
-      
+
       const { queryByText } = render(
         <ArticleCard {...defaultProps} article={nanReadTimeArticle} />
       );
-      
+
       expect(queryByText('min read')).toBeNull();
     });
 
@@ -312,11 +327,11 @@ describe('ArticleCard', () => {
         ...mockArticle,
         sourceUrl: undefined,
       };
-      
+
       const { queryByText } = render(
         <ArticleCard {...defaultProps} article={noSourceArticle} />
       );
-      
+
       // Should render without errors
       expect(queryByText(mockArticle.title)).toBeTruthy();
     });
@@ -326,11 +341,11 @@ describe('ArticleCard', () => {
         ...mockArticle,
         tags: [],
       };
-      
+
       const { queryByTestId } = render(
         <ArticleCard {...defaultProps} article={noTagsArticle} />
       );
-      
+
       expect(queryByTestId('tags-container')).toBeNull();
     });
   });
@@ -338,7 +353,7 @@ describe('ArticleCard', () => {
   describe('Accessibility', () => {
     it('should have proper accessibility labels', () => {
       const { getByLabelText } = render(<ArticleCard {...defaultProps} />);
-      
+
       expect(getByLabelText(`Article: ${mockArticle.title}`)).toBeTruthy();
     });
 
@@ -347,14 +362,14 @@ describe('ArticleCard', () => {
       const { getByLabelText } = render(
         <ArticleCard {...defaultProps} article={readArticle} />
       );
-      
+
       // The accessibility label is "Article: {title}" for all articles
       expect(getByLabelText(/Article:/)).toBeTruthy();
     });
 
     it('should have accessible favorite button', () => {
       const { getByLabelText } = render(<ArticleCard {...defaultProps} />);
-      
+
       expect(getByLabelText('Add to favorites')).toBeTruthy();
     });
 
@@ -363,13 +378,13 @@ describe('ArticleCard', () => {
       const { getByLabelText } = render(
         <ArticleCard {...defaultProps} article={favoriteArticle} />
       );
-      
+
       expect(getByLabelText('Remove from favorites')).toBeTruthy();
     });
 
     it('should have accessible archive button', () => {
       const { getByLabelText } = render(<ArticleCard {...defaultProps} />);
-      
+
       expect(getByLabelText('Archive article')).toBeTruthy();
     });
 
@@ -378,7 +393,7 @@ describe('ArticleCard', () => {
       const { getByLabelText } = render(
         <ArticleCard {...defaultProps} article={archivedArticle} />
       );
-      
+
       expect(getByLabelText('Unarchive article')).toBeTruthy();
     });
   });
@@ -386,19 +401,19 @@ describe('ArticleCard', () => {
   describe('Performance', () => {
     it('should not re-render unnecessarily', () => {
       const renderSpy = jest.fn();
-      
+
       const TestWrapper = (props: ArticleCardProps) => {
         renderSpy();
         return <ArticleCard {...props} />;
       };
-      
+
       const { rerender } = render(<TestWrapper {...defaultProps} />);
-      
+
       expect(renderSpy).toHaveBeenCalledTimes(1);
-      
+
       // Re-render with same props
       rerender(<TestWrapper {...defaultProps} />);
-      
+
       // Should use memoization
       expect(renderSpy).toHaveBeenCalledTimes(2);
     });

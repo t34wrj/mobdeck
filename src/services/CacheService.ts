@@ -1,6 +1,6 @@
 /**
  * High-Performance Cache Service
- * 
+ *
  * Features:
  * - In-memory caching with O(1) access time
  * - LRU (Least Recently Used) eviction policy
@@ -83,10 +83,10 @@ class CacheImpl<T> {
    */
   get(key: string): T | null {
     const startTime = performance.now();
-    
+
     // Direct map access - O(1)
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       const endTime = performance.now();
       this.recordMiss(endTime - startTime);
@@ -107,10 +107,10 @@ class CacheImpl<T> {
     entry.lastAccessed = now;
     entry.accessCount++;
     this.accessOrder.set(key, now);
-    
+
     const endTime = performance.now();
     this.recordHit(endTime - startTime);
-    
+
     // Return data directly - already in memory
     return entry.data;
   }
@@ -121,13 +121,15 @@ class CacheImpl<T> {
   set(key: string, value: T, ttl?: number): void {
     const now = Date.now();
     const expiresAt = now + (ttl || this.options.ttl);
-    
+
     // Calculate entry size
     const size = this.estimateSize(value);
-    
+
     // Check if eviction is needed
-    if (this.cache.size >= this.options.maxSize || 
-        this.totalMemory + size > this.options.maxMemory) {
+    if (
+      this.cache.size >= this.options.maxSize ||
+      this.totalMemory + size > this.options.maxMemory
+    ) {
       this.evictLRU();
     }
 
@@ -156,7 +158,7 @@ class CacheImpl<T> {
     if (existingEntry) {
       this.totalMemory -= existingEntry.size;
     }
-    
+
     this.cache.set(key, entry);
     this.accessOrder.set(key, now);
     this.totalMemory += size;
@@ -171,14 +173,14 @@ class CacheImpl<T> {
   has(key: string): boolean {
     const entry = this.cache.get(key);
     if (!entry) return false;
-    
+
     // Quick expiration check
     if (entry.expiresAt < Date.now()) {
       this.cache.delete(key);
       this.accessOrder.delete(key);
       return false;
     }
-    
+
     return true;
   }
 
@@ -192,7 +194,7 @@ class CacheImpl<T> {
       this.stats.size = this.cache.size - 1;
       this.stats.memoryUsage = this.totalMemory;
     }
-    
+
     this.accessOrder.delete(key);
     return this.cache.delete(key);
   }
@@ -230,10 +232,10 @@ class CacheImpl<T> {
     // Sort by last accessed time
     const entries = Array.from(this.accessOrder.entries());
     entries.sort((a, b) => a[1] - b[1]);
-    
+
     // Evict 25% of entries or until memory is under limit
     const toEvict = Math.max(1, Math.floor(this.cache.size * 0.25));
-    
+
     for (let i = 0; i < toEvict && i < entries.length; i++) {
       const [key] = entries[i];
       const entry = this.cache.get(key);
@@ -243,13 +245,13 @@ class CacheImpl<T> {
         this.accessOrder.delete(key);
         this.stats.evictions++;
       }
-      
+
       // Stop if memory is under limit
       if (this.totalMemory < this.options.maxMemory * 0.9) {
         break;
       }
     }
-    
+
     this.stats.size = this.cache.size;
     this.stats.memoryUsage = this.totalMemory;
   }

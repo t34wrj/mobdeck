@@ -154,10 +154,12 @@ export const fetchArticles = createAsyncThunk<
 >('articles/fetchArticles', async (params, { rejectWithValue, getState }) => {
   try {
     const state = getState();
-    
+
     // Check if user is authenticated
     if (!state.auth.isAuthenticated || !state.auth.user) {
-      return rejectWithValue('Please configure your Readeck server settings first');
+      return rejectWithValue(
+        'Please configure your Readeck server settings first'
+      );
     }
 
     const currentPage = params.page || state.articles.pagination.page;
@@ -173,20 +175,31 @@ export const fetchArticles = createAsyncThunk<
     return response;
   } catch (error) {
     console.error('[articlesSlice] fetchArticles error:', error);
-    
+
     let errorMessage = 'Failed to fetch articles';
     if (error instanceof Error) {
-      if (error.message.includes('401') || error.message.includes('unauthorized')) {
-        errorMessage = 'Authentication failed. Please check your server settings.';
-      } else if (error.message.includes('404') || error.message.includes('not found')) {
+      if (
+        error.message.includes('401') ||
+        error.message.includes('unauthorized')
+      ) {
+        errorMessage =
+          'Authentication failed. Please check your server settings.';
+      } else if (
+        error.message.includes('404') ||
+        error.message.includes('not found')
+      ) {
         errorMessage = 'Server not found. Please check your server URL.';
-      } else if (error.message.includes('Network') || error.message.includes('network')) {
-        errorMessage = 'Network error. Please check your connection and server URL.';
+      } else if (
+        error.message.includes('Network') ||
+        error.message.includes('network')
+      ) {
+        errorMessage =
+          'Network error. Please check your connection and server URL.';
       } else {
         errorMessage = error.message;
       }
     }
-    
+
     return rejectWithValue(errorMessage);
   }
 });
@@ -214,7 +227,7 @@ export const updateArticle = createAsyncThunk<
   try {
     // Update via API first
     const article = await articlesApiService.updateArticle(params);
-    
+
     // Also persist to local database with is_modified flag for sync
     try {
       const updatedArticleForDB = {
@@ -222,14 +235,20 @@ export const updateArticle = createAsyncThunk<
         isModified: true, // Mark as modified for sync
         syncedAt: null, // Clear synced timestamp since it's now modified
       };
-      
+
       await DatabaseService.updateArticle(article.id, updatedArticleForDB);
-      console.log('[ArticlesSlice] Article updated in database and marked for sync:', article.id);
+      console.log(
+        '[ArticlesSlice] Article updated in database and marked for sync:',
+        article.id
+      );
     } catch (dbError) {
-      console.warn('[ArticlesSlice] Failed to update article in database:', dbError);
+      console.warn(
+        '[ArticlesSlice] Failed to update article in database:',
+        dbError
+      );
       // Don't fail the whole operation if database update fails
     }
-    
+
     return article;
   } catch (error) {
     const errorMessage =
@@ -242,35 +261,43 @@ export const updateArticleLocalWithDB = createAsyncThunk<
   Article,
   { id: string; updates: Partial<Article> },
   { rejectValue: string }
->('articles/updateArticleLocalWithDB', async (params, { rejectWithValue, getState }) => {
-  try {
-    const state = getState() as RootState;
-    const existingArticle = state.articles.entities[params.id];
-    
-    if (!existingArticle) {
-      throw new Error('Article not found');
+>(
+  'articles/updateArticleLocalWithDB',
+  async (params, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as RootState;
+      const existingArticle = state.articles.entities[params.id];
+
+      if (!existingArticle) {
+        throw new Error('Article not found');
+      }
+
+      // Merge updates with existing article
+      const updatedArticle = {
+        ...existingArticle,
+        ...params.updates,
+        isModified: true, // Mark as modified for sync
+        syncedAt: null, // Clear synced timestamp
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Persist to database
+      await DatabaseService.updateArticle(params.id, updatedArticle);
+      console.log(
+        '[ArticlesSlice] Article updated locally in database and marked for sync:',
+        params.id
+      );
+
+      return updatedArticle;
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to update article locally';
+      return rejectWithValue(errorMessage);
     }
-    
-    // Merge updates with existing article
-    const updatedArticle = {
-      ...existingArticle,
-      ...params.updates,
-      isModified: true, // Mark as modified for sync
-      syncedAt: null, // Clear synced timestamp
-      updatedAt: new Date().toISOString(),
-    };
-    
-    // Persist to database
-    await DatabaseService.updateArticle(params.id, updatedArticle);
-    console.log('[ArticlesSlice] Article updated locally in database and marked for sync:', params.id);
-    
-    return updatedArticle;
-  } catch (error) {
-    const errorMessage =
-      error instanceof Error ? error.message : 'Failed to update article locally';
-    return rejectWithValue(errorMessage);
   }
-});
+);
 
 export const deleteArticle = createAsyncThunk<
   string,
@@ -294,11 +321,11 @@ export const loadLocalArticles = createAsyncThunk<
 >('articles/loadLocalArticles', async (params, { rejectWithValue }) => {
   try {
     console.log('[articlesSlice] Loading articles from local database...');
-    
+
     const page = params.page || 1;
     const limit = params.limit || 20;
     const offset = (page - 1) * limit;
-    
+
     const result = await DatabaseService.getArticles({
       limit,
       offset,
@@ -309,8 +336,10 @@ export const loadLocalArticles = createAsyncThunk<
     });
 
     if (result.success && result.data) {
-      console.log(`[articlesSlice] Loaded ${result.data.items.length} articles from local database`);
-      
+      console.log(
+        `[articlesSlice] Loaded ${result.data.items.length} articles from local database`
+      );
+
       // Convert database articles to Article format
       const articles = result.data.items.map(dbArticle => ({
         id: dbArticle.id,
@@ -327,13 +356,16 @@ export const loadLocalArticles = createAsyncThunk<
         sourceUrl: dbArticle.source_url || dbArticle.url,
         createdAt: new Date(dbArticle.created_at * 1000).toISOString(),
         updatedAt: new Date(dbArticle.updated_at * 1000).toISOString(),
-        syncedAt: dbArticle.synced_at ? new Date(dbArticle.synced_at * 1000).toISOString() : undefined,
+        syncedAt: dbArticle.synced_at
+          ? new Date(dbArticle.synced_at * 1000).toISOString()
+          : undefined,
       }));
 
       // Calculate pagination from database result
-      const currentPage = Math.floor(result.data.offset / result.data.limit) + 1;
+      const currentPage =
+        Math.floor(result.data.offset / result.data.limit) + 1;
       const totalPages = Math.ceil(result.data.totalCount / result.data.limit);
-      
+
       return {
         items: articles,
         pagination: {
@@ -350,7 +382,9 @@ export const loadLocalArticles = createAsyncThunk<
     }
   } catch (error) {
     console.error('[articlesSlice] loadLocalArticles error:', error);
-    return rejectWithValue(error instanceof Error ? error.message : 'Failed to load local articles');
+    return rejectWithValue(
+      error instanceof Error ? error.message : 'Failed to load local articles'
+    );
   }
 });
 
@@ -362,20 +396,22 @@ export const syncArticles = createAsyncThunk<
   try {
     const syncStartTime = Date.now();
     const result = await articlesApiService.syncArticles(params);
-    
+
     // Also update the main sync slice's lastSyncTime for the Settings screen
     const syncEndTime = Date.now();
     const syncDuration = syncEndTime - syncStartTime;
-    
+
     // Import and dispatch syncSuccess action
     const { syncSuccess } = await import('./syncSlice');
-    dispatch(syncSuccess({
-      syncTime: new Date().toISOString(),
-      syncDuration,
-      itemsSynced: result.syncedCount,
-      conflicts: result.conflictCount
-    }));
-    
+    dispatch(
+      syncSuccess({
+        syncTime: new Date().toISOString(),
+        syncDuration,
+        itemsSynced: result.syncedCount,
+        conflicts: result.conflictCount,
+      })
+    );
+
     return result;
   } catch (error) {
     const errorMessage =
@@ -599,32 +635,47 @@ const articlesSlice = createSlice({
       .addCase(updateArticle.fulfilled, (state, action) => {
         state.loading.update = false;
         state.error.update = null;
-        
+
         // Get existing article to preserve fields that might not be in API response
         const existingArticle = state.entities[action.payload.id];
-        
+
         if (existingArticle) {
           // Create a smart merge that preserves important fields like content
           const mergedChanges = { ...existingArticle };
-          
+
           // Only update fields that are meaningful (not empty strings or undefined)
           Object.entries(action.payload).forEach(([key, value]) => {
             // Always update these fields regardless of value
-            const alwaysUpdateFields = ['id', 'isRead', 'isArchived', 'isFavorite', 'tags', 'syncedAt', 'updatedAt'];
-            
+            const alwaysUpdateFields = [
+              'id',
+              'isRead',
+              'isArchived',
+              'isFavorite',
+              'tags',
+              'syncedAt',
+              'updatedAt',
+            ];
+
             // For content, only update if the new value has actual content
             if (key === 'content') {
-              if (value && typeof value === 'string' && value.trim().length > 0) {
+              if (
+                value &&
+                typeof value === 'string' &&
+                value.trim().length > 0
+              ) {
                 mergedChanges[key] = value;
               }
               // Otherwise keep existing content
             }
             // For other fields, update if not empty or if it's an always-update field
-            else if (alwaysUpdateFields.includes(key) || (value !== '' && value !== null && value !== undefined)) {
+            else if (
+              alwaysUpdateFields.includes(key) ||
+              (value !== '' && value !== null && value !== undefined)
+            ) {
               mergedChanges[key] = value;
             }
           });
-          
+
           articlesAdapter.updateOne(state, {
             id: action.payload.id,
             changes: mergedChanges,
@@ -636,7 +687,7 @@ const articlesSlice = createSlice({
             changes: action.payload,
           });
         }
-        
+
         // Remove from pending changes after successful sync
         state.sync.pendingChanges = state.sync.pendingChanges.filter(
           id => id !== action.payload.id
@@ -666,7 +717,8 @@ const articlesSlice = createSlice({
       })
       .addCase(updateArticleLocalWithDB.rejected, (state, action) => {
         state.loading.update = false;
-        state.error.update = action.payload || 'Failed to update article locally';
+        state.error.update =
+          action.payload || 'Failed to update article locally';
       })
 
       // Delete article

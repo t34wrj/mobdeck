@@ -93,7 +93,7 @@ describe('Security: URL Validation', () => {
     it('should sanitize valid URLs', () => {
       const url = 'https://example.com/path with spaces/<tag>';
       const result = validateUrl(url);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.sanitized).not.toContain(' ');
       expect(result.sanitized).not.toContain('<');
@@ -105,8 +105,9 @@ describe('Security: URL Validation', () => {
 describe('Security: Token Validation', () => {
   describe('validateToken', () => {
     it('should validate correct JWT tokens', () => {
-      const validJWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
-      
+      const validJWT =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c';
+
       const result = validateToken(validJWT, 'jwt');
       expect(result.isValid).toBe(true);
       expect(result.error).toBeUndefined();
@@ -130,8 +131,9 @@ describe('Security: Token Validation', () => {
     });
 
     it('should validate API tokens with Bearer prefix', () => {
-      const validBearer = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc';
-      
+      const validBearer =
+        'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.abc';
+
       const result = validateToken(validBearer, 'bearer');
       expect(result.isValid).toBe(true);
     });
@@ -178,7 +180,7 @@ describe('Security: Input Sanitization', () => {
     it('should escape HTML when stripHtml is false', () => {
       const input = '<script>alert("XSS")</script>';
       const result = sanitizeInput(input, { stripHtml: false });
-      
+
       expect(result).not.toContain('<script>');
       expect(result).toContain('&lt;script&gt;');
       expect(result).toContain('&quot;');
@@ -187,14 +189,14 @@ describe('Security: Input Sanitization', () => {
     it('should enforce max length', () => {
       const longInput = 'a'.repeat(2000);
       const result = sanitizeInput(longInput, { maxLength: 100 });
-      
+
       expect(result.length).toBe(100);
     });
 
     it('should remove null bytes', () => {
       const input = 'Hello\0World\x00!';
       const result = sanitizeInput(input);
-      
+
       expect(result).toBe('Hello World !');
       expect(result).not.toContain('\0');
     });
@@ -202,7 +204,7 @@ describe('Security: Input Sanitization', () => {
     it('should normalize whitespace', () => {
       const input = '  Hello   \n\t  World  \r\n  ';
       const result = sanitizeInput(input);
-      
+
       expect(result).toBe('Hello World');
     });
   });
@@ -211,16 +213,16 @@ describe('Security: Input Sanitization', () => {
     it('should escape single quotes', () => {
       const input = "O'Brien's Restaurant";
       const result = sanitizeForSQL(input);
-      
+
       expect(result).toBe("O''Brien''s Restaurant");
     });
 
     it('should remove SQL injection patterns', () => {
       const injections = [
-        { input: "'; DROP TABLE users; --", expected: " DROP TABLE users " },
+        { input: "'; DROP TABLE users; --", expected: ' DROP TABLE users ' },
         { input: "1' OR '1'='1", expected: "1'' OR ''1''=''1" },
         { input: "admin'--", expected: "admin''" },
-        { input: "1; DELETE FROM users", expected: "1 DELETE FROM users" },
+        { input: '1; DELETE FROM users', expected: '1 DELETE FROM users' },
       ];
 
       injections.forEach(({ input, expected }) => {
@@ -232,7 +234,7 @@ describe('Security: Input Sanitization', () => {
     it('should remove comment indicators', () => {
       const input = 'SELECT * FROM users -- comment /* block */';
       const result = sanitizeForSQL(input);
-      
+
       expect(result).not.toContain('--');
       expect(result).not.toContain('/*');
       expect(result).not.toContain('*/');
@@ -305,7 +307,7 @@ describe('Security: File Path Validation', () => {
     it('should normalize path separators', () => {
       const path = 'documents\\folder\\file.txt';
       const result = validateFilePath(path);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.sanitized).toBe('documents/folder/file.txt');
     });
@@ -314,7 +316,7 @@ describe('Security: File Path Validation', () => {
       const basePath = '/app/data';
       const path = 'user/file.txt';
       const result = validateFilePath(path, basePath);
-      
+
       expect(result.isValid).toBe(true);
       expect(result.sanitized).toBe('/app/data/user/file.txt');
     });
@@ -358,15 +360,20 @@ describe('Security: Password Validation', () => {
     it('should provide helpful feedback', () => {
       const password = 'simplepassword';
       const result = validatePassword(password);
-      
+
       expect(result.feedback).toContain('Add uppercase letters');
       expect(result.feedback).toContain('Add numbers');
       expect(result.feedback).toContain('Add special characters');
     });
 
     it('should detect common patterns', () => {
-      const commonPatterns = ['password123', 'admin123', 'qwerty123', 'letmein123'];
-      
+      const commonPatterns = [
+        'password123',
+        'admin123',
+        'qwerty123',
+        'letmein123',
+      ];
+
       commonPatterns.forEach(password => {
         const result = validatePassword(password);
         expect(result.feedback).toContain('Avoid common patterns');
@@ -414,7 +421,7 @@ describe('Security: Email Validation', () => {
     it('should enforce email length limit', () => {
       const longEmail = 'a'.repeat(250) + '@example.com';
       const result = validateEmail(longEmail);
-      
+
       expect(result.isValid).toBe(false);
       expect(result.error).toContain('too long');
     });
@@ -426,7 +433,7 @@ describe('Security: Data Masking', () => {
     it('should mask tokens properly', () => {
       const token = 'sk_test_4eC39HqLyjWDarjtT1zdp7dc';
       const masked = maskSensitiveData(token);
-      
+
       expect(masked).toBe('sk_t*********************p7dc');
       expect(masked).not.toContain('4eC39HqLyjWDarjtT1zd');
     });
@@ -439,7 +446,7 @@ describe('Security: Data Masking', () => {
     it('should handle custom visible characters', () => {
       const data = 'sensitive-data-here';
       const masked = maskSensitiveData(data, 6);
-      
+
       expect(masked).toBe('sensit*******re');
     });
   });
@@ -449,7 +456,7 @@ describe('Security: Cryptographic Functions', () => {
   describe('generateSecureRandom', () => {
     it('should generate random strings of correct length', () => {
       const lengths = [16, 32, 64, 128];
-      
+
       lengths.forEach(length => {
         const random = generateSecureRandom(length);
         expect(random).toHaveLength(length);
@@ -462,7 +469,7 @@ describe('Security: Cryptographic Functions', () => {
       for (let i = 0; i < 100; i++) {
         values.add(generateSecureRandom(32));
       }
-      
+
       expect(values.size).toBe(100);
     });
   });
@@ -472,7 +479,7 @@ describe('Security: Cryptographic Functions', () => {
       const data = 'test-data';
       const hash1 = hashData(data);
       const hash2 = hashData(data);
-      
+
       expect(hash1).toBe(hash2);
       expect(hash1).toHaveLength(64); // SHA256 hex length
     });
@@ -481,10 +488,10 @@ describe('Security: Cryptographic Functions', () => {
       const data = 'test-data';
       const salt1 = 'salt1';
       const salt2 = 'salt2';
-      
+
       const hash1 = hashData(data, salt1);
       const hash2 = hashData(data, salt2);
-      
+
       expect(hash1).not.toBe(hash2);
     });
 

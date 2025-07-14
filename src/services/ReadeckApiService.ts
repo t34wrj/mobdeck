@@ -63,7 +63,9 @@ class ReadeckApiService implements IReadeckApiService {
   constructor(config: Partial<ReadeckApiConfig> = {}) {
     // Default configuration with security enforcement
     const isDevMode = typeof __DEV__ !== 'undefined' ? __DEV__ : false;
-    const defaultBaseUrl = isDevMode ? 'http://localhost:8000/api' : 'https://localhost:8000/api';
+    const defaultBaseUrl = isDevMode
+      ? 'http://localhost:8000/api'
+      : 'https://localhost:8000/api';
     this.config = {
       baseUrl: config.baseUrl || defaultBaseUrl,
       timeout: 30000, // 30 seconds
@@ -119,7 +121,7 @@ class ReadeckApiService implements IReadeckApiService {
       },
       // Enhanced security configurations
       maxRedirects: 3, // Reduced from 5 for security
-      validateStatus: (status) => status >= 200 && status < 300,
+      validateStatus: status => status >= 200 && status < 300,
       withCredentials: false, // Prevent CORS credential leaks
       // Certificate validation and security options
       httpsAgent: undefined, // Will be configured in setupHttpsAgent if needed
@@ -135,23 +137,25 @@ class ReadeckApiService implements IReadeckApiService {
    */
   private validateAndWarnHttpUsage(): void {
     const isProduction = typeof __DEV__ === 'undefined' || __DEV__ === false;
-    const isLocalhost = this.config.baseUrl.includes('localhost') || this.config.baseUrl.includes('127.0.0.1');
+    const isLocalhost =
+      this.config.baseUrl.includes('localhost') ||
+      this.config.baseUrl.includes('127.0.0.1');
     const isHttps = this.config.baseUrl.startsWith('https://');
     const isHttp = this.config.baseUrl.startsWith('http://');
-    
+
     // Warn about HTTP usage in production for non-localhost URLs
     if (isProduction && !isLocalhost && isHttp) {
       logger.warn('HTTP connection detected in production environment', {
         url: maskSensitiveData(this.config.baseUrl),
         recommendation: 'Consider using HTTPS for better security',
-securityRisk: 'Data transmitted over HTTP is not encrypted'
+        securityRisk: 'Data transmitted over HTTP is not encrypted',
       });
     }
-    
+
     // Log HTTPS usage confirmation
     if (isHttps) {
       logger.info('Secure HTTPS connection established', {
-        url: maskSensitiveData(this.config.baseUrl)
+        url: maskSensitiveData(this.config.baseUrl),
       });
     }
   }
@@ -163,7 +167,7 @@ securityRisk: 'Data transmitted over HTTP is not encrypted'
   private getEnhancedSecurityHeaders(): Record<string, string> {
     return {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
+      Pragma: 'no-cache',
       'X-Request-ID': this.generateRequestId(),
       'X-Client-Version': '1.0.0',
       'X-Platform': 'React-Native-Android',
@@ -214,19 +218,19 @@ securityRisk: 'Data transmitted over HTTP is not encrypted'
           const token = await authStorageService.retrieveToken();
           if (token) {
             // Debug: Log token characteristics (sanitized)
-            logger.debug('Token retrieved for validation', { 
-              length: token.length, 
+            logger.debug('Token retrieved for validation', {
+              length: token.length,
               startsWithBearer: token.startsWith('Bearer'),
-              hasSpecialChars: /[^A-Za-z0-9-_.]/.test(token)
+              hasSpecialChars: /[^A-Za-z0-9-_.]/.test(token),
             });
-            
+
             // Temporarily bypass token validation for testing
             // TODO: Implement proper token validation for Readeck API tokens
             logger.debug('Token validation bypassed for testing');
             config.headers.Authorization = `Bearer ${token}`;
-            logger.debug('API token attached to request', { 
+            logger.debug('API token attached to request', {
               url: config.url,
-              hasAuthorization: true
+              hasAuthorization: true,
             });
           } else {
             // Silently cancel requests without authentication
@@ -242,9 +246,14 @@ securityRisk: 'Data transmitted over HTTP is not encrypted'
           if (error?.name !== 'AuthenticationError') {
             const handledError = errorHandler.handleError(error, {
               category: ErrorCategory.AUTHENTICATION,
-              context: { actionType: 'token_retrieval', apiEndpoint: config.url },
+              context: {
+                actionType: 'token_retrieval',
+                apiEndpoint: config.url,
+              },
             });
-            logger.error('Failed to retrieve API token', { error: handledError });
+            logger.error('Failed to retrieve API token', {
+              error: handledError,
+            });
           }
           return Promise.reject(error);
         }
@@ -254,26 +263,34 @@ securityRisk: 'Data transmitted over HTTP is not encrypted'
         logger.startPerformanceTimer(operationId);
         (config as any)._startTime = Date.now();
         (config as any)._operationId = operationId;
-        
+
         // Enhanced request URL validation and security checks
         if (config.url) {
-          const fullUrl = config.url.startsWith('http') ? config.url : `${config.baseURL}${config.url}`;
+          const fullUrl = config.url.startsWith('http')
+            ? config.url
+            : `${config.baseURL}${config.url}`;
           const urlValidation = validateUrl(fullUrl);
           if (!urlValidation.isValid) {
             throw new Error(`Invalid request URL: ${urlValidation.error}`);
           }
-          
+
           // Log warning for HTTP URLs in production (but allow connection)
-          if (fullUrl.startsWith('http://') && !fullUrl.includes('localhost') && !fullUrl.includes('127.0.0.1')) {
-            const isProduction = typeof __DEV__ === 'undefined' || __DEV__ === false;
+          if (
+            fullUrl.startsWith('http://') &&
+            !fullUrl.includes('localhost') &&
+            !fullUrl.includes('127.0.0.1')
+          ) {
+            const isProduction =
+              typeof __DEV__ === 'undefined' || __DEV__ === false;
             if (isProduction) {
               logger.warn('HTTP request in production environment', {
                 url: maskSensitiveData(fullUrl),
-securityWarning: 'Unencrypted HTTP connection - data may be intercepted'
+                securityWarning:
+                  'Unencrypted HTTP connection - data may be intercepted',
               });
             }
           }
-          
+
           // Validate certificate pins if configured
           if (this.certificatePins.size > 0) {
             this.validateCertificatePinsForUrl(fullUrl);
@@ -293,7 +310,7 @@ securityWarning: 'Unencrypted HTTP connection - data may be intercepted'
         if (error.silent && error.name === 'AuthenticationError') {
           return Promise.reject(error);
         }
-        
+
         errorHandler.handleError(error, {
           category: ErrorCategory.NETWORK,
           context: { actionType: 'request_interceptor' },
@@ -315,20 +332,20 @@ securityWarning: 'Unencrypted HTTP connection - data may be intercepted'
             url: response.config.url,
           });
         }
-        
+
         // Security validation
         this.validateResponseSecurity(response);
-        
+
         // Sanitize response data
         const sanitizedResponse = this.sanitizeResponseData(response);
-        
+
         logger.debug('API Response received', {
           status: response.status,
           url: response.config.url,
           duration: Date.now() - (response.config as any)._startTime,
           hasSecurityHeaders: this.hasSecurityHeaders(response),
         });
-        
+
         return sanitizedResponse;
       },
       error => {
@@ -346,7 +363,7 @@ securityWarning: 'Unencrypted HTTP connection - data may be intercepted'
             error: true,
           });
         }
-        
+
         const apiError = this.handleResponseError(error);
         return Promise.reject(apiError);
       }
@@ -361,12 +378,16 @@ securityWarning: 'Unencrypted HTTP connection - data may be intercepted'
     try {
       const hostname = new URL(url).hostname;
       if (this.certificatePins.has(hostname)) {
-        logger.debug('Certificate pinning validation enabled for hostname', { hostname });
+        logger.debug('Certificate pinning validation enabled for hostname', {
+          hostname,
+        });
         // Note: In React Native, certificate pinning is handled at the native level
         // This method serves as a validation point for future native integration
       }
     } catch (error) {
-      logger.warn('Failed to validate certificate pins for URL', { url: maskSensitiveData(url) });
+      logger.warn('Failed to validate certificate pins for URL', {
+        url: maskSensitiveData(url),
+      });
     }
   }
 
@@ -379,14 +400,20 @@ securityWarning: 'Unencrypted HTTP connection - data may be intercepted'
     const isProduction = typeof __DEV__ === 'undefined' || __DEV__ === false;
     const requestUrl = response.config.url || '';
     const baseUrl = response.config.baseURL || '';
-    const fullUrl = requestUrl.startsWith('http') ? requestUrl : `${baseUrl}${requestUrl}`;
-    
-    if (isProduction && fullUrl.startsWith('http://') && 
-        !fullUrl.includes('localhost') && !fullUrl.includes('127.0.0.1')) {
+    const fullUrl = requestUrl.startsWith('http')
+      ? requestUrl
+      : `${baseUrl}${requestUrl}`;
+
+    if (
+      isProduction &&
+      fullUrl.startsWith('http://') &&
+      !fullUrl.includes('localhost') &&
+      !fullUrl.includes('127.0.0.1')
+    ) {
       logger.warn('HTTP response received in production', {
         url: maskSensitiveData(fullUrl),
         status: response.status,
-securityNote: 'Consider using HTTPS for encrypted communication'
+        securityNote: 'Consider using HTTPS for encrypted communication',
       });
     }
 
@@ -398,17 +425,17 @@ securityNote: 'Consider using HTTPS for encrypted communication'
         'strict-transport-security',
         'x-content-type-options',
         'x-frame-options',
-        'content-security-policy'
+        'content-security-policy',
       ];
-      
-      const missingHeaders = securityHeaders.filter(header => 
-        !headers[header] && !headers[header.toLowerCase()]
+
+      const missingHeaders = securityHeaders.filter(
+        header => !headers[header] && !headers[header.toLowerCase()]
       );
-      
+
       if (missingHeaders.length > 0) {
-        logger.debug('Response missing security headers', { 
+        logger.debug('Response missing security headers', {
           missingHeaders,
-          url: maskSensitiveData(fullUrl)
+          url: maskSensitiveData(fullUrl),
         });
       }
     }
@@ -421,15 +448,15 @@ securityNote: 'Consider using HTTPS for encrypted communication'
   private hasSecurityHeaders(response: AxiosResponse): boolean {
     const headers = response.headers;
     if (!headers || typeof headers !== 'object') return false;
-    
+
     const securityHeaders = [
       'strict-transport-security',
       'x-content-type-options',
-      'x-frame-options'
+      'x-frame-options',
     ];
-    
-    return securityHeaders.some(header => 
-      headers[header] || headers[header.toLowerCase()]
+
+    return securityHeaders.some(
+      header => headers[header] || headers[header.toLowerCase()]
     );
   }
 
@@ -440,7 +467,7 @@ securityNote: 'Consider using HTTPS for encrypted communication'
   private sanitizeResponseData(response: AxiosResponse): AxiosResponse {
     // Create a copy to avoid mutating the original response
     const sanitizedResponse = { ...response };
-    
+
     // Remove potentially sensitive headers from response
     if (sanitizedResponse.headers) {
       const sensitiveHeaders = ['server', 'x-powered-by', 'x-aspnet-version'];
@@ -449,19 +476,23 @@ securityNote: 'Consider using HTTPS for encrypted communication'
         delete sanitizedResponse.headers[header.toLowerCase()];
       });
     }
-    
+
     // Validate response data structure
     if (sanitizedResponse.data && typeof sanitizedResponse.data === 'object') {
       // Remove any potentially dangerous properties
       if (Array.isArray(sanitizedResponse.data)) {
         // For arrays, validate each item
-        sanitizedResponse.data = sanitizedResponse.data.map(this.sanitizeDataObject);
+        sanitizedResponse.data = sanitizedResponse.data.map(
+          this.sanitizeDataObject
+        );
       } else {
         // For objects, sanitize properties
-        sanitizedResponse.data = this.sanitizeDataObject(sanitizedResponse.data);
+        sanitizedResponse.data = this.sanitizeDataObject(
+          sanitizedResponse.data
+        );
       }
     }
-    
+
     return sanitizedResponse;
   }
 
@@ -471,15 +502,15 @@ securityNote: 'Consider using HTTPS for encrypted communication'
    */
   private sanitizeDataObject(obj: any): any {
     if (!obj || typeof obj !== 'object') return obj;
-    
+
     const sanitized = { ...obj };
-    
+
     // Remove potentially dangerous properties
     const dangerousProps = ['__proto__', 'constructor', 'prototype'];
     dangerousProps.forEach(prop => {
       delete sanitized[prop];
     });
-    
+
     return sanitized;
   }
 
@@ -491,7 +522,7 @@ securityNote: 'Consider using HTTPS for encrypted communication'
     if (!error.response) {
       return ErrorCategory.NETWORK;
     }
-    
+
     const status = error.response.status;
     if (status === 401) {
       return ErrorCategory.AUTHENTICATION;
@@ -500,7 +531,7 @@ securityNote: 'Consider using HTTPS for encrypted communication'
     } else if (status >= 500) {
       return ErrorCategory.NETWORK;
     }
-    
+
     return ErrorCategory.UNKNOWN;
   }
 
@@ -512,7 +543,7 @@ securityNote: 'Consider using HTTPS for encrypted communication'
     // Use centralized error handling for consistent categorization
     errorHandler.handleError(error, {
       category: this.getErrorCategory(error),
-      context: { 
+      context: {
         actionType: 'api_request',
         apiEndpoint: error.config?.url,
         serverUrl: this.config.baseUrl,
@@ -643,7 +674,7 @@ securityNote: 'Consider using HTTPS for encrypted communication'
         // Use centralized error handling for network errors
         const networkErrorHandler = errorHandler.getNetworkErrorHandler();
         const handledError = networkErrorHandler(error);
-        
+
         lastError = error as ReadeckApiError;
 
         // Don't retry if configured to skip, on last attempt, or if error is not retryable
@@ -701,9 +732,9 @@ securityNote: 'Consider using HTTPS for encrypted communication'
     const authRequest = {
       application: 'Mobdeck Mobile App',
       username: credentials.username,
-      password: credentials.password
+      password: credentials.password,
     };
-    
+
     return this.makeRequest<ReadeckLoginResponse>({
       method: 'POST',
       url: '/auth',
@@ -712,19 +743,23 @@ securityNote: 'Consider using HTTPS for encrypted communication'
     });
   }
 
-  async validateToken(timeout?: number): Promise<ReadeckApiResponse<ReadeckUser>> {
+  async validateToken(
+    timeout?: number
+  ): Promise<ReadeckApiResponse<ReadeckUser>> {
     return this.makeRequest<ReadeckUser>({
       method: 'GET',
       url: '/profile',
       config: {
-        timeout: timeout || this.config.timeout
-      }
+        timeout: timeout || this.config.timeout,
+      },
     });
   }
 
   // Note: Readeck API doesn't have token refresh endpoint
   async refreshToken(): Promise<ReadeckApiResponse<ReadeckLoginResponse>> {
-    throw new Error('Token refresh not supported by Readeck API. Please re-authenticate.');
+    throw new Error(
+      'Token refresh not supported by Readeck API. Please re-authenticate.'
+    );
   }
 
   // Article methods
@@ -740,19 +775,19 @@ securityNote: 'Consider using HTTPS for encrypted communication'
 
   async getArticle(id: string): Promise<ReadeckApiResponse<ReadeckArticle>> {
     logger.debug('Fetching article', { articleId: id });
-    
+
     // Get the article metadata from the bookmarks endpoint
     const response = await this.makeRequest<ReadeckArticle>({
       method: 'GET',
       url: `/bookmarks/${id}`,
     });
-    
-    logger.debug('Article fetch successful', { 
+
+    logger.debug('Article fetch successful', {
       articleId: id,
       hasData: !!response.data,
-      status: response.status
+      status: response.status,
     });
-    
+
     return response;
   }
 
@@ -785,52 +820,59 @@ securityNote: 'Consider using HTTPS for encrypted communication'
   }
 
   async getArticleContent(contentUrl: string): Promise<string> {
-    logger.debug('Fetching article content', { 
+    logger.debug('Fetching article content', {
       urlHash: maskSensitiveData(contentUrl),
-      baseUrlHash: maskSensitiveData(this.config.baseUrl)
+      baseUrlHash: maskSensitiveData(this.config.baseUrl),
     });
-      
-      // Handle both absolute URLs and relative paths
-      let requestUrl = contentUrl;
-      
-      // If it's a full URL, we need to extract the path relative to our base URL
-      if (contentUrl.startsWith('http://') || contentUrl.startsWith('https://')) {
-        // Remove the base URL portion to get just the path
-        const baseUrlWithoutTrailingSlash = this.config.baseUrl.replace(/\/$/, '');
-        
-        if (contentUrl.startsWith(baseUrlWithoutTrailingSlash)) {
-          // Extract the path after the base URL
-          requestUrl = contentUrl.substring(baseUrlWithoutTrailingSlash.length);
-          // Ensure it starts with /
-          if (!requestUrl.startsWith('/')) {
-            requestUrl = `/${  requestUrl}`;
-          }
+
+    // Handle both absolute URLs and relative paths
+    let requestUrl = contentUrl;
+
+    // If it's a full URL, we need to extract the path relative to our base URL
+    if (contentUrl.startsWith('http://') || contentUrl.startsWith('https://')) {
+      // Remove the base URL portion to get just the path
+      const baseUrlWithoutTrailingSlash = this.config.baseUrl.replace(
+        /\/$/,
+        ''
+      );
+
+      if (contentUrl.startsWith(baseUrlWithoutTrailingSlash)) {
+        // Extract the path after the base URL
+        requestUrl = contentUrl.substring(baseUrlWithoutTrailingSlash.length);
+        // Ensure it starts with /
+        if (!requestUrl.startsWith('/')) {
+          requestUrl = `/${requestUrl}`;
+        }
+      } else {
+        // If URL doesn't match our base URL, try extracting path after /api/
+        const url = new URL(contentUrl);
+        const apiIndex = url.pathname.indexOf('/api/');
+        if (apiIndex !== -1) {
+          requestUrl = url.pathname.substring(apiIndex + 4); // Skip '/api'
         } else {
-          // If URL doesn't match our base URL, try extracting path after /api/
-          const url = new URL(contentUrl);
-          const apiIndex = url.pathname.indexOf('/api/');
-          if (apiIndex !== -1) {
-            requestUrl = url.pathname.substring(apiIndex + 4); // Skip '/api'
-          } else {
-            requestUrl = url.pathname;
-          }
+          requestUrl = url.pathname;
         }
       }
-      
-      logger.debug('Making content request to path', { pathHash: maskSensitiveData(requestUrl) });
-      
-      // Use the makeRequest method to ensure proper authentication and error handling
-      const response = await this.makeRequest<string>({
-        method: 'GET',
-        url: requestUrl,
-        headers: {
-          'Accept': 'text/html',
-        },
-      });
-      
-      logger.debug('Content response received', { contentLength: response.data?.length || 0 });
-      
-      return response.data;
+    }
+
+    logger.debug('Making content request to path', {
+      pathHash: maskSensitiveData(requestUrl),
+    });
+
+    // Use the makeRequest method to ensure proper authentication and error handling
+    const response = await this.makeRequest<string>({
+      method: 'GET',
+      url: requestUrl,
+      headers: {
+        Accept: 'text/html',
+      },
+    });
+
+    logger.debug('Content response received', {
+      contentLength: response.data?.length || 0,
+    });
+
+    return response.data;
   }
 
   // User methods
@@ -864,7 +906,7 @@ securityNote: 'Consider using HTTPS for encrypted communication'
     request?: SyncRequest
   ): Promise<ReadeckApiResponse<ReadeckSyncResponse>> {
     logger.debug('Initiating sync operation using getArticles with filters');
-    
+
     // Map sync request to article filters
     const filters: any = {};
     if (request?.since) {
@@ -873,22 +915,29 @@ securityNote: 'Consider using HTTPS for encrypted communication'
     if (request?.limit) {
       filters.limit = request.limit;
     }
-    
+
     const response = await this.getArticles(filters);
-    
+
     // Transform response to match expected sync response format
     const syncResponse: ReadeckSyncResponse = {
-      articles: Array.isArray(response.data) ? response.data : response.data.articles || [],
+      articles: Array.isArray(response.data)
+        ? response.data
+        : response.data.articles || [],
       last_updated: new Date().toISOString(),
-      total_count: Array.isArray(response.data) ? response.data.length : response.data.pagination?.total_count || 0,
-      has_more: Array.isArray(response.data) ? false : (response.data.pagination?.page || 1) < (response.data.pagination?.total_pages || 1)
+      total_count: Array.isArray(response.data)
+        ? response.data.length
+        : response.data.pagination?.total_count || 0,
+      has_more: Array.isArray(response.data)
+        ? false
+        : (response.data.pagination?.page || 1) <
+          (response.data.pagination?.total_pages || 1),
     };
-    
+
     return {
       data: syncResponse,
       status: response.status,
       headers: response.headers,
-      timestamp: response.timestamp
+      timestamp: response.timestamp,
     };
   }
 
@@ -934,32 +983,44 @@ securityNote: 'Consider using HTTPS for encrypted communication'
   async createLabel(_label: any): Promise<ReadeckApiResponse<any>> {
     // Note: Readeck API doesn't have a direct create label endpoint
     // Labels are created when assigned to bookmarks
-    throw new Error('Creating labels directly is not supported by Readeck API. Labels are created when assigned to bookmarks.');
+    throw new Error(
+      'Creating labels directly is not supported by Readeck API. Labels are created when assigned to bookmarks.'
+    );
   }
 
   async assignLabel(_data: any): Promise<ReadeckApiResponse<void>> {
     // Note: Label assignment is done through bookmark update
-    throw new Error('Use updateArticle with labels/add_labels fields instead of assignLabel');
+    throw new Error(
+      'Use updateArticle with labels/add_labels fields instead of assignLabel'
+    );
   }
 
   async removeLabel(_data: any): Promise<ReadeckApiResponse<void>> {
     // Note: Label removal is done through bookmark update
-    throw new Error('Use updateArticle with remove_labels field instead of removeLabel');
+    throw new Error(
+      'Use updateArticle with remove_labels field instead of removeLabel'
+    );
   }
 
   async batchLabels(_data: any): Promise<ReadeckApiResponse<any>> {
     // Note: Batch operations should be done through individual bookmark updates
-    throw new Error('Batch label operations not supported. Use individual bookmark updates.');
+    throw new Error(
+      'Batch label operations not supported. Use individual bookmark updates.'
+    );
   }
 
   async getLabelStats(): Promise<ReadeckApiResponse<any>> {
     // Note: Label stats are available through the labels list endpoint
-    throw new Error('Use getLabels() to get label information including counts');
+    throw new Error(
+      'Use getLabels() to get label information including counts'
+    );
   }
 
   async getArticleLabels(_articleId: string): Promise<ReadeckApiResponse<any>> {
     // Note: Article labels are included in the bookmark details
-    throw new Error('Article labels are included in bookmark details from getArticle()');
+    throw new Error(
+      'Article labels are included in bookmark details from getArticle()'
+    );
   }
 
   // Configuration methods
@@ -1026,7 +1087,10 @@ securityNote: 'Consider using HTTPS for encrypted communication'
       throw new Error('Invalid certificate pinning configuration');
     }
     this.certificatePins.set(hostname, pins);
-    logger.info('Certificate pins configured', { hostname, pinCount: pins.length });
+    logger.info('Certificate pins configured', {
+      hostname,
+      pinCount: pins.length,
+    });
   }
 
   /**

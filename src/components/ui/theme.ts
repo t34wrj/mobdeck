@@ -194,18 +194,18 @@ export const accessibility = {
     width: 44,
     height: 44,
   },
-  
+
   // Font size scaling support
   fontScale: {
     min: 0.85,
     max: 2.0,
     default: 1.0,
   },
-  
+
   // High contrast mode colors (automatically used when system setting is enabled)
   highContrast: {
     text: '#000000',
-    background: '#ffffff', 
+    background: '#ffffff',
     border: '#000000',
     accent: '#0000ff',
   },
@@ -277,18 +277,18 @@ export const shadows = {
 
 /**
  * Mobdeck design system theme object containing all design tokens
- * 
+ *
  * Provides a comprehensive design system with:
  * - Color palette with semantic color scales
- * - Typography system with font sizes, weights, and line heights  
+ * - Typography system with font sizes, weights, and line heights
  * - Spacing scale for consistent layout
  * - Border radius values
  * - Shadow/elevation styles
- * 
+ *
  * @example
  * ```tsx
  * import { theme } from './theme';
- * 
+ *
  * const styles = {
  *   container: {
  *     backgroundColor: theme.colors.primary[500],

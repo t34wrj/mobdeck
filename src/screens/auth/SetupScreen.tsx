@@ -28,7 +28,6 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
     message: string;
   } | null>(null);
 
-
   const testConnection = useCallback(async () => {
     if (!testUrl.trim() || !testToken.trim()) {
       Alert.alert(
@@ -115,7 +114,7 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
       id: 3,
       title: 'Copy the API token',
       description:
-        "Copy the generated token for easy access. The token will look like a long string of random characters",
+        'Copy the generated token for easy access. The token will look like a long string of random characters',
     },
     {
       id: 4,
@@ -241,7 +240,9 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
           onPress={handleBackToLogin}
           style={styles.backButton}
         >
-          <Text>{testResult?.success ? 'Continue to Login' : 'Back to Login'}</Text>
+          <Text>
+            {testResult?.success ? 'Continue to Login' : 'Back to Login'}
+          </Text>
         </Button>
 
         <Text

@@ -1,6 +1,6 @@
 /**
  * Android Security Configuration Tests
- * 
+ *
  * Validates Android-specific security configurations including:
  * - Permission declarations and usage
  * - Manifest security settings
@@ -14,13 +14,18 @@ import * as path from 'path';
 import { DOMParser, Document, Element } from '@xmldom/xmldom';
 
 const ANDROID_DIR = path.join(__dirname, '../../android');
-const MANIFEST_PATH = path.join(ANDROID_DIR, 'app/src/main/AndroidManifest.xml');
+const MANIFEST_PATH = path.join(
+  ANDROID_DIR,
+  'app/src/main/AndroidManifest.xml'
+);
 const BUILD_GRADLE_PATH = path.join(ANDROID_DIR, 'app/build.gradle');
 const PROGUARD_RULES_PATH = path.join(ANDROID_DIR, 'app/proguard-rules.pro');
-const NETWORK_CONFIG_PATH = path.join(ANDROID_DIR, 'app/src/main/res/xml/network_security_config.xml');
+const NETWORK_CONFIG_PATH = path.join(
+  ANDROID_DIR,
+  'app/src/main/res/xml/network_security_config.xml'
+);
 
 describe('Android Security Configuration Tests', () => {
-  
   describe('AndroidManifest.xml Security', () => {
     let manifestContent: string;
     let manifestDoc: Document;
@@ -32,15 +37,19 @@ describe('Android Security Configuration Tests', () => {
     });
 
     it('should have secure backup settings', () => {
-      const applicationElement = manifestDoc.getElementsByTagName('application')[0] as Element;
-      const allowBackup = applicationElement.getAttribute('android:allowBackup');
-      
+      const applicationElement = manifestDoc.getElementsByTagName(
+        'application'
+      )[0] as Element;
+      const allowBackup = applicationElement.getAttribute(
+        'android:allowBackup'
+      );
+
       expect(allowBackup).toBe('false');
     });
 
     it('should only declare necessary permissions', () => {
       const permissions = manifestDoc.getElementsByTagName('uses-permission');
-      const declaredPermissions = Array.from(permissions).map((p: Element) => 
+      const declaredPermissions = Array.from(permissions).map((p: Element) =>
         p.getAttribute('android:name')
       );
 
@@ -54,7 +63,7 @@ describe('Android Security Configuration Tests', () => {
         'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
         'android.permission.POST_NOTIFICATIONS',
         'android.permission.USE_EXACT_ALARM',
-        'android.permission.SCHEDULE_EXACT_ALARM'
+        'android.permission.SCHEDULE_EXACT_ALARM',
       ];
 
       // Validate all declared permissions are expected
@@ -75,7 +84,7 @@ describe('Android Security Configuration Tests', () => {
         'android.permission.READ_PHONE_STATE',
         'android.permission.CALL_PHONE',
         'android.permission.READ_EXTERNAL_STORAGE',
-        'android.permission.WRITE_EXTERNAL_STORAGE'
+        'android.permission.WRITE_EXTERNAL_STORAGE',
       ];
 
       declaredPermissions.forEach(permission => {
@@ -89,54 +98,64 @@ describe('Android Security Configuration Tests', () => {
       const receivers = manifestDoc.getElementsByTagName('receiver');
 
       // MainActivity should be exported for launcher
-      const mainActivity = Array.from(activities).find((activity: Element) =>
-        activity.getAttribute('android:name') === '.MainActivity'
+      const mainActivity = Array.from(activities).find(
+        (activity: Element) =>
+          activity.getAttribute('android:name') === '.MainActivity'
       );
       expect(mainActivity?.getAttribute('android:exported')).toBe('true');
 
       // ShareActivity should be exported for intent handling
-      const shareActivity = Array.from(activities).find((activity: Element) =>
-        activity.getAttribute('android:name') === '.ShareActivity'
+      const shareActivity = Array.from(activities).find(
+        (activity: Element) =>
+          activity.getAttribute('android:name') === '.ShareActivity'
       );
       expect(shareActivity?.getAttribute('android:exported')).toBe('true');
 
       // Background service should have proper permission
-      const backgroundService = Array.from(services).find((service: Element) =>
-        service.getAttribute('android:name') === 'com.mobdeck.BackgroundSyncJobService'
+      const backgroundService = Array.from(services).find(
+        (service: Element) =>
+          service.getAttribute('android:name') ===
+          'com.mobdeck.BackgroundSyncJobService'
       );
-      expect(backgroundService?.getAttribute('android:permission')).toBe('android.permission.BIND_JOB_SERVICE');
+      expect(backgroundService?.getAttribute('android:permission')).toBe(
+        'android.permission.BIND_JOB_SERVICE'
+      );
       expect(backgroundService?.getAttribute('android:exported')).toBe('true');
 
       // Boot receiver should be exported for system events
-      const bootReceiver = Array.from(receivers).find((receiver: Element) =>
-        receiver.getAttribute('android:name') === 'com.mobdeck.BootReceiver'
+      const bootReceiver = Array.from(receivers).find(
+        (receiver: Element) =>
+          receiver.getAttribute('android:name') === 'com.mobdeck.BootReceiver'
       );
       expect(bootReceiver?.getAttribute('android:exported')).toBe('true');
     });
 
     it('should have secure intent filters', () => {
       const activities = manifestDoc.getElementsByTagName('activity');
-      
+
       Array.from(activities).forEach((activity: Element) => {
         const intentFilters = activity.getElementsByTagName('intent-filter');
-        
+
         Array.from(intentFilters).forEach((filter: Element) => {
           const actions = filter.getElementsByTagName('action');
           const categories = filter.getElementsByTagName('category');
-          
+
           // Validate no overly broad intent filters
           Array.from(actions).forEach((action: Element) => {
             const actionName = action.getAttribute('android:name');
-            
+
             // Dangerous actions that shouldn't be handled
             const dangerousActions = [
               'android.intent.action.BOOT_COMPLETED', // Only for BootReceiver
               'android.intent.action.NEW_OUTGOING_CALL',
               'android.intent.action.PHONE_STATE',
-              'android.provider.Telephony.SMS_RECEIVED'
+              'android.provider.Telephony.SMS_RECEIVED',
             ];
 
-            if (activity.getAttribute('android:name') !== 'com.mobdeck.BootReceiver') {
+            if (
+              activity.getAttribute('android:name') !==
+              'com.mobdeck.BootReceiver'
+            ) {
               expect(dangerousActions.slice(1)).not.toContain(actionName);
             }
           });
@@ -145,16 +164,22 @@ describe('Android Security Configuration Tests', () => {
     });
 
     it('should have network security configuration', () => {
-      const applicationElement = manifestDoc.getElementsByTagName('application')[0];
-      const networkSecurityConfig = applicationElement.getAttribute('android:networkSecurityConfig');
-      
+      const applicationElement =
+        manifestDoc.getElementsByTagName('application')[0];
+      const networkSecurityConfig = applicationElement.getAttribute(
+        'android:networkSecurityConfig'
+      );
+
       expect(networkSecurityConfig).toBe('@xml/network_security_config');
     });
 
     it('should have cleartext traffic properly configured', () => {
-      const applicationElement = manifestDoc.getElementsByTagName('application')[0];
-      const usesCleartextTraffic = applicationElement.getAttribute('android:usesCleartextTraffic');
-      
+      const applicationElement =
+        manifestDoc.getElementsByTagName('application')[0];
+      const usesCleartextTraffic = applicationElement.getAttribute(
+        'android:usesCleartextTraffic'
+      );
+
       // Should be true for development (self-hosted Readeck instances may use HTTP)
       expect(usesCleartextTraffic).toBe('true');
     });
@@ -168,7 +193,9 @@ describe('Android Security Configuration Tests', () => {
     });
 
     it('should enable ProGuard for release builds', () => {
-      expect(buildGradleContent).toMatch(/enableProguardInReleaseBuilds\s*=\s*true/);
+      expect(buildGradleContent).toMatch(
+        /enableProguardInReleaseBuilds\s*=\s*true/
+      );
     });
 
     it('should enable R8 obfuscation', () => {
@@ -176,7 +203,9 @@ describe('Android Security Configuration Tests', () => {
     });
 
     it('should have release build optimizations', () => {
-      expect(buildGradleContent).toMatch(/minifyEnabled\s*=\s*enableProguardInReleaseBuilds/);
+      expect(buildGradleContent).toMatch(
+        /minifyEnabled\s*=\s*enableProguardInReleaseBuilds/
+      );
       expect(buildGradleContent).toMatch(/shrinkResources\s*=\s*true/);
       expect(buildGradleContent).toMatch(/zipAlignEnabled\s*=\s*true/);
       expect(buildGradleContent).toMatch(/crunchPngs\s*=\s*true/);
@@ -184,8 +213,10 @@ describe('Android Security Configuration Tests', () => {
 
     it('should have secure signing configuration', () => {
       // Debug signing should use debug keystore
-      expect(buildGradleContent).toMatch(/storeFile\s*=\s*file\('debug\.keystore'\)/);
-      
+      expect(buildGradleContent).toMatch(
+        /storeFile\s*=\s*file\('debug\.keystore'\)/
+      );
+
       // Release signing should use environment variables
       expect(buildGradleContent).toMatch(/MOBDECK_UPLOAD_STORE_FILE/);
       expect(buildGradleContent).toMatch(/MOBDECK_UPLOAD_STORE_PASSWORD/);
@@ -195,26 +226,36 @@ describe('Android Security Configuration Tests', () => {
 
     it('should not contain hardcoded secrets', () => {
       // Should not contain actual passwords or keys in non-comment lines
-      const nonCommentLines = buildGradleContent.split('\n').filter(line => 
-        !line.trim().startsWith('//') && !line.trim().startsWith('*') && !line.trim().startsWith('/*')
-      ).join('\n');
-      
+      const nonCommentLines = buildGradleContent
+        .split('\n')
+        .filter(
+          line =>
+            !line.trim().startsWith('//') &&
+            !line.trim().startsWith('*') &&
+            !line.trim().startsWith('/*')
+        )
+        .join('\n');
+
       expect(nonCommentLines).not.toMatch(/password\s*=\s*["'][^"']{10,}["']/);
-      expect(nonCommentLines).not.toMatch(/keyPassword\s*=\s*["'][^"']{10,}["']/);
-      
+      expect(nonCommentLines).not.toMatch(
+        /keyPassword\s*=\s*["'][^"']{10,}["']/
+      );
+
       // Should not contain actual API keys (exclude development/template values)
-      const suspiciousKeys: string[] = nonCommentLines.match(/[A-Za-z0-9]{32,}/g) || [];
+      const suspiciousKeys: string[] =
+        nonCommentLines.match(/[A-Za-z0-9]{32,}/g) || [];
       const allowedKeys = [
         'ioGithubReactNativeCommunityJscAndroid', // JSC dependency
         'proguardAndroidOptimize', // ProGuard rule
         'comFacebookReactReactAndroid', // React Native dependency
-        'comFacebookReactHermesAndroid' // Hermes dependency
+        'comFacebookReactHermesAndroid', // Hermes dependency
       ];
-      
+
       suspiciousKeys.forEach((key: string) => {
-        const isAllowed = allowedKeys.some(allowed => key.includes(allowed)) || 
-                         buildGradleContent.includes(`// ${key}`) || 
-                         buildGradleContent.includes(`* ${key}`);
+        const isAllowed =
+          allowedKeys.some(allowed => key.includes(allowed)) ||
+          buildGradleContent.includes(`// ${key}`) ||
+          buildGradleContent.includes(`* ${key}`);
         if (!isAllowed) {
           console.warn(`Potential hardcoded secret found: ${key}`);
         }
@@ -223,7 +264,9 @@ describe('Android Security Configuration Tests', () => {
 
     it('should have appropriate target SDK version', () => {
       // Should target modern Android API level for security
-      expect(buildGradleContent).toMatch(/targetSdkVersion\s*=\s*rootProject\.ext\.targetSdkVersion/);
+      expect(buildGradleContent).toMatch(
+        /targetSdkVersion\s*=\s*rootProject\.ext\.targetSdkVersion/
+      );
     });
   });
 
@@ -235,7 +278,9 @@ describe('Android Security Configuration Tests', () => {
     });
 
     it('should remove logging in release builds', () => {
-      expect(proguardContent).toMatch(/-assumenosideeffects class android\.util\.Log/);
+      expect(proguardContent).toMatch(
+        /-assumenosideeffects class android\.util\.Log/
+      );
       expect(proguardContent).toMatch(/public static int v\(\.\.\.\);/);
       expect(proguardContent).toMatch(/public static int d\(\.\.\.\);/);
       expect(proguardContent).toMatch(/public static int i\(\.\.\.\);/);
@@ -244,7 +289,9 @@ describe('Android Security Configuration Tests', () => {
     });
 
     it('should remove console.log calls', () => {
-      expect(proguardContent).toMatch(/-assumenosideeffects class java\.io\.PrintStream/);
+      expect(proguardContent).toMatch(
+        /-assumenosideeffects class java\.io\.PrintStream/
+      );
       expect(proguardContent).toMatch(/public void println\(\.\.\.\);/);
       expect(proguardContent).toMatch(/public void print\(\.\.\.\);/);
     });
@@ -252,11 +299,15 @@ describe('Android Security Configuration Tests', () => {
     it('should protect security-critical libraries', () => {
       // react-native-keychain protection
       expect(proguardContent).toMatch(/-keep class com\.oblador\.keychain/);
-      
+
       // Security providers protection
-      expect(proguardContent).toMatch(/-keep class com\.android\.org\.conscrypt/);
-      expect(proguardContent).toMatch(/-keep class org\.apache\.harmony\.xnet\.provider\.jsse/);
-      
+      expect(proguardContent).toMatch(
+        /-keep class com\.android\.org\.conscrypt/
+      );
+      expect(proguardContent).toMatch(
+        /-keep class org\.apache\.harmony\.xnet\.provider\.jsse/
+      );
+
       // Certificate pinning protection
       expect(proguardContent).toMatch(/-keep class javax\.net\.ssl/);
     });
@@ -267,7 +318,9 @@ describe('Android Security Configuration Tests', () => {
 
     it('should remove debug information', () => {
       expect(proguardContent).toMatch(/-renamesourcefileattribute SourceFile/);
-      expect(proguardContent).toMatch(/-keepattributes !SourceFile,!LineNumberTable/);
+      expect(proguardContent).toMatch(
+        /-keepattributes !SourceFile,!LineNumberTable/
+      );
     });
 
     it('should have anti-tampering protection', () => {
@@ -283,38 +336,53 @@ describe('Android Security Configuration Tests', () => {
     beforeAll(() => {
       networkConfigContent = fs.readFileSync(NETWORK_CONFIG_PATH, 'utf8');
       const parser = new DOMParser();
-      networkConfigDoc = parser.parseFromString(networkConfigContent, 'text/xml');
+      networkConfigDoc = parser.parseFromString(
+        networkConfigContent,
+        'text/xml'
+      );
     });
 
     it('should disable cleartext traffic by default', () => {
-      const baseConfig = networkConfigDoc.getElementsByTagName('base-config')[0] as Element;
-      const cleartextPermitted = baseConfig.getAttribute('cleartextTrafficPermitted');
-      
+      const baseConfig = networkConfigDoc.getElementsByTagName(
+        'base-config'
+      )[0] as Element;
+      const cleartextPermitted = baseConfig.getAttribute(
+        'cleartextTrafficPermitted'
+      );
+
       expect(cleartextPermitted).toBe('false');
     });
 
     it('should allow cleartext for localhost development', () => {
-      const domainConfigs = networkConfigDoc.getElementsByTagName('domain-config');
-      
+      const domainConfigs =
+        networkConfigDoc.getElementsByTagName('domain-config');
+
       let localhostConfig = null;
       Array.from(domainConfigs).forEach((config: Element) => {
         const domains = config.getElementsByTagName('domain');
         Array.from(domains).forEach((domain: Element) => {
-          if (domain.textContent === 'localhost' || 
-              domain.textContent === '127.0.0.1' || 
-              domain.textContent === '10.0.2.2') {
+          if (
+            domain.textContent === 'localhost' ||
+            domain.textContent === '127.0.0.1' ||
+            domain.textContent === '10.0.2.2'
+          ) {
             localhostConfig = config;
           }
         });
       });
 
       expect(localhostConfig).toBeTruthy();
-      expect((localhostConfig as Element | null)?.getAttribute('cleartextTrafficPermitted')).toBe('true');
+      expect(
+        (localhostConfig as Element | null)?.getAttribute(
+          'cleartextTrafficPermitted'
+        )
+      ).toBe('true');
     });
 
     it('should trust system certificates', () => {
-      const trustAnchors = networkConfigDoc.getElementsByTagName('trust-anchors');
-      
+      const trustAnchors =
+        networkConfigDoc.getElementsByTagName('trust-anchors');
+
       let hasSystemCerts = false;
       Array.from(trustAnchors).forEach((anchor: Element) => {
         const certificates = anchor.getElementsByTagName('certificates');
@@ -329,7 +397,8 @@ describe('Android Security Configuration Tests', () => {
     });
 
     it('should have debug overrides for development', () => {
-      const debugOverrides = networkConfigDoc.getElementsByTagName('debug-overrides');
+      const debugOverrides =
+        networkConfigDoc.getElementsByTagName('debug-overrides');
       expect(debugOverrides.length).toBeGreaterThan(0);
     });
 
@@ -343,24 +412,40 @@ describe('Android Security Configuration Tests', () => {
   describe('Permission Usage Validation', () => {
     it('should validate INTERNET permission usage', () => {
       // This permission is used for API calls
-      expect(fs.existsSync(path.join(__dirname, '../../src/services/ReadeckApiService.ts'))).toBe(true);
+      expect(
+        fs.existsSync(
+          path.join(__dirname, '../../src/services/ReadeckApiService.ts')
+        )
+      ).toBe(true);
     });
 
     it('should validate ACCESS_NETWORK_STATE permission usage', () => {
       // This permission is used for connectivity checking
-      expect(fs.existsSync(path.join(__dirname, '../../src/utils/connectivityManager.ts'))).toBe(true);
+      expect(
+        fs.existsSync(
+          path.join(__dirname, '../../src/utils/connectivityManager.ts')
+        )
+      ).toBe(true);
     });
 
     it('should validate background service permissions usage', () => {
       // FOREGROUND_SERVICE permissions are used for sync
-      expect(fs.existsSync(path.join(__dirname, '../../src/services/BackgroundSyncService.ts'))).toBe(true);
-      expect(fs.existsSync(path.join(__dirname, '../../src/services/BackgroundTaskManager.ts'))).toBe(true);
+      expect(
+        fs.existsSync(
+          path.join(__dirname, '../../src/services/BackgroundSyncService.ts')
+        )
+      ).toBe(true);
+      expect(
+        fs.existsSync(
+          path.join(__dirname, '../../src/services/BackgroundTaskManager.ts')
+        )
+      ).toBe(true);
     });
 
     it('should validate notification permission usage', () => {
       // POST_NOTIFICATIONS is used for sync status
       const backgroundTaskManager = fs.readFileSync(
-        path.join(__dirname, '../../src/services/BackgroundTaskManager.ts'), 
+        path.join(__dirname, '../../src/services/BackgroundTaskManager.ts'),
         'utf8'
       );
       expect(backgroundTaskManager).toMatch(/POST_NOTIFICATIONS/);
@@ -369,11 +454,11 @@ describe('Android Security Configuration Tests', () => {
     it('should validate alarm permissions usage', () => {
       // Alarm permissions are used for background sync scheduling
       const backgroundTaskManager = fs.readFileSync(
-        path.join(__dirname, '../../src/services/BackgroundTaskManager.ts'), 
+        path.join(__dirname, '../../src/services/BackgroundTaskManager.ts'),
         'utf8'
       );
       expect(backgroundTaskManager).toMatch(/SCHEDULE_EXACT_ALARM/);
-      
+
       // Check manifest for permission declarations
       const manifestContent = fs.readFileSync(MANIFEST_PATH, 'utf8');
       expect(manifestContent).toMatch(/USE_EXACT_ALARM/);
@@ -384,7 +469,7 @@ describe('Android Security Configuration Tests', () => {
   describe('Security Best Practices Compliance', () => {
     it('should not expose unnecessary components', () => {
       const manifestContent = fs.readFileSync(MANIFEST_PATH, 'utf8');
-      
+
       // Should not have debug activities in production
       expect(manifestContent).not.toMatch(/debug.*Activity/i);
       expect(manifestContent).not.toMatch(/test.*Activity/i);
@@ -392,22 +477,26 @@ describe('Android Security Configuration Tests', () => {
 
     it('should have proper app branding', () => {
       const manifestContent = fs.readFileSync(MANIFEST_PATH, 'utf8');
-      
+
       expect(manifestContent).toMatch(/@string\/app_name/);
       expect(manifestContent).toMatch(/@mipmap\/ic_launcher/);
     });
 
     it('should follow Android 13+ requirements', () => {
       const buildGradleContent = fs.readFileSync(BUILD_GRADLE_PATH, 'utf8');
-      
+
       // Should support modern Android versions
-      expect(buildGradleContent).toMatch(/compileSdk\s*=\s*rootProject\.ext\.compileSdkVersion/);
-      expect(buildGradleContent).toMatch(/targetSdkVersion\s*=\s*rootProject\.ext\.targetSdkVersion/);
+      expect(buildGradleContent).toMatch(
+        /compileSdk\s*=\s*rootProject\.ext\.compileSdkVersion/
+      );
+      expect(buildGradleContent).toMatch(
+        /targetSdkVersion\s*=\s*rootProject\.ext\.targetSdkVersion/
+      );
     });
 
     it('should have secure default configurations', () => {
       const manifestContent = fs.readFileSync(MANIFEST_PATH, 'utf8');
-      
+
       // Should have secure defaults
       expect(manifestContent).toMatch(/android:allowBackup="false"/);
       expect(manifestContent).toMatch(/android:supportsRtl="true"/);
@@ -418,7 +507,7 @@ describe('Android Security Configuration Tests', () => {
     it('should have debug keystore for development only', () => {
       const debugKeystore = path.join(ANDROID_DIR, 'app/debug.keystore');
       expect(fs.existsSync(debugKeystore)).toBe(true);
-      
+
       // Should not have release keystore committed
       const releaseKeystore = path.join(ANDROID_DIR, 'app/release.keystore');
       expect(fs.existsSync(releaseKeystore)).toBe(false);
@@ -426,21 +515,21 @@ describe('Android Security Configuration Tests', () => {
 
     it('should have environment-based signing configuration', () => {
       const gradleProperties = fs.readFileSync(
-        path.join(ANDROID_DIR, 'gradle.properties'), 
+        path.join(ANDROID_DIR, 'gradle.properties'),
         'utf8'
       );
-      
+
       // Should document signing configuration
       expect(gradleProperties).toMatch(/MOBDECK_UPLOAD_STORE_FILE/);
       expect(gradleProperties).toMatch(/MOBDECK_UPLOAD_KEY_ALIAS/);
-      
+
       // Should not contain actual secrets
       expect(gradleProperties).not.toMatch(/password.*=.*[^#]/);
     });
 
     it('should handle cleartext traffic appropriately', () => {
       const networkConfigContent = fs.readFileSync(NETWORK_CONFIG_PATH, 'utf8');
-      
+
       // Should allow localhost but not production cleartext
       expect(networkConfigContent).toMatch(/localhost/);
       expect(networkConfigContent).toMatch(/127\.0\.0\.1/);

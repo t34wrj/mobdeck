@@ -11,7 +11,7 @@ import {
   resetSyncStatus,
   cancelSync,
 } from '../store/slices/syncSlice';
-import { 
+import {
   startSyncOperation,
   pauseSyncOperation,
   resumeSyncOperation,
@@ -27,7 +27,13 @@ export const SyncSettings: React.FC = () => {
   const [manualSyncLoading, setManualSyncLoading] = useState(false);
 
   // Debug log the sync state (development only)
-  __DEV__ && console.log('[SyncSettings] Full sync state:', { status, error, isOnline, lastSyncTime });
+  __DEV__ &&
+    console.log('[SyncSettings] Full sync state:', {
+      status,
+      error,
+      isOnline,
+      lastSyncTime,
+    });
 
   const handleManualSync = useCallback(async () => {
     if (!isOnline) {
@@ -44,8 +50,9 @@ export const SyncSettings: React.FC = () => {
       // Reset sync status before starting new sync
       __DEV__ && console.log('[SyncSettings] Resetting sync status...');
       dispatch(resetSyncStatus());
-      
-      __DEV__ && console.log('[SyncSettings] Dispatching startSyncOperation...');
+
+      __DEV__ &&
+        console.log('[SyncSettings] Dispatching startSyncOperation...');
       await dispatch(
         startSyncOperation({
           syncOptions: {
@@ -58,7 +65,10 @@ export const SyncSettings: React.FC = () => {
       __DEV__ && console.log('[SyncSettings] Sync completed successfully');
     } catch (err) {
       console.error('[SyncSettings] Manual sync failed:', err);
-      Alert.alert('Sync Error', err?.message || 'Failed to start sync. Please try again.');
+      Alert.alert(
+        'Sync Error',
+        err?.message || 'Failed to start sync. Please try again.'
+      );
     } finally {
       setManualSyncLoading(false);
     }
@@ -116,7 +126,13 @@ export const SyncSettings: React.FC = () => {
   };
 
   const getSyncStatusText = () => {
-    __DEV__ && console.log('[SyncSettings] Current sync status:', status, 'Error:', error);
+    __DEV__ &&
+      console.log(
+        '[SyncSettings] Current sync status:',
+        status,
+        'Error:',
+        error
+      );
     switch (status) {
       case SyncStatus.IDLE:
         return 'Ready to sync';
@@ -201,7 +217,6 @@ export const SyncSettings: React.FC = () => {
     );
   };
 
-
   const renderSyncControls = () => {
     const isSyncing = status === SyncStatus.SYNCING;
     const isPaused = status === SyncStatus.PAUSED;
@@ -219,7 +234,6 @@ export const SyncSettings: React.FC = () => {
             {isOnline ? 'Sync Now' : 'No Connection'}
           </Button>
         )}
-
 
         {isSyncing && (
           <Button variant='secondary' onPress={handlePauseSync} fullWidth>

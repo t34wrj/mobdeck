@@ -40,7 +40,10 @@ export const mockNavigation = {
 };
 
 // Mock route object factory
-export const createMockRoute = (params: any = {}, name: string = 'TestScreen') => ({
+export const createMockRoute = (
+  params: any = {},
+  name: string = 'TestScreen'
+) => ({
   key: `${name}-test-key`,
   name,
   params,
@@ -84,7 +87,7 @@ export const useMockNavigation = () => mockNavigation;
 /**
  * Mock route hook that returns a test route
  */
-export const useMockRoute = (params: any = {}, name: string = 'TestScreen') => 
+export const useMockRoute = (params: any = {}, name: string = 'TestScreen') =>
   createMockRoute(params, name);
 
 /**
@@ -103,7 +106,9 @@ export const withMockNavigation = <P extends object>(
 /**
  * Creates a mock navigation context for testing navigation behavior
  */
-export const createMockNavigationContext = (overrides: Partial<typeof mockNavigation> = {}) => ({
+export const createMockNavigationContext = (
+  overrides: Partial<typeof mockNavigation> = {}
+) => ({
   ...mockNavigation,
   ...overrides,
 });

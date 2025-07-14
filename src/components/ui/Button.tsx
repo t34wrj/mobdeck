@@ -164,16 +164,16 @@ const getButtonStyles = (
 
 /**
  * Reusable Button component with multiple variants and sizes
- * 
+ *
  * @param props - Button component props
  * @returns Rendered button component
- * 
+ *
  * @example
  * ```tsx
  * <Button variant="primary" size="md" onPress={() => console.log('Pressed')}>
  *   Save Article
  * </Button>
- * 
+ *
  * <Button variant="outline" loading={true}>
  *   Loading...
  * </Button>

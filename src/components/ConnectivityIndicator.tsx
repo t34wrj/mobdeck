@@ -3,28 +3,35 @@ import { Text, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { theme } from './ui/theme';
-import { connectivityManager, ConnectivityStatus } from '../utils/connectivityManager';
+import {
+  connectivityManager,
+  ConnectivityStatus,
+} from '../utils/connectivityManager';
 import { selectIsUserAuthenticated } from '../store/selectors/authSelectors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export const ConnectivityIndicator: React.FC = () => {
-  const [status, setStatus] = useState<ConnectivityStatus>(connectivityManager.getStatus());
+  const [status, setStatus] = useState<ConnectivityStatus>(
+    connectivityManager.getStatus()
+  );
   const [visible, setVisible] = useState(false);
   const animatedValue = useMemo(() => new Animated.Value(0), []);
   const insets = useSafeAreaInsets();
   const isUserAuthenticated = useSelector(selectIsUserAuthenticated);
-  
+
   useEffect(() => {
     const handleStatusChange = (newStatus: ConnectivityStatus) => {
       setStatus(newStatus);
-      
+
       // Only show indicator when offline or server unreachable AND user is authenticated
       // Don't show server unreachable before user has configured a server
-      const shouldShow = newStatus !== ConnectivityStatus.ONLINE && 
-                        (newStatus === ConnectivityStatus.OFFLINE || 
-                         (newStatus === ConnectivityStatus.SERVER_UNREACHABLE && isUserAuthenticated));
+      const shouldShow =
+        newStatus !== ConnectivityStatus.ONLINE &&
+        (newStatus === ConnectivityStatus.OFFLINE ||
+          (newStatus === ConnectivityStatus.SERVER_UNREACHABLE &&
+            isUserAuthenticated));
       setVisible(shouldShow);
-      
+
       // Animate in/out
       Animated.timing(animatedValue, {
         toValue: shouldShow ? 1 : 0,
@@ -32,22 +39,22 @@ export const ConnectivityIndicator: React.FC = () => {
         useNativeDriver: true,
       }).start();
     };
-    
+
     // Set initial state
     handleStatusChange(connectivityManager.getStatus());
-    
+
     // Listen for changes
     connectivityManager.on('statusChanged', handleStatusChange);
-    
+
     return () => {
       connectivityManager.off('statusChanged', handleStatusChange);
     };
   }, [animatedValue, isUserAuthenticated]);
-  
+
   if (!visible && (animatedValue as any)._value === 0) {
     return null;
   }
-  
+
   const getStatusConfig = () => {
     switch (status) {
       case ConnectivityStatus.OFFLINE:
@@ -72,10 +79,10 @@ export const ConnectivityIndicator: React.FC = () => {
         return null;
     }
   };
-  
+
   const config = getStatusConfig();
   if (!config) return null;
-  
+
   return (
     <Animated.View
       style={[
@@ -95,8 +102,15 @@ export const ConnectivityIndicator: React.FC = () => {
         },
       ]}
     >
-      <Icon name={config.icon} size={20} color={theme.colors.neutral[50]} style={styles.icon} />
-      <Text style={[styles.text, { color: theme.colors.neutral[50] }]}>{config.text}</Text>
+      <Icon
+        name={config.icon}
+        size={20}
+        color={theme.colors.neutral[50]}
+        style={styles.icon}
+      />
+      <Text style={[styles.text, { color: theme.colors.neutral[50] }]}>
+        {config.text}
+      </Text>
     </Animated.View>
   );
 };

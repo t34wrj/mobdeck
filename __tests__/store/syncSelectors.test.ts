@@ -1,5 +1,10 @@
 import * as syncSelectors from '../../src/store/selectors/syncSelectors';
-import { SyncStatus, SyncPhase, ConflictType, ConflictResolutionStrategy } from '../../src/types/sync';
+import {
+  SyncStatus,
+  SyncPhase,
+  ConflictType,
+  ConflictResolutionStrategy,
+} from '../../src/types/sync';
 
 describe('syncSelectors', () => {
   const mockState = {
@@ -118,7 +123,8 @@ describe('syncSelectors', () => {
           progress: { ...mockState.sync.progress, totalItems: 0 },
         },
       };
-      const result = syncSelectors.selectSyncProgressPercentage(stateWithZeroItems);
+      const result =
+        syncSelectors.selectSyncProgressPercentage(stateWithZeroItems);
       expect(result).toBe(0);
     });
 
@@ -294,7 +300,9 @@ describe('syncSelectors', () => {
     it('should calculate next sync time', () => {
       const result = syncSelectors.selectNextSyncTime(mockState);
       expect(result).toBeTruthy();
-      expect(new Date(result!).getTime()).toBeGreaterThan(new Date('2023-12-01T10:00:00Z').getTime());
+      expect(new Date(result!).getTime()).toBeGreaterThan(
+        new Date('2023-12-01T10:00:00Z').getTime()
+      );
     });
 
     it('should handle null last sync time', () => {

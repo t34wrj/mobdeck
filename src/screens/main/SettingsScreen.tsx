@@ -82,7 +82,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           failedSyncs={stats.failedSyncs}
           lastSync={formatLastSync()}
           dataTransferred={formatDataTransfer()}
-          articlesSynced={stats.itemsSynced.articlesCreated + stats.itemsSynced.articlesUpdated}
+          articlesSynced={
+            stats.itemsSynced.articlesCreated +
+            stats.itemsSynced.articlesUpdated
+          }
         />
 
         <AppInfoSection />

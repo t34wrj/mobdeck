@@ -14,20 +14,29 @@ export class ShareService {
     try {
       console.log('ShareService: Checking for MobdeckShareModule...', {
         hasMobdeckShareModule: !!MobdeckShareModule,
-        hasGetSharedDataMethod: MobdeckShareModule && typeof MobdeckShareModule.getSharedData === 'function'
+        hasGetSharedDataMethod:
+          MobdeckShareModule &&
+          typeof MobdeckShareModule.getSharedData === 'function',
       });
 
-      if (!MobdeckShareModule || typeof MobdeckShareModule.getSharedData !== 'function') {
+      if (
+        !MobdeckShareModule ||
+        typeof MobdeckShareModule.getSharedData !== 'function'
+      ) {
         // MobdeckShareModule is only available when app is launched via share intent
-        console.log('ShareService: MobdeckShareModule not available or missing getSharedData method');
+        console.log(
+          'ShareService: MobdeckShareModule not available or missing getSharedData method'
+        );
         return null;
       }
 
-      console.log('ShareService: Calling MobdeckShareModule.getSharedData()...');
+      console.log(
+        'ShareService: Calling MobdeckShareModule.getSharedData()...'
+      );
       const data = await MobdeckShareModule.getSharedData();
-      
+
       console.log('ShareService: Raw response from native module:', data);
-      
+
       if (data) {
         console.log('ShareService: Retrieved shared data:', data);
         return {
@@ -36,7 +45,7 @@ export class ShareService {
           timestamp: data.timestamp,
         };
       }
-      
+
       console.log('ShareService: No shared data available');
       return null;
     } catch (error) {
@@ -51,7 +60,10 @@ export class ShareService {
    */
   static async clearSharedData(): Promise<boolean> {
     try {
-      if (!MobdeckShareModule || typeof MobdeckShareModule.clearSharedData !== 'function') {
+      if (
+        !MobdeckShareModule ||
+        typeof MobdeckShareModule.clearSharedData !== 'function'
+      ) {
         // MobdeckShareModule is only available when app is launched via share intent
         return false;
       }
@@ -128,12 +140,12 @@ export class ShareService {
       }
 
       const db = DatabaseService;
-      
+
       // Ensure database is initialized before attempting to queue
       await db.initialize();
-      
+
       const queueId = `shared_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       // Store in sync_metadata table for offline processing
       const result = await db.createSyncMetadata({
         entity_type: 'shared_url',
@@ -148,10 +160,13 @@ export class ShareService {
       });
 
       if (result.success) {
-        console.log('ShareService: Shared URL queued for offline processing:', queueId);
+        console.log(
+          'ShareService: Shared URL queued for offline processing:',
+          queueId
+        );
         return queueId;
       }
-      
+
       return null;
     } catch (error) {
       console.error('ShareService: Error queuing shared URL:', error);
@@ -163,12 +178,14 @@ export class ShareService {
    * Gets pending shared URLs from offline queue
    * @returns Promise resolving to array of pending shared URLs
    */
-  static async getPendingSharedUrls(): Promise<Array<{
-    id: string;
-    url: string;
-    title: string;
-    timestamp: number;
-  }>> {
+  static async getPendingSharedUrls(): Promise<
+    Array<{
+      id: string;
+      url: string;
+      title: string;
+      timestamp: number;
+    }>
+  > {
     try {
       const db = DatabaseService;
       const result = await db.getSyncMetadata({
@@ -177,27 +194,29 @@ export class ShareService {
       });
 
       if (result.success && result.data && result.data.items) {
-        return result.data.items.map(item => {
-          try {
-            const articleData = JSON.parse(item.error_message || '{}');
-            return {
-              id: item.entity_id,
-              url: articleData.url || '',
-              title: articleData.title || 'Shared Article',
-              timestamp: item.local_timestamp,
-            };
-          } catch (e) {
-            console.error('ShareService: Error parsing queued URL data:', e);
-            return {
-              id: item.entity_id,
-              url: '',
-              title: 'Invalid Share Data',
-              timestamp: item.local_timestamp,
-            };
-          }
-        }).filter(item => item.url); // Filter out invalid entries
+        return result.data.items
+          .map(item => {
+            try {
+              const articleData = JSON.parse(item.error_message || '{}');
+              return {
+                id: item.entity_id,
+                url: articleData.url || '',
+                title: articleData.title || 'Shared Article',
+                timestamp: item.local_timestamp,
+              };
+            } catch (e) {
+              console.error('ShareService: Error parsing queued URL data:', e);
+              return {
+                id: item.entity_id,
+                url: '',
+                title: 'Invalid Share Data',
+                timestamp: item.local_timestamp,
+              };
+            }
+          })
+          .filter(item => item.url); // Filter out invalid entries
       }
-      
+
       return [];
     } catch (error) {
       console.error('ShareService: Error getting pending shared URLs:', error);
@@ -214,7 +233,8 @@ export class ShareService {
     try {
       const db = DatabaseService;
       // Get the item by entity_id using a direct SQL query
-      const sql = 'SELECT * FROM sync_metadata WHERE entity_type = ? AND entity_id = ?';
+      const sql =
+        'SELECT * FROM sync_metadata WHERE entity_type = ? AND entity_id = ?';
       const queryResult = await db.executeSql(sql, ['shared_url', queueId]);
 
       if (queryResult.rows.length > 0) {
@@ -222,7 +242,7 @@ export class ShareService {
         const deleteResult = await db.deleteSyncMetadata(item.id);
         return deleteResult.success;
       }
-      
+
       return false;
     } catch (error) {
       console.error('ShareService: Error removing from queue:', error);

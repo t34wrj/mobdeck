@@ -5,7 +5,11 @@
 
 import * as Keychain from 'react-native-keychain';
 import AuthStorageService from '../../src/services/AuthStorageService';
-import { validateToken, generateSecureRandom, hashData } from '../../src/utils/security';
+import {
+  validateToken,
+  generateSecureRandom,
+  hashData,
+} from '../../src/utils/security';
 import { StorageErrorCode } from '../../src/types/auth';
 
 // Mock dependencies
@@ -45,17 +49,18 @@ jest.mock('../../src/utils/logger', () => ({
 
 describe('Storage Security: AuthStorageService', () => {
   let authService: AuthStorageService;
-  const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE5MTYyMzkwMjJ9.4Adcj3UFYzPUVaVF43FmMab6RlaQD8A9V8wFzzht-KQ';
+  const mockToken =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE5MTYyMzkwMjJ9.4Adcj3UFYzPUVaVF43FmMab6RlaQD8A9V8wFzzht-KQ';
 
   beforeEach(() => {
     authService = new AuthStorageService();
     jest.clearAllMocks();
-    
+
     // Setup default mocks
     (validateToken as jest.Mock).mockReturnValue({ isValid: true });
     (generateSecureRandom as jest.Mock).mockReturnValue('random-salt-value');
     (hashData as jest.Mock).mockReturnValue('hashed-checksum');
-    
+
     // Mock console methods to prevent actual logging during tests
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
@@ -67,7 +72,7 @@ describe('Storage Security: AuthStorageService', () => {
     it('should validate token before storing', async () => {
       // Mock validation to return false for this test
       (validateToken as jest.Mock).mockReturnValueOnce({ isValid: false });
-      
+
       // Test with invalid token (too short)
       const result = await authService.storeToken('short');
 
@@ -77,12 +82,18 @@ describe('Storage Security: AuthStorageService', () => {
 
     it('should store token with security metadata', async () => {
       (validateToken as jest.Mock).mockReturnValue({ isValid: true });
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue({ service: 'mobdeck_auth_tokens', username: 'api_token' });
+      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue({
+        service: 'mobdeck_auth_tokens',
+        username: 'api_token',
+      });
 
       const result = await authService.storeToken(mockToken);
-      
+
       console.log('Test result:', result);
-      console.log('setInternetCredentials called with:', (Keychain.setInternetCredentials as jest.Mock).mock.calls);
+      console.log(
+        'setInternetCredentials called with:',
+        (Keychain.setInternetCredentials as jest.Mock).mock.calls
+      );
 
       expect(result).toBe(true);
       expect(Keychain.setInternetCredentials).toHaveBeenCalledWith(
@@ -97,13 +108,16 @@ describe('Storage Security: AuthStorageService', () => {
 
     it('should generate and store token checksum', async () => {
       (validateToken as jest.Mock).mockReturnValue({ isValid: true });
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue({ service: 'mobdeck_auth_tokens', username: 'api_token' });
+      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue({
+        service: 'mobdeck_auth_tokens',
+        username: 'api_token',
+      });
 
       await authService.storeToken(mockToken);
 
       expect(generateSecureRandom).toHaveBeenCalledWith(16);
       expect(hashData).toHaveBeenCalledWith(mockToken, 'random-salt-value');
-      
+
       const storedData = JSON.parse(
         (Keychain.setInternetCredentials as jest.Mock).mock.calls[0][2]
       );
@@ -123,14 +137,17 @@ describe('Storage Security: AuthStorageService', () => {
 
     it('should extract expiration from JWT', async () => {
       (validateToken as jest.Mock).mockReturnValue({ isValid: true });
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue({ service: 'mobdeck_auth_tokens', username: 'api_token' });
+      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue({
+        service: 'mobdeck_auth_tokens',
+        username: 'api_token',
+      });
 
       await authService.storeToken(mockToken);
 
       const storedData = JSON.parse(
         (Keychain.setInternetCredentials as jest.Mock).mock.calls[0][2]
       );
-      
+
       // The mock token has exp: 1916239022 (year 2030)
       const expirationDate = new Date(storedData.expiresAt);
       expect(expirationDate.getFullYear()).toBeGreaterThan(2025);
@@ -173,7 +190,9 @@ describe('Storage Security: AuthStorageService', () => {
       (Keychain.resetInternetCredentials as jest.Mock).mockResolvedValue(true);
 
       // Mock checksum verification failure
-      jest.spyOn(authService as any, 'verifyTokenChecksum').mockReturnValueOnce(false);
+      jest
+        .spyOn(authService as any, 'verifyTokenChecksum')
+        .mockReturnValueOnce(false);
 
       const token = await authService.retrieveToken();
 
@@ -197,7 +216,9 @@ describe('Storage Security: AuthStorageService', () => {
       const oldTokenData = {
         token: mockToken,
         expiresAt: new Date(Date.now() + 86400000).toISOString(),
-        issuedAt: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString(), // 100 days old
+        issuedAt: new Date(
+          Date.now() - 100 * 24 * 60 * 60 * 1000
+        ).toISOString(), // 100 days old
         serverUrl: '',
         version: '1.0',
       };
@@ -209,13 +230,11 @@ describe('Storage Security: AuthStorageService', () => {
       // Mock logger.info to capture the rotation message
       const loggerMock = require('../../src/utils/logger');
       const loggerInfoSpy = jest.spyOn(loggerMock.logger, 'info');
-      
+
       await authService.retrieveToken();
 
       // Should log rotation recommendation
-      expect(loggerInfoSpy).toHaveBeenCalledWith(
-        'Token rotation recommended'
-      );
+      expect(loggerInfoSpy).toHaveBeenCalledWith('Token rotation recommended');
     });
   });
 
@@ -226,7 +245,9 @@ describe('Storage Security: AuthStorageService', () => {
       const result = await authService.deleteToken();
 
       expect(result).toBe(true);
-      expect(Keychain.resetInternetCredentials).toHaveBeenCalledWith('mobdeck_auth_tokens');
+      expect(Keychain.resetInternetCredentials).toHaveBeenCalledWith(
+        'mobdeck_auth_tokens'
+      );
     });
 
     it('should handle deletion errors gracefully', async () => {
@@ -244,7 +265,7 @@ describe('Storage Security: AuthStorageService', () => {
 
       // Access private property for testing
       (authService as any).lastRotationCheck = new Date();
-      
+
       await authService.deleteToken();
 
       expect((authService as any).lastRotationCheck).toBeNull();
@@ -295,7 +316,9 @@ describe('Storage Security: AuthStorageService', () => {
 
   describe('Biometric Authentication', () => {
     it('should enable biometric authentication when available', async () => {
-      (Keychain.getSupportedBiometryType as jest.Mock).mockResolvedValue('TouchID');
+      (Keychain.getSupportedBiometryType as jest.Mock).mockResolvedValue(
+        'TouchID'
+      );
 
       const result = await authService.enableBiometricAuth();
 
@@ -324,7 +347,9 @@ describe('Storage Security: AuthStorageService', () => {
 
   describe('Security Configuration', () => {
     it('should return current security configuration', async () => {
-      (Keychain.getSupportedBiometryType as jest.Mock).mockResolvedValue('FaceID');
+      (Keychain.getSupportedBiometryType as jest.Mock).mockResolvedValue(
+        'FaceID'
+      );
 
       const config = await authService.getSecurityConfig();
 
@@ -340,13 +365,24 @@ describe('Storage Security: AuthStorageService', () => {
   describe('Error Handling', () => {
     it('should categorize keychain errors correctly', async () => {
       const errors = [
-        { error: new Error('UserCancel'), expectedCode: StorageErrorCode.USER_CANCELLED },
-        { error: new Error('BiometryNotAvailable'), expectedCode: StorageErrorCode.BIOMETRIC_UNAVAILABLE },
-        { error: new Error('KeychainError'), expectedCode: StorageErrorCode.KEYCHAIN_UNAVAILABLE },
+        {
+          error: new Error('UserCancel'),
+          expectedCode: StorageErrorCode.USER_CANCELLED,
+        },
+        {
+          error: new Error('BiometryNotAvailable'),
+          expectedCode: StorageErrorCode.BIOMETRIC_UNAVAILABLE,
+        },
+        {
+          error: new Error('KeychainError'),
+          expectedCode: StorageErrorCode.KEYCHAIN_UNAVAILABLE,
+        },
       ];
 
       for (const { error, expectedCode } of errors) {
-        (Keychain.setInternetCredentials as jest.Mock).mockRejectedValueOnce(error);
+        (Keychain.setInternetCredentials as jest.Mock).mockRejectedValueOnce(
+          error
+        );
 
         const result = await authService.storeToken(mockToken);
 
@@ -391,7 +427,7 @@ describe('Storage Security: AuthStorageService', () => {
       // Mock logger.warn to capture the version warning
       const loggerMock = require('../../src/utils/logger');
       const loggerWarnSpy = jest.spyOn(loggerMock.logger, 'warn');
-      
+
       await authService.retrieveToken();
 
       expect(loggerWarnSpy).toHaveBeenCalledWith(

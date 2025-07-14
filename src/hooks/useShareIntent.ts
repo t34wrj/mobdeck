@@ -24,7 +24,7 @@ export const useShareIntent = (): UseShareIntentResult => {
     try {
       console.log('useShareIntent: Calling ShareService.getSharedData()...');
       const data = await ShareService.getSharedData();
-      
+
       if (data) {
         console.log('useShareIntent: Share intent detected:', data);
         setSharedData(data);
@@ -34,7 +34,10 @@ export const useShareIntent = (): UseShareIntentResult => {
     } catch (e) {
       const errorMessage =
         e instanceof Error ? e.message : 'Failed to process shared data';
-      console.error('useShareIntent: Error processing shared data:', errorMessage);
+      console.error(
+        'useShareIntent: Error processing shared data:',
+        errorMessage
+      );
       setError(errorMessage);
     } finally {
       setIsProcessing(false);

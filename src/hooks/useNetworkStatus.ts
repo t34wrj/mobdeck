@@ -13,12 +13,12 @@ interface NetworkStatus {
 
 /**
  * Hook to monitor network connectivity status
- * 
+ *
  * @returns NetworkStatus object with connectivity information
  * @example
  * ```tsx
  * const { isOnline, isConnected } = useNetworkStatus();
- * 
+ *
  * if (!isOnline) {
  *   return <OfflineBanner />;
  * }
@@ -34,7 +34,7 @@ export const useNetworkStatus = (): NetworkStatus => {
     const updateNetworkStatus = () => {
       const isOnline = readeckApiService.isOnline();
       const networkState = readeckApiService.getNetworkState();
-      
+
       setNetworkStatus({
         isOnline,
         isConnected: networkState.isConnected,

@@ -28,9 +28,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
         accessibilityHint='Enter keywords to search your articles'
         accessibilityRole='search'
       />
-      <Button 
-        variant='primary' 
-        size='sm' 
+      <Button
+        variant='primary'
+        size='sm'
         onPress={onSearchSubmit}
         accessibilityLabel='Search button'
         accessibilityHint='Tap to search for articles'

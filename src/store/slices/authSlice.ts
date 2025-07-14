@@ -24,7 +24,7 @@ export const loginUser = createAsyncThunk<
   { rejectValue: string }
 >('auth/loginUser', async (credentials, { rejectWithValue }) => {
   try {
-    logger.info('Login attempt initiated', { 
+    logger.info('Login attempt initiated', {
       serverUrl: credentials.serverUrl,
       username: credentials.username,
     });
@@ -69,59 +69,67 @@ export const loginUser = createAsyncThunk<
   } catch (error) {
     const handledError = errorHandler.handleError(error, {
       category: ErrorCategory.AUTHENTICATION,
-      context: { 
+      context: {
         actionType: 'login',
         serverUrl: credentials.serverUrl,
       },
     });
-    
+
     logger.error('Login failed', { error: handledError });
     return rejectWithValue(handledError.userMessage);
   }
 });
 
-export const logoutUser = createAsyncThunk<void, void, { rejectValue: string; dispatch: any }>(
-  'auth/logoutUser',
-  async (_, { rejectWithValue, dispatch }) => {
+export const logoutUser = createAsyncThunk<
+  void,
+  void,
+  { rejectValue: string; dispatch: any }
+>('auth/logoutUser', async (_, { rejectWithValue, dispatch }) => {
+  try {
+    // Clear auth token from secure storage
+    const tokenDeleted = await authStorageService.deleteToken();
+    if (!tokenDeleted) {
+      console.warn('[AuthSlice] Failed to delete token from secure storage');
+    }
+
+    // Clear all locally stored data
     try {
-      // Clear auth token from secure storage
-      const tokenDeleted = await authStorageService.deleteToken();
-      if (!tokenDeleted) {
-        console.warn('[AuthSlice] Failed to delete token from secure storage');
+      // Import here to avoid circular dependencies
+      const { clearAll: clearAllArticles } = await import('./articlesSlice');
+      const { resetSyncState, resetSyncStats } = await import('./syncSlice');
+      const databaseService = (await import('../../services/DatabaseService'))
+        .default;
+
+      // Clear Redux state
+      dispatch(clearAllArticles());
+      dispatch(resetSyncState());
+      dispatch(resetSyncStats());
+
+      // Clear database data
+      const clearResult = await databaseService.clearAllData();
+      if (!clearResult.success) {
+        console.warn(
+          '[AuthSlice] Failed to clear database data:',
+          clearResult.error
+        );
       }
 
-      // Clear all locally stored data
-      try {
-        // Import here to avoid circular dependencies
-        const { clearAll: clearAllArticles } = await import('./articlesSlice');
-        const { resetSyncState, resetSyncStats } = await import('./syncSlice');
-        const databaseService = (await import('../../services/DatabaseService')).default;
-        
-        // Clear Redux state
-        dispatch(clearAllArticles());
-        dispatch(resetSyncState());
-        dispatch(resetSyncStats());
-        
-        // Clear database data
-        const clearResult = await databaseService.clearAllData();
-        if (!clearResult.success) {
-          console.warn('[AuthSlice] Failed to clear database data:', clearResult.error);
-        }
-        
-        logger.info('User logged out - all local data cleared');
-      } catch (error) {
-        console.warn('[AuthSlice] Error clearing local data during logout:', error);
-        // Don't fail the logout if data cleanup fails
-      }
-      
-      return undefined; // Explicit return for consistency
+      logger.info('User logged out - all local data cleared');
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Logout failed';
-      return rejectWithValue(errorMessage);
+      console.warn(
+        '[AuthSlice] Error clearing local data during logout:',
+        error
+      );
+      // Don't fail the logout if data cleanup fails
     }
+
+    return undefined; // Explicit return for consistency
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Logout failed';
+    return rejectWithValue(errorMessage);
   }
-);
+});
 
 export const initializeAuth = createAsyncThunk<
   { user: AuthenticatedUser; token: string } | null,
@@ -137,52 +145,67 @@ export const initializeAuth = createAsyncThunk<
 
       if (validation.isValid && !validation.isExpired) {
         // Restore user data from stored auth data
-        const user: AuthenticatedUser = authData.user ? {
-          id: authData.user.id,
-          username: authData.user.username,
-          email: authData.user.email,
-          serverUrl: authData.serverUrl,
-          lastLoginAt: authData.user.lastLoginAt,
-          tokenExpiresAt: authData.expiresAt,
-        } : {
-          // Fallback for legacy tokens without user data
-          id: 'readeck-user',
-          username: 'Readeck User',
-          email: 'user@readeck.local',
-          serverUrl: authData.serverUrl || '',
-          lastLoginAt: new Date().toISOString(),
-          tokenExpiresAt: authData.expiresAt,
-        };
-        
+        const user: AuthenticatedUser = authData.user
+          ? {
+              id: authData.user.id,
+              username: authData.user.username,
+              email: authData.user.email,
+              serverUrl: authData.serverUrl,
+              lastLoginAt: authData.user.lastLoginAt,
+              tokenExpiresAt: authData.expiresAt,
+            }
+          : {
+              // Fallback for legacy tokens without user data
+              id: 'readeck-user',
+              username: 'Readeck User',
+              email: 'user@readeck.local',
+              serverUrl: authData.serverUrl || '',
+              lastLoginAt: new Date().toISOString(),
+              tokenExpiresAt: authData.expiresAt,
+            };
+
         // Configure the ReadeckApiService with the restored server URL
         if (user.serverUrl) {
           try {
-            const { readeckApiService } = await import('../../services/ReadeckApiService');
+            const { readeckApiService } = await import(
+              '../../services/ReadeckApiService'
+            );
             const cleanUrl = user.serverUrl.trim().replace(/\/$/, '');
-            const apiUrl = cleanUrl.includes('/api') ? cleanUrl : `${cleanUrl}/api`;
-            
-            console.log('[AuthSlice] Configuring API service on auth restore:', {
-              originalUrl: user.serverUrl,
-              cleanUrl,
-              apiUrl,
-            });
-            
+            const apiUrl = cleanUrl.includes('/api')
+              ? cleanUrl
+              : `${cleanUrl}/api`;
+
+            console.log(
+              '[AuthSlice] Configuring API service on auth restore:',
+              {
+                originalUrl: user.serverUrl,
+                cleanUrl,
+                apiUrl,
+              }
+            );
+
             readeckApiService.updateConfig({
               baseUrl: apiUrl,
             });
-            
-            logger.info('API service configured for restored session', { 
+
+            logger.info('API service configured for restored session', {
               serverUrl: user.serverUrl,
               apiUrl,
             });
           } catch (error) {
-            console.error('[AuthSlice] Failed to configure API service:', error);
+            console.error(
+              '[AuthSlice] Failed to configure API service:',
+              error
+            );
           }
         } else {
           console.warn('[AuthSlice] No server URL found in restored auth data');
         }
-        
-        logger.info('Auth initialized successfully', { userId: user.id, serverUrl: user.serverUrl });
+
+        logger.info('Auth initialized successfully', {
+          userId: user.id,
+          serverUrl: user.serverUrl,
+        });
         return { user, token: authData.token };
       } else {
         logger.info('Stored token is invalid or expired, clearing auth data');
@@ -209,14 +232,14 @@ export const restoreAuthState = createAsyncThunk<
 >('auth/restoreAuthState', async (_, { rejectWithValue }) => {
   try {
     const token = await authStorageService.retrieveToken();
-    
+
     if (!token) {
       return null;
     }
-    
+
     // TODO: Properly restore user data including serverUrl from storage
     // For now, we'll need to handle this in the app initialization
-    
+
     return null;
   } catch (error) {
     const errorMessage =

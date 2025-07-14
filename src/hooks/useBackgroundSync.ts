@@ -8,9 +8,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useAppSelector, useAppDispatch, store } from '../store';
-import {
-  backgroundSyncService,
-} from '../services/BackgroundSyncService';
+import { backgroundSyncService } from '../services/BackgroundSyncService';
 import { updateSyncConfig } from '../store/slices/syncSlice';
 
 interface BackgroundSyncHookReturn {
@@ -86,18 +84,21 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
   /**
    * Handle app state changes
    */
-  const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
-    console.log(
-      `[useBackgroundSync] App state changed from ${appState} to ${nextAppState}`
-    );
+  const handleAppStateChange = useCallback(
+    (nextAppState: AppStateStatus) => {
+      console.log(
+        `[useBackgroundSync] App state changed from ${appState} to ${nextAppState}`
+      );
 
-    if (appState.match(/inactive|background/) && nextAppState === 'active') {
-      // App has come to foreground, update sync status
-      updateSyncStatus();
-    }
+      if (appState.match(/inactive|background/) && nextAppState === 'active') {
+        // App has come to foreground, update sync status
+        updateSyncStatus();
+      }
 
-    setAppState(nextAppState);
-  }, [appState]);
+      setAppState(nextAppState);
+    },
+    [appState]
+  );
 
   /**
    * Update sync status from background service

@@ -6,7 +6,9 @@ import { authStorageService } from '../../../src/services/AuthStorageService';
 // Mock dependencies
 jest.mock('react-native-keychain', () => ({
   setInternetCredentials: jest.fn(() => Promise.resolve(true)),
-  getInternetCredentials: jest.fn(() => Promise.resolve({ password: 'mock-token' })),
+  getInternetCredentials: jest.fn(() =>
+    Promise.resolve({ password: 'mock-token' })
+  ),
   resetInternetCredentials: jest.fn(() => Promise.resolve(true)),
 }));
 
@@ -45,13 +47,13 @@ describe('LoginScreen', () => {
   describe('Authentication flow', () => {
     it('handles successful token storage', async () => {
       (authStorageService.storeToken as jest.Mock).mockResolvedValue(true);
-      
+
       expect(authStorageService.storeToken).toBeDefined();
     });
 
     it('handles failed token storage', async () => {
       (authStorageService.storeToken as jest.Mock).mockResolvedValue(false);
-      
+
       const result = await authStorageService.storeToken('test-token');
       expect(result).toBe(false);
     });
@@ -116,10 +118,10 @@ describe('LoginScreen', () => {
   describe('Error handling', () => {
     it('shows alert on storage error', async () => {
       (authStorageService.storeToken as jest.Mock).mockResolvedValue(false);
-      
+
       // Simulate alert call
       Alert.alert('Storage Error', 'Failed to store token securely');
-      
+
       expect(Alert.alert).toHaveBeenCalledWith(
         'Storage Error',
         'Failed to store token securely'

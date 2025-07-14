@@ -3,11 +3,16 @@
  * Testing retry logic and exponential backoff
  */
 
-import { RetryManager, RetryOptions, RetryContext, WithRetry } from '../../src/utils/retryManager';
+import {
+  RetryManager,
+  RetryOptions,
+  RetryContext,
+  WithRetry,
+} from '../../src/utils/retryManager';
 
 describe('RetryManager', () => {
   let retryManager: RetryManager;
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
     retryManager = new RetryManager();
@@ -23,47 +28,50 @@ describe('RetryManager', () => {
   describe('Basic Retry Operations', () => {
     it('should execute operation successfully on first try', async () => {
       const operation = jest.fn().mockResolvedValue('success');
-      
+
       const result = await retryManager.retry(operation);
-      
+
       expect(result).toBe('success');
       expect(operation).toHaveBeenCalledTimes(1);
     });
 
     it('should retry failed operations', async () => {
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('First failure'))
         .mockRejectedValueOnce(new Error('Second failure'))
         .mockResolvedValue('success');
-      
-      const result = await retryManager.retry(operation, { 
+
+      const result = await retryManager.retry(operation, {
         maxAttempts: 3,
-        initialDelay: 1 // Very short delay for testing
+        initialDelay: 1, // Very short delay for testing
       });
-      
+
       expect(result).toBe('success');
       expect(operation).toHaveBeenCalledTimes(3);
     });
 
     it('should fail after max attempts', async () => {
-      const operation = jest.fn()
-        .mockRejectedValue(new Error('Always fails'));
-      
-      await expect(retryManager.retry(operation, { 
-        maxAttempts: 3,
-        initialDelay: 1
-      })).rejects.toThrow('Always fails');
-      
+      const operation = jest.fn().mockRejectedValue(new Error('Always fails'));
+
+      await expect(
+        retryManager.retry(operation, {
+          maxAttempts: 3,
+          initialDelay: 1,
+        })
+      ).rejects.toThrow('Always fails');
+
       expect(operation).toHaveBeenCalledTimes(3);
     });
 
     it('should use default options when not specified', async () => {
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail'))
         .mockResolvedValue('success');
-      
+
       const result = await retryManager.retry(operation, { initialDelay: 1 });
-      
+
       expect(result).toBe('success');
       expect(operation).toHaveBeenCalledTimes(2);
     });
@@ -71,14 +79,16 @@ describe('RetryManager', () => {
 
   describe('Retry Context', () => {
     it('should provide context to operation', async () => {
-      const operation = jest.fn().mockImplementation((context: RetryContext) => {
-        expect(context.attempt).toBeDefined();
-        expect(context.previousError).toBeDefined();
-        return Promise.resolve(`Attempt ${context.attempt}`);
-      });
-      
+      const operation = jest
+        .fn()
+        .mockImplementation((context: RetryContext) => {
+          expect(context.attempt).toBeDefined();
+          expect(context.previousError).toBeDefined();
+          return Promise.resolve(`Attempt ${context.attempt}`);
+        });
+
       const result = await retryManager.retry(operation);
-      
+
       expect(result).toBe('Attempt 1');
       expect(operation).toHaveBeenCalledWith({
         attempt: 1,
@@ -88,39 +98,43 @@ describe('RetryManager', () => {
 
     it('should increment attempt number on retries', async () => {
       const attempts: number[] = [];
-      const operation = jest.fn().mockImplementation((context: RetryContext) => {
-        attempts.push(context.attempt);
-        if (context.attempt < 3) {
-          return Promise.reject(new Error(`Fail ${context.attempt}`));
-        }
-        return Promise.resolve('success');
-      });
-      
+      const operation = jest
+        .fn()
+        .mockImplementation((context: RetryContext) => {
+          attempts.push(context.attempt);
+          if (context.attempt < 3) {
+            return Promise.reject(new Error(`Fail ${context.attempt}`));
+          }
+          return Promise.resolve('success');
+        });
+
       const resultPromise = retryManager.retry(operation, { maxAttempts: 5 });
-      
+
       await jest.runAllTimersAsync();
-      
+
       await resultPromise;
-      
+
       expect(attempts).toEqual([1, 2, 3]);
     });
 
     it('should provide previous error in context', async () => {
       const errors: Array<Error | null> = [];
-      const operation = jest.fn().mockImplementation((context: RetryContext) => {
-        errors.push(context.previousError);
-        if (context.attempt === 1) {
-          return Promise.reject(new Error('First error'));
-        }
-        return Promise.resolve('success');
-      });
-      
+      const operation = jest
+        .fn()
+        .mockImplementation((context: RetryContext) => {
+          errors.push(context.previousError);
+          if (context.attempt === 1) {
+            return Promise.reject(new Error('First error'));
+          }
+          return Promise.resolve('success');
+        });
+
       const resultPromise = retryManager.retry(operation);
-      
+
       await jest.runAllTimersAsync();
-      
+
       await resultPromise;
-      
+
       expect(errors[0]).toBeNull();
       expect(errors[1]?.message).toBe('First error');
     });
@@ -128,19 +142,20 @@ describe('RetryManager', () => {
 
   describe('Exponential Backoff', () => {
     it('should use exponential backoff', async () => {
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail 1'))
         .mockRejectedValueOnce(new Error('Fail 2'))
         .mockResolvedValue('success');
-      
+
       const options: RetryOptions = {
         maxAttempts: 3,
         initialDelay: 1, // Very short delay for testing
         backoffMultiplier: 2,
       };
-      
+
       const result = await retryManager.retry(operation, options);
-      
+
       // Should have tried 3 times total
       expect(operation).toHaveBeenCalledTimes(3);
       expect(result).toBe('success');
@@ -148,37 +163,41 @@ describe('RetryManager', () => {
 
     it('should respect max delay', async () => {
       const operation = jest.fn().mockRejectedValue(new Error('Always fails'));
-      
+
       const options: RetryOptions = {
         maxAttempts: 3,
         initialDelay: 1,
-        maxDelay: 2, // Very short for testing  
+        maxDelay: 2, // Very short for testing
         backoffMultiplier: 3,
       };
-      
-      await expect(retryManager.retry(operation, options)).rejects.toThrow('Always fails');
-      
+
+      await expect(retryManager.retry(operation, options)).rejects.toThrow(
+        'Always fails'
+      );
+
       // Should have tried 3 times total
       expect(operation).toHaveBeenCalledTimes(3);
     });
 
     it('should add jitter when enabled', async () => {
       const operation = jest.fn().mockRejectedValue(new Error('Always fails'));
-      
+
       const options: RetryOptions = {
         maxAttempts: 2,
         initialDelay: 1, // Very short delay for testing
         jitter: true,
       };
-      
+
       // Spy on Math.random to control jitter
       const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
-      
-      await expect(retryManager.retry(operation, options)).rejects.toThrow('Always fails');
-      
+
+      await expect(retryManager.retry(operation, options)).rejects.toThrow(
+        'Always fails'
+      );
+
       // Should have tried 2 times total
       expect(operation).toHaveBeenCalledTimes(2);
-      
+
       randomSpy.mockRestore();
     });
   });
@@ -188,20 +207,21 @@ describe('RetryManager', () => {
       const shouldRetry = jest.fn().mockImplementation((error: Error) => {
         return error.message !== 'Fatal error';
       });
-      
-      const operation = jest.fn()
+
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Temporary error'))
         .mockRejectedValueOnce(new Error('Fatal error'));
-      
+
       const options: RetryOptions = {
         maxAttempts: 5,
         shouldRetry,
       };
-      
+
       const resultPromise = retryManager.retry(operation, options);
-      
+
       await jest.runAllTimersAsync();
-      
+
       // Expect the promise to reject with the fatal error
       try {
         await resultPromise;
@@ -209,7 +229,7 @@ describe('RetryManager', () => {
       } catch (error) {
         expect(error.message).toBe('Fatal error');
       }
-      
+
       // Should stop after fatal error
       expect(operation).toHaveBeenCalledTimes(2);
       expect(shouldRetry).toHaveBeenCalledTimes(2);
@@ -218,14 +238,16 @@ describe('RetryManager', () => {
     it('should not retry when shouldRetry returns false', async () => {
       const operation = jest.fn().mockRejectedValue(new Error('Error'));
       const shouldRetry = jest.fn().mockReturnValue(false);
-      
+
       const options: RetryOptions = {
         maxAttempts: 3,
         shouldRetry,
       };
-      
-      await expect(retryManager.retry(operation, options)).rejects.toThrow('Error');
-      
+
+      await expect(retryManager.retry(operation, options)).rejects.toThrow(
+        'Error'
+      );
+
       expect(operation).toHaveBeenCalledTimes(1);
       expect(shouldRetry).toHaveBeenCalledTimes(1);
     });
@@ -235,14 +257,16 @@ describe('RetryManager', () => {
       const shouldRetry = jest.fn().mockImplementation(() => {
         throw new Error('shouldRetry error');
       });
-      
+
       const options: RetryOptions = {
         maxAttempts: 3,
         shouldRetry,
       };
-      
-      await expect(retryManager.retry(operation, options)).rejects.toThrow('Error');
-      
+
+      await expect(retryManager.retry(operation, options)).rejects.toThrow(
+        'Error'
+      );
+
       // Should treat exception as false and not retry
       expect(operation).toHaveBeenCalledTimes(1);
     });
@@ -251,22 +275,23 @@ describe('RetryManager', () => {
   describe('Callbacks', () => {
     it('should call onRetry callback', async () => {
       const onRetry = jest.fn();
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail 1'))
         .mockRejectedValueOnce(new Error('Fail 2'))
         .mockResolvedValue('success');
-      
+
       const options: RetryOptions = {
         maxAttempts: 3,
         onRetry,
       };
-      
+
       const resultPromise = retryManager.retry(operation, options);
-      
+
       await jest.runAllTimersAsync();
-      
+
       await resultPromise;
-      
+
       expect(onRetry).toHaveBeenCalledTimes(2);
       expect(onRetry).toHaveBeenCalledWith(
         expect.any(Error),
@@ -279,20 +304,21 @@ describe('RetryManager', () => {
       const onRetry = jest.fn().mockImplementation(() => {
         throw new Error('onRetry error');
       });
-      
-      const operation = jest.fn()
+
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail'))
         .mockResolvedValue('success');
-      
+
       const options: RetryOptions = {
         maxAttempts: 2,
         onRetry,
       };
-      
+
       const resultPromise = retryManager.retry(operation, options);
-      
+
       await jest.runAllTimersAsync();
-      
+
       // Should continue despite onRetry error
       const result = await resultPromise;
       expect(result).toBe('success');
@@ -301,23 +327,24 @@ describe('RetryManager', () => {
 
   describe('Abort Controller', () => {
     it('should abort retry operation', async () => {
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('First failure'))
         .mockResolvedValue('success');
-      
+
       const abortController = new AbortController();
       const options: RetryOptions = {
         signal: abortController.signal,
         maxAttempts: 3,
       };
-      
+
       const resultPromise = retryManager.retry(operation, options);
-      
+
       // Abort during the retry delay
       setTimeout(() => abortController.abort(), 500);
-      
+
       await jest.runAllTimersAsync();
-      
+
       // Expect the promise to reject with abort error
       try {
         await resultPromise;
@@ -330,20 +357,20 @@ describe('RetryManager', () => {
     it('should not retry after abort', async () => {
       const operation = jest.fn().mockRejectedValue(new Error('Fail'));
       const abortController = new AbortController();
-      
+
       const options: RetryOptions = {
         maxAttempts: 5,
         signal: abortController.signal,
       };
-      
+
       const resultPromise = retryManager.retry(operation, options);
-      
+
       // Let first attempt fail, then abort
       await jest.advanceTimersByTimeAsync(100);
       abortController.abort();
-      
+
       await jest.runAllTimersAsync();
-      
+
       // Expect the promise to reject with abort error
       try {
         await resultPromise;
@@ -351,7 +378,7 @@ describe('RetryManager', () => {
       } catch (error) {
         expect(error.message).toBe('aborted');
       }
-      
+
       // Should only have attempted once
       expect(operation).toHaveBeenCalledTimes(1);
     });
@@ -360,93 +387,106 @@ describe('RetryManager', () => {
   describe('Special Cases', () => {
     it('should handle synchronous operations', async () => {
       const operation = jest.fn().mockReturnValue('sync result');
-      
+
       const result = await retryManager.retry(operation);
-      
+
       expect(result).toBe('sync result');
       expect(operation).toHaveBeenCalledTimes(1);
     });
 
     it('should handle zero max attempts', async () => {
       const operation = jest.fn().mockResolvedValue('success');
-      
+
       const options: RetryOptions = {
         maxAttempts: 0,
       };
-      
+
       await expect(retryManager.retry(operation, options)).rejects.toThrow();
       expect(operation).not.toHaveBeenCalled();
     });
 
     it('should handle negative max attempts', async () => {
       const operation = jest.fn().mockResolvedValue('success');
-      
+
       const options: RetryOptions = {
         maxAttempts: -1,
       };
-      
+
       await expect(retryManager.retry(operation, options)).rejects.toThrow();
       expect(operation).not.toHaveBeenCalled();
     });
 
     it('should handle very large delays', async () => {
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail'))
         .mockResolvedValue('success');
-      
+
       const options: RetryOptions = {
         initialDelay: Number.MAX_SAFE_INTEGER,
         maxAttempts: 2,
       };
-      
+
       const resultPromise = retryManager.retry(operation, options);
-      
+
       // Should cap to reasonable delay
       await jest.advanceTimersByTimeAsync(60000); // 1 minute max
-      
+
       await resultPromise;
-      
+
       expect(operation).toHaveBeenCalledTimes(2);
-    });
+    }, 70000);
   });
 
   describe('Retry Patterns', () => {
     it('should support custom backoff strategy', async () => {
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail 1'))
         .mockRejectedValueOnce(new Error('Fail 2'))
         .mockResolvedValue('success');
-      
+
       const options: RetryOptions = {
         maxAttempts: 3,
-        getDelay: (attempt) => attempt * 50, // Linear backoff
+        getDelay: attempt => attempt * 50, // Linear backoff
       };
-      
-      retryManager.retry(operation, options);
-      
-      // First retry after 50ms
+
+      const resultPromise = retryManager.retry(operation, options);
+
+      // Wait for first attempt
+      expect(operation).toHaveBeenCalledTimes(1);
+
+      // First retry after 50ms (getDelay(1) = 50)
       await jest.advanceTimersByTimeAsync(50);
       expect(operation).toHaveBeenCalledTimes(2);
-      
-      // Second retry after 100ms
+
+      // Second retry after 100ms (getDelay(2) = 100)
       await jest.advanceTimersByTimeAsync(100);
+
+      await resultPromise;
       expect(operation).toHaveBeenCalledTimes(3);
     });
 
     it('should support constant delay', async () => {
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail'))
         .mockResolvedValue('success');
-      
+
       const options: RetryOptions = {
         maxAttempts: 2,
         backoffMultiplier: 1, // Constant delay
         initialDelay: 200,
       };
-      
-      retryManager.retry(operation, options);
-      
+
+      const resultPromise = retryManager.retry(operation, options);
+
+      // Wait for first attempt
+      expect(operation).toHaveBeenCalledTimes(1);
+
       await jest.advanceTimersByTimeAsync(200);
+
+      await resultPromise;
       expect(operation).toHaveBeenCalledTimes(2);
     });
   });
@@ -454,8 +494,12 @@ describe('RetryManager', () => {
   describe('Static Methods', () => {
     describe('withRetry', () => {
       it('should execute function with retry logic', async () => {
-        const fn = jest.fn()
-          .mockRejectedValueOnce(new Error('Fail'))
+        const networkError = new Error('Connection failed');
+        networkError.code = 'CONNECTION_ERROR';
+
+        const fn = jest
+          .fn()
+          .mockRejectedValueOnce(networkError)
           .mockResolvedValue('success');
 
         const result = await RetryManager.withRetry(fn, { maxRetries: 2 });
@@ -467,8 +511,9 @@ describe('RetryManager', () => {
       it('should handle default retry conditions', async () => {
         const networkError = new Error('Network error');
         networkError.code = 'CONNECTION_ERROR';
-        
-        const fn = jest.fn()
+
+        const fn = jest
+          .fn()
           .mockRejectedValueOnce(networkError)
           .mockResolvedValue('success');
 
@@ -480,18 +525,21 @@ describe('RetryManager', () => {
 
       it('should not retry non-retryable errors', async () => {
         const nonRetryableError = new Error('Client error');
-        
+
         const fn = jest.fn().mockRejectedValue(nonRetryableError);
 
-        await expect(RetryManager.withRetry(fn, { maxRetries: 3 })).rejects.toThrow('Client error');
+        await expect(
+          RetryManager.withRetry(fn, { maxRetries: 3 })
+        ).rejects.toThrow('Client error');
         expect(fn).toHaveBeenCalledTimes(1);
       });
 
       it('should handle 5xx server errors', async () => {
         const serverError = new Error('Server error');
         serverError.response = { status: 500 };
-        
-        const fn = jest.fn()
+
+        const fn = jest
+          .fn()
           .mockRejectedValueOnce(serverError)
           .mockResolvedValue('success');
 
@@ -504,8 +552,9 @@ describe('RetryManager', () => {
       it('should handle timeout errors', async () => {
         const timeoutError = new Error('Timeout');
         timeoutError.code = 'TIMEOUT_ERROR';
-        
-        const fn = jest.fn()
+
+        const fn = jest
+          .fn()
           .mockRejectedValueOnce(timeoutError)
           .mockResolvedValue('success');
 
@@ -518,8 +567,9 @@ describe('RetryManager', () => {
       it('should handle connection refused errors', async () => {
         const connectionError = new Error('Connection refused');
         connectionError.code = 'ECONNREFUSED';
-        
-        const fn = jest.fn()
+
+        const fn = jest
+          .fn()
           .mockRejectedValueOnce(connectionError)
           .mockResolvedValue('success');
 
@@ -532,31 +582,41 @@ describe('RetryManager', () => {
       it('should not retry 404 errors but log appropriately', async () => {
         const notFoundError = new Error('Not found');
         notFoundError.status = 404;
-        
+
         const fn = jest.fn().mockRejectedValue(notFoundError);
 
-        await expect(RetryManager.withRetry(fn, { maxRetries: 3 })).rejects.toThrow('Not found');
+        await expect(
+          RetryManager.withRetry(fn, { maxRetries: 3 })
+        ).rejects.toThrow('Not found');
         expect(fn).toHaveBeenCalledTimes(1);
       });
 
       it('should handle 404 in error message', async () => {
         const notFoundError = new Error('Resource 404 not found');
-        
+
         const fn = jest.fn().mockRejectedValue(notFoundError);
 
-        await expect(RetryManager.withRetry(fn, { maxRetries: 3 })).rejects.toThrow('Resource 404 not found');
+        await expect(
+          RetryManager.withRetry(fn, { maxRetries: 3 })
+        ).rejects.toThrow('Resource 404 not found');
         expect(fn).toHaveBeenCalledTimes(1);
       });
     });
 
     describe('createRetryWrapper', () => {
       it('should create a retry wrapper function', async () => {
-        const originalFn = jest.fn()
-          .mockRejectedValueOnce(new Error('Fail'))
+        const networkError = new Error('Connection failed');
+        networkError.code = 'CONNECTION_ERROR';
+
+        const originalFn = jest
+          .fn()
+          .mockRejectedValueOnce(networkError)
           .mockResolvedValue('success');
 
-        const wrappedFn = RetryManager.createRetryWrapper(originalFn, { maxRetries: 2 });
-        
+        const wrappedFn = RetryManager.createRetryWrapper(originalFn, {
+          maxRetries: 2,
+        });
+
         const result = await wrappedFn('arg1', 'arg2');
 
         expect(result).toBe('success');
@@ -567,7 +627,7 @@ describe('RetryManager', () => {
       it('should preserve function arguments', async () => {
         const originalFn = jest.fn().mockResolvedValue('success');
         const wrappedFn = RetryManager.createRetryWrapper(originalFn);
-        
+
         await wrappedFn('test', 123, { prop: 'value' });
 
         expect(originalFn).toHaveBeenCalledWith('test', 123, { prop: 'value' });
@@ -576,9 +636,18 @@ describe('RetryManager', () => {
 
     describe('calculateDelay', () => {
       it('should calculate exponential backoff delay', () => {
-        const delay1 = RetryManager.calculateDelay(1, { initialDelay: 100, backoffMultiplier: 2 });
-        const delay2 = RetryManager.calculateDelay(2, { initialDelay: 100, backoffMultiplier: 2 });
-        const delay3 = RetryManager.calculateDelay(3, { initialDelay: 100, backoffMultiplier: 2 });
+        const delay1 = RetryManager.calculateDelay(1, {
+          initialDelay: 100,
+          backoffMultiplier: 2,
+        });
+        const delay2 = RetryManager.calculateDelay(2, {
+          initialDelay: 100,
+          backoffMultiplier: 2,
+        });
+        const delay3 = RetryManager.calculateDelay(3, {
+          initialDelay: 100,
+          backoffMultiplier: 2,
+        });
 
         expect(delay1).toBe(100);
         expect(delay2).toBe(200);
@@ -586,10 +655,10 @@ describe('RetryManager', () => {
       });
 
       it('should respect max delay', () => {
-        const delay = RetryManager.calculateDelay(10, { 
-          initialDelay: 100, 
-          backoffMultiplier: 2, 
-          maxDelay: 500 
+        const delay = RetryManager.calculateDelay(10, {
+          initialDelay: 100,
+          backoffMultiplier: 2,
+          maxDelay: 500,
         });
 
         expect(delay).toBe(500);
@@ -597,7 +666,7 @@ describe('RetryManager', () => {
 
       it('should use default options when not provided', () => {
         const delay = RetryManager.calculateDelay(2);
-        
+
         expect(delay).toBe(2000); // 1000 * 2^(2-1)
       });
     });
@@ -666,7 +735,8 @@ describe('RetryManager', () => {
 
   describe('Edge Cases and Error Scenarios', () => {
     it('should handle very long retry chains', async () => {
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail 1'))
         .mockRejectedValueOnce(new Error('Fail 2'))
         .mockRejectedValueOnce(new Error('Fail 3'))
@@ -676,12 +746,12 @@ describe('RetryManager', () => {
 
       const options: RetryOptions = {
         maxAttempts: 6,
-        initialDelay: 10
+        initialDelay: 10,
       };
 
       const resultPromise = retryManager.retry(operation, options);
       await jest.runAllTimersAsync();
-      
+
       const result = await resultPromise;
 
       expect(result).toBe('success');
@@ -689,10 +759,14 @@ describe('RetryManager', () => {
     });
 
     it('should handle undefined maxRetries in static withRetry', async () => {
-      const fn = jest.fn()
-        .mockRejectedValueOnce(new Error('CONNECTION_ERROR'))
+      const networkError = new Error('Connection failed');
+      networkError.code = 'CONNECTION_ERROR';
+
+      const fn = jest
+        .fn()
+        .mockRejectedValueOnce(networkError)
         .mockResolvedValue('success');
-      
+
       // Should use default maxRetries
       const result = await RetryManager.withRetry(fn);
 
@@ -702,34 +776,34 @@ describe('RetryManager', () => {
 
     it('should handle retryCondition precedence over shouldRetry', async () => {
       const operation = jest.fn().mockRejectedValue(new Error('Non-retryable'));
-      
+
       const options: RetryOptions = {
         maxAttempts: 3,
         retryCondition: () => false, // Never retry
-        shouldRetry: () => true // Always retry (should be ignored)
+        shouldRetry: () => true, // Always retry (should be ignored)
       };
 
-      const resultPromise = retryManager.retry(operation, options);
-      await jest.runAllTimersAsync();
-
-      await expect(resultPromise).rejects.toThrow('Non-retryable');
+      await expect(retryManager.retry(operation, options)).rejects.toThrow(
+        'Non-retryable'
+      );
       expect(operation).toHaveBeenCalledTimes(1);
     });
 
     it('should handle mixed maxRetries and maxAttempts options', async () => {
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail'))
         .mockResolvedValue('success');
 
       // maxAttempts should take precedence
       const options: RetryOptions = {
         maxRetries: 5,
-        maxAttempts: 2
+        maxAttempts: 2,
       };
 
       const resultPromise = retryManager.retry(operation, options);
       await jest.runAllTimersAsync();
-      
+
       const result = await resultPromise;
 
       expect(result).toBe('success');
@@ -749,21 +823,22 @@ describe('RetryManager', () => {
     });
 
     it('should handle delay capping edge case', async () => {
-      const operation = jest.fn()
+      const operation = jest
+        .fn()
         .mockRejectedValueOnce(new Error('Fail'))
         .mockResolvedValue('success');
 
       const options: RetryOptions = {
         maxAttempts: 2,
         initialDelay: 100000, // Large initial delay
-        backoffMultiplier: 10
+        backoffMultiplier: 10,
       };
 
       const resultPromise = retryManager.retry(operation, options);
-      
+
       // Should cap to 1 minute
       await jest.advanceTimersByTimeAsync(60000);
-      
+
       const result = await resultPromise;
 
       expect(result).toBe('success');

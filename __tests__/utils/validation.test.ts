@@ -1,6 +1,6 @@
 /**
  * Comprehensive Security Tests for Input Validation Utilities
- * 
+ *
  * This test suite validates all input validation and sanitization functions
  * to ensure they properly prevent security vulnerabilities including:
  * - XSS (Cross-Site Scripting) attacks
@@ -40,13 +40,19 @@ describe('Input Validation Security Tests', () => {
       ];
 
       validUrls.forEach(url => {
-        const result = validateUrl(url, { allowHttp: true, allowLocalhost: true });
+        const result = validateUrl(url, {
+          allowHttp: true,
+          allowLocalhost: true,
+        });
         expect(result.isValid).toBe(true);
         expect(result.value).toBeDefined();
       });
 
       // Test localhost separately with proper options
-      const localhostResult = validateUrl('http://localhost:3000', { allowHttp: true, allowLocalhost: true });
+      const localhostResult = validateUrl('http://localhost:3000', {
+        allowHttp: true,
+        allowLocalhost: true,
+      });
       expect(localhostResult.isValid).toBe(true);
     });
 
@@ -136,7 +142,9 @@ describe('Input Validation Security Tests', () => {
     });
 
     test('should reject queries that are too long', () => {
-      const longQuery = 'a'.repeat(INPUT_CONSTRAINTS.SEARCH_QUERY.maxLength + 1);
+      const longQuery = 'a'.repeat(
+        INPUT_CONSTRAINTS.SEARCH_QUERY.maxLength + 1
+      );
       const result = validateSearchQuery(longQuery);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain('characters');
@@ -261,7 +269,9 @@ describe('Input Validation Security Tests', () => {
     });
 
     test('should reject titles that are too long', () => {
-      const longTitle = 'a'.repeat(INPUT_CONSTRAINTS.ARTICLE_TITLE.maxLength + 1);
+      const longTitle = 'a'.repeat(
+        INPUT_CONSTRAINTS.ARTICLE_TITLE.maxLength + 1
+      );
       const result = validateArticleTitle(longTitle);
       expect(result.isValid).toBe(false);
       expect(result.error).toContain('characters');
@@ -279,14 +289,7 @@ describe('Input Validation Security Tests', () => {
 
   describe('Numeric Input Validation', () => {
     test('should validate legitimate numeric inputs', () => {
-      const validNumbers = [
-        '15',
-        '60',
-        '1440',
-        15,
-        60,
-        1440,
-      ];
+      const validNumbers = ['15', '60', '1440', 15, 60, 1440];
 
       validNumbers.forEach(num => {
         const result = validateNumericInput(num, { type: 'syncInterval' });
@@ -314,16 +317,7 @@ describe('Input Validation Security Tests', () => {
     });
 
     test('should reject numbers outside valid range', () => {
-      const outOfRangeNumbers = [
-        '0',
-        '-1',
-        '1500',
-        '9999',
-        0,
-        -1,
-        1500,
-        9999,
-      ];
+      const outOfRangeNumbers = ['0', '-1', '1500', '9999', 0, -1, 1500, 9999];
 
       outOfRangeNumbers.forEach(num => {
         const result = validateNumericInput(num, { type: 'syncInterval' });
@@ -431,7 +425,9 @@ describe('Input Validation Security Tests', () => {
 
     test('should preserve line breaks when requested', () => {
       const multilineInput = 'Line 1\nLine 2\nLine 3';
-      const sanitized = sanitizeInput(multilineInput, { preserveLineBreaks: true });
+      const sanitized = sanitizeInput(multilineInput, {
+        preserveLineBreaks: true,
+      });
       expect(sanitized).toBe('Line 1\nLine 2\nLine 3');
     });
   });
@@ -439,7 +435,11 @@ describe('Input Validation Security Tests', () => {
   describe('Batch Validation', () => {
     test('should validate multiple inputs', () => {
       const validations = [
-        { value: 'https://example.com', validator: (url: string) => validateUrl(url, { allowHttp: true, allowLocalhost: true }) },
+        {
+          value: 'https://example.com',
+          validator: (url: string) =>
+            validateUrl(url, { allowHttp: true, allowLocalhost: true }),
+        },
         { value: 'test query', validator: validateSearchQuery },
         { value: 'work', validator: validateLabelName },
       ];
@@ -452,7 +452,11 @@ describe('Input Validation Security Tests', () => {
     test('should report errors for invalid inputs', () => {
       const validations = [
         { value: 'invalid-url', validator: validateUrl, field: 'serverUrl' },
-        { value: '<script>alert(1)</script>', validator: validateSearchQuery, field: 'query' },
+        {
+          value: '<script>alert(1)</script>',
+          validator: validateSearchQuery,
+          field: 'query',
+        },
         { value: '', validator: validateLabelName, field: 'labelName' },
       ];
 
@@ -610,7 +614,9 @@ describe('Input Validation Security Tests', () => {
       const urlResult = validateUrl(emptyString);
       expect(urlResult.isValid).toBe(false);
 
-      const searchResult = validateSearchQuery(emptyString, { required: false });
+      const searchResult = validateSearchQuery(emptyString, {
+        required: false,
+      });
       expect(searchResult.isValid).toBe(true);
 
       const labelResult = validateLabelName(whitespaceString);
@@ -619,7 +625,7 @@ describe('Input Validation Security Tests', () => {
 
     test('should handle extremely long inputs without crashing', () => {
       const extremelyLongInput = 'a'.repeat(100000);
-      
+
       const result = validateSearchQuery(extremelyLongInput);
       expect(result.isValid).toBe(false);
       expect(result.error).toBeDefined();

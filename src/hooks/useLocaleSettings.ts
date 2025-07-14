@@ -4,13 +4,18 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { AppState, AppStateStatus, DeviceEventEmitter, Platform } from 'react-native';
-import { 
-  getDeviceLocale, 
-  getDateFormatPattern, 
+import {
+  AppState,
+  AppStateStatus,
+  DeviceEventEmitter,
+  Platform,
+} from 'react-native';
+import {
+  getDeviceLocale,
+  getDateFormatPattern,
   DateFormatPattern,
   LocaleInfo,
-  getLocaleInfo 
+  getLocaleInfo,
 } from '../utils/dateFormatter';
 
 // Hook return type
@@ -49,46 +54,46 @@ export const useLocaleSettings = (): UseLocaleSettingsReturn => {
     }
     return getDeviceLocale();
   });
-  
+
   const [dateFormat, setDateFormat] = useState<DateFormatPattern>(() => {
     if (localeCache && Date.now() - localeCache.timestamp < CACHE_DURATION) {
       return localeCache.dateFormat;
     }
     return getDateFormatPattern();
   });
-  
+
   const [localeInfo, setLocaleInfo] = useState<LocaleInfo>(() => {
     if (localeCache && Date.now() - localeCache.timestamp < CACHE_DURATION) {
       return localeCache.localeInfo;
     }
     return getLocaleInfo();
   });
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Track component mount status
   const isMountedRef = useRef(true);
-  
+
   /**
    * Updates locale information and cache
    */
   const updateLocaleInfo = useCallback(() => {
     if (!isMountedRef.current) return;
-    
+
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const newLocale = getDeviceLocale();
       const newDateFormat = getDateFormatPattern(newLocale);
       const newLocaleInfo = getLocaleInfo();
-      
+
       // Update state
       setLocale(newLocale);
       setDateFormat(newDateFormat);
       setLocaleInfo(newLocaleInfo);
-      
+
       // Update cache
       localeCache = {
         locale: newLocale,
@@ -96,45 +101,53 @@ export const useLocaleSettings = (): UseLocaleSettingsReturn => {
         localeInfo: newLocaleInfo,
         timestamp: Date.now(),
       };
-      
+
       setIsLoading(false);
     } catch (err) {
       if (isMountedRef.current) {
-        setError(err instanceof Error ? err.message : 'Failed to detect locale');
+        setError(
+          err instanceof Error ? err.message : 'Failed to detect locale'
+        );
         setIsLoading(false);
       }
     }
   }, []);
-  
+
   /**
    * Manual refresh function
    */
   const refresh = useCallback(() => {
     updateLocaleInfo();
   }, [updateLocaleInfo]);
-  
+
   /**
    * Handle app state changes (detects when app returns from settings)
    */
-  const handleAppStateChange = useCallback((nextAppState: AppStateStatus) => {
-    if (nextAppState === 'active') {
-      // Check if locale might have changed while app was in background
-      const currentLocale = getDeviceLocale();
-      if (currentLocale !== locale) {
-        updateLocaleInfo();
+  const handleAppStateChange = useCallback(
+    (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // Check if locale might have changed while app was in background
+        const currentLocale = getDeviceLocale();
+        if (currentLocale !== locale) {
+          updateLocaleInfo();
+        }
       }
-    }
-  }, [locale, updateLocaleInfo]);
-  
+    },
+    [locale, updateLocaleInfo]
+  );
+
   useEffect(() => {
     // Initial load if cache is expired
     if (!localeCache || Date.now() - localeCache.timestamp >= CACHE_DURATION) {
       updateLocaleInfo();
     }
-    
+
     // Listen for app state changes
-    const appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
-    
+    const appStateSubscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange
+    );
+
     // Android-specific locale change listener
     let localeChangeListener: any;
     if (Platform.OS === 'android') {
@@ -148,7 +161,7 @@ export const useLocaleSettings = (): UseLocaleSettingsReturn => {
         console.warn('Failed to setup locale change listener:', err);
       }
     }
-    
+
     return () => {
       isMountedRef.current = false;
       appStateSubscription.remove();
@@ -157,7 +170,7 @@ export const useLocaleSettings = (): UseLocaleSettingsReturn => {
       }
     };
   }, [handleAppStateChange, updateLocaleInfo]);
-  
+
   return {
     locale,
     dateFormat,
@@ -174,20 +187,32 @@ export const useLocaleSettings = (): UseLocaleSettingsReturn => {
  */
 export const useLocaleDateFormatter = () => {
   const { locale, dateFormat } = useLocaleSettings();
-  
-  const formatDate = useCallback((
-    date: Date | string | number,
-    options?: { includeTime?: boolean; includeYear?: boolean; shortFormat?: boolean }
-  ) => {
-    const { formatDate: formatter } = require('../utils/dateFormatter');
-    return formatter(date, { ...options, fallbackLocale: locale });
-  }, [locale]);
-  
-  const formatRelativeDate = useCallback((date: Date | string | number) => {
-    const { formatRelativeDate: formatter } = require('../utils/dateFormatter');
-    return formatter(date, locale);
-  }, [locale]);
-  
+
+  const formatDate = useCallback(
+    (
+      date: Date | string | number,
+      options?: {
+        includeTime?: boolean;
+        includeYear?: boolean;
+        shortFormat?: boolean;
+      }
+    ) => {
+      const { formatDate: formatter } = require('../utils/dateFormatter');
+      return formatter(date, { ...options, fallbackLocale: locale });
+    },
+    [locale]
+  );
+
+  const formatRelativeDate = useCallback(
+    (date: Date | string | number) => {
+      const {
+        formatRelativeDate: formatter,
+      } = require('../utils/dateFormatter');
+      return formatter(date, locale);
+    },
+    [locale]
+  );
+
   return {
     formatDate,
     formatRelativeDate,

@@ -4,7 +4,7 @@ import { useLocaleDateFormatter } from './useLocaleSettings';
 
 export const useSettingsData = () => {
   const { formatDate } = useLocaleDateFormatter();
-  
+
   const { user, loading: authLoading } = useSelector(
     (state: RootState) => state.auth
   );

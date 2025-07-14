@@ -43,7 +43,10 @@ class PerformanceTestHelper {
   /**
    * End timing an operation and record metrics
    */
-  endOperation(operationName: string, metadata?: Record<string, any>): PerformanceMetrics {
+  endOperation(
+    operationName: string,
+    metadata?: Record<string, any>
+  ): PerformanceMetrics {
     const startTime = this.activeTimers.get(operationName);
     if (!startTime) {
       throw new Error(`No active timer found for operation: ${operationName}`);
@@ -156,15 +159,22 @@ class PerformanceTestHelper {
     averageMemory?: number;
     sampleSize: number;
   } {
-    const operationMetrics = this.metrics.filter(m => m.operationName === operationName);
+    const operationMetrics = this.metrics.filter(
+      m => m.operationName === operationName
+    );
     if (operationMetrics.length === 0) {
       return { averageDuration: 0, sampleSize: 0 };
     }
 
-    const totalDuration = operationMetrics.reduce((sum, m) => sum + m.duration, 0);
+    const totalDuration = operationMetrics.reduce(
+      (sum, m) => sum + m.duration,
+      0
+    );
     const averageDuration = totalDuration / operationMetrics.length;
 
-    const metricsWithMemory = operationMetrics.filter(m => m.memoryUsed !== undefined);
+    const metricsWithMemory = operationMetrics.filter(
+      m => m.memoryUsed !== undefined
+    );
     const averageMemory =
       metricsWithMemory.length > 0
         ? metricsWithMemory.reduce((sum, m) => sum + (m.memoryUsed || 0), 0) /
@@ -184,15 +194,21 @@ class PerformanceTestHelper {
   generateReport(): string {
     const report: string[] = ['=== Performance Test Report ===\n'];
 
-    const operationNames = Array.from(new Set(this.metrics.map(m => m.operationName)));
+    const operationNames = Array.from(
+      new Set(this.metrics.map(m => m.operationName))
+    );
 
     operationNames.forEach(operationName => {
       const avgMetrics = this.getAverageMetrics(operationName);
-      const operationMetrics = this.metrics.filter(m => m.operationName === operationName);
+      const operationMetrics = this.metrics.filter(
+        m => m.operationName === operationName
+      );
 
       report.push(`\nOperation: ${operationName}`);
       report.push(`Samples: ${avgMetrics.sampleSize}`);
-      report.push(`Average Duration: ${avgMetrics.averageDuration.toFixed(2)}ms`);
+      report.push(
+        `Average Duration: ${avgMetrics.averageDuration.toFixed(2)}ms`
+      );
 
       if (avgMetrics.averageMemory) {
         report.push(
@@ -222,7 +238,10 @@ class PerformanceTestHelper {
    */
   private getCurrentMemoryUsage(): number | undefined {
     try {
-      if ((global as any)?.performance && 'memory' in (global as any).performance) {
+      if (
+        (global as any)?.performance &&
+        'memory' in (global as any).performance
+      ) {
         return (global as any).performance.memory.usedJSHeapSize;
       }
     } catch (error) {

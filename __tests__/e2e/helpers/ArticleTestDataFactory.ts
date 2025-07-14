@@ -46,12 +46,18 @@ export class ArticleTestDataFactory {
       readTime: options.readTime || Math.floor(Math.random() * 10) + 1,
       createdAt: options.createdAt || now,
       updatedAt: options.updatedAt || now,
-      sourceUrl: options.sourceUrl || options.url || `https://example.com/articles/${id}`,
+      sourceUrl:
+        options.sourceUrl ||
+        options.url ||
+        `https://example.com/articles/${id}`,
     };
   }
 
-  static createArticleList(count: number, baseOptions?: ArticleTestDataOptions): Article[] {
-    return Array.from({ length: count }, (_, index) => 
+  static createArticleList(
+    count: number,
+    baseOptions?: ArticleTestDataOptions
+  ): Article[] {
+    return Array.from({ length: count }, (_, index) =>
       this.createArticle({
         ...baseOptions,
         id: `test-article-${this.idCounter + index}`,
@@ -79,8 +85,14 @@ export class ArticleTestDataFactory {
     return {
       unread: this.createArticle({ isRead: false, title: 'Unread Article' }),
       read: this.createArticle({ isRead: true, title: 'Read Article' }),
-      favorite: this.createArticle({ isFavorite: true, title: 'Favorite Article' }),
-      archived: this.createArticle({ isArchived: true, title: 'Archived Article' }),
+      favorite: this.createArticle({
+        isFavorite: true,
+        title: 'Favorite Article',
+      }),
+      archived: this.createArticle({
+        isArchived: true,
+        title: 'Archived Article',
+      }),
     };
   }
 
@@ -93,9 +105,11 @@ export class ArticleTestDataFactory {
 
   static createLongArticle(): Article {
     return this.createArticle({
-      title: 'This is a very long article title that should test how the UI handles lengthy content',
+      title:
+        'This is a very long article title that should test how the UI handles lengthy content',
       content: this.generateLongContent(),
-      summary: 'This is a comprehensive summary of a very detailed article that covers multiple topics and concepts.',
+      summary:
+        'This is a comprehensive summary of a very detailed article that covers multiple topics and concepts.',
       readTime: 15,
     });
   }

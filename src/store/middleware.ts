@@ -29,7 +29,7 @@ export const errorHandlerMiddleware: Middleware<{}, RootState> =
       // Optimized error logging - only log essential information
       console.error('🚨 Redux Error:', error);
       console.error('Action:', action.type);
-      
+
       // Only log full state in development
       if (__DEV__) {
         console.error('State:', store.getState());

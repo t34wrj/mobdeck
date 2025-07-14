@@ -1,6 +1,13 @@
 import React from 'react';
 import { Provider } from 'react-redux';
-import { View, StyleSheet, ActivityIndicator, Platform, Dimensions, StatusBar } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Platform,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from './store';
 import AppNavigator from './navigation/AppNavigator';
@@ -16,9 +23,9 @@ if (__DEV__) {
     dimensions: Dimensions.get('window'),
     isHermes: !!(global as any).HermesInternal,
   };
-  
+
   console.log('React Native Debug Info:', debugInfo);
-  
+
   // Global debug functions
   (global as any).testReactNative = () => {
     console.log('Testing React Native functionality...');
@@ -28,7 +35,7 @@ if (__DEV__) {
     console.log('Store state:', store.getState());
     return 'React Native test completed - check console';
   };
-  
+
   (global as any).testRedux = () => {
     console.log('Testing Redux...');
     const state = store.getState();
@@ -45,8 +52,8 @@ const AppContent: React.FC = () => {
   if (isInitializing) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color={theme.colors.primary[500]} />
-        <Text variant="body1" style={styles.loadingText}>
+        <ActivityIndicator size='large' color={theme.colors.primary[500]} />
+        <Text variant='body1' style={styles.loadingText}>
           Initializing app...
         </Text>
       </View>
@@ -56,10 +63,10 @@ const AppContent: React.FC = () => {
   if (error) {
     return (
       <View style={styles.container}>
-        <Text variant="h5" style={styles.errorText}>
+        <Text variant='h5' style={styles.errorText}>
           Initialization Error
         </Text>
-        <Text variant="body1" style={styles.errorMessage}>
+        <Text variant='body1' style={styles.errorMessage}>
           {error}
         </Text>
       </View>
@@ -79,13 +86,13 @@ const App: React.FC = () => {
     if (Platform.OS === 'android') {
       // Clear any existing translucent flags
       StatusBar.setTranslucent(false);
-      
+
       // Enable drawing system bar backgrounds
       StatusBar.setBackgroundColor(theme.colors.neutral[100], false);
-      
+
       // Set bar style for proper icon contrast
       StatusBar.setBarStyle('dark-content', false);
-      
+
       // Ensure status bar is visible
       StatusBar.setHidden(false, 'none');
     }
@@ -94,9 +101,9 @@ const App: React.FC = () => {
   return (
     <SafeAreaProvider>
       <Provider store={store}>
-        <StatusBar 
-          backgroundColor={theme.colors.neutral[100]} 
-          barStyle="dark-content"
+        <StatusBar
+          backgroundColor={theme.colors.neutral[100]}
+          barStyle='dark-content'
           translucent={false}
           animated={false}
           hidden={false}

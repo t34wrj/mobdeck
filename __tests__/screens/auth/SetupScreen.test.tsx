@@ -6,7 +6,9 @@ import { authStorageService } from '../../../src/services/AuthStorageService';
 // Mock dependencies
 jest.mock('react-native-keychain', () => ({
   setInternetCredentials: jest.fn(() => Promise.resolve(true)),
-  getInternetCredentials: jest.fn(() => Promise.resolve({ password: 'mock-token' })),
+  getInternetCredentials: jest.fn(() =>
+    Promise.resolve({ password: 'mock-token' })
+  ),
   resetInternetCredentials: jest.fn(() => Promise.resolve(true)),
 }));
 
@@ -50,15 +52,17 @@ describe('SetupScreen', () => {
   describe('Documentation link', () => {
     it('can open external documentation', async () => {
       mockLinking.openURL.mockResolvedValue(undefined);
-      
+
       await mockLinking.openURL('https://readeck.org/en/docs/api/');
-      
-      expect(mockLinking.openURL).toHaveBeenCalledWith('https://readeck.org/en/docs/api/');
+
+      expect(mockLinking.openURL).toHaveBeenCalledWith(
+        'https://readeck.org/en/docs/api/'
+      );
     });
 
     it('handles documentation link errors', async () => {
       mockLinking.openURL.mockRejectedValue(new Error('Failed to open'));
-      
+
       try {
         await mockLinking.openURL('https://readeck.org/en/docs/api/');
       } catch (error) {
@@ -71,7 +75,7 @@ describe('SetupScreen', () => {
     it('validates empty input', () => {
       const emptyUrl = '';
       const emptyToken = '';
-      
+
       expect(emptyUrl.trim()).toBe('');
       expect(emptyToken.trim()).toBe('');
     });
@@ -82,13 +86,16 @@ describe('SetupScreen', () => {
       });
       (authStorageService.storeToken as jest.Mock).mockResolvedValue(true);
 
-      const response = await fetch('https://readeck.example.com/api/bookmarks', {
-        method: 'GET',
-        headers: {
-          'Authorization': 'Bearer valid-token',
-          'Accept': 'application/json',
-        },
-      });
+      const response = await fetch(
+        'https://readeck.example.com/api/bookmarks',
+        {
+          method: 'GET',
+          headers: {
+            Authorization: 'Bearer valid-token',
+            Accept: 'application/json',
+          },
+        }
+      );
 
       expect(response.ok).toBe(true);
       expect(response.status).toBe(200);
@@ -100,20 +107,25 @@ describe('SetupScreen', () => {
         status: 401,
       });
 
-      const response = await fetch('https://readeck.example.com/api/bookmarks', {
-        method: 'GET',
-        headers: {
-          'Authorization': 'Bearer invalid-token',
-          'Accept': 'application/json',
-        },
-      });
+      const response = await fetch(
+        'https://readeck.example.com/api/bookmarks',
+        {
+          method: 'GET',
+          headers: {
+            Authorization: 'Bearer invalid-token',
+            Accept: 'application/json',
+          },
+        }
+      );
 
       expect(response.ok).toBe(false);
       expect(response.status).toBe(401);
     });
 
     it('handles network errors', async () => {
-      (fetch as jest.Mock).mockRejectedValue(new Error('Network request failed'));
+      (fetch as jest.Mock).mockRejectedValue(
+        new Error('Network request failed')
+      );
 
       try {
         await fetch('https://readeck.example.com/api/bookmarks');
@@ -124,7 +136,7 @@ describe('SetupScreen', () => {
 
     it('can store token after successful test', async () => {
       (authStorageService.storeToken as jest.Mock).mockResolvedValue(true);
-      
+
       const result = await authStorageService.storeToken('valid-token');
       expect(result).toBe(true);
     });
@@ -134,7 +146,7 @@ describe('SetupScreen', () => {
     it('trims whitespace from inputs', () => {
       const urlWithSpaces = '  https://readeck.example.com  ';
       const tokenWithSpaces = '  valid-token  ';
-      
+
       expect(urlWithSpaces.trim()).toBe('https://readeck.example.com');
       expect(tokenWithSpaces.trim()).toBe('valid-token');
     });

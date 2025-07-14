@@ -15,7 +15,7 @@ jest.mock('../../utils/urlValidation');
 jest.mock('react-native', () => ({
   Platform: {
     OS: 'ios',
-    select: jest.fn((dict) => dict.ios || dict.default),
+    select: jest.fn(dict => dict.ios || dict.default),
   },
   Alert: {
     alert: jest.fn(),

@@ -8,7 +8,6 @@ import { theme } from '../components/ui/theme';
 
 const Stack = createStackNavigator<MainStackParamList>();
 
-
 const MainNavigator: React.FC = () => {
   return (
     <Stack.Navigator
@@ -47,6 +46,5 @@ const MainNavigator: React.FC = () => {
     </Stack.Navigator>
   );
 };
-
 
 export default MainNavigator;

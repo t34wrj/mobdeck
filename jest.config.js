@@ -4,12 +4,12 @@ module.exports = {
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   testMatch: ['**/__tests__/**/*.(ts|tsx|js)', '**/*.(test|spec).(ts|tsx|js)'],
   testPathIgnorePatterns: [
-    '<rootDir>/node_modules/', 
-    '<rootDir>/android/', 
+    '<rootDir>/node_modules/',
+    '<rootDir>/android/',
     '<rootDir>/ios/',
     '<rootDir>/__tests__/mocks/',
     '<rootDir>/__tests__/e2e/helpers/',
-    '<rootDir>/__tests__/setup.ts'
+    '<rootDir>/__tests__/setup.ts',
   ],
   // Special timeout for performance tests
   testTimeout: process.env.RUN_DEVICE_TESTS === 'true' ? 60000 : 10000,
@@ -19,14 +19,14 @@ module.exports = {
   },
   transformIgnorePatterns: [
     'node_modules/(?!(react-native' +
-    '|@react-native' +
-    '|@react-navigation' +
-    '|react-native-.*' +
-    '|@react-native-community' +
-    '|@react-native-async-storage' +
-    '|react-redux' +
-    '|@reduxjs/toolkit' +
-    ')/)',
+      '|@react-native' +
+      '|@react-navigation' +
+      '|react-native-.*' +
+      '|@react-native-community' +
+      '|@react-native-async-storage' +
+      '|react-redux' +
+      '|@reduxjs/toolkit' +
+      ')/)',
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',

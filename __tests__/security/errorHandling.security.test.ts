@@ -2,7 +2,11 @@
  * Security tests for error handling to ensure no sensitive data leakage
  */
 
-import { errorHandler, ErrorCategory, ErrorSeverity } from '../../src/utils/errorHandler';
+import {
+  errorHandler,
+  ErrorCategory,
+  ErrorSeverity,
+} from '../../src/utils/errorHandler';
 import { logger } from '../../src/utils/logger';
 
 // Extend global interface for React Native ErrorUtils
@@ -10,13 +14,21 @@ declare global {
   namespace NodeJS {
     interface Global {
       ErrorUtils?: {
-        setGlobalHandler: (handler: (error: Error, isFatal: boolean) => void) => void;
-        getGlobalHandler: () => ((error: Error, isFatal: boolean) => void) | undefined;
+        setGlobalHandler: (
+          handler: (error: Error, isFatal: boolean) => void
+        ) => void;
+        getGlobalHandler: () =>
+          | ((error: Error, isFatal: boolean) => void)
+          | undefined;
       };
     }
   }
 }
-import { sanitizeForLogging, sanitizeErrorMessage, sanitizeStackTrace } from '../../src/utils/security';
+import {
+  sanitizeForLogging,
+  sanitizeErrorMessage,
+  sanitizeStackTrace,
+} from '../../src/utils/security';
 
 // Mock logger to capture log calls
 jest.mock('../../src/utils/logger', () => ({
@@ -51,7 +63,9 @@ describe('Error Handling Security Tests', () => {
       });
 
       // Verify that sensitive data is redacted
-      expect(handledError.details?.authorization).toBe('[REDACTED_BEARER_TOKEN]');
+      expect(handledError.details?.authorization).toBe(
+        '[REDACTED_BEARER_TOKEN]'
+      );
       expect(handledError.details?.token).toBe('[REDACTED_JWT]');
       expect(handledError.details?.apiKey).toBe('[REDACTED_API_KEY]');
     });
@@ -83,18 +97,27 @@ describe('Error Handling Security Tests', () => {
       expect(handledError.details).toBeDefined();
       expect(handledError.details?.user).toBeDefined();
       expect(handledError.details?.user?.credentials).toBeDefined();
-      
+
       // Verify nested sensitive data is redacted
-      expect(handledError.details?.user?.credentials?.password).toBe('[REDACTED]');
-      expect(handledError.details?.user?.credentials?.token).toBe('[REDACTED_BEARER_TOKEN]');
-      expect(handledError.details?.request?.headers?.authorization).toBe('[REDACTED_BEARER_TOKEN]');
-      expect(handledError.details?.request?.headers?.['x-api-key']).toBe('[REDACTED]');
+      expect(handledError.details?.user?.credentials?.password).toBe(
+        '[REDACTED]'
+      );
+      expect(handledError.details?.user?.credentials?.token).toBe(
+        '[REDACTED_BEARER_TOKEN]'
+      );
+      expect(handledError.details?.request?.headers?.authorization).toBe(
+        '[REDACTED_BEARER_TOKEN]'
+      );
+      expect(handledError.details?.request?.headers?.['x-api-key']).toBe(
+        '[REDACTED]'
+      );
     });
 
     it('should sanitize URLs with embedded credentials', () => {
       const error = new Error('Connection failed');
       const sensitiveContext = {
-        serverUrl: 'https://user:password@api.example.com/endpoint?token=secret123',
+        serverUrl:
+          'https://user:password@api.example.com/endpoint?token=secret123',
         apiEndpoint: '/api/users/abc123def456789/profile',
       };
 
@@ -120,13 +143,13 @@ describe('Error Handling Security Tests', () => {
 
       sensitiveMessages.forEach(message => {
         const sanitized = sanitizeErrorMessage(message);
-        
+
         expect(sanitized).not.toContain('sk_live_123456789');
         expect(sanitized).not.toContain('eyJhbGciOiJIUzI1NiJ9.test.sig');
         expect(sanitized).toContain('[REDACTED]'); // API key should be sanitized
         expect(sanitized).not.toContain('user@example.com');
         expect(sanitized).not.toContain('192.168.1.100');
-        
+
         expect(sanitized).toContain('[REDACTED]');
       });
     });
@@ -144,7 +167,7 @@ describe('Error Handling Security Tests', () => {
       expect(sanitized).not.toContain('/Users/johndoe');
       expect(sanitized).not.toContain('C:\\Users\\sensitive');
       expect(sanitized).not.toContain('Bearer token123');
-      
+
       expect(sanitized).toContain('/home/[USERNAME]');
       expect(sanitized).toContain('/Users/[USERNAME]');
       expect(sanitized).toContain('C:\\Users\\[USERNAME]');
@@ -169,7 +192,7 @@ describe('Error Handling Security Tests', () => {
       expect(logger.log).toHaveBeenCalled();
       const logCall = (logger.log as jest.Mock).mock.calls[0];
       const loggedData = JSON.stringify(logCall);
-      
+
       expect(loggedData).not.toContain('myPassword123');
       expect(loggedData).not.toContain('secret_token_here');
       expect(loggedData).not.toContain('Bearer token123');
@@ -177,11 +200,14 @@ describe('Error Handling Security Tests', () => {
 
     it('should prevent console.error from exposing sensitive data', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-      
+
       try {
         // Simulate a console.error call with sensitive data
-        console.error('Auth failed', { token: 'Bearer secret123', password: 'password123' });
-        
+        console.error('Auth failed', {
+          token: 'Bearer secret123',
+          password: 'password123',
+        });
+
         // The error handler should have intercepted and sanitized this
         // Note: In real implementation, global error handlers would sanitize console calls
         expect(consoleSpy).toHaveBeenCalled();
@@ -210,13 +236,16 @@ describe('Error Handling Security Tests', () => {
       });
 
       // Verify device info is sanitized
-      expect(handledError.context?.deviceInfo?.credentials?.token).toBe('[REDACTED]');
+      expect(handledError.context?.deviceInfo?.credentials?.token).toBe(
+        '[REDACTED]'
+      );
     });
 
     it('should sanitize query parameters in server URLs', () => {
       const error = new Error('Network error');
       const sensitiveContext = {
-        serverUrl: 'https://api.example.com/data?token=secret123&key=apikey456&safe=value',
+        serverUrl:
+          'https://api.example.com/data?token=secret123&key=apikey456&safe=value',
       };
 
       const handledError = errorHandler.handleError(error, {
@@ -235,22 +264,26 @@ describe('Error Handling Security Tests', () => {
     it('should sanitize unhandled errors', () => {
       const originalErrorHandler = (global as any).ErrorUtils?.setGlobalHandler;
       const mockGlobalHandler = jest.fn();
-      
+
       if ((global as any).ErrorUtils) {
         (global as any).ErrorUtils.setGlobalHandler = mockGlobalHandler;
       }
 
       try {
         // Simulate an unhandled error with sensitive data
-        const sensitiveError = new Error('Unhandled error with Bearer token123');
-        
+        const sensitiveError = new Error(
+          'Unhandled error with Bearer token123'
+        );
+
         // The global handler should be set up to sanitize errors
         if ((global as any).ErrorUtils?.setGlobalHandler) {
-          (global as any).ErrorUtils.setGlobalHandler((error: Error, isFatal: boolean) => {
-            const sanitizedMessage = sanitizeErrorMessage(error.message);
-            expect(sanitizedMessage).not.toContain('Bearer token123');
-            expect(sanitizedMessage).toContain('[REDACTED]');
-          });
+          (global as any).ErrorUtils.setGlobalHandler(
+            (error: Error, isFatal: boolean) => {
+              const sanitizedMessage = sanitizeErrorMessage(error.message);
+              expect(sanitizedMessage).not.toContain('Bearer token123');
+              expect(sanitizedMessage).toContain('[REDACTED]');
+            }
+          );
         }
       } finally {
         if ((global as any).ErrorUtils && originalErrorHandler) {

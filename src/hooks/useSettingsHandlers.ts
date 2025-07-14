@@ -8,7 +8,7 @@ import { logoutUser } from '../store/slices/authSlice';
 export const useSettingsHandlers = () => {
   const dispatch = useDispatch();
   const { config: syncConfig } = useSelector((state: RootState) => state.sync);
-  
+
   const [customSyncInterval, setCustomSyncInterval] = useState(
     syncConfig.syncInterval.toString()
   );

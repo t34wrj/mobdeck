@@ -8,7 +8,7 @@ jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
 jest.mock('react-native', () => ({
   Platform: {
     OS: 'ios',
-    select: jest.fn((dict) => dict.ios || dict.default),
+    select: jest.fn(dict => dict.ios || dict.default),
   },
   Alert: {
     alert: jest.fn(),
@@ -25,8 +25,8 @@ jest.mock('react-native', () => ({
     removeEventListener: jest.fn(),
   },
   StyleSheet: {
-    create: jest.fn((styles) => styles),
-    flatten: jest.fn((styles) => styles),
+    create: jest.fn(styles => styles),
+    flatten: jest.fn(styles => styles),
   },
   View: 'View',
   Text: 'Text',
@@ -38,11 +38,13 @@ jest.mock('react-native', () => ({
   Modal: 'Modal',
   NativeModules: {
     RNCNetInfo: {
-      getCurrentState: jest.fn(() => Promise.resolve({
-        type: 'wifi',
-        isConnected: true,
-        isInternetReachable: true,
-      })),
+      getCurrentState: jest.fn(() =>
+        Promise.resolve({
+          type: 'wifi',
+          isConnected: true,
+          isInternetReachable: true,
+        })
+      ),
       addEventListener: jest.fn(),
       removeEventListener: jest.fn(),
     },
@@ -52,7 +54,9 @@ jest.mock('react-native', () => ({
 // Mock Keychain
 jest.mock('react-native-keychain', () => ({
   setInternetCredentials: jest.fn(() => Promise.resolve()),
-  getInternetCredentials: jest.fn(() => Promise.resolve({ username: 'test', password: 'test' })),
+  getInternetCredentials: jest.fn(() =>
+    Promise.resolve({ username: 'test', password: 'test' })
+  ),
   resetInternetCredentials: jest.fn(() => Promise.resolve()),
   canImplyAuthentication: jest.fn(() => Promise.resolve(true)),
   ACCESSIBLE: {
@@ -75,11 +79,13 @@ jest.mock('react-native-keychain', () => ({
 // Mock NetInfo
 jest.mock('@react-native-community/netinfo', () => ({
   addEventListener: jest.fn(),
-  fetch: jest.fn(() => Promise.resolve({
-    type: 'wifi',
-    isConnected: true,
-    isInternetReachable: true,
-  })),
+  fetch: jest.fn(() =>
+    Promise.resolve({
+      type: 'wifi',
+      isConnected: true,
+      isInternetReachable: true,
+    })
+  ),
 }));
 
 // Mock React Navigation
@@ -99,13 +105,14 @@ jest.mock('@react-navigation/native', () => ({
     name: 'test-route',
   }),
   useFocusEffect: jest.fn(),
-  NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
+  NavigationContainer: ({ children }: { children: React.ReactNode }) =>
+    children,
 }));
 
 // Mock SQLite Storage
 jest.mock('react-native-sqlite-storage', () => ({
   openDatabase: jest.fn(() => ({
-    transaction: jest.fn((callback) => {
+    transaction: jest.fn(callback => {
       callback({
         executeSql: jest.fn((sql, params, success) => {
           if (success) success([], { rows: { _array: [] } });
@@ -117,7 +124,6 @@ jest.mock('react-native-sqlite-storage', () => ({
   enablePromise: jest.fn(),
   DEBUG: jest.fn(),
 }));
-
 
 // Mock Background Actions
 jest.mock('react-native-background-actions', () => ({

@@ -22,13 +22,16 @@ export class ShareIntentSimulator {
   /**
    * Simulates sharing a URL from an external app
    */
-  static simulateUrlShare(url: string, options: ShareIntentSimulationOptions = {}): void {
+  static simulateUrlShare(
+    url: string,
+    options: ShareIntentSimulationOptions = {}
+  ): void {
     const sharedData: SharedData = {
       text: options.text || url,
       subject: options.subject,
       timestamp: options.timestamp || Date.now(),
     };
-    
+
     // Add non-SharedData fields for simulation tracking
     const simulationData = {
       ...sharedData,
@@ -37,13 +40,20 @@ export class ShareIntentSimulator {
     };
 
     this.sharedDataStore = sharedData;
-    console.log('[ShareIntentSimulator] Simulated share intent:', simulationData);
+    console.log(
+      '[ShareIntentSimulator] Simulated share intent:',
+      simulationData
+    );
   }
 
   /**
    * Simulates sharing text content with a URL embedded
    */
-  static simulateTextWithUrlShare(text: string, url: string, options: ShareIntentSimulationOptions = {}): void {
+  static simulateTextWithUrlShare(
+    text: string,
+    url: string,
+    options: ShareIntentSimulationOptions = {}
+  ): void {
     const textWithUrl = `${text} ${url}`;
     this.simulateUrlShare(textWithUrl, {
       ...options,
@@ -55,7 +65,11 @@ export class ShareIntentSimulator {
   /**
    * Simulates sharing an article from a browser
    */
-  static simulateBrowserShare(url: string, title: string, options: ShareIntentSimulationOptions = {}): void {
+  static simulateBrowserShare(
+    url: string,
+    title: string,
+    options: ShareIntentSimulationOptions = {}
+  ): void {
     this.simulateUrlShare(url, {
       ...options,
       subject: title,
@@ -67,7 +81,11 @@ export class ShareIntentSimulator {
   /**
    * Simulates sharing from social media apps
    */
-  static simulateSocialMediaShare(url: string, caption: string, platform: 'twitter' | 'facebook' | 'reddit' = 'twitter'): void {
+  static simulateSocialMediaShare(
+    url: string,
+    caption: string,
+    platform: 'twitter' | 'facebook' | 'reddit' = 'twitter'
+  ): void {
     const sourceApps = {
       twitter: 'com.twitter.android',
       facebook: 'com.facebook.katana',
@@ -86,8 +104,8 @@ export class ShareIntentSimulator {
    * Simulates sharing a news article
    */
   static simulateNewsArticleShare(
-    url: string, 
-    headline: string, 
+    url: string,
+    headline: string,
     newsSource: string = 'news.app'
   ): void {
     this.simulateUrlShare(url, {
@@ -100,12 +118,26 @@ export class ShareIntentSimulator {
   /**
    * Simulates invalid share data scenarios
    */
-  static simulateInvalidShare(scenario: 'empty' | 'no-url' | 'malformed-url' | 'unsupported-protocol'): void {
+  static simulateInvalidShare(
+    scenario: 'empty' | 'no-url' | 'malformed-url' | 'unsupported-protocol'
+  ): void {
     const scenarios = {
       empty: { text: '', subject: '', type: 'text/plain' },
-      'no-url': { text: 'This is just text without any URL', subject: 'No URL Text', type: 'text/plain' },
-      'malformed-url': { text: 'Check out this link: htp://malformed.url', subject: 'Malformed URL', type: 'text/plain' },
-      'unsupported-protocol': { text: 'file:///local/file/path', subject: 'Local File', type: 'text/plain' },
+      'no-url': {
+        text: 'This is just text without any URL',
+        subject: 'No URL Text',
+        type: 'text/plain',
+      },
+      'malformed-url': {
+        text: 'Check out this link: htp://malformed.url',
+        subject: 'Malformed URL',
+        type: 'text/plain',
+      },
+      'unsupported-protocol': {
+        text: 'file:///local/file/path',
+        subject: 'Local File',
+        type: 'text/plain',
+      },
     };
 
     const data = scenarios[scenario];
@@ -143,9 +175,11 @@ export class ShareIntentSimulator {
    */
   static createMockShareModule() {
     return {
-      getSharedData: jest.fn().mockImplementation(() => 
-        Promise.resolve(this.getSimulatedSharedData())
-      ),
+      getSharedData: jest
+        .fn()
+        .mockImplementation(() =>
+          Promise.resolve(this.getSimulatedSharedData())
+        ),
       clearSharedData: jest.fn().mockImplementation(() => {
         this.clearSimulatedSharedData();
         return Promise.resolve();
@@ -171,28 +205,31 @@ export class ShareIntentSimulator {
       },
       {
         name: 'Browser article share',
-        setup: () => this.simulateBrowserShare(
-          'https://news.example.com/breaking-news',
-          'Breaking News: Important Update'
-        ),
+        setup: () =>
+          this.simulateBrowserShare(
+            'https://news.example.com/breaking-news',
+            'Breaking News: Important Update'
+          ),
         expectedUrl: 'https://news.example.com/breaking-news',
         shouldSucceed: true,
       },
       {
         name: 'Social media share',
-        setup: () => this.simulateSocialMediaShare(
-          'https://blog.example.com/post',
-          'Great article about technology!'
-        ),
+        setup: () =>
+          this.simulateSocialMediaShare(
+            'https://blog.example.com/post',
+            'Great article about technology!'
+          ),
         expectedUrl: 'https://blog.example.com/post',
         shouldSucceed: true,
       },
       {
         name: 'Text with embedded URL',
-        setup: () => this.simulateTextWithUrlShare(
-          'Check out this interesting article:',
-          'https://science.example.com/research'
-        ),
+        setup: () =>
+          this.simulateTextWithUrlShare(
+            'Check out this interesting article:',
+            'https://science.example.com/research'
+          ),
         expectedUrl: 'https://science.example.com/research',
         shouldSucceed: true,
       },

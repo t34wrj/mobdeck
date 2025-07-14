@@ -14,24 +14,27 @@ import axios from 'axios';
  */
 export const validateApiToken = async (serverUrl: string, apiToken: string) => {
   const cleanUrl = serverUrl.replace(/\/$/, ''); // Remove trailing slash
-  
+
   try {
     console.log('[API] Attempting to connect to:', cleanUrl);
-    console.log('[API] Using token:', apiToken ? '[TOKEN_PRESENT]' : '[NO_TOKEN]');
-    
+    console.log(
+      '[API] Using token:',
+      apiToken ? '[TOKEN_PRESENT]' : '[NO_TOKEN]'
+    );
+
     // Use correct Readeck API endpoint for profile validation
     const response = await axios.get(`${cleanUrl}/api/profile`, {
       headers: {
-        'Authorization': `Bearer ${apiToken}`,
+        Authorization: `Bearer ${apiToken}`,
         'Content-Type': 'application/json',
       },
       timeout: 10000, // 10 second timeout
     });
-    
+
     console.log('[API] Connection successful! Status:', response.status);
     console.log('[API] Profile response received');
     // Note: Profile data not logged to prevent sensitive information disclosure
-    
+
     // Extract user info from profile response
     const profileData = response.data;
     return {
@@ -49,7 +52,7 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
     };
   } catch (error) {
     console.error('[API] Error validating API token:', error);
-    
+
     if (axios.isAxiosError(error)) {
       console.error('[API] Axios error details:', {
         code: error.code,
@@ -60,25 +63,39 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
         hasRequest: !!error.request,
         // Note: Response data and headers not logged to prevent sensitive information disclosure
       });
-      
+
       if (error.response?.status === 401) {
         throw new Error('Invalid API token. Please check your credentials.');
       } else if (error.response?.status === 403) {
-        throw new Error('Access denied. Please check your API token permissions.');
+        throw new Error(
+          'Access denied. Please check your API token permissions.'
+        );
       } else if (error.code === 'ECONNREFUSED') {
-        throw new Error(`Cannot connect to server at ${cleanUrl}. Is the server running?`);
+        throw new Error(
+          `Cannot connect to server at ${cleanUrl}. Is the server running?`
+        );
       } else if (error.code === 'ENOTFOUND') {
-        throw new Error(`Server not found at ${cleanUrl}. Please check the URL.`);
+        throw new Error(
+          `Server not found at ${cleanUrl}. Please check the URL.`
+        );
       } else if (error.code === 'ECONNABORTED') {
-        throw new Error('Connection timeout. Please check your network connection.');
+        throw new Error(
+          'Connection timeout. Please check your network connection.'
+        );
       } else if (error.response && error.response.status >= 500) {
-        throw new Error(`Server error (${error.response.status}). Please try again later.`);
+        throw new Error(
+          `Server error (${error.response.status}). Please try again later.`
+        );
       } else if (error.code === 'ERR_NETWORK') {
-        throw new Error('Network error. Please check your internet connection and server URL.');
+        throw new Error(
+          'Network error. Please check your internet connection and server URL.'
+        );
       }
     }
-    
-    throw new Error('Failed to validate API token. Please check your credentials and server URL.');
+
+    throw new Error(
+      'Failed to validate API token. Please check your credentials and server URL.'
+    );
   }
 };
 
@@ -94,7 +111,7 @@ export const fetchArticles = async (serverUrl: string, apiToken: string) => {
     const cleanUrl = serverUrl.replace(/\/$/, '');
     const response = await axios.get(`${cleanUrl}/api/bookmarks`, {
       headers: {
-        'Authorization': `Bearer ${apiToken}`,
+        Authorization: `Bearer ${apiToken}`,
         'Content-Type': 'application/json',
       },
     });
@@ -113,12 +130,16 @@ export const fetchArticles = async (serverUrl: string, apiToken: string) => {
  * @returns Promise resolving to article data
  * @throws Error if article not found or request fails
  */
-export const fetchArticleById = async (serverUrl: string, apiToken: string, id: string) => {
+export const fetchArticleById = async (
+  serverUrl: string,
+  apiToken: string,
+  id: string
+) => {
   try {
     const cleanUrl = serverUrl.replace(/\/$/, '');
     const response = await axios.get(`${cleanUrl}/api/bookmarks/${id}`, {
       headers: {
-        'Authorization': `Bearer ${apiToken}`,
+        Authorization: `Bearer ${apiToken}`,
         'Content-Type': 'application/json',
       },
     });

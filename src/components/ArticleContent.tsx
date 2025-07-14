@@ -36,218 +36,233 @@ const FontSizes = {
   },
 };
 
-export const ArticleContent: React.FC<ArticleContentProps> = memo(({
-  content,
-  summary,
-  imageUrl,
-  fontSize = 'medium',
-  fontFamily = theme.typography.fontFamily.regular,
-}) => {
-  const [imageModalVisible, setImageModalVisible] = useState(false);
-  const [imageError, setImageError] = useState(false);
+export const ArticleContent: React.FC<ArticleContentProps> = memo(
+  ({
+    content,
+    summary,
+    imageUrl,
+    fontSize = 'medium',
+    fontFamily = theme.typography.fontFamily.regular,
+  }) => {
+    const [imageModalVisible, setImageModalVisible] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
-  const contentStyles = useMemo(() => ({
-    fontSize: FontSizes[fontSize].body,
-    lineHeight: FontSizes[fontSize].lineHeight,
-    fontFamily,
-  }), [fontSize, fontFamily]);
+    const contentStyles = useMemo(
+      () => ({
+        fontSize: FontSizes[fontSize].body,
+        lineHeight: FontSizes[fontSize].lineHeight,
+        fontFamily,
+      }),
+      [fontSize, fontFamily]
+    );
 
-  // Memoize the expensive HTML content parser
-  const parseContent = useCallback((htmlContent: string): React.ReactNode[] => {
-    // Remove HTML tags and convert basic formatting
-    // This is a simplified parser - in production, consider using a proper HTML parser
-    const processedContent = htmlContent
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<p[^>]*>/gi, '')
-      .replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n\n$1\n\n')
-      .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '$1')
-      .replace(/<b[^>]*>(.*?)<\/b>/gi, '$1')
-      .replace(/<em[^>]*>(.*?)<\/em>/gi, '$1')
-      .replace(/<i[^>]*>(.*?)<\/i>/gi, '$1')
-      .replace(/<[^>]*>/g, '') // Remove remaining HTML tags
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/&#34;/g, '"')
-      .replace(/&#8216;/g, "'")
-      .replace(/&#8217;/g, "'")
-      .replace(/&#8220;/g, '"')
-      .replace(/&#8221;/g, '"')
-      .replace(/&#8212;/g, '—')
-      .replace(/&#8211;/g, '–')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&rsquo;/g, "'")
-      .replace(/&lsquo;/g, "'")
-      .replace(/&rdquo;/g, '"')
-      .replace(/&ldquo;/g, '"')
-      .replace(/&mdash;/g, '—')
-      .replace(/&ndash;/g, '–')
-      .trim();
+    // Memoize the expensive HTML content parser
+    const parseContent = useCallback(
+      (htmlContent: string): React.ReactNode[] => {
+        // Remove HTML tags and convert basic formatting
+        // This is a simplified parser - in production, consider using a proper HTML parser
+        const processedContent = htmlContent
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<\/p>/gi, '\n\n')
+          .replace(/<p[^>]*>/gi, '')
+          .replace(/<h[1-6][^>]*>(.*?)<\/h[1-6]>/gi, '\n\n$1\n\n')
+          .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '$1')
+          .replace(/<b[^>]*>(.*?)<\/b>/gi, '$1')
+          .replace(/<em[^>]*>(.*?)<\/em>/gi, '$1')
+          .replace(/<i[^>]*>(.*?)<\/i>/gi, '$1')
+          .replace(/<[^>]*>/g, '') // Remove remaining HTML tags
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&#34;/g, '"')
+          .replace(/&#8216;/g, "'")
+          .replace(/&#8217;/g, "'")
+          .replace(/&#8220;/g, '"')
+          .replace(/&#8221;/g, '"')
+          .replace(/&#8212;/g, '—')
+          .replace(/&#8211;/g, '–')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&rsquo;/g, "'")
+          .replace(/&lsquo;/g, "'")
+          .replace(/&rdquo;/g, '"')
+          .replace(/&ldquo;/g, '"')
+          .replace(/&mdash;/g, '—')
+          .replace(/&ndash;/g, '–')
+          .trim();
 
-    // Split into paragraphs and render
-    const paragraphs = processedContent.split(/\n\s*\n/).filter(p => p.trim());
+        // Split into paragraphs and render
+        const paragraphs = processedContent
+          .split(/\n\s*\n/)
+          .filter(p => p.trim());
 
-    return paragraphs.map((paragraph, index) => {
-      // Check if it's likely a heading (short line followed by content)
-      const isHeading =
-        paragraph.length < 100 &&
-        index < paragraphs.length - 1 &&
-        !paragraph.endsWith('.') &&
-        !paragraph.endsWith('!') &&
-        !paragraph.endsWith('?');
+        return paragraphs.map((paragraph, index) => {
+          // Check if it's likely a heading (short line followed by content)
+          const isHeading =
+            paragraph.length < 100 &&
+            index < paragraphs.length - 1 &&
+            !paragraph.endsWith('.') &&
+            !paragraph.endsWith('!') &&
+            !paragraph.endsWith('?');
 
-      if (isHeading) {
-        return (
-          <Text
-            key={index}
-            variant='h6'
-            style={[
-              styles.heading,
-              {
-                fontSize: FontSizes[fontSize].body * 1.2,
-                lineHeight: FontSizes[fontSize].lineHeight * 1.2,
-                fontFamily,
-              },
-            ]}
-          >
-            {paragraph}
-          </Text>
-        );
+          if (isHeading) {
+            return (
+              <Text
+                key={index}
+                variant='h6'
+                style={[
+                  styles.heading,
+                  {
+                    fontSize: FontSizes[fontSize].body * 1.2,
+                    lineHeight: FontSizes[fontSize].lineHeight * 1.2,
+                    fontFamily,
+                  },
+                ]}
+              >
+                {paragraph}
+              </Text>
+            );
+          }
+
+          return (
+            <Text
+              key={index}
+              variant='body1'
+              style={[styles.paragraph, contentStyles]}
+            >
+              {paragraph}
+            </Text>
+          );
+        });
+      },
+      [contentStyles, fontSize, fontFamily]
+    );
+
+    // Handle image load error
+    const handleImageError = useCallback(() => {
+      setImageError(true);
+    }, []);
+
+    // Handle image press
+    const handleImagePress = useCallback(() => {
+      if (!imageError && imageUrl) {
+        setImageModalVisible(true);
       }
+    }, [imageError, imageUrl]);
 
-      return (
-        <Text
-          key={index}
-          variant='body1'
-          style={[styles.paragraph, contentStyles]}
-        >
-          {paragraph}
-        </Text>
-      );
-    });
-  }, [contentStyles, fontSize, fontFamily]);
+    // Render image with fallback
+    const renderImage = useCallback(
+      (style: any, resizeMode: any = 'cover') => {
+        if (!imageUrl || imageError) {
+          return null;
+        }
 
-  // Handle image load error
-  const handleImageError = useCallback(() => {
-    setImageError(true);
-  }, []);
+        return (
+          <Image
+            source={{ uri: imageUrl }}
+            style={style}
+            resizeMode={resizeMode}
+            onError={handleImageError}
+          />
+        );
+      },
+      [imageUrl, imageError, handleImageError]
+    );
 
-  // Handle image press
-  const handleImagePress = useCallback(() => {
-    if (!imageError && imageUrl) {
-      setImageModalVisible(true);
-    }
-  }, [imageError, imageUrl]);
-
-  // Render image with fallback
-  const renderImage = useCallback((style: any, resizeMode: any = 'cover') => {
-    if (!imageUrl || imageError) {
+    // Memoize parsed content to avoid re-parsing on every render
+    const parsedContent = useMemo(() => {
+      if (content && content.trim()) {
+        return parseContent(content);
+      }
       return null;
-    }
+    }, [content, parseContent]);
 
     return (
-      <Image
-        source={{ uri: imageUrl }}
-        style={style}
-        resizeMode={resizeMode}
-        onError={handleImageError}
-      />
-    );
-  }, [imageUrl, imageError, handleImageError]);
-
-  // Memoize parsed content to avoid re-parsing on every render
-  const parsedContent = useMemo(() => {
-    if (content && content.trim()) {
-      return parseContent(content);
-    }
-    return null;
-  }, [content, parseContent]);
-
-  return (
-    <View style={styles.container}>
-      {/* Article Image */}
-      {imageUrl && !imageError && (
-        <TouchableOpacity
-          style={styles.imageContainer}
-          onPress={handleImagePress}
-          activeOpacity={0.8}
-        >
-          {renderImage(styles.image)}
-        </TouchableOpacity>
-      )}
-
-      {/* Summary */}
-      {summary && (
-        <View style={styles.summaryContainer}>
-          <Text variant='h6' style={styles.summaryTitle}>
-            Summary
-          </Text>
-          <Text variant='body1' style={[styles.summary, contentStyles]}>
-            {summary}
-          </Text>
-        </View>
-      )}
-
-      {/* Content */}
-      <View style={styles.contentContainer}>
-        {parsedContent ? (
-          parsedContent
-        ) : (
-          <Text variant='body1' style={[styles.noContent, contentStyles]}>
-            No content available for this article.{'\n\n'}Pull down to refresh to try loading the content from the server.
-          </Text>
-        )}
-      </View>
-
-      {/* Image Modal */}
-      <Modal
-        visible={imageModalVisible}
-        transparent={true}
-        animationType='fade'
-        onRequestClose={() => setImageModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
+      <View style={styles.container}>
+        {/* Article Image */}
+        {imageUrl && !imageError && (
           <TouchableOpacity
-            style={styles.modalBackground}
-            onPress={() => setImageModalVisible(false)}
-            activeOpacity={1}
+            style={styles.imageContainer}
+            onPress={handleImagePress}
+            activeOpacity={0.8}
           >
-            <View style={styles.modalContent}>
-              <RNScrollView
-                contentContainerStyle={styles.modalScrollContent}
-                maximumZoomScale={3}
-                minimumZoomScale={1}
-                showsHorizontalScrollIndicator={false}
-                showsVerticalScrollIndicator={false}
-              >
-                {renderImage(styles.modalImage, 'contain')}
-              </RNScrollView>
-
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setImageModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
+            {renderImage(styles.image)}
           </TouchableOpacity>
+        )}
+
+        {/* Summary */}
+        {summary && (
+          <View style={styles.summaryContainer}>
+            <Text variant='h6' style={styles.summaryTitle}>
+              Summary
+            </Text>
+            <Text variant='body1' style={[styles.summary, contentStyles]}>
+              {summary}
+            </Text>
+          </View>
+        )}
+
+        {/* Content */}
+        <View style={styles.contentContainer}>
+          {parsedContent ? (
+            parsedContent
+          ) : (
+            <Text variant='body1' style={[styles.noContent, contentStyles]}>
+              No content available for this article.{'\n\n'}Pull down to refresh
+              to try loading the content from the server.
+            </Text>
+          )}
         </View>
-      </Modal>
-    </View>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison function for React.memo optimization
-  return (
-    prevProps.content === nextProps.content &&
-    prevProps.summary === nextProps.summary &&
-    prevProps.imageUrl === nextProps.imageUrl &&
-    prevProps.fontSize === nextProps.fontSize &&
-    prevProps.fontFamily === nextProps.fontFamily
-  );
-});
+
+        {/* Image Modal */}
+        <Modal
+          visible={imageModalVisible}
+          transparent={true}
+          animationType='fade'
+          onRequestClose={() => setImageModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <TouchableOpacity
+              style={styles.modalBackground}
+              onPress={() => setImageModalVisible(false)}
+              activeOpacity={1}
+            >
+              <View style={styles.modalContent}>
+                <RNScrollView
+                  contentContainerStyle={styles.modalScrollContent}
+                  maximumZoomScale={3}
+                  minimumZoomScale={1}
+                  showsHorizontalScrollIndicator={false}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {renderImage(styles.modalImage, 'contain')}
+                </RNScrollView>
+
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setImageModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </Modal>
+      </View>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison function for React.memo optimization
+    return (
+      prevProps.content === nextProps.content &&
+      prevProps.summary === nextProps.summary &&
+      prevProps.imageUrl === nextProps.imageUrl &&
+      prevProps.fontSize === nextProps.fontSize &&
+      prevProps.fontFamily === nextProps.fontFamily
+    );
+  }
+);
 
 const styles = StyleSheet.create({
   container: {

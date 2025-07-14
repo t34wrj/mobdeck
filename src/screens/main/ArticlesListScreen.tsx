@@ -96,7 +96,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       articlesLength: articles.length,
       willFetch: isAuthenticated && articles.length === 0,
     });
-    
+
     if (isAuthenticated && articles.length === 0) {
       // Add a small delay to ensure API service is configured
       console.log('[ArticlesListScreen] Scheduling article fetch after delay');
@@ -105,7 +105,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
         // Always load local articles first to show offline-saved articles immediately
         dispatch(loadLocalArticles({ page: 1 }));
       }, 100);
-      
+
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -114,37 +114,49 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
     console.log('[ArticlesListScreen] Pull to refresh triggered');
-    
+
     // Always reload local articles first for immediate feedback
     dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
-    
+
     // Try to sync with server if online and authenticated
     if (isOnline && isAuthenticated) {
       try {
         console.log('[ArticlesListScreen] Syncing with server...');
         const syncResult = await dispatch(syncArticles({ fullSync: false }));
         console.log('[ArticlesListScreen] Sync result:', syncResult);
-        
+
         // Try to fetch fresh articles from server
         try {
-          console.log('[ArticlesListScreen] Fetching fresh articles from server');
-          const fetchResult = await dispatch(fetchArticles({ 
-            page: 1, 
-            forceRefresh: true, 
-            fetchFullContent: false 
-          }));
+          console.log(
+            '[ArticlesListScreen] Fetching fresh articles from server'
+          );
+          const fetchResult = await dispatch(
+            fetchArticles({
+              page: 1,
+              forceRefresh: true,
+              fetchFullContent: false,
+            })
+          );
           console.log('[ArticlesListScreen] Fetch result:', fetchResult);
         } catch (fetchError) {
-          console.warn('[ArticlesListScreen] Fetch failed, continuing with sync:', fetchError);
+          console.warn(
+            '[ArticlesListScreen] Fetch failed, continuing with sync:',
+            fetchError
+          );
         }
-        
+
         // Reload local articles after sync to show changes
         dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
       } catch (syncError) {
-        console.warn('[ArticlesListScreen] Sync failed, showing local articles only:', syncError);
+        console.warn(
+          '[ArticlesListScreen] Sync failed, showing local articles only:',
+          syncError
+        );
       }
     } else {
-      console.log('[ArticlesListScreen] Offline or not authenticated, showing local articles only');
+      console.log(
+        '[ArticlesListScreen] Offline or not authenticated, showing local articles only'
+      );
     }
   }, [dispatch, isOnline, isAuthenticated]);
 
@@ -163,7 +175,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
           tags: filters.tags,
         },
       };
-      
+
       // Always load from local to include offline-saved articles
       dispatch(loadLocalArticles(loadParams));
     }
@@ -186,7 +198,10 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       {
         key: 'all',
         label: 'All',
-        active: filters.isRead === undefined && filters.isArchived === undefined && filters.isFavorite === undefined,
+        active:
+          filters.isRead === undefined &&
+          filters.isArchived === undefined &&
+          filters.isFavorite === undefined,
       },
       { key: 'unread', label: 'Unread', active: filters.isRead === false },
       { key: 'read', label: 'Read', active: filters.isRead === true },
@@ -248,15 +263,15 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       }
 
       dispatch(setFilters(newFilters));
-      const loadParams = { 
-        page: 1, 
+      const loadParams = {
+        page: 1,
         filters: {
           ...filters,
-          ...newFilters
-        }, 
-        forceRefresh: true 
+          ...newFilters,
+        },
+        forceRefresh: true,
       };
-      
+
       // Always load from local to include offline-saved articles
       dispatch(loadLocalArticles(loadParams));
     },
@@ -266,10 +281,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   // Render article item
   const renderArticleItem = useCallback(
     ({ item }: { item: Article }) => (
-      <ArticleCard 
-        article={item} 
-        onPress={() => handleArticlePress(item)} 
-      />
+      <ArticleCard article={item} onPress={() => handleArticlePress(item)} />
     ),
     [handleArticlePress]
   );
@@ -287,7 +299,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
 
       // Check which filter is active
       const { isRead, isFavorite, isArchived } = filters;
-      
+
       if (isRead === false) {
         return {
           title: 'No unread articles',
@@ -295,27 +307,27 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
           showClearButton: false,
         };
       }
-      
+
       if (isRead === true) {
         return {
           title: 'No read articles',
-          message: 'You haven\'t read any articles yet',
+          message: "You haven't read any articles yet",
           showClearButton: false,
         };
       }
-      
+
       if (isFavorite === true) {
         return {
           title: 'No favorite articles',
-          message: 'You haven\'t marked any articles as favorites yet',
+          message: "You haven't marked any articles as favorites yet",
           showClearButton: false,
         };
       }
-      
+
       if (isArchived === true) {
         return {
           title: 'No archived articles',
-          message: 'You haven\'t archived any articles yet',
+          message: "You haven't archived any articles yet",
           showClearButton: false,
         };
       }
@@ -366,40 +378,46 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   }, [loading.fetch, pagination.page]);
 
   // Render filter chips
-  const renderFilters = useCallback(() => (
-    <View style={styles.filtersContainer}>
-      <FlatList
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        data={filterOptions}
-        keyExtractor={item => item.key}
-        contentContainerStyle={styles.filtersContent}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={[styles.filterChip, item.active && styles.filterChipActive]}
-            onPress={() => handleFilterPress(item.key)}
-          >
-            <Text
-              variant='body2'
+  const renderFilters = useCallback(
+    () => (
+      <View style={styles.filtersContainer}>
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={filterOptions}
+          keyExtractor={item => item.key}
+          contentContainerStyle={styles.filtersContent}
+          renderItem={({ item }) => (
+            <TouchableOpacity
               style={[
-                styles.filterChipText,
-                item.active && styles.filterChipTextActive,
+                styles.filterChip,
+                item.active && styles.filterChipActive,
               ]}
+              onPress={() => handleFilterPress(item.key)}
             >
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        )}
-      />
-    </View>
-  ), [filterOptions, handleFilterPress]);
+              <Text
+                variant='body2'
+                style={[
+                  styles.filterChipText,
+                  item.active && styles.filterChipTextActive,
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          )}
+        />
+      </View>
+    ),
+    [filterOptions, handleFilterPress]
+  );
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <MobdeckLogo 
+          <MobdeckLogo
             size={24}
             color={theme.colors.accent[500]} // Tiffany Blue for contrast on green
           />
@@ -444,7 +462,9 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
             {error.fetch}
           </Text>
           <View style={styles.errorButtonsContainer}>
-            {error.fetch.includes('server settings') || error.fetch.includes('Authentication') || error.fetch.includes('Server not found') ? (
+            {error.fetch.includes('server settings') ||
+            error.fetch.includes('Authentication') ||
+            error.fetch.includes('Server not found') ? (
               <Button
                 variant='primary'
                 size='sm'

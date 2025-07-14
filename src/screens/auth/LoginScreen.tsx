@@ -81,30 +81,42 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 
     console.log('[LoginScreen] Starting login process...');
     console.log('[LoginScreen] Server URL:', serverUrl);
-    console.log('[LoginScreen] Token provided:', apiToken ? '[TOKEN_PRESENT]' : '[NO_TOKEN]');
+    console.log(
+      '[LoginScreen] Token provided:',
+      apiToken ? '[TOKEN_PRESENT]' : '[NO_TOKEN]'
+    );
 
     setIsValidating(true);
 
     try {
       // Validate the API token against the Readeck server
-      const validationResult = await validateApiToken(serverUrl.trim(), apiToken);
-      
+      const validationResult = await validateApiToken(
+        serverUrl.trim(),
+        apiToken
+      );
+
       if (!validationResult.isValid) {
         console.error('[LoginScreen] Validation failed - result not valid');
-        Alert.alert('Login Failed', 'Invalid credentials. Please check your server URL and API token.');
+        Alert.alert(
+          'Login Failed',
+          'Invalid credentials. Please check your server URL and API token.'
+        );
         return;
       }
 
       console.log('[LoginScreen] Validation successful, storing token...');
-      
+
       // Create user object for storage
       const userForStorage = {
         ...validationResult.user,
         serverUrl: serverUrl.trim().replace(/\/$/, ''),
       };
-      
+
       // Store the token securely after successful validation
-      const tokenStored = await authStorageService.storeToken(apiToken, userForStorage);
+      const tokenStored = await authStorageService.storeToken(
+        apiToken,
+        userForStorage
+      );
       if (!tokenStored) {
         console.error('[LoginScreen] Failed to store token');
         Alert.alert('Storage Error', 'Failed to store token securely');
@@ -112,33 +124,35 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
       }
 
       console.log('[LoginScreen] Token stored, configuring API service...');
-      
+
       // Configure the ReadeckApiService with the server URL
       // Ensure the URL includes the /api path
       const cleanUrl = serverUrl.trim().replace(/\/$/, '');
       const apiUrl = cleanUrl.includes('/api') ? cleanUrl : `${cleanUrl}/api`;
-      
+
       readeckApiService.updateConfig({
         baseUrl: apiUrl,
       });
-      
+
       // Dispatch success action with validated user data
       dispatch({
         type: 'auth/setUser',
         payload: validationResult.user,
       });
-      
+
       console.log('[LoginScreen] Login successful! Starting initial sync...');
-      
+
       // Trigger immediate sync after successful authentication
       try {
-        await dispatch(startSyncOperation({ 
-          forceFull: true,
-          syncOptions: {
-            fullTextSync: true,
-            downloadImages: true,
-          }
-        }));
+        await dispatch(
+          startSyncOperation({
+            forceFull: true,
+            syncOptions: {
+              fullTextSync: true,
+              downloadImages: true,
+            },
+          })
+        );
         console.log('[LoginScreen] Initial sync completed successfully');
       } catch (syncError) {
         console.error('[LoginScreen] Initial sync failed:', syncError);

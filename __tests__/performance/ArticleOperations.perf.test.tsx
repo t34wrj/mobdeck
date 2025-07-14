@@ -1,6 +1,6 @@
 /**
  * Article Operations Performance Tests
- * 
+ *
  * Tests performance of:
  * - Article list rendering with large datasets
  * - Search and filter operations
@@ -10,12 +10,22 @@
  */
 
 import React from 'react';
-import { FlatList, View, Text, TouchableOpacity, TextInput, Image } from 'react-native';
+import {
+  FlatList,
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  Image,
+} from 'react-native';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { Provider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
 import { store } from '../../src/store';
-import { performanceTestHelper, PERFORMANCE_THRESHOLDS } from '../../src/utils/performanceTestHelper';
+import {
+  performanceTestHelper,
+  PERFORMANCE_THRESHOLDS,
+} from '../../src/utils/performanceTestHelper';
 import { Article } from '../../src/types';
 import { fetchArticles } from '../../src/store/slices/articlesSlice';
 
@@ -27,22 +37,22 @@ jest.mock('../../src/services/DatabaseService');
 // Mock ArticlesListScreen for performance testing
 const MockArticlesListScreen: React.FC = () => {
   return (
-    <View testID="articles-list">
-      <TextInput testID="search-input" />
-      <TouchableOpacity testID="filter-button">
+    <View testID='articles-list'>
+      <TextInput testID='search-input' />
+      <TouchableOpacity testID='filter-button'>
         <Text>Filter</Text>
       </TouchableOpacity>
-      <TouchableOpacity testID="filter-unread">
+      <TouchableOpacity testID='filter-unread'>
         <Text>Unread</Text>
       </TouchableOpacity>
-      <TouchableOpacity testID="filter-favorite">
+      <TouchableOpacity testID='filter-favorite'>
         <Text>Favorite</Text>
       </TouchableOpacity>
-      <TouchableOpacity testID="filter-archived">
+      <TouchableOpacity testID='filter-archived'>
         <Text>Archived</Text>
       </TouchableOpacity>
       <FlatList
-        testID="articles-flatlist"
+        testID='articles-flatlist'
         data={[]}
         renderItem={() => null}
         keyExtractor={(item: any) => item?.id || 'mock-item'}
@@ -54,12 +64,12 @@ const MockArticlesListScreen: React.FC = () => {
 // Mock ArticleCard component
 const MockArticleCard: React.FC<{ article: any }> = ({ article }) => {
   return (
-    <View testID="article-card">
+    <View testID='article-card'>
       <Text>{article.title}</Text>
       {article.imageUrl && (
-        <Image 
-          testID={`article-image-${article.id}`} 
-          source={{ uri: article.imageUrl }} 
+        <Image
+          testID={`article-image-${article.id}`}
+          source={{ uri: article.imageUrl }}
         />
       )}
     </View>
@@ -92,9 +102,7 @@ describe('Article Operations Performance Tests', () => {
   const renderWithProviders = (component: React.ReactElement) => {
     return render(
       <Provider store={store}>
-        <NavigationContainer>
-          {component}
-        </NavigationContainer>
+        <NavigationContainer>{component}</NavigationContainer>
       </Provider>
     );
   };
@@ -108,37 +116,44 @@ describe('Article Operations Performance Tests', () => {
     it('should render 50 articles efficiently', async () => {
       const articles = createTestArticles(50);
       // Simulate fulfilled fetchArticles action
-      store.dispatch(fetchArticles.fulfilled({
-        items: articles,
-        page: 1,
-        totalPages: 1,
-        totalItems: 50,
-      }, 'test', { page: 1, limit: 50 }));
+      store.dispatch(
+        fetchArticles.fulfilled(
+          {
+            items: articles,
+            page: 1,
+            totalPages: 1,
+            totalItems: 50,
+          },
+          'test',
+          { page: 1, limit: 50 }
+        )
+      );
 
       const { result: screen, metrics } = performanceTestHelper.measureSync(
         'render_50_articles',
-        () => render(
-          <Provider store={store}>
-            <NavigationContainer>
-              <View testID="articles-list">
-                <TextInput testID="search-input" />
-                <TouchableOpacity testID="filter-button">
-                  <Text>Filter</Text>
-                </TouchableOpacity>
-                <FlatList
-                  testID="articles-flatlist"
-                  data={articles}
-                  renderItem={({ item }) => (
-                    <View testID="article-card">
-                      <Text>{item.title}</Text>
-                    </View>
-                  )}
-                  keyExtractor={(item) => item.id}
-                />
-              </View>
-            </NavigationContainer>
-          </Provider>
-        ),
+        () =>
+          render(
+            <Provider store={store}>
+              <NavigationContainer>
+                <View testID='articles-list'>
+                  <TextInput testID='search-input' />
+                  <TouchableOpacity testID='filter-button'>
+                    <Text>Filter</Text>
+                  </TouchableOpacity>
+                  <FlatList
+                    testID='articles-flatlist'
+                    data={articles}
+                    renderItem={({ item }) => (
+                      <View testID='article-card'>
+                        <Text>{item.title}</Text>
+                      </View>
+                    )}
+                    keyExtractor={item => item.id}
+                  />
+                </View>
+              </NavigationContainer>
+            </Provider>
+          ),
         { articleCount: 50 }
       );
 
@@ -156,33 +171,40 @@ describe('Article Operations Performance Tests', () => {
 
     it('should handle 200 articles with virtualization', async () => {
       const articles = createTestArticles(200);
-      store.dispatch(fetchArticles.fulfilled({
-        items: articles,
-        page: 1,
-        totalPages: 1,
-        totalItems: articles.length,
-      }, 'test', { page: 1, limit: articles.length }));
+      store.dispatch(
+        fetchArticles.fulfilled(
+          {
+            items: articles,
+            page: 1,
+            totalPages: 1,
+            totalItems: articles.length,
+          },
+          'test',
+          { page: 1, limit: articles.length }
+        )
+      );
 
       const { result: screen } = performanceTestHelper.measureSync(
         'render_200_articles_virtualized',
-        () => render(
-          <Provider store={store}>
-            <NavigationContainer>
-              <View testID="articles-list">
-                <FlatList
-                  testID="articles-flatlist"
-                  data={articles}
-                  renderItem={({ item }) => (
-                    <View testID="article-card">
-                      <Text>{item.title}</Text>
-                    </View>
-                  )}
-                  keyExtractor={(item) => item.id}
-                />
-              </View>
-            </NavigationContainer>
-          </Provider>
-        ),
+        () =>
+          render(
+            <Provider store={store}>
+              <NavigationContainer>
+                <View testID='articles-list'>
+                  <FlatList
+                    testID='articles-flatlist'
+                    data={articles}
+                    renderItem={({ item }) => (
+                      <View testID='article-card'>
+                        <Text>{item.title}</Text>
+                      </View>
+                    )}
+                    keyExtractor={item => item.id}
+                  />
+                </View>
+              </NavigationContainer>
+            </Provider>
+          ),
         { articleCount: 200, virtualized: true }
       );
 
@@ -192,7 +214,7 @@ describe('Article Operations Performance Tests', () => {
 
       // Test scrolling performance
       const flatList = screen.getByTestId('articles-flatlist');
-      
+
       const { metrics } = await performanceTestHelper.measureAsync(
         'scroll_200_articles',
         async () => {
@@ -205,9 +227,12 @@ describe('Article Operations Performance Tests', () => {
             },
           });
 
-          await waitFor(() => {
-            // Wait for render to complete
-          }, { timeout: 100 });
+          await waitFor(
+            () => {
+              // Wait for render to complete
+            },
+            { timeout: 100 }
+          );
         },
         { operation: 'scroll', position: 1000 }
       );
@@ -218,12 +243,18 @@ describe('Article Operations Performance Tests', () => {
 
     it('should optimize re-renders when article status changes', async () => {
       const articles = createTestArticles(100);
-      store.dispatch(fetchArticles.fulfilled({
-        items: articles,
-        page: 1,
-        totalPages: 1,
-        totalItems: articles.length,
-      }, 'test', { page: 1, limit: articles.length }));
+      store.dispatch(
+        fetchArticles.fulfilled(
+          {
+            items: articles,
+            page: 1,
+            totalPages: 1,
+            totalItems: articles.length,
+          },
+          'test',
+          { page: 1, limit: articles.length }
+        )
+      );
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
 
@@ -238,16 +269,25 @@ describe('Article Operations Performance Tests', () => {
           // Update article status
           const updatedArticles = [...articles];
           updatedArticles[0] = { ...updatedArticles[0], isRead: true };
-          store.dispatch(fetchArticles.fulfilled({
-            items: updatedArticles,
-            page: 1,
-            totalPages: 1,
-            totalItems: updatedArticles.length,
-          }, 'test', { page: 1, limit: updatedArticles.length }));
+          store.dispatch(
+            fetchArticles.fulfilled(
+              {
+                items: updatedArticles,
+                page: 1,
+                totalPages: 1,
+                totalItems: updatedArticles.length,
+              },
+              'test',
+              { page: 1, limit: updatedArticles.length }
+            )
+          );
 
-          await waitFor(() => {
-            // Wait for re-render
-          }, { timeout: 50 });
+          await waitFor(
+            () => {
+              // Wait for re-render
+            },
+            { timeout: 50 }
+          );
         },
         { operation: 'status_update', articleIndex: 0 }
       );
@@ -260,12 +300,18 @@ describe('Article Operations Performance Tests', () => {
   describe('Search and Filter Performance', () => {
     it('should search through 100 articles efficiently', async () => {
       const articles = createTestArticles(100);
-      store.dispatch(fetchArticles.fulfilled({
-        items: articles,
-        page: 1,
-        totalPages: 1,
-        totalItems: articles.length,
-      }, 'test', { page: 1, limit: articles.length }));
+      store.dispatch(
+        fetchArticles.fulfilled(
+          {
+            items: articles,
+            page: 1,
+            totalPages: 1,
+            totalItems: articles.length,
+          },
+          'test',
+          { page: 1, limit: articles.length }
+        )
+      );
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
 
@@ -283,10 +329,13 @@ describe('Article Operations Performance Tests', () => {
           `search_${query.length}_chars`,
           async () => {
             fireEvent.changeText(searchInput, query);
-            
-            await waitFor(() => {
-              // Wait for search results to update
-            }, { timeout: 100 });
+
+            await waitFor(
+              () => {
+                // Wait for search results to update
+              },
+              { timeout: 100 }
+            );
           },
           { query, queryLength: query.length, articleCount: 100 }
         );
@@ -302,12 +351,18 @@ describe('Article Operations Performance Tests', () => {
 
     it('should filter articles by status efficiently', async () => {
       const articles = createTestArticles(150);
-      store.dispatch(fetchArticles.fulfilled({
-        items: articles,
-        page: 1,
-        totalPages: 1,
-        totalItems: articles.length,
-      }, 'test', { page: 1, limit: articles.length }));
+      store.dispatch(
+        fetchArticles.fulfilled(
+          {
+            items: articles,
+            page: 1,
+            totalPages: 1,
+            totalItems: articles.length,
+          },
+          'test',
+          { page: 1, limit: articles.length }
+        )
+      );
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
 
@@ -327,28 +382,38 @@ describe('Article Operations Performance Tests', () => {
           `filter_${filter.name}`,
           async () => {
             fireEvent.press(screen.getByTestId(filter.testId));
-            
-            await waitFor(() => {
-              // Wait for filter to apply
-            }, { timeout: 100 });
+
+            await waitFor(
+              () => {
+                // Wait for filter to apply
+              },
+              { timeout: 100 }
+            );
           },
           { filterType: filter.name, articleCount: 150 }
         );
       }
 
       // Filter operations should be fast
-      const avgMetrics = performanceTestHelper.getAverageMetrics('filter_favorite');
+      const avgMetrics =
+        performanceTestHelper.getAverageMetrics('filter_favorite');
       expect(avgMetrics.averageDuration).toBeLessThan(100);
     });
 
     it('should handle combined search and filter operations', async () => {
       const articles = createTestArticles(100);
-      store.dispatch(fetchArticles.fulfilled({
-        items: articles,
-        page: 1,
-        totalPages: 1,
-        totalItems: articles.length,
-      }, 'test', { page: 1, limit: articles.length }));
+      store.dispatch(
+        fetchArticles.fulfilled(
+          {
+            items: articles,
+            page: 1,
+            totalPages: 1,
+            totalItems: articles.length,
+          },
+          'test',
+          { page: 1, limit: articles.length }
+        )
+      );
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
 
@@ -365,10 +430,13 @@ describe('Article Operations Performance Tests', () => {
         'search_with_filter',
         async () => {
           fireEvent.changeText(screen.getByTestId('search-input'), 'article');
-          
-          await waitFor(() => {
-            // Wait for combined results
-          }, { timeout: 150 });
+
+          await waitFor(
+            () => {
+              // Wait for combined results
+            },
+            { timeout: 150 }
+          );
         },
         { operation: 'search_and_filter' }
       );
@@ -387,23 +455,25 @@ describe('Article Operations Performance Tests', () => {
       for (let i = 0; i < 10; i++) {
         const { metrics } = performanceTestHelper.measureSync(
           `render_article_card_${i}`,
-          () => render(
-            <View testID="article-card">
-              <Text>{article.title}</Text>
-              {article.imageUrl && (
-                <Image 
-                  testID={`article-image-${article.id}`} 
-                  source={{ uri: article.imageUrl }} 
-                />
-              )}
-            </View>
-          ),
+          () =>
+            render(
+              <View testID='article-card'>
+                <Text>{article.title}</Text>
+                {article.imageUrl && (
+                  <Image
+                    testID={`article-image-${article.id}`}
+                    source={{ uri: article.imageUrl }}
+                  />
+                )}
+              </View>
+            ),
           { iteration: i }
         );
         measurements.push(metrics.duration);
       }
 
-      const avgDuration = measurements.reduce((a, b) => a + b, 0) / measurements.length;
+      const avgDuration =
+        measurements.reduce((a, b) => a + b, 0) / measurements.length;
       expect(avgDuration).toBeLessThan(10); // Individual cards should render very fast
     });
 
@@ -413,32 +483,38 @@ describe('Article Operations Performance Tests', () => {
         imageUrl: `https://example.com/image-${a.id}.jpg`,
       }));
 
-      store.dispatch(fetchArticles.fulfilled({
-        items: articlesWithImages,
-        page: 1,
-        totalPages: 1,
-        totalItems: articlesWithImages.length,
-      }, 'test', { page: 1, limit: articlesWithImages.length }));
+      store.dispatch(
+        fetchArticles.fulfilled(
+          {
+            items: articlesWithImages,
+            page: 1,
+            totalPages: 1,
+            totalItems: articlesWithImages.length,
+          },
+          'test',
+          { page: 1, limit: articlesWithImages.length }
+        )
+      );
 
       const screen = render(
         <Provider store={store}>
           <NavigationContainer>
-            <View testID="articles-list">
+            <View testID='articles-list'>
               <FlatList
-                testID="articles-flatlist"
+                testID='articles-flatlist'
                 data={articlesWithImages}
                 renderItem={({ item }) => (
-                  <View testID="article-card">
+                  <View testID='article-card'>
                     <Text>{item.title}</Text>
                     {item.imageUrl && (
-                      <Image 
-                        testID={`article-image-${item.id}`} 
-                        source={{ uri: item.imageUrl }} 
+                      <Image
+                        testID={`article-image-${item.id}`}
+                        source={{ uri: item.imageUrl }}
                       />
                     )}
                   </View>
                 )}
-                keyExtractor={(item) => item.id}
+                keyExtractor={item => item.id}
               />
             </View>
           </NavigationContainer>
@@ -454,10 +530,13 @@ describe('Article Operations Performance Tests', () => {
         'image_loading_impact',
         async () => {
           // For performance testing, just simulate the time it takes to render with images
-          await waitFor(() => {
-            // Test that the FlatList renders without performance issues
-            expect(screen.getByTestId('articles-flatlist')).toBeTruthy();
-          }, { timeout: 200 });
+          await waitFor(
+            () => {
+              // Test that the FlatList renders without performance issues
+              expect(screen.getByTestId('articles-flatlist')).toBeTruthy();
+            },
+            { timeout: 200 }
+          );
         },
         { imageCount: 20 }
       );
@@ -479,12 +558,18 @@ describe('Article Operations Performance Tests', () => {
         id: `more-${a.id}`,
       }));
 
-      store.dispatch(fetchArticles.fulfilled({
-        items: initialArticles,
-        page: 1,
-        totalPages: 1,
-        totalItems: initialArticles.length,
-      }, 'test', { page: 1, limit: initialArticles.length }));
+      store.dispatch(
+        fetchArticles.fulfilled(
+          {
+            items: initialArticles,
+            page: 1,
+            totalPages: 1,
+            totalItems: initialArticles.length,
+          },
+          'test',
+          { page: 1, limit: initialArticles.length }
+        )
+      );
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
 
@@ -502,17 +587,26 @@ describe('Article Operations Performance Tests', () => {
 
           // Simulate API response
           setTimeout(() => {
-            store.dispatch(fetchArticles.fulfilled({
-              items: [...initialArticles, ...moreArticles],
-              page: 1,
-              totalPages: 1,
-              totalItems: initialArticles.length + moreArticles.length,
-            }, 'test', { page: 1, limit: initialArticles.length + moreArticles.length }));
+            store.dispatch(
+              fetchArticles.fulfilled(
+                {
+                  items: [...initialArticles, ...moreArticles],
+                  page: 1,
+                  totalPages: 1,
+                  totalItems: initialArticles.length + moreArticles.length,
+                },
+                'test',
+                { page: 1, limit: initialArticles.length + moreArticles.length }
+              )
+            );
           }, 100);
 
-          await waitFor(() => {
-            // Wait for new articles to render
-          }, { timeout: 300 });
+          await waitFor(
+            () => {
+              // Wait for new articles to render
+            },
+            { timeout: 300 }
+          );
         },
         { operation: 'pagination', newArticles: 50 }
       );
@@ -523,12 +617,18 @@ describe('Article Operations Performance Tests', () => {
     it('should maintain scroll position when loading more', async () => {
       const articles = createTestArticles(100);
       const initialArticles = articles.slice(0, 50);
-      store.dispatch(fetchArticles.fulfilled({
-        items: initialArticles,
-        page: 1,
-        totalPages: 1,
-        totalItems: initialArticles.length,
-      }, 'test', { page: 1, limit: initialArticles.length }));
+      store.dispatch(
+        fetchArticles.fulfilled(
+          {
+            items: initialArticles,
+            page: 1,
+            totalPages: 1,
+            totalItems: initialArticles.length,
+          },
+          'test',
+          { page: 1, limit: initialArticles.length }
+        )
+      );
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
 
@@ -551,16 +651,25 @@ describe('Article Operations Performance Tests', () => {
       const { metrics } = await performanceTestHelper.measureAsync(
         'maintain_scroll_position',
         async () => {
-          store.dispatch(fetchArticles.fulfilled({
-        items: articles,
-        page: 1,
-        totalPages: 1,
-        totalItems: articles.length,
-      }, 'test', { page: 1, limit: articles.length }));
+          store.dispatch(
+            fetchArticles.fulfilled(
+              {
+                items: articles,
+                page: 1,
+                totalPages: 1,
+                totalItems: articles.length,
+              },
+              'test',
+              { page: 1, limit: articles.length }
+            )
+          );
 
-          await waitFor(() => {
-            // Verify scroll position maintained
-          }, { timeout: 100 });
+          await waitFor(
+            () => {
+              // Verify scroll position maintained
+            },
+            { timeout: 100 }
+          );
         },
         { operation: 'scroll_position_maintenance' }
       );
@@ -577,27 +686,38 @@ describe('Article Operations Performance Tests', () => {
       }
 
       const articles = createTestArticles(100);
-      store.dispatch(fetchArticles.fulfilled({
-        items: articles,
-        page: 1,
-        totalPages: 1,
-        totalItems: articles.length,
-      }, 'test', { page: 1, limit: articles.length }));
+      store.dispatch(
+        fetchArticles.fulfilled(
+          {
+            items: articles,
+            page: 1,
+            totalPages: 1,
+            totalItems: articles.length,
+          },
+          'test',
+          { page: 1, limit: articles.length }
+        )
+      );
 
-      const initialMemory = performanceTestHelper['getCurrentMemoryUsage']() || 0;
+      const initialMemory =
+        performanceTestHelper['getCurrentMemoryUsage']() || 0;
       const memorySnapshots: number[] = [];
 
       // Mount and unmount multiple times
       for (let i = 0; i < 5; i++) {
         const { unmount } = renderWithProviders(<MockArticlesListScreen />);
 
-        await waitFor(() => {
-          // Wait for render
-        }, { timeout: 100 });
+        await waitFor(
+          () => {
+            // Wait for render
+          },
+          { timeout: 100 }
+        );
 
         unmount();
 
-        const currentMemory = performanceTestHelper['getCurrentMemoryUsage']() || 0;
+        const currentMemory =
+          performanceTestHelper['getCurrentMemoryUsage']() || 0;
         memorySnapshots.push(currentMemory);
       }
 

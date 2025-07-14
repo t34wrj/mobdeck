@@ -76,7 +76,7 @@ describe('Logger', () => {
 
   describe('data sanitization', () => {
     it('should sanitize sensitive data', () => {
-      logger.updateConfig({ 
+      logger.updateConfig({
         level: 'debug',
         enableConsole: true,
         sensitiveKeys: ['password', 'token'],
@@ -116,7 +116,7 @@ describe('Logger', () => {
     });
 
     it('should handle arrays in sanitization', () => {
-      logger.updateConfig({ 
+      logger.updateConfig({
         level: 'debug',
         enableConsole: true,
         sensitiveKeys: ['secret', 'key'],
@@ -148,21 +148,21 @@ describe('Logger', () => {
   describe('storage functionality', () => {
     it('should call AsyncStorage when storage is enabled', () => {
       logger.updateConfig({ enableStorage: true });
-      
+
       logger.info('Test message');
-      
+
       // Since storage is async, we just verify config was set
       expect(true).toBe(true); // Config test
     });
 
     it('should not call AsyncStorage when storage is disabled', () => {
       logger.updateConfig({ enableStorage: false });
-      
+
       // Clear previous calls
       (AsyncStorage.setItem as jest.Mock).mockClear();
-      
+
       logger.info('Test message');
-      
+
       // Should not call storage immediately
       expect(true).toBe(true); // Config test
     });
@@ -181,7 +181,7 @@ describe('Logger', () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(mockLogs);
 
       const logs = await logger.getLogs();
-      
+
       expect(logs).toHaveLength(1);
       expect(logs[0].message).toBe('Test log');
       expect(logs[0].level).toBe('info');
@@ -189,15 +189,33 @@ describe('Logger', () => {
 
     it('should filter logs by level', async () => {
       const mockLogs = JSON.stringify([
-        { id: '1', level: 'info', message: 'Info log', timestamp: '2023-01-01T00:00:00.000Z', context: {} },
-        { id: '2', level: 'error', message: 'Error log', timestamp: '2023-01-01T00:00:00.000Z', context: {} },
-        { id: '3', level: 'debug', message: 'Debug log', timestamp: '2023-01-01T00:00:00.000Z', context: {} },
+        {
+          id: '1',
+          level: 'info',
+          message: 'Info log',
+          timestamp: '2023-01-01T00:00:00.000Z',
+          context: {},
+        },
+        {
+          id: '2',
+          level: 'error',
+          message: 'Error log',
+          timestamp: '2023-01-01T00:00:00.000Z',
+          context: {},
+        },
+        {
+          id: '3',
+          level: 'debug',
+          message: 'Debug log',
+          timestamp: '2023-01-01T00:00:00.000Z',
+          context: {},
+        },
       ]);
 
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(mockLogs);
 
       const errorLogs = await logger.getLogs('error');
-      
+
       expect(errorLogs).toHaveLength(1);
       expect(errorLogs[0].level).toBe('error');
     });
@@ -216,7 +234,7 @@ describe('Logger', () => {
       (AsyncStorage.getItem as jest.Mock).mockResolvedValue(mockLogs);
 
       const logs = await logger.getLogs(undefined, 5);
-      
+
       expect(logs).toHaveLength(5);
     });
   });
@@ -228,10 +246,10 @@ describe('Logger', () => {
 
     it('should track performance timers', () => {
       logger.startPerformanceTimer('test-operation');
-      
+
       // Simulate some time passing
       jest.advanceTimersByTime(100);
-      
+
       logger.endPerformanceTimer('test-operation', { context: 'test' });
 
       // Check that debug was called with performance info
@@ -246,10 +264,10 @@ describe('Logger', () => {
 
     it('should warn about slow operations', () => {
       logger.startPerformanceTimer('slow-operation');
-      
+
       // Simulate slow operation (> 1 second)
       jest.advanceTimersByTime(1500);
-      
+
       logger.endPerformanceTimer('slow-operation');
 
       expect(mockConsole.warn).toHaveBeenCalledWith(
@@ -299,7 +317,7 @@ describe('Logger', () => {
 
     it('should update context', () => {
       logger.updateConfig({ enableConsole: true, level: 'debug' });
-      
+
       logger.updateContext({
         userId: 'user123',
         screenName: 'HomeScreen',
@@ -318,15 +336,27 @@ describe('Logger', () => {
 
       expect(result).toBe(true);
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@mobdeck_logs');
-      expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@mobdeck_performance');
+      expect(AsyncStorage.removeItem).toHaveBeenCalledWith(
+        '@mobdeck_performance'
+      );
     });
 
     it('should export logs', async () => {
       const mockLogs = [
-        { id: '1', level: 'info', message: 'Test', timestamp: '2023-01-01T00:00:00.000Z', context: {} },
+        {
+          id: '1',
+          level: 'info',
+          message: 'Test',
+          timestamp: '2023-01-01T00:00:00.000Z',
+          context: {},
+        },
       ];
       const mockMetrics = [
-        { operation: 'test', duration: 100, timestamp: '2023-01-01T00:00:00.000Z' },
+        {
+          operation: 'test',
+          duration: 100,
+          timestamp: '2023-01-01T00:00:00.000Z',
+        },
       ];
 
       (AsyncStorage.getItem as jest.Mock)
@@ -343,7 +373,9 @@ describe('Logger', () => {
 
   describe('error handling', () => {
     it('should handle storage errors gracefully', async () => {
-      (AsyncStorage.setItem as jest.Mock).mockRejectedValue(new Error('Storage error'));
+      (AsyncStorage.setItem as jest.Mock).mockRejectedValue(
+        new Error('Storage error')
+      );
 
       // Should not throw
       expect(() => {
@@ -352,10 +384,12 @@ describe('Logger', () => {
     });
 
     it('should handle retrieval errors gracefully', async () => {
-      (AsyncStorage.getItem as jest.Mock).mockRejectedValue(new Error('Retrieval error'));
+      (AsyncStorage.getItem as jest.Mock).mockRejectedValue(
+        new Error('Retrieval error')
+      );
 
       const logs = await logger.getLogs();
-      
+
       expect(logs).toEqual([]);
     });
   });

@@ -5,7 +5,11 @@
 
 import * as Keychain from 'react-native-keychain';
 import { errorHandler, ErrorCategory } from '../utils/errorHandler';
-import { validateToken, generateSecureRandom, hashData } from '../utils/security';
+import {
+  validateToken,
+  generateSecureRandom,
+  hashData,
+} from '../utils/security';
 import {
   IAuthStorageService,
   AuthToken,
@@ -57,7 +61,10 @@ class AuthStorageService implements IAuthStorageService {
    * @param user - Optional user data to store with token
    * @returns Promise<boolean> - Success status
    */
-  storeToken = async (token: string, user?: AuthenticatedUser): Promise<boolean> => {
+  storeToken = async (
+    token: string,
+    user?: AuthenticatedUser
+  ): Promise<boolean> => {
     try {
       if (!token || typeof token !== 'string' || token.trim().length === 0) {
         logger.error('Invalid token provided for storage');
@@ -66,26 +73,26 @@ class AuthStorageService implements IAuthStorageService {
 
       // Flexible token validation for Readeck API tokens
       const trimmedToken = token.trim();
-      
+
       // Validate token using security utility
       const validation = validateToken(trimmedToken);
       if (!validation.isValid) {
         logger.error('Token validation failed', { error: validation.error });
         return false;
       }
-      
+
       // Basic validation: must be at least 10 characters
       if (trimmedToken.length < 10) {
         logger.error('Token too short for storage');
         return false;
       }
-      
+
       // Maximum length validation for security
       if (trimmedToken.length > 4096) {
         logger.error('Token too long for storage');
         return false;
       }
-      
+
       // Create token metadata with security enhancements
       const tokenData: AuthStorageData = {
         token: trimmedToken,
@@ -94,12 +101,14 @@ class AuthStorageService implements IAuthStorageService {
         serverUrl: user?.serverUrl || '',
         version: this.TOKEN_VERSION,
         checksum: hashData(trimmedToken, generateSecureRandom(16)),
-        user: user ? {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          lastLoginAt: user.lastLoginAt,
-        } : undefined,
+        user: user
+          ? {
+              id: user.id,
+              username: user.username,
+              email: user.email,
+              lastLoginAt: user.lastLoginAt,
+            }
+          : undefined,
       };
 
       const result = await Keychain.setInternetCredentials(
@@ -114,7 +123,9 @@ class AuthStorageService implements IAuthStorageService {
       );
 
       if (result) {
-        logger.info('Token stored successfully', { version: this.TOKEN_VERSION });
+        logger.info('Token stored successfully', {
+          version: this.TOKEN_VERSION,
+        });
         // Schedule token rotation check
         this.scheduleTokenRotationCheck();
         return true;
@@ -184,8 +195,8 @@ class AuthStorageService implements IAuthStorageService {
             return null;
           }
         } catch (parseError) {
-          logger.error('Failed to parse stored auth data', { 
-            error: 'Parse error occurred - corrupted auth data detected' 
+          logger.error('Failed to parse stored auth data', {
+            error: 'Parse error occurred - corrupted auth data detected',
           });
           await this.deleteToken(); // Clean up corrupted data
           return null;
@@ -223,9 +234,9 @@ class AuthStorageService implements IAuthStorageService {
         error,
         StorageErrorCode.DELETION_FAILED
       );
-      logger.error('Token deletion failed', { 
+      logger.error('Token deletion failed', {
         errorCode: storageError.code,
-        message: storageError.message
+        message: storageError.message,
       });
       return false;
     }
@@ -311,7 +322,7 @@ class AuthStorageService implements IAuthStorageService {
     // Use centralized error handling for consistent error categorization and logging
     errorHandler.handleError(error, {
       category: ErrorCategory.STORAGE,
-      context: { 
+      context: {
         actionType: 'auth_storage_operation',
       },
     });
@@ -417,7 +428,7 @@ class AuthStorageService implements IAuthStorageService {
     const issuedAt = new Date(authData.issuedAt);
     const now = new Date();
     const tokenAge = now.getTime() - issuedAt.getTime();
-    
+
     // Rotate if token is older than MAX_TOKEN_AGE
     return tokenAge > this.MAX_TOKEN_AGE;
   };

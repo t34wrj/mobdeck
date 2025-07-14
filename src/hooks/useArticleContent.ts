@@ -2,14 +2,20 @@ import { useEffect, useState, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { Alert } from 'react-native';
 import { Article } from '../types';
-import { updateArticleLocal, updateArticleLocalWithDB } from '../store/slices/articlesSlice';
+import {
+  updateArticleLocal,
+  updateArticleLocalWithDB,
+} from '../store/slices/articlesSlice';
 import { articlesApiService } from '../services/ArticlesApiService';
 
-export const useArticleContent = (article: Article | undefined, articleId: string) => {
+export const useArticleContent = (
+  article: Article | undefined,
+  articleId: string
+) => {
   const dispatch = useDispatch();
   const [refreshing, setRefreshing] = useState(false);
   const [contentFetched, setContentFetched] = useState(false);
-  
+
   useEffect(() => {
     setContentFetched(false);
   }, [articleId]);
@@ -17,45 +23,56 @@ export const useArticleContent = (article: Article | undefined, articleId: strin
   useEffect(() => {
     const fetchContentIfNeeded = async () => {
       if (!article) return;
-      
+
       if (!article.content && !contentFetched) {
         setContentFetched(true);
-        console.log('[useArticleContent] Article has no content, attempting to fetch...');
-        
+        console.log(
+          '[useArticleContent] Article has no content, attempting to fetch...'
+        );
+
         if (article.id.startsWith('local_')) {
-          console.log('[useArticleContent] Local article detected, attempting to sync to server...');
-          
+          console.log(
+            '[useArticleContent] Local article detected, attempting to sync to server...'
+          );
+
           try {
             const createdArticle = await articlesApiService.createArticle({
               title: article.title,
               url: article.url,
             });
-            
-            const serverArticle = await articlesApiService.getArticle(createdArticle.id);
-            
-            console.log('[useArticleContent] Article content fetched from server');
-            
+
+            const serverArticle = await articlesApiService.getArticle(
+              createdArticle.id
+            );
+
+            console.log(
+              '[useArticleContent] Article content fetched from server'
+            );
+
             const updateData = {
               content: serverArticle.content || '',
               summary: serverArticle.summary || '',
               imageUrl: serverArticle.imageUrl || '',
             };
-            
+
             dispatch(
               updateArticleLocalWithDB({
                 id: articleId,
                 updates: updateData,
               })
             );
-            
           } catch (syncErr) {
-            console.error('[useArticleContent] Failed to sync local article to server:', syncErr);
+            console.error(
+              '[useArticleContent] Failed to sync local article to server:',
+              syncErr
+            );
           }
-        } 
-        else if (article.contentUrl) {
+        } else if (article.contentUrl) {
           try {
-            const htmlContent = await articlesApiService.getArticleContent(article.contentUrl);
-            
+            const htmlContent = await articlesApiService.getArticleContent(
+              article.contentUrl
+            );
+
             dispatch(
               updateArticleLocalWithDB({
                 id: articleId,
@@ -63,7 +80,10 @@ export const useArticleContent = (article: Article | undefined, articleId: strin
               })
             );
           } catch (fetchErr) {
-            console.error('[useArticleContent] Failed to auto-fetch content:', fetchErr);
+            console.error(
+              '[useArticleContent] Failed to auto-fetch content:',
+              fetchErr
+            );
           }
         }
       }
@@ -78,10 +98,12 @@ export const useArticleContent = (article: Article | undefined, articleId: strin
     setRefreshing(true);
     setContentFetched(false);
     try {
-      console.log('[useArticleContent] Manual refresh - fetching full content...');
-      
+      console.log(
+        '[useArticleContent] Manual refresh - fetching full content...'
+      );
+
       let updatedArticle;
-      
+
       if (article.id.startsWith('local_')) {
         const createdArticle = await articlesApiService.createArticle({
           title: article.title,
@@ -91,7 +113,7 @@ export const useArticleContent = (article: Article | undefined, articleId: strin
       } else {
         updatedArticle = await articlesApiService.getArticle(article.id);
       }
-      
+
       const updateData = {
         content: updatedArticle.content,
         summary: updatedArticle.summary,
@@ -99,17 +121,20 @@ export const useArticleContent = (article: Article | undefined, articleId: strin
         imageUrl: updatedArticle.imageUrl,
         updatedAt: updatedArticle.updatedAt,
       };
-      
+
       dispatch(
         updateArticleLocal({
           id: article.id,
           updates: updateData,
         })
       );
-      
+
       console.log('[useArticleContent] Article updated via refresh');
     } catch (refreshErr) {
-      console.error('[useArticleContent] Failed to refresh article:', refreshErr);
+      console.error(
+        '[useArticleContent] Failed to refresh article:',
+        refreshErr
+      );
       Alert.alert(
         'Refresh Failed',
         `Unable to fetch latest article content. Error: ${refreshErr.message || 'Unknown error'}`,

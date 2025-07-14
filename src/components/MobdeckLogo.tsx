@@ -7,9 +7,9 @@ interface MobdeckLogoProps {
   color?: string;
 }
 
-const MobdeckLogo: React.FC<MobdeckLogoProps> = ({ 
-  size = 24, 
-  color: _color = theme.colors.secondary[500] // Use theme color instead of hardcoded value
+const MobdeckLogo: React.FC<MobdeckLogoProps> = ({
+  size = 24,
+  color: _color = theme.colors.secondary[500], // Use theme color instead of hardcoded value
 }) => {
   return (
     <View style={[styles.container, { width: size, height: size }]}>
@@ -20,7 +20,7 @@ const MobdeckLogo: React.FC<MobdeckLogoProps> = ({
           height: size,
           borderRadius: size / 2, // Make it circular
         }}
-        resizeMode="contain"
+        resizeMode='contain'
       />
     </View>
   );

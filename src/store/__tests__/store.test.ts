@@ -46,7 +46,7 @@ describe('Redux Store Configuration', () => {
       lastLoginAt: new Date().toISOString(),
       tokenExpiresAt: new Date().toISOString(),
     };
-    
+
     dispatch(setUser(testUser));
 
     let state = store.getState();
@@ -86,11 +86,13 @@ describe('Redux Store Configuration', () => {
       },
     ];
 
-    dispatch(fetchArticles.fulfilled(
-      { items: testArticles, page: 1, totalPages: 1, totalItems: 1 },
-      'test',
-      {}
-    ));
+    dispatch(
+      fetchArticles.fulfilled(
+        { items: testArticles, page: 1, totalPages: 1, totalItems: 1 },
+        'test',
+        {}
+      )
+    );
 
     const state = store.getState();
     expect(state.articles.ids).toHaveLength(1);

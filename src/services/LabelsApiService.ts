@@ -250,9 +250,16 @@ class LabelsApiService implements ILabelsApiService {
         await readeckApiService.getLabels(filters);
 
       // Ensure response.data and response.data.labels exist
-      if (!response.data || !response.data.labels || !Array.isArray(response.data.labels)) {
+      if (
+        !response.data ||
+        !response.data.labels ||
+        !Array.isArray(response.data.labels)
+      ) {
         if (__DEV__) {
-          console.warn('[LabelsApiService] Invalid response structure:', response.data);
+          console.warn(
+            '[LabelsApiService] Invalid response structure:',
+            response.data
+          );
         }
         return {
           items: [],
@@ -373,7 +380,10 @@ class LabelsApiService implements ILabelsApiService {
 
       this.invalidateCache(params.id);
       if (__DEV__) {
-        console.log('[LabelsApiService] Successfully deleted label:', params.id);
+        console.log(
+          '[LabelsApiService] Successfully deleted label:',
+          params.id
+        );
       }
       return; // Explicitly return void
     } catch (error) {
@@ -404,7 +414,9 @@ class LabelsApiService implements ILabelsApiService {
       this.invalidateCache(params.labelId);
 
       if (__DEV__) {
-        console.log('[LabelsApiService] Successfully assigned label to article');
+        console.log(
+          '[LabelsApiService] Successfully assigned label to article'
+        );
       }
       return; // Explicitly return void
     } catch (error) {
@@ -440,7 +452,9 @@ class LabelsApiService implements ILabelsApiService {
       this.invalidateCache(params.labelId);
 
       if (__DEV__) {
-        console.log('[LabelsApiService] Successfully removed label from article');
+        console.log(
+          '[LabelsApiService] Successfully removed label from article'
+        );
       }
       return; // Explicitly return void
     } catch (error) {
@@ -573,7 +587,10 @@ class LabelsApiService implements ILabelsApiService {
   ): Promise<Label[]> {
     try {
       if (__DEV__) {
-        console.log('[LabelsApiService] Batch updating labels:', updates.length);
+        console.log(
+          '[LabelsApiService] Batch updating labels:',
+          updates.length
+        );
       }
 
       const updatePromises = updates.map(({ id, updates: labelUpdates }) =>
@@ -650,16 +667,26 @@ class LabelsApiService implements ILabelsApiService {
   async getLabelsForArticle(articleId: string): Promise<Label[]> {
     try {
       if (__DEV__) {
-        console.log('[LabelsApiService] Fetching labels for article:', articleId);
+        console.log(
+          '[LabelsApiService] Fetching labels for article:',
+          articleId
+        );
       }
 
       const response: ReadeckApiResponse<{ labels: ReadeckLabel[] }> =
         await readeckApiService.getArticleLabels(articleId);
 
       // Ensure response.data and response.data.labels exist
-      if (!response.data || !response.data.labels || !Array.isArray(response.data.labels)) {
+      if (
+        !response.data ||
+        !response.data.labels ||
+        !Array.isArray(response.data.labels)
+      ) {
         if (__DEV__) {
-          console.warn('[LabelsApiService] Invalid article labels response structure:', response.data);
+          console.warn(
+            '[LabelsApiService] Invalid article labels response structure:',
+            response.data
+          );
         }
         return [];
       }

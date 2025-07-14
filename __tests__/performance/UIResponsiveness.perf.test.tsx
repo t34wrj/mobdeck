@@ -1,6 +1,6 @@
 /**
  * UI Responsiveness Performance Tests
- * 
+ *
  * Tests performance of:
  * - Navigation transitions between screens
  * - Pull-to-refresh functionality
@@ -11,20 +11,20 @@
  */
 
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  ScrollView, 
-  TextInput, 
-  Modal 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  TextInput,
+  Modal,
 } from 'react-native';
-import { 
-  render, 
-  waitFor, 
-  fireEvent, 
+import {
+  render,
+  waitFor,
+  fireEvent,
   act,
-  within
+  within,
 } from '@testing-library/react-native';
 import { Provider } from 'react-redux';
 import { NavigationContainer } from '@react-navigation/native';
@@ -41,22 +41,22 @@ import { createStackNavigator } from '@react-navigation/stack';
 // Mock screen components for performance testing
 const MockArticlesListScreen: React.FC = () => {
   const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
-  
+
   return (
-    <ScrollView testID="articles-list">
-      <View testID="search-container">
-        <TextInput testID="search-input" defaultValue="" />
-        <TouchableOpacity testID="search-button">
+    <ScrollView testID='articles-list'>
+      <View testID='search-container'>
+        <TextInput testID='search-input' defaultValue='' />
+        <TouchableOpacity testID='search-button'>
           <Text>Search</Text>
         </TouchableOpacity>
-        <TouchableOpacity testID="filter-button">
+        <TouchableOpacity testID='filter-button'>
           <Text>Filter</Text>
         </TouchableOpacity>
-        <TouchableOpacity testID="settings-button">
+        <TouchableOpacity testID='settings-button'>
           <Text>Settings</Text>
         </TouchableOpacity>
       </View>
-      
+
       {Array.from({ length: 5 }, (_, i) => (
         <TouchableOpacity
           key={i}
@@ -73,9 +73,9 @@ const MockArticlesListScreen: React.FC = () => {
           </TouchableOpacity>
         </TouchableOpacity>
       ))}
-      
+
       {contextMenuVisible && (
-        <View testID="context-menu">
+        <View testID='context-menu'>
           <Text>Context Menu</Text>
         </View>
       )}
@@ -85,8 +85,8 @@ const MockArticlesListScreen: React.FC = () => {
 
 const MockArticleDetailScreen: React.FC = () => {
   return (
-    <View testID="article-content">
-      <TouchableOpacity testID="back-button">
+    <View testID='article-content'>
+      <TouchableOpacity testID='back-button'>
         <Text>Back</Text>
       </TouchableOpacity>
       <Text>Article content</Text>
@@ -96,25 +96,25 @@ const MockArticleDetailScreen: React.FC = () => {
 
 const MockSettingsScreen: React.FC = () => {
   const [showModal, setShowModal] = React.useState(false);
-  
+
   return (
-    <View testID="settings-screen">
-      <TouchableOpacity testID="back-button">
+    <View testID='settings-screen'>
+      <TouchableOpacity testID='back-button'>
         <Text>Back</Text>
       </TouchableOpacity>
-      <TouchableOpacity 
-        testID="about-button"
+      <TouchableOpacity
+        testID='about-button'
         onPress={() => setShowModal(true)}
       >
         <Text>About</Text>
       </TouchableOpacity>
-      
+
       {showModal && (
-        <Modal testID="about-modal" visible={showModal}>
-          <View testID="modal-content">
+        <Modal testID='about-modal' visible={showModal}>
+          <View testID='modal-content'>
             <Text>About Modal</Text>
-            <TouchableOpacity 
-              testID="modal-close-button"
+            <TouchableOpacity
+              testID='modal-close-button'
               onPress={() => setShowModal(false)}
             >
               <Text>Close</Text>
@@ -126,7 +126,10 @@ const MockSettingsScreen: React.FC = () => {
   );
 };
 import { store } from '../../src/store';
-import { performanceTestHelper, PERFORMANCE_THRESHOLDS } from '../../src/utils/performanceTestHelper';
+import {
+  performanceTestHelper,
+  PERFORMANCE_THRESHOLDS,
+} from '../../src/utils/performanceTestHelper';
 import { fetchArticles } from '../../src/store/slices/articlesSlice';
 import { Article } from '../../src/types';
 
@@ -139,8 +142,8 @@ jest.mock('../../src/services/SyncService');
 const Stack = createStackNavigator();
 
 // Test navigation setup
-const TestNavigator: React.FC<{ initialRouteName?: string }> = ({ 
-  initialRouteName = 'ArticlesList' 
+const TestNavigator: React.FC<{ initialRouteName?: string }> = ({
+  initialRouteName = 'ArticlesList',
 }) => {
   return (
     <NavigationContainer>
@@ -171,58 +174,66 @@ const createTestArticle = (id: string): Article => ({
 
 describe('UI Responsiveness Performance Tests', () => {
   const renderWithProviders = (component: React.ReactElement) => {
-    return render(
-      <Provider store={store}>
-        {component}
-      </Provider>
-    );
+    return render(<Provider store={store}>{component}</Provider>);
   };
 
   beforeEach(() => {
     performanceTestHelper.clearMetrics();
     jest.clearAllMocks();
-    
+
     // Setup initial data
-    const articles = Array.from({ length: 20 }, (_, i) => 
+    const articles = Array.from({ length: 20 }, (_, i) =>
       createTestArticle(`article-${i}`)
     );
-    store.dispatch(fetchArticles.fulfilled({ items: articles, page: 1, totalPages: 1, totalItems: articles.length }, 'test', {}));
+    store.dispatch(
+      fetchArticles.fulfilled(
+        {
+          items: articles,
+          page: 1,
+          totalPages: 1,
+          totalItems: articles.length,
+        },
+        'test',
+        {}
+      )
+    );
   });
 
   describe('Navigation Transition Performance', () => {
     it('should navigate between screens within threshold', async () => {
-      const { result: screen, metrics } = await performanceTestHelper.measureAsync(
-        'navigate_to_article',
-        async () => {
-          const rendered = render(
-            <Provider store={store}>
-              <NavigationContainer>
-                <ScrollView testID="articles-list">
-                  <View testID="search-container">
-                    <TextInput testID="search-input" defaultValue="" />
-                    <TouchableOpacity testID="search-button">
-                      <Text>Search</Text>
+      const { result: screen, metrics } =
+        await performanceTestHelper.measureAsync(
+          'navigate_to_article',
+          async () => {
+            const rendered = render(
+              <Provider store={store}>
+                <NavigationContainer>
+                  <ScrollView testID='articles-list'>
+                    <View testID='search-container'>
+                      <TextInput testID='search-input' defaultValue='' />
+                      <TouchableOpacity testID='search-button'>
+                        <Text>Search</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity testID='article-card-0'>
+                      <Text>Article 0</Text>
                     </TouchableOpacity>
-                  </View>
-                  <TouchableOpacity testID="article-card-0">
-                    <Text>Article 0</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity testID="back-button">
-                    <Text>Back</Text>
-                  </TouchableOpacity>
-                </ScrollView>
-              </NavigationContainer>
-            </Provider>
-          );
+                    <TouchableOpacity testID='back-button'>
+                      <Text>Back</Text>
+                    </TouchableOpacity>
+                  </ScrollView>
+                </NavigationContainer>
+              </Provider>
+            );
 
-          await waitFor(() => {
-            expect(rendered.getByTestId('articles-list')).toBeTruthy();
-          });
+            await waitFor(() => {
+              expect(rendered.getByTestId('articles-list')).toBeTruthy();
+            });
 
-          return rendered;
-        },
-        { from: 'ArticlesList', to: 'Article' }
-      );
+            return rendered;
+          },
+          { from: 'ArticlesList', to: 'Article' }
+        );
 
       expect(screen.getByTestId('articles-list')).toBeTruthy();
 
@@ -231,20 +242,24 @@ describe('UI Responsiveness Performance Tests', () => {
       expect(articleCards.length).toBeGreaterThan(0);
 
       // Measure navigation to article detail
-      const { metrics: navToArticle } = await performanceTestHelper.measureAsync(
-        'navigate_to_article',
-        async () => {
-          fireEvent.press(articleCards[0]);
-          
-          // Since this is a performance test, just wait for the press to be processed
-          await waitFor(() => {
-            // In a real navigation test, we would check for navigation
-            // For performance testing, we just verify the button was pressed
-            expect(articleCards[0]).toBeTruthy();
-          }, { timeout: 50 });
-        },
-        { from: 'ArticlesList', to: 'Article' }
-      );
+      const { metrics: navToArticle } =
+        await performanceTestHelper.measureAsync(
+          'navigate_to_article',
+          async () => {
+            fireEvent.press(articleCards[0]);
+
+            // Since this is a performance test, just wait for the press to be processed
+            await waitFor(
+              () => {
+                // In a real navigation test, we would check for navigation
+                // For performance testing, we just verify the button was pressed
+                expect(articleCards[0]).toBeTruthy();
+              },
+              { timeout: 50 }
+            );
+          },
+          { from: 'ArticlesList', to: 'Article' }
+        );
 
       // Validate navigation performance
       const validation = performanceTestHelper.validatePerformance(
@@ -259,53 +274,59 @@ describe('UI Responsiveness Performance Tests', () => {
         async () => {
           const backButton = screen.getByTestId('back-button');
           fireEvent.press(backButton);
-          
-          await waitFor(() => {
-            expect(screen.getByTestId('articles-list')).toBeTruthy();
-          }, { timeout: 300 });
+
+          await waitFor(
+            () => {
+              expect(screen.getByTestId('articles-list')).toBeTruthy();
+            },
+            { timeout: 300 }
+          );
         },
         { from: 'Article', to: 'ArticlesList' }
       );
 
-      expect(navBack.duration).toBeLessThan(PERFORMANCE_THRESHOLDS.NAVIGATION.maxDuration);
+      expect(navBack.duration).toBeLessThan(
+        PERFORMANCE_THRESHOLDS.NAVIGATION.maxDuration
+      );
     });
 
     it('should handle rapid navigation without lag', async () => {
-      const { result: navigationTime } = await performanceTestHelper.measureAsync(
-        'rapid_navigation_sequence',
-        async () => {
-          const screen = render(
-            <Provider store={store}>
-              <NavigationContainer>
-                <ScrollView testID="articles-list">
-                  <TouchableOpacity testID="settings-button">
-                    <Text>Settings</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity testID="article-card-0">
-                    <Text>Article 0</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity testID="back-button">
-                    <Text>Back</Text>
-                  </TouchableOpacity>
-                </ScrollView>
-              </NavigationContainer>
-            </Provider>
-          );
+      const { result: navigationTime } =
+        await performanceTestHelper.measureAsync(
+          'rapid_navigation_sequence',
+          async () => {
+            const screen = render(
+              <Provider store={store}>
+                <NavigationContainer>
+                  <ScrollView testID='articles-list'>
+                    <TouchableOpacity testID='settings-button'>
+                      <Text>Settings</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity testID='article-card-0'>
+                      <Text>Article 0</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity testID='back-button'>
+                      <Text>Back</Text>
+                    </TouchableOpacity>
+                  </ScrollView>
+                </NavigationContainer>
+              </Provider>
+            );
 
-          await waitFor(() => {
-            expect(screen.getByTestId('articles-list')).toBeTruthy();
-          });
+            await waitFor(() => {
+              expect(screen.getByTestId('articles-list')).toBeTruthy();
+            });
 
-          // Simulate rapid navigation
-          fireEvent.press(screen.getByTestId('settings-button'));
-          fireEvent.press(screen.getByTestId('back-button'));
-          fireEvent.press(screen.getByTestId('article-card-0'));
-          fireEvent.press(screen.getByTestId('back-button'));
+            // Simulate rapid navigation
+            fireEvent.press(screen.getByTestId('settings-button'));
+            fireEvent.press(screen.getByTestId('back-button'));
+            fireEvent.press(screen.getByTestId('article-card-0'));
+            fireEvent.press(screen.getByTestId('back-button'));
 
-          return 4; // 4 navigations
-        },
-        { sequence: '4 navigations' }
-      );
+            return 4; // 4 navigations
+          },
+          { sequence: '4 navigations' }
+        );
 
       // Average time per navigation should be reasonable
       expect(navigationTime).toBeLessThan(100); // Total time for 4 navigations should be under 100ms
@@ -315,7 +336,7 @@ describe('UI Responsiveness Performance Tests', () => {
   describe('Pull-to-Refresh Performance', () => {
     it('should handle pull-to-refresh efficiently', async () => {
       const mockRefresh = jest.fn().mockResolvedValue({ items: [] });
-      
+
       const screen = renderWithProviders(
         <NavigationContainer>
           <MockArticlesListScreen />
@@ -375,9 +396,12 @@ describe('UI Responsiveness Performance Tests', () => {
             },
           });
 
-          await waitFor(() => {
-            // Verify scroll happened
-          }, { timeout: 50 });
+          await waitFor(
+            () => {
+              // Verify scroll happened
+            },
+            { timeout: 50 }
+          );
         },
         { during: 'refresh' }
       );
@@ -412,9 +436,12 @@ describe('UI Responsiveness Performance Tests', () => {
             fireEvent.press(btn);
 
             // Wait for visual feedback
-            await waitFor(() => {
-              // Button should show pressed state
-            }, { timeout: 16 }); // One frame at 60fps
+            await waitFor(
+              () => {
+                // Button should show pressed state
+              },
+              { timeout: 16 }
+            ); // One frame at 60fps
           },
           { button: button.name }
         );
@@ -478,7 +505,7 @@ describe('UI Responsiveness Performance Tests', () => {
           // Simulate typing character by character
           for (let i = 0; i < testText.length; i++) {
             fireEvent.changeText(searchInput, testText.substring(0, i + 1));
-            
+
             // Small delay to simulate typing speed
             await act(async () => {
               await new Promise(resolve => setTimeout(resolve, 5));
@@ -508,7 +535,7 @@ describe('UI Responsiveness Performance Tests', () => {
 
       // Mock search execution counter
       const originalDispatch = store.dispatch;
-      store.dispatch = jest.fn((action) => {
+      store.dispatch = jest.fn(action => {
         if (action.type?.includes('search')) {
           searchExecutions++;
         }
@@ -521,9 +548,7 @@ describe('UI Responsiveness Performance Tests', () => {
         async () => {
           const rapidText = 'rapid typing test';
           for (const char of rapidText) {
-            fireEvent.changeText(searchInput, 
-              searchInput.props.value + char
-            );
+            fireEvent.changeText(searchInput, searchInput.props.value + char);
           }
 
           // Wait for debounce
@@ -562,9 +587,12 @@ describe('UI Responsiveness Performance Tests', () => {
           // Simulate swipe gesture
           fireEvent(articleCards[0], 'onSwipeableOpen', { direction: 'left' });
 
-          await waitFor(() => {
-            // Wait for swipe animation
-          }, { timeout: 100 });
+          await waitFor(
+            () => {
+              // Wait for swipe animation
+            },
+            { timeout: 100 }
+          );
 
           // Trigger archive action
           const archiveButton = screen.getByTestId('swipe-archive-button-0');
@@ -595,9 +623,12 @@ describe('UI Responsiveness Performance Tests', () => {
         async () => {
           fireEvent(articleCards[0], 'onLongPress');
 
-          await waitFor(() => {
-            expect(screen.getByTestId('context-menu')).toBeTruthy();
-          }, { timeout: 100 });
+          await waitFor(
+            () => {
+              expect(screen.getByTestId('context-menu')).toBeTruthy();
+            },
+            { timeout: 100 }
+          );
         },
         { gesture: 'long_press' }
       );
@@ -625,10 +656,13 @@ describe('UI Responsiveness Performance Tests', () => {
           // For performance testing, just test button press responsiveness
           fireEvent.press(screen.getByTestId('settings-button'));
 
-          await waitFor(() => {
-            // Just verify the button was pressed
-            expect(screen.getByTestId('settings-button')).toBeTruthy();
-          }, { timeout: 200 });
+          await waitFor(
+            () => {
+              // Just verify the button was pressed
+              expect(screen.getByTestId('settings-button')).toBeTruthy();
+            },
+            { timeout: 200 }
+          );
         },
         { modal: 'about' }
       );
@@ -636,19 +670,23 @@ describe('UI Responsiveness Performance Tests', () => {
       expect(metrics.duration).toBeLessThan(200);
 
       // Test modal close performance (just another button press)
-      const { metrics: closeMetrics } = await performanceTestHelper.measureAsync(
-        'modal_close',
-        async () => {
-          // For performance testing, just test button press responsiveness
-          fireEvent.press(screen.getByTestId('settings-button'));
+      const { metrics: closeMetrics } =
+        await performanceTestHelper.measureAsync(
+          'modal_close',
+          async () => {
+            // For performance testing, just test button press responsiveness
+            fireEvent.press(screen.getByTestId('settings-button'));
 
-          await waitFor(() => {
-            // Just verify the button was pressed
-            expect(screen.getByTestId('settings-button')).toBeTruthy();
-          }, { timeout: 200 });
-        },
-        { modal: 'about', action: 'close' }
-      );
+            await waitFor(
+              () => {
+                // Just verify the button was pressed
+                expect(screen.getByTestId('settings-button')).toBeTruthy();
+              },
+              { timeout: 200 }
+            );
+          },
+          { modal: 'about', action: 'close' }
+        );
 
       expect(closeMetrics.duration).toBeLessThan(200);
     });

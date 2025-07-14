@@ -16,7 +16,7 @@ export const mockAsyncStorage = {
     return Promise.resolve();
   }),
   getAllKeys: jest.fn(() => Promise.resolve(Object.keys(mockStorage))),
-  multiGet: jest.fn((keys: string[]) => 
+  multiGet: jest.fn((keys: string[]) =>
     Promise.resolve(keys.map(key => [key, mockStorage[key] || null]))
   ),
   multiSet: jest.fn((keyValuePairs: [string, string][]) => {
@@ -29,7 +29,7 @@ export const mockAsyncStorage = {
     keys.forEach(key => delete mockStorage[key]);
     return Promise.resolve();
   }),
-  
+
   // Helper methods for testing
   __clearMockStorage: () => {
     Object.keys(mockStorage).forEach(key => delete mockStorage[key]);

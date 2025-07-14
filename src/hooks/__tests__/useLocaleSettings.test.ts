@@ -5,10 +5,10 @@
 
 import { renderHook, act } from '@testing-library/react-native';
 import { AppState, NativeModules, DeviceEventEmitter } from 'react-native';
-import { 
-  useLocaleSettings, 
+import {
+  useLocaleSettings,
   useLocaleDateFormatter,
-  clearLocaleCache 
+  clearLocaleCache,
 } from '../useLocaleSettings';
 import { DateFormatPattern } from '../../utils/dateFormatter';
 
@@ -56,19 +56,23 @@ describe('useLocaleSettings', () => {
     jest.clearAllMocks();
 
     // Capture event listeners
-    (AppState.addEventListener as jest.Mock).mockImplementation((event, handler) => {
-      if (event === 'change') {
-        mockAppStateListener = handler;
+    (AppState.addEventListener as jest.Mock).mockImplementation(
+      (event, handler) => {
+        if (event === 'change') {
+          mockAppStateListener = handler;
+        }
+        return { remove: jest.fn() };
       }
-      return { remove: jest.fn() };
-    });
+    );
 
-    (DeviceEventEmitter.addListener as jest.Mock).mockImplementation((event, handler) => {
-      if (event === 'localeChanged') {
-        mockLocaleChangeListener = handler;
+    (DeviceEventEmitter.addListener as jest.Mock).mockImplementation(
+      (event, handler) => {
+        if (event === 'localeChanged') {
+          mockLocaleChangeListener = handler;
+        }
+        return { remove: jest.fn() };
       }
-      return { remove: jest.fn() };
-    });
+    );
   });
 
   afterEach(() => {
@@ -95,16 +99,25 @@ describe('useLocaleSettings', () => {
     it('should set up event listeners', () => {
       renderHook(() => useLocaleSettings());
 
-      expect(AppState.addEventListener).toHaveBeenCalledWith('change', expect.any(Function));
-      expect(DeviceEventEmitter.addListener).toHaveBeenCalledWith('localeChanged', expect.any(Function));
+      expect(AppState.addEventListener).toHaveBeenCalledWith(
+        'change',
+        expect.any(Function)
+      );
+      expect(DeviceEventEmitter.addListener).toHaveBeenCalledWith(
+        'localeChanged',
+        expect.any(Function)
+      );
     });
   });
 
   describe('locale updates', () => {
     it('should update locale when app becomes active with different locale', async () => {
-      const mockGetDeviceLocale = require('../../utils/dateFormatter').getDeviceLocale;
-      const mockGetDateFormatPattern = require('../../utils/dateFormatter').getDateFormatPattern;
-      const mockGetLocaleInfo = require('../../utils/dateFormatter').getLocaleInfo;
+      const mockGetDeviceLocale =
+        require('../../utils/dateFormatter').getDeviceLocale;
+      const mockGetDateFormatPattern =
+        require('../../utils/dateFormatter').getDateFormatPattern;
+      const mockGetLocaleInfo =
+        require('../../utils/dateFormatter').getLocaleInfo;
 
       const { result } = renderHook(() => useLocaleSettings());
 
@@ -128,7 +141,8 @@ describe('useLocaleSettings', () => {
     });
 
     it('should not update when app becomes active with same locale', async () => {
-      const mockGetDeviceLocale = require('../../utils/dateFormatter').getDeviceLocale;
+      const mockGetDeviceLocale =
+        require('../../utils/dateFormatter').getDeviceLocale;
       mockGetDeviceLocale.mockReturnValue('en-US');
 
       const { result } = renderHook(() => useLocaleSettings());
@@ -142,9 +156,12 @@ describe('useLocaleSettings', () => {
     });
 
     it('should handle locale change events on Android', async () => {
-      const mockGetDeviceLocale = require('../../utils/dateFormatter').getDeviceLocale;
-      const mockGetDateFormatPattern = require('../../utils/dateFormatter').getDateFormatPattern;
-      const mockGetLocaleInfo = require('../../utils/dateFormatter').getLocaleInfo;
+      const mockGetDeviceLocale =
+        require('../../utils/dateFormatter').getDeviceLocale;
+      const mockGetDateFormatPattern =
+        require('../../utils/dateFormatter').getDateFormatPattern;
+      const mockGetLocaleInfo =
+        require('../../utils/dateFormatter').getLocaleInfo;
 
       const { result } = renderHook(() => useLocaleSettings());
 
@@ -167,9 +184,12 @@ describe('useLocaleSettings', () => {
 
   describe('manual refresh', () => {
     it('should refresh locale information when refresh is called', async () => {
-      const mockGetDeviceLocale = require('../../utils/dateFormatter').getDeviceLocale;
-      const mockGetDateFormatPattern = require('../../utils/dateFormatter').getDateFormatPattern;
-      const mockGetLocaleInfo = require('../../utils/dateFormatter').getLocaleInfo;
+      const mockGetDeviceLocale =
+        require('../../utils/dateFormatter').getDeviceLocale;
+      const mockGetDateFormatPattern =
+        require('../../utils/dateFormatter').getDateFormatPattern;
+      const mockGetLocaleInfo =
+        require('../../utils/dateFormatter').getLocaleInfo;
 
       const { result } = renderHook(() => useLocaleSettings());
 
@@ -192,7 +212,8 @@ describe('useLocaleSettings', () => {
 
   describe('error handling', () => {
     it('should handle locale detection errors', async () => {
-      const mockGetDeviceLocale = require('../../utils/dateFormatter').getDeviceLocale;
+      const mockGetDeviceLocale =
+        require('../../utils/dateFormatter').getDeviceLocale;
       let callCount = 0;
       mockGetDeviceLocale.mockImplementation(() => {
         callCount++;
@@ -210,16 +231,18 @@ describe('useLocaleSettings', () => {
 
       expect(result.current.error).toBe('Locale detection failed');
       expect(result.current.isLoading).toBe(false);
-      
+
       // Reset mock for subsequent tests
       mockGetDeviceLocale.mockRestore();
     });
 
     it('should handle missing I18nManager gracefully', () => {
       // Store original implementation
-      const originalGetDeviceLocale = require('../../utils/dateFormatter').getDeviceLocale;
-      const originalGetLocaleInfo = require('../../utils/dateFormatter').getLocaleInfo;
-      
+      const originalGetDeviceLocale =
+        require('../../utils/dateFormatter').getDeviceLocale;
+      const originalGetLocaleInfo =
+        require('../../utils/dateFormatter').getLocaleInfo;
+
       // Mock to return fallback values when I18nManager is unavailable
       originalGetDeviceLocale.mockReturnValue('en-US');
       originalGetLocaleInfo.mockReturnValue({
@@ -228,9 +251,9 @@ describe('useLocaleSettings', () => {
         country: 'US',
         dateFormat: 'MM/DD/YYYY',
       });
-      
+
       const { result } = renderHook(() => useLocaleSettings());
-      
+
       expect(result.current.locale).toBe('en-US');
       expect(result.current.error).toBeNull();
     });
@@ -238,8 +261,10 @@ describe('useLocaleSettings', () => {
 
   describe('caching', () => {
     it('should use cached values when available', () => {
-      const mockGetDeviceLocale = require('../../utils/dateFormatter').getDeviceLocale;
-      const mockGetLocaleInfo = require('../../utils/dateFormatter').getLocaleInfo;
+      const mockGetDeviceLocale =
+        require('../../utils/dateFormatter').getDeviceLocale;
+      const mockGetLocaleInfo =
+        require('../../utils/dateFormatter').getLocaleInfo;
 
       // Ensure mocks return expected values
       mockGetDeviceLocale.mockReturnValue('en-US');
@@ -251,7 +276,9 @@ describe('useLocaleSettings', () => {
       });
 
       // First render to populate cache
-      const { result: result1, unmount: unmount1 } = renderHook(() => useLocaleSettings());
+      const { result: result1, unmount: unmount1 } = renderHook(() =>
+        useLocaleSettings()
+      );
       expect(result1.current.locale).toBe('en-US');
       unmount1();
 
@@ -275,8 +302,12 @@ describe('useLocaleSettings', () => {
   describe('cleanup', () => {
     it('should remove event listeners on unmount', () => {
       const mockRemove = jest.fn();
-      (AppState.addEventListener as jest.Mock).mockReturnValue({ remove: mockRemove });
-      (DeviceEventEmitter.addListener as jest.Mock).mockReturnValue({ remove: mockRemove });
+      (AppState.addEventListener as jest.Mock).mockReturnValue({
+        remove: mockRemove,
+      });
+      (DeviceEventEmitter.addListener as jest.Mock).mockReturnValue({
+        remove: mockRemove,
+      });
 
       const { unmount } = renderHook(() => useLocaleSettings());
       unmount();
@@ -294,10 +325,13 @@ describe('useLocaleDateFormatter', () => {
 
   it('should provide formatter functions with current locale', () => {
     // Ensure mocks return expected values
-    const mockGetDeviceLocale = require('../../utils/dateFormatter').getDeviceLocale;
-    const mockGetLocaleInfo = require('../../utils/dateFormatter').getLocaleInfo;
-    const mockGetDateFormatPattern = require('../../utils/dateFormatter').getDateFormatPattern;
-    
+    const mockGetDeviceLocale =
+      require('../../utils/dateFormatter').getDeviceLocale;
+    const mockGetLocaleInfo =
+      require('../../utils/dateFormatter').getLocaleInfo;
+    const mockGetDateFormatPattern =
+      require('../../utils/dateFormatter').getDateFormatPattern;
+
     mockGetDeviceLocale.mockReturnValue('en-US');
     mockGetDateFormatPattern.mockReturnValue('MM/DD/YYYY');
     mockGetLocaleInfo.mockReturnValue({
@@ -306,7 +340,7 @@ describe('useLocaleDateFormatter', () => {
       country: 'US',
       dateFormat: 'MM/DD/YYYY',
     });
-    
+
     const { result } = renderHook(() => useLocaleDateFormatter());
 
     expect(result.current.formatDate).toBeInstanceOf(Function);
@@ -317,11 +351,14 @@ describe('useLocaleDateFormatter', () => {
 
   it('should format dates using current locale', () => {
     // Set up mocks for the hook dependencies
-    const mockGetDeviceLocale = require('../../utils/dateFormatter').getDeviceLocale;
-    const mockGetLocaleInfo = require('../../utils/dateFormatter').getLocaleInfo;
+    const mockGetDeviceLocale =
+      require('../../utils/dateFormatter').getDeviceLocale;
+    const mockGetLocaleInfo =
+      require('../../utils/dateFormatter').getLocaleInfo;
     const mockFormatDate = require('../../utils/dateFormatter').formatDate;
-    const mockGetDateFormatPattern = require('../../utils/dateFormatter').getDateFormatPattern;
-    
+    const mockGetDateFormatPattern =
+      require('../../utils/dateFormatter').getDateFormatPattern;
+
     mockGetDeviceLocale.mockReturnValue('en-US');
     mockGetDateFormatPattern.mockReturnValue('MM/DD/YYYY');
     mockGetLocaleInfo.mockReturnValue({
@@ -334,21 +371,27 @@ describe('useLocaleDateFormatter', () => {
 
     const { result } = renderHook(() => useLocaleDateFormatter());
     const testDate = new Date('2025-07-10');
-    
+
     act(() => {
       result.current.formatDate(testDate);
     });
 
-    expect(mockFormatDate).toHaveBeenCalledWith(testDate, expect.objectContaining({
-      fallbackLocale: 'en-US',
-    }));
+    expect(mockFormatDate).toHaveBeenCalledWith(
+      testDate,
+      expect.objectContaining({
+        fallbackLocale: 'en-US',
+      })
+    );
   });
 
   it('should update formatters when locale changes', async () => {
-    const mockGetDeviceLocale = require('../../utils/dateFormatter').getDeviceLocale;
-    const mockGetLocaleInfo = require('../../utils/dateFormatter').getLocaleInfo;
-    const mockGetDateFormatPattern = require('../../utils/dateFormatter').getDateFormatPattern;
-    
+    const mockGetDeviceLocale =
+      require('../../utils/dateFormatter').getDeviceLocale;
+    const mockGetLocaleInfo =
+      require('../../utils/dateFormatter').getLocaleInfo;
+    const mockGetDateFormatPattern =
+      require('../../utils/dateFormatter').getDateFormatPattern;
+
     // Start with en-US
     mockGetDeviceLocale.mockReturnValue('en-US');
     mockGetDateFormatPattern.mockReturnValue('MM/DD/YYYY');
@@ -358,9 +401,9 @@ describe('useLocaleDateFormatter', () => {
       country: 'US',
       dateFormat: 'MM/DD/YYYY',
     });
-    
+
     const { result } = renderHook(() => useLocaleDateFormatter());
-    
+
     expect(result.current.locale).toBe('en-US');
     expect(result.current.dateFormat).toBe('MM/DD/YYYY');
 

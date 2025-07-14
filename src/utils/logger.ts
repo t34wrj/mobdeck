@@ -77,10 +77,10 @@ class Logger {
 
   private getDefaultConfig(): LoggerConfig {
     return {
-      level: (typeof __DEV__ !== 'undefined' && __DEV__) ? 'debug' : 'warn',
-      enableConsole: (typeof __DEV__ !== 'undefined' && __DEV__),
+      level: typeof __DEV__ !== 'undefined' && __DEV__ ? 'debug' : 'warn',
+      enableConsole: typeof __DEV__ !== 'undefined' && __DEV__,
       enableStorage: true,
-      enablePerformanceLogging: (typeof __DEV__ !== 'undefined' && __DEV__),
+      enablePerformanceLogging: typeof __DEV__ !== 'undefined' && __DEV__,
       maxStorageSize: 1024 * 1024 * 2, // 2MB
       maxStorageEntries: 1000,
       rotationThreshold: 80, // 80%
@@ -146,7 +146,11 @@ class Logger {
     this.log('fatal', message, data);
   }
 
-  public log(level: LogLevel, message: string, data?: Record<string, any>): void {
+  public log(
+    level: LogLevel,
+    message: string,
+    data?: Record<string, any>
+  ): void {
     if (!this.shouldLog(level)) {
       return;
     }
@@ -176,7 +180,7 @@ class Logger {
     const id = `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const timestamp = new Date().toISOString();
     const sanitizedData = data ? this.sanitizeData(data) : undefined;
-    
+
     const context: LogContext = {
       ...this.context,
       platform: this.context.platform || 'unknown',
@@ -199,21 +203,23 @@ class Logger {
 
   private sanitizeData(data: Record<string, any>): Record<string, any> {
     const sanitized = { ...data };
-    
+
     const sanitizeValue = (value: any, key: string, depth = 0): any => {
       if (depth > 5) return '[MAX_DEPTH_REACHED]';
-      
+
       if (value === null || value === undefined) {
         return value;
       }
-      
+
       // Check if key contains sensitive information
-      if (this.config.sensitiveKeys.some(sensitive => 
-        key.toLowerCase().includes(sensitive.toLowerCase())
-      )) {
+      if (
+        this.config.sensitiveKeys.some(sensitive =>
+          key.toLowerCase().includes(sensitive.toLowerCase())
+        )
+      ) {
         return '[REDACTED]';
       }
-      
+
       // Check if string value looks like sensitive data
       if (typeof value === 'string') {
         // Bearer token pattern
@@ -250,14 +256,19 @@ class Logger {
         }
         // IP addresses
         if (/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(value)) {
-          return value.replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[REDACTED_IP]');
+          return value.replace(
+            /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g,
+            '[REDACTED_IP]'
+          );
         }
       }
-      
+
       // Handle objects and arrays
       if (typeof value === 'object') {
         if (Array.isArray(value)) {
-          return value.map((item, index) => sanitizeValue(item, `${key}[${index}]`, depth + 1));
+          return value.map((item, index) =>
+            sanitizeValue(item, `${key}[${index}]`, depth + 1)
+          );
         } else {
           const result: any = {};
           Object.keys(value).forEach(subKey => {
@@ -266,22 +277,22 @@ class Logger {
           return result;
         }
       }
-      
+
       return value;
     };
-    
+
     const result: any = {};
     Object.keys(sanitized).forEach(key => {
       result[key] = sanitizeValue(sanitized[key], key);
     });
-    
+
     return result;
   }
 
   private logToConsole(logEntry: LogEntry): void {
     const { level, message, data, timestamp } = logEntry;
     const logMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}`;
-    
+
     switch (level) {
       case 'debug':
         console.debug(logMessage, data);
@@ -305,7 +316,7 @@ class Logger {
     try {
       const existingLogs = await this.getStoredLogs();
       const updatedLogs = [...existingLogs, logEntry];
-      
+
       await this.checkAndRotateLogs(updatedLogs);
       await AsyncStorage.setItem(this.storageKey, JSON.stringify(updatedLogs));
     } catch (error) {
@@ -328,16 +339,18 @@ class Logger {
     if (logs.length <= this.config.maxStorageEntries) {
       return logs;
     }
-    
-    const rotateCount = Math.floor(logs.length * (this.config.rotationThreshold / 100));
+
+    const rotateCount = Math.floor(
+      logs.length * (this.config.rotationThreshold / 100)
+    );
     const rotatedLogs = logs.slice(rotateCount);
-    
+
     this.debug('Log rotation performed', {
       originalCount: logs.length,
       rotatedCount: rotatedLogs.length,
       removedCount: rotateCount,
     });
-    
+
     return rotatedLogs;
   }
 
@@ -345,10 +358,13 @@ class Logger {
     try {
       const logs = await this.getStoredLogs();
       const logsSize = JSON.stringify(logs).length;
-      
+
       if (logsSize > this.config.maxStorageSize) {
         const rotatedLogs = await this.checkAndRotateLogs(logs);
-        await AsyncStorage.setItem(this.storageKey, JSON.stringify(rotatedLogs));
+        await AsyncStorage.setItem(
+          this.storageKey,
+          JSON.stringify(rotatedLogs)
+        );
       }
     } catch (error) {
       console.warn('[Logger] Storage rotation check failed:', error);
@@ -369,7 +385,7 @@ class Logger {
   // Performance logging methods
   public startPerformanceTimer(operation: string): void {
     if (!this.config.enablePerformanceLogging) return;
-    
+
     this.performanceMarks.set(operation, Date.now());
   }
 
@@ -378,33 +394,34 @@ class Logger {
     context?: Record<string, any>
   ): void {
     if (!this.config.enablePerformanceLogging) return;
-    
+
     const startTime = this.performanceMarks.get(operation);
     if (!startTime) {
       this.warn('Performance timer not found', { operation });
       return;
     }
-    
+
     const duration = Date.now() - startTime;
     this.performanceMarks.delete(operation);
-    
+
     const metric: PerformanceMetric = {
       operation,
       duration,
       timestamp: new Date().toISOString(),
       context: context ? this.sanitizeData(context) : undefined,
     };
-    
+
     this.logPerformanceMetric(metric);
-    
+
     this.debug('Performance metric recorded', {
       operation,
       duration,
       context,
     });
-    
+
     // Log slow operations as warning (mobile performance threshold)
-    if (duration > 1000) { // > 1 second
+    if (duration > 1000) {
+      // > 1 second
       this.warn('Slow operation detected', {
         operation,
         duration: `${duration}ms`,
@@ -417,10 +434,10 @@ class Logger {
     try {
       const existingMetrics = await this.getStoredPerformanceMetrics();
       const updatedMetrics = [...existingMetrics, metric];
-      
+
       // Keep only last 100 performance metrics
       const trimmedMetrics = updatedMetrics.slice(-100);
-      
+
       await AsyncStorage.setItem(
         this.performanceKey,
         JSON.stringify(trimmedMetrics)
@@ -442,23 +459,20 @@ class Logger {
   }
 
   // Log retrieval methods for debugging
-  public async getLogs(
-    level?: LogLevel,
-    limit?: number
-  ): Promise<LogEntry[]> {
+  public async getLogs(level?: LogLevel, limit?: number): Promise<LogEntry[]> {
     try {
       const logs = await this.getStoredLogs();
-      
+
       let filteredLogs = logs;
-      
+
       if (level) {
         filteredLogs = logs.filter(log => log.level === level);
       }
-      
+
       if (limit) {
         filteredLogs = filteredLogs.slice(-limit);
       }
-      
+
       return filteredLogs;
     } catch (error) {
       this.error('Failed to retrieve logs', { error });
@@ -466,7 +480,9 @@ class Logger {
     }
   }
 
-  public async getPerformanceMetrics(limit?: number): Promise<PerformanceMetric[]> {
+  public async getPerformanceMetrics(
+    limit?: number
+  ): Promise<PerformanceMetric[]> {
     try {
       const metrics = await this.getStoredPerformanceMetrics();
       return limit ? metrics.slice(-limit) : metrics;
@@ -491,7 +507,7 @@ class Logger {
     try {
       const logs = await this.getStoredLogs();
       const metrics = await this.getStoredPerformanceMetrics();
-      
+
       const exportData = {
         logs,
         performanceMetrics: metrics,
@@ -502,7 +518,7 @@ class Logger {
           version: this.context.version,
         },
       };
-      
+
       return JSON.stringify(exportData, null, 2);
     } catch (error) {
       this.error('Failed to export logs', { error });

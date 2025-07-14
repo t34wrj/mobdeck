@@ -8,8 +8,8 @@ export { ArticleTestDataFactory };
 export type { ArticleTestDataOptions } from './ArticleTestDataFactory';
 
 import { resetNavigationMocks } from './MockNavigationProvider';
-export { 
-  MockNavigationProvider, 
+export {
+  MockNavigationProvider,
   mockNavigation,
   mockNavigate,
   mockGoBack,
@@ -29,10 +29,15 @@ import { SyncTestHelper } from './SyncTestHelper';
 export { ShareIntentSimulator };
 export type { ShareIntentSimulationOptions } from './ShareIntentSimulator';
 export { SyncTestHelper };
-export type { SyncTestScenario, MockSyncServiceOptions } from './SyncTestHelper';
+export type {
+  SyncTestScenario,
+  MockSyncServiceOptions,
+} from './SyncTestHelper';
 
 export interface E2ETestEnvironmentSetup {
-  mockShareModule: ReturnType<typeof ShareIntentSimulator.createMockShareModule>;
+  mockShareModule: ReturnType<
+    typeof ShareIntentSimulator.createMockShareModule
+  >;
   mockSyncService: ReturnType<typeof SyncTestHelper.createMockSyncService>;
   mockSyncActions: ReturnType<typeof SyncTestHelper.createMockSyncActions>;
 }
@@ -47,12 +52,12 @@ export const setupE2ETestEnvironment = (): E2ETestEnvironmentSetup => {
   ShareIntentSimulator.reset();
   SyncTestHelper.reset();
   resetNavigationMocks();
-  
+
   // Setup common mocks
   const mockShareModule = ShareIntentSimulator.createMockShareModule();
   const mockSyncService = SyncTestHelper.createMockSyncService();
   const mockSyncActions = SyncTestHelper.createMockSyncActions();
-  
+
   return {
     mockShareModule,
     mockSyncService,
@@ -68,16 +73,20 @@ export const cleanupE2ETestEnvironment = (): void => {
   ShareIntentSimulator.reset();
   SyncTestHelper.reset();
   resetNavigationMocks();
-  
+
   // Clear all mock call history
   jest.clearAllMocks();
 };
 
 export interface CommonE2EScenarios {
-  shareScenarios: ReturnType<typeof ShareIntentSimulator.getCommonShareScenarios>;
+  shareScenarios: ReturnType<
+    typeof ShareIntentSimulator.getCommonShareScenarios
+  >;
   syncScenarios: ReturnType<typeof SyncTestHelper.createSyncScenarios>;
   conflictScenarios: ReturnType<typeof SyncTestHelper.createConflictScenarios>;
-  articleStates: ReturnType<typeof ArticleTestDataFactory.createArticleWithStates>;
+  articleStates: ReturnType<
+    typeof ArticleTestDataFactory.createArticleWithStates
+  >;
 }
 
 /**
@@ -93,9 +102,11 @@ export const getCommonE2EScenarios = (): CommonE2EScenarios => ({
 /**
  * Waits for async operations to complete in tests
  */
-export const waitForAsyncOperations = async (timeout: number = 5000): Promise<void> => {
+export const waitForAsyncOperations = async (
+  timeout: number = 5000
+): Promise<void> => {
   await new Promise<void>(resolve => setTimeout(resolve, 100));
-  
+
   // Wait for any pending promises to resolve
   await new Promise<void>(resolve => setImmediate(resolve));
 };
@@ -110,7 +121,7 @@ export const withTimeout = <T>(
 ): Promise<T> => {
   return Promise.race([
     operation(),
-    new Promise<never>((_, reject) => 
+    new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error(timeoutMessage)), timeout)
     ),
   ]);

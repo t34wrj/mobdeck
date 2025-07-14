@@ -58,11 +58,11 @@ jest.mock('../BackgroundSyncService', () => ({
 describe('BackgroundTaskManager', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset Platform to Android for tests
     (Platform as any).OS = 'android';
     (Platform as any).Version = 33;
-    
+
     // Reset singleton instance state
     const manager = BackgroundTaskManager.getInstance();
     (manager as any).isInitialized = false;
@@ -90,10 +90,10 @@ describe('BackgroundTaskManager', () => {
     it('should initialize background sync service integration', async () => {
       (Platform as any).OS = 'android';
       const manager = BackgroundTaskManager.getInstance();
-      
+
       // Ensure we're testing a fresh instance
       (manager as any).isInitialized = false;
-      
+
       await manager.initialize();
       expect(backgroundSyncService.initialize).toHaveBeenCalled();
     });
@@ -125,10 +125,10 @@ describe('BackgroundTaskManager', () => {
       PermissionsAndroid.check.mockResolvedValue(true);
 
       const manager = BackgroundTaskManager.getInstance();
-      
+
       // Ensure we're testing a fresh instance
       (manager as any).isInitialized = false;
-      
+
       await manager.initialize();
 
       expect(PermissionsAndroid.check).toHaveBeenCalledWith(

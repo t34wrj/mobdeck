@@ -2,9 +2,17 @@ import { useCallback, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { Alert, Share } from 'react-native';
 import { Article } from '../types';
-import { updateArticle, deleteArticle, updateArticleLocalWithDB } from '../store/slices/articlesSlice';
+import {
+  updateArticle,
+  deleteArticle,
+  updateArticleLocalWithDB,
+} from '../store/slices/articlesSlice';
 
-export const useArticleActions = (article: Article | undefined, articleId: string, navigation: any) => {
+export const useArticleActions = (
+  article: Article | undefined,
+  articleId: string,
+  navigation: any
+) => {
   const dispatch = useDispatch();
   const [showActions, setShowActions] = useState(false);
   const [showLabelModal, setShowLabelModal] = useState(false);

@@ -24,25 +24,31 @@ const storeConfig: ConfigureStoreOptions = {
     // Production optimized middleware configuration
     const middlewareConfig = {
       // Optimize serializable check for production
-      serializableCheck: __DEV__ ? {
-        ignoredActions: [],
-        ignoredActionsPaths: ['meta.requestId', 'meta.requestStatus'],
-        ignoredPaths: ['articles.items.content', 'auth.user'],
-        warnAfter: 128,
-      } : false,
+      serializableCheck: __DEV__
+        ? {
+            ignoredActions: [],
+            ignoredActionsPaths: ['meta.requestId', 'meta.requestStatus'],
+            ignoredPaths: ['articles.items.content', 'auth.user'],
+            warnAfter: 128,
+          }
+        : false,
       // Disable immutability check in production for performance
-      immutableCheck: __DEV__ ? {
-        warnAfter: 128,
-        ignoredPaths: ['articles.items.content'],
-      } : false,
+      immutableCheck: __DEV__
+        ? {
+            warnAfter: 128,
+            ignoredPaths: ['articles.items.content'],
+          }
+        : false,
       // Disable thunk middleware checks in production
-      thunk: __DEV__ ? {
-        extraArgument: undefined,
-      } : true,
+      thunk: __DEV__
+        ? {
+            extraArgument: undefined,
+          }
+        : true,
     };
 
     const baseMiddleware = getDefaultMiddleware(middlewareConfig);
-    
+
     // Add custom middleware - optimized for production vs development
     return baseMiddleware.concat(
       __DEV__ ? errorHandlerMiddleware : productionErrorMiddleware,

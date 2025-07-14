@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Linking, Alert } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+  Alert,
+} from 'react-native';
 import { Text } from '../ui/Text';
 import { theme } from '../ui/theme';
 import { Article } from '../../types';

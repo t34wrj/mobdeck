@@ -92,7 +92,7 @@ describe('dateFormatter', () => {
       if (NativeModules.I18nManager) {
         NativeModules.I18nManager.localeIdentifier = 'en_US';
         expect(getDateFormatPattern()).toBe(DateFormatPattern.US);
-        
+
         NativeModules.I18nManager.localeIdentifier = 'en_GB';
         expect(getDateFormatPattern()).toBe(DateFormatPattern.EU);
       } else {
@@ -141,9 +141,11 @@ describe('dateFormatter', () => {
 
     it('should respect includeTime option', () => {
       const mockFormatWithTime = jest.fn().mockReturnValue('07/10/2025 14:30');
-      (global as any).Intl.DateTimeFormat = jest.fn().mockImplementation(() => ({
-        format: mockFormatWithTime,
-      }));
+      (global as any).Intl.DateTimeFormat = jest
+        .fn()
+        .mockImplementation(() => ({
+          format: mockFormatWithTime,
+        }));
 
       const result = formatDate(testDate, { includeTime: true });
       expect(result).toBe('07/10/2025 14:30');
@@ -151,9 +153,11 @@ describe('dateFormatter', () => {
 
     it('should respect includeYear option', () => {
       const mockFormatWithoutYear = jest.fn().mockReturnValue('07/10');
-      (global as any).Intl.DateTimeFormat = jest.fn().mockImplementation(() => ({
-        format: mockFormatWithoutYear,
-      }));
+      (global as any).Intl.DateTimeFormat = jest
+        .fn()
+        .mockImplementation(() => ({
+          format: mockFormatWithoutYear,
+        }));
 
       const result = formatDate(testDate, { includeYear: false });
       expect(result).toBe('07/10');
@@ -161,7 +165,7 @@ describe('dateFormatter', () => {
 
     it('should use fallback formatting when Intl is not available', () => {
       delete (global as any).Intl;
-      
+
       if (NativeModules.I18nManager) {
         // Test US format
         NativeModules.I18nManager.localeIdentifier = 'en_US';
@@ -258,7 +262,7 @@ describe('dateFormatter', () => {
       if (NativeModules.I18nManager) {
         NativeModules.I18nManager.localeIdentifier = 'en_US';
         const info = getLocaleInfo();
-        
+
         expect(info).toEqual({
           locale: 'en-US',
           language: 'en',
@@ -274,7 +278,7 @@ describe('dateFormatter', () => {
       if (NativeModules.I18nManager) {
         NativeModules.I18nManager.localeIdentifier = 'en';
         const info = getLocaleInfo();
-        
+
         expect(info).toEqual({
           locale: 'en',
           language: 'en',

@@ -177,7 +177,11 @@ describe('syncSlice', () => {
   });
 
   it('should handle clearSyncError', () => {
-    const errorState = { ...initialState, status: SyncStatus.ERROR, error: 'Test error' };
+    const errorState = {
+      ...initialState,
+      status: SyncStatus.ERROR,
+      error: 'Test error',
+    };
     const action = clearSyncError();
     const state = syncReducer(errorState, action);
 

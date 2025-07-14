@@ -57,7 +57,7 @@ export class SyncTestHelper {
         }
 
         this.recordSyncOperation('sync', true, params.articlesCount);
-        
+
         return {
           success: true,
           articlesAdded: params.articlesCount || 0,
@@ -77,9 +77,11 @@ export class SyncTestHelper {
         }
 
         this.recordSyncOperation('fetch', true);
-        
+
         return {
-          articles: ArticleTestDataFactory.createArticleList(params.limit || 10),
+          articles: ArticleTestDataFactory.createArticleList(
+            params.limit || 10
+          ),
           hasMore: false,
           nextCursor: null,
         };
@@ -95,7 +97,7 @@ export class SyncTestHelper {
         }
 
         this.recordSyncOperation('push', true);
-        
+
         return {
           success: true,
           pushedChanges: 0,
@@ -120,12 +122,12 @@ export class SyncTestHelper {
       {
         name: 'No conflicts - simple sync',
         localArticles: ArticleTestDataFactory.createArticleList(3),
-        remoteArticles: ArticleTestDataFactory.createArticleList(3, { 
-          id: 'remote-article' 
+        remoteArticles: ArticleTestDataFactory.createArticleList(3, {
+          id: 'remote-article',
         }),
         expectedResult: {
-          articlesToAdd: ArticleTestDataFactory.createArticleList(3, { 
-            id: 'remote-article' 
+          articlesToAdd: ArticleTestDataFactory.createArticleList(3, {
+            id: 'remote-article',
           }),
           articlesToUpdate: [],
           articlesToDelete: [],
@@ -205,11 +207,21 @@ export class SyncTestHelper {
   /**
    * Simulates network conditions for sync testing
    */
-  static simulateNetworkConditions(condition: 'offline' | 'slow' | 'unstable' | 'normal') {
+  static simulateNetworkConditions(
+    condition: 'offline' | 'slow' | 'unstable' | 'normal'
+  ) {
     const conditions = {
-      offline: { delay: 0, shouldFail: true, failureReason: 'Network unavailable' },
+      offline: {
+        delay: 0,
+        shouldFail: true,
+        failureReason: 'Network unavailable',
+      },
       slow: { delay: 5000, shouldFail: false },
-      unstable: { delay: 2000, shouldFail: Math.random() < 0.3, failureReason: 'Connection timeout' },
+      unstable: {
+        delay: 2000,
+        shouldFail: Math.random() < 0.3,
+        failureReason: 'Connection timeout',
+      },
       normal: { delay: 500, shouldFail: false },
     };
 
@@ -247,11 +259,11 @@ export class SyncTestHelper {
         local: { ...baseArticle, isRead: true, tags: ['local-tag'] },
         remote: { ...baseArticle, isFavorite: true, tags: ['remote-tag'] },
         resolution: 'merge' as const,
-        expected: { 
-          ...baseArticle, 
-          isRead: true, 
-          isFavorite: true, 
-          tags: ['local-tag', 'remote-tag'] 
+        expected: {
+          ...baseArticle,
+          isRead: true,
+          isFavorite: true,
+          tags: ['local-tag', 'remote-tag'],
         },
       },
     ];
@@ -262,18 +274,19 @@ export class SyncTestHelper {
    */
   static async waitForSync(timeout: number = 10000): Promise<boolean> {
     const startTime = Date.now();
-    
+
     while (Date.now() - startTime < timeout) {
       if (this.syncOperations.length > 0) {
-        const lastOperation = this.syncOperations[this.syncOperations.length - 1];
+        const lastOperation =
+          this.syncOperations[this.syncOperations.length - 1];
         if (lastOperation.type === 'sync') {
           return lastOperation.success;
         }
       }
-      
+
       await this.delay(100);
     }
-    
+
     throw new Error('Sync operation timeout');
   }
 
@@ -288,8 +301,8 @@ export class SyncTestHelper {
    * Records a sync operation for tracking
    */
   private static recordSyncOperation(
-    type: 'fetch' | 'push' | 'sync', 
-    success: boolean, 
+    type: 'fetch' | 'push' | 'sync',
+    success: boolean,
     articlesCount?: number
   ) {
     this.syncOperations.push({

@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store';
 import DatabaseService from '../services/DatabaseService';
-import { initializeSyncService, startSyncOperation } from '../store/thunks/syncThunks';
+import {
+  initializeSyncService,
+  startSyncOperation,
+} from '../store/thunks/syncThunks';
 import { useNetworkStatus } from './useNetworkStatus';
 
 interface InitializationState {
@@ -42,9 +45,11 @@ export const useAppInitialization = () => {
             message: dbError?.message || 'Unknown database error',
             code: dbError?.code,
             stack: dbError?.stack,
-            details: dbError
+            details: dbError,
           });
-          throw new Error(`Database initialization failed: ${dbError?.message || 'Unknown error'}`);
+          throw new Error(
+            `Database initialization failed: ${dbError?.message || 'Unknown error'}`
+          );
         }
 
         // Initialize sync service
@@ -77,7 +82,9 @@ export const useAppInitialization = () => {
     if (!state.isInitialized) return;
 
     if (networkStatus.isOnline && wasOffline) {
-      console.log('[AppInit] Network came back online, triggering sync for pending operations');
+      console.log(
+        '[AppInit] Network came back online, triggering sync for pending operations'
+      );
       dispatch(startSyncOperation({}));
       setWasOffline(false);
     } else if (!networkStatus.isOnline && !wasOffline) {

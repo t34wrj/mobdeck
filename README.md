@@ -1,6 +1,6 @@
 # Mobdeck Mobile App
 
-Mobdeck is a React Native mobile application that provides seamless access to your self-hosted [Readeck] (https://readeck.org/en/)  instance. Designed for self-hosting enthusiasts, it offers offline-first article reading, background synchronization, and Android share integration for a complete mobile reading experience.
+Mobdeck is a React Native mobile application that provides seamless access to your self-hosted [Readeck] (https://readeck.org/en/) instance. Designed for self-hosting enthusiasts, it offers offline-first article reading, background synchronization, and Android share integration for a complete mobile reading experience.
 
 ![Android](https://img.shields.io/badge/Android-7.0%2B-green) ![React Native](https://img.shields.io/badge/React%20Native-0.80.0-blue) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
@@ -13,7 +13,6 @@ Mobdeck is a React Native mobile application that provides seamless access to yo
 🏷️ **Label Management**: Organize articles with Readeck labels and tags  
 ⚙️ **Network Control**: WiFi-only or mobile sync options  
 📦 **Auto Updates**: Distributed via GitHub Releases with Obtainium support
-
 
 ## Installation
 
@@ -40,7 +39,6 @@ Obtainium provides automatic updates directly from GitHub releases:
    - Enable background update checks
    - Set to WiFi-only if preferred
 
-
 #### Option 2: Direct APK Download
 
 1. **Download APK**:
@@ -54,10 +52,10 @@ Obtainium provides automatic updates directly from GitHub releases:
    - Grant installation permissions
    - Complete installation
 
-
 ### System Requirements
 
 **Android Device:**
+
 - **Minimum**: Android 7.0+ (API level 24)
 - **Target**: Android 15 (API level 35)
 - **Recommended**: Android 13+ (API level 33) for optimal performance
@@ -66,7 +64,6 @@ Obtainium provides automatic updates directly from GitHub releases:
 - **CPU**: ARMv7 or ARM64 architecture
 - **Network**: WiFi or mobile data connectivity required for synchronization
 - **Permissions**: Internet access, storage access, background app refresh, notifications (optional)
-
 
 ### Initial Setup
 
@@ -127,6 +124,7 @@ Bearer tokens provide secure API access to your Readeck instance. Each token sho
    - Configuration persists across app restarts
 
 **Security Best Practices**:
+
 - 🔐 Use unique tokens per device
 - 📝 Use descriptive token names for easy management
 - 🔄 Rotate tokens periodically (every 6-12 months)
@@ -138,18 +136,19 @@ Bearer tokens provide secure API access to your Readeck instance. Each token sho
 
 **Sync Preferences:**
 
-*Frequency Options:*
+_Frequency Options:_
 Enter sync interval in minutes (e.g., 15 for every 15 minutes, 60 for hourly, 1440 for daily)
 
-*Network Configuration:*
+_Network Configuration:_
+
 - ✅ **WiFi Only**: Toggle to restrict sync to WiFi networks only
 - 🔄 **Background Sync**: Continue syncing when app is closed
 
 **Content Settings:**
 Content synchronization settings are automatically configured based on your Readeck server setup and available articles.
 
-
 **Security Configuration:**
+
 - 🔐 **Token Auto-Refresh**: Automatically renew authentication tokens
 - 🔒 **Secure Storage**: Verify encrypted storage of authentication data
 - 🚫 **Certificate Pinning**: Enhanced security for HTTPS connections
@@ -218,7 +217,6 @@ Content synchronization settings are automatically configured based on your Read
    - **Network Options**: WiFi-only toggle
    - **Image Downloads**: Enable/disable image caching for offline reading
 
-
 ## App Usage Guide
 
 ### Getting Started with Mobdeck
@@ -228,6 +226,7 @@ This guide covers all major app functionality to help you get the most out of yo
 #### Main Interface Overview
 
 **Home Screen Features:**
+
 - **Article List**: Browse your synchronized articles with titles, summaries, and read status
 - **Search Bar**: Real-time search across article titles and content
 - **Sync Status**: Current synchronization status displayed in header
@@ -235,6 +234,7 @@ This guide covers all major app functionality to help you get the most out of yo
 - **Filter Options**: Filter articles by read status, labels, or favorites
 
 **Navigation:**
+
 - **Articles Tab**: Main article browsing and reading interface
 - **Labels Tab**: Manage and organize article labels/tags
 - **Settings Tab**: Configure sync, account, and app preferences
@@ -247,19 +247,19 @@ Mobdeck integrates seamlessly with Android's share system, allowing you to add a
 #### Adding Articles via Share
 
 **Step 1: Access Share Menu**
+
 1. **From Browser**: Open article in Chrome, Firefox, or any browser
    - Tap **Share** button (usually three dots or share icon)
    - Select **Mobdeck** from share options
-   
 2. **From Social Media**: Share articles from Twitter, Reddit, Facebook, etc.
    - Tap **Share** button on post or article
    - Choose **Mobdeck** from share menu
-   
 3. **From News Apps**: Share from news apps, RSS readers, etc.
    - Use app's built-in share functionality
    - Select **Mobdeck** as target app
 
 **Step 2: Automatic Processing**
+
 - **URL Extraction**: Mobdeck automatically extracts URLs from shared content
 - **Validation**: System verifies URLs are valid and accessible
 - **Queue Processing**: Articles are added to processing queue
@@ -267,6 +267,7 @@ Mobdeck integrates seamlessly with Android's share system, allowing you to add a
 - **Sync Confirmation**: Articles appear in your collection after next sync
 
 **Supported Content Types:**
+
 - ✅ **Direct URLs**: Web links shared from browsers
 - ✅ **Social Media Posts**: Posts containing article links
 - ✅ **Text Content**: Plain text containing multiple URLs
@@ -274,6 +275,7 @@ Mobdeck integrates seamlessly with Android's share system, allowing you to add a
 - ✅ **Blog Posts**: Content from blogging platforms
 
 **Share Processing Status:**
+
 - **Settings → Share Processing**: Monitor processing queue
 - **Notification Feedback**: Real-time processing notifications
 - **Error Handling**: Clear error messages for invalid content
@@ -282,12 +284,14 @@ Mobdeck integrates seamlessly with Android's share system, allowing you to add a
 #### Troubleshooting Share Issues
 
 **Mobdeck Not in Share Menu:**
+
 - ✅ Restart Android device to refresh share targets
 - ✅ Reinstall Mobdeck if share registration is broken
 - ✅ Check app permissions in Android settings
 - ✅ Clear default app associations for text sharing
 
 **Share Processing Failures:**
+
 - ✅ Verify shared URLs are publicly accessible
 - ✅ Check network connectivity during share processing
 - ✅ Ensure Bearer token has write permissions
@@ -305,9 +309,11 @@ Mobdeck provides comprehensive synchronization options to keep your articles up-
 Set sync interval in minutes (e.g., 15, 60, 1440)
 
 **Network Preferences:**
+
 - **WiFi Only**: Toggle to restrict sync to WiFi connections only
 
 **Content Sync Options:**
+
 - **Download Images**: Cache images for offline viewing (uses more storage)
 - **Full-Text Sync**: Download complete article content (recommended)
 - **Metadata Only**: Sync titles and links only (minimal data usage)
@@ -317,12 +323,14 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Manual Sync Operations
 
 **Trigger Manual Sync:**
+
 1. **Pull-to-Refresh**: Swipe down on article list
 2. **Sync Button**: Tap sync icon in app header
 3. **Settings Sync**: Use "Sync Now" button in sync settings
 4. **Share Processing**: Sync after sharing articles
 
 **Sync Status Monitoring:**
+
 - **Progress Indicator**: Real-time sync progress with percentage
 - **Article Count**: Number of articles being processed
 - **Network Status**: Current connection type (WiFi/Cellular/Offline)
@@ -332,12 +340,14 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Background Sync Management
 
 **Enable Background Sync:**
+
 1. **App Settings**: Enable "Background Sync" in sync settings
 2. **Android Settings**: Disable battery optimization for Mobdeck
 3. **Background Data**: Allow background data usage for the app
 4. **Auto-Start**: Permit app to start automatically
 
 **Background Sync Behavior:**
+
 - **Scheduled Intervals**: Runs at configured frequency
 - **Network-Aware**: Respects WiFi/mobile preferences
 - **Battery-Conscious**: Reduces frequency when battery is low
@@ -348,6 +358,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Browsing and Reading Articles
 
 **Article List Features:**
+
 - **Article Cards**: Display title, summary, source, and read status
 - **Status Indicators**: Visual cues for read/unread, favorite, archived
 - **Thumbnail Images**: Article preview images when available
@@ -355,6 +366,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - **Long Press Menu**: Additional actions via long press
 
 **Reading Experience:**
+
 - **Offline Reading**: Access cached articles without internet
 - **Responsive Design**: Optimized text formatting for mobile
 - **Image Support**: In-line images display when downloaded
@@ -362,6 +374,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - **Reading Progress**: Track reading position in long articles
 
 **Article Actions:**
+
 - **Mark Read/Unread**: Toggle reading status
 - **Add to Favorites**: Star articles for quick access
 - **Archive Articles**: Remove from main list while preserving access
@@ -371,6 +384,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Search and Filtering
 
 **Search Functionality:**
+
 - **Real-Time Search**: Search as you type in search bar
 - **Title Search**: Find articles by title keywords
 - **Content Search**: Full-text search across article content (offline capable)
@@ -378,18 +392,19 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - **Search Suggestions**: Auto-complete based on article content
 
 **Filter Options:**
+
 - **Read Status**: Show read, unread, or all articles
 - **Favorites**: Display only starred articles
 - **Labels**: Filter by specific labels or combinations
 - **Date Range**: Filter articles by publication or addition date
 - **Source**: Filter by article source or domain
 
-
 ### Advanced Features
 
 #### Offline Functionality
 
 **Offline Capabilities:**
+
 - **Article Reading**: Access all synced articles without internet
 - **Full-Text Search**: Search works completely offline
 - **Label Management**: Add/remove labels offline (synced later)
@@ -397,6 +412,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - **Share Queue**: Add articles via share integration offline
 
 **Offline Data Management:**
+
 - **Smart Caching**: Frequently accessed articles prioritized
 - **Storage Optimization**: Configurable cache size with automatic cleanup
 - **Image Downloads**: Optional image caching for complete offline experience
@@ -405,18 +421,21 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Performance Optimization
 
 **Battery Optimization:**
+
 - **Sync Intervals**: Use longer intervals (hourly/daily) to conserve battery
 - **WiFi-Only Sync**: Restrict sync to WiFi to save mobile data and battery
 - **Background Limits**: Disable background sync when battery is low
 - **Screen-On Sync**: Prefer manual sync when actively using app
 
 **Storage Management:**
+
 - **Cache Limits**: Set maximum storage used for offline articles
 - **Auto-Cleanup**: Automatically remove old cached content
 - **Selective Sync**: Choose which articles to download for offline reading
 - **Storage Monitoring**: Track storage usage in app settings
 
 **Network Optimization:**
+
 - **Batch Processing**: Sync multiple articles in single request
 - **Compression**: Use data compression for faster sync
 - **Connection Pooling**: Reuse connections for better performance
@@ -429,6 +448,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Installation Problems
 
 **APK Won't Install:**
+
 - ✅ Enable "Install from unknown sources" for browser/file manager
 - ✅ Ensure sufficient storage space (500MB+ recommended)
 - ✅ Disable Play Protect temporarily if it blocks installation
@@ -436,6 +456,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ Check Android version compatibility (Android 10+ required)
 
 **Obtainium Not Detecting Updates:**
+
 - ✅ Check internet connection
 - ✅ Refresh app list (pull down to refresh)
 - ✅ Verify repository URL: `https://github.com/t34wrj/mobdeck`
@@ -445,6 +466,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Authentication Issues
 
 **Cannot Connect to Server:**
+
 - ✅ **URL Format**: Verify server URL includes protocol (`http://` or `https://`)
 - ✅ **Browser Test**: Test server access in mobile browser first
 - ✅ **Port Check**: Include port number if using non-standard port (e.g., `:8000`)
@@ -453,6 +475,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ **Firewall**: Check if firewall blocks mobile device IP range
 
 **"Authentication Failed" Error:**
+
 - ✅ **Token Format**: Verify token is alphanumeric, 32+ characters
 - ✅ **Copy/Paste**: Check for extra spaces when copying token
 - ✅ **Permissions**: Ensure token has read/write permissions in Readeck
@@ -461,6 +484,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ **Case Sensitivity**: Tokens are case-sensitive - copy exactly
 
 **"Server Not Reachable" Error:**
+
 - ✅ **Network Connectivity**: Test with other apps requiring internet
 - ✅ **Server Status**: Verify Readeck server is running and responsive
 - ✅ **VPN/Proxy**: Try connecting with/without VPN
@@ -470,6 +494,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Sync Issues
 
 **Articles Not Syncing:**
+
 - ✅ **Manual Sync**: Try "Pull to Refresh" to trigger manual sync
 - ✅ **Network Settings**: Verify sync allows current network type (WiFi/Cellular)
 - ✅ **Background Sync**: Check if background sync is enabled in settings
@@ -478,6 +503,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ **Token Validity**: Verify authentication token is still valid
 
 **"Sync Failed" Error:**
+
 - ✅ **Connection Test**: Test server connection in app settings
 - ✅ **Restart App**: Force close and reopen Mobdeck
 - ✅ **Clear Cache**: Clear app cache in Android settings
@@ -485,6 +511,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ **Server Load**: Check if server is under heavy load
 
 **Sync Taking Too Long:**
+
 - ✅ **Network Speed**: Test internet speed with speed test app
 - ✅ **Batch Size**: Reduce sync batch size in advanced settings
 - ✅ **Image Downloads**: Disable image downloading temporarily
@@ -492,6 +519,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ **Server Performance**: Check server resource usage
 
 **Background Sync Not Working:**
+
 - ✅ **Battery Optimization**: Disable for Mobdeck in Android settings
 - ✅ **Background App Refresh**: Enable in Android settings
 - ✅ **Data Saver**: Add Mobdeck to unrestricted apps
@@ -501,6 +529,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Connection Issues
 
 **Network Timeout Errors:**
+
 - ✅ **Signal Strength**: Ensure strong WiFi or mobile signal
 - ✅ **Network Speed**: Test connection speed with other apps
 - ✅ **Timeout Settings**: Increase network timeout in advanced settings
@@ -508,6 +537,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ **Switch Networks**: Try different WiFi or mobile data connection
 
 **SSL/TLS Certificate Errors:**
+
 - ✅ **HTTPS URLs**: Verify HTTPS server uses valid certificate
 - ✅ **Self-Signed Certs**: Add certificate exception in mobile browser first
 - ✅ **Certificate Chain**: Ensure complete certificate chain is configured
@@ -515,6 +545,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ **Certificate Expiry**: Check if server certificate has expired
 
 **"DNS Resolution Failed" Error:**
+
 - ✅ **DNS Servers**: Use public DNS (8.8.8.8, 1.1.1.1) in WiFi settings
 - ✅ **Hostname**: Try using server IP address instead of hostname
 - ✅ **Network Reset**: Reset network settings on Android device
@@ -524,6 +555,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Share Integration Issues
 
 **Mobdeck Not in Share Menu:**
+
 - ✅ **Device Restart**: Reboot Android device to refresh share targets
 - ✅ **App Reinstall**: Uninstall and reinstall Mobdeck
 - ✅ **Default Apps**: Clear default app associations in Android settings
@@ -531,6 +563,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ **Android Version**: Ensure compatibility with share intent system
 
 **Share Processing Failed:**
+
 - ✅ **URL Validity**: Verify shared URLs are properly formatted and accessible
 - ✅ **Network Connection**: Ensure internet connectivity during share processing
 - ✅ **Authentication**: Check if Bearer token is valid for adding articles
@@ -540,23 +573,29 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 #### Common Error Messages
 
 **"Permission Denied":**
+
 - Bearer token lacks necessary permissions → Create new token with read/write access
 
 **"Invalid URL":**
+
 - Server URL malformed → Verify format includes protocol and correct port
 
 **"Database Error":**
+
 - Local database corruption → Clear app data and reconfigure
 
 **"Storage Full":**
+
 - Insufficient device storage → Free up space or reduce cache size
 
 **"Network Timeout":**
+
 - Slow or unreliable connection → Improve network or adjust timeout settings
 
 #### Performance Issues
 
 **App Running Slowly:**
+
 - ✅ **Restart App**: Force close and reopen Mobdeck
 - ✅ **Device Restart**: Reboot Android device
 - ✅ **Free Memory**: Close other apps to free RAM
@@ -564,6 +603,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ **Cache Size**: Reduce article cache size in settings
 
 **High Battery Usage:**
+
 - ✅ **Sync Frequency**: Use longer sync intervals (hourly/daily)
 - ✅ **WiFi Only**: Restrict sync to WiFi connections
 - ✅ **Background Limits**: Disable background sync when battery low

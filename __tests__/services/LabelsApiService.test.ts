@@ -4,7 +4,9 @@
  */
 
 import { readeckApiService } from '../../src/services/ReadeckApiService';
-import LabelsApiService, { labelsApiService } from '../../src/services/LabelsApiService';
+import LabelsApiService, {
+  labelsApiService,
+} from '../../src/services/LabelsApiService';
 import {
   Label,
   ReadeckLabel,
@@ -32,7 +34,9 @@ jest.mock('../../src/services/ReadeckApiService', () => ({
   },
 }));
 
-const mockReadeckApiService = readeckApiService as jest.Mocked<typeof readeckApiService>;
+const mockReadeckApiService = readeckApiService as jest.Mocked<
+  typeof readeckApiService
+>;
 
 describe('LabelsApiService', () => {
   let service: LabelsApiService;
@@ -184,7 +188,9 @@ describe('LabelsApiService', () => {
 
       mockReadeckApiService.createLabel.mockRejectedValue(apiError);
 
-      await expect(service.createLabel({ name: 'Technology' })).rejects.toMatchObject({
+      await expect(
+        service.createLabel({ name: 'Technology' })
+      ).rejects.toMatchObject({
         code: LabelErrorCode.UNKNOWN_LABEL_ERROR,
         message: 'Label already exists',
         retryable: false,
@@ -210,7 +216,9 @@ describe('LabelsApiService', () => {
 
       const result = await service.updateLabel(params);
 
-      expect(mockReadeckApiService.updateLabel).toHaveBeenCalledWith('1', { name: 'Updated Technology' });
+      expect(mockReadeckApiService.updateLabel).toHaveBeenCalledWith('1', {
+        name: 'Updated Technology',
+      });
       expect(result.name).toBe('Updated Technology');
     });
 
@@ -225,11 +233,12 @@ describe('LabelsApiService', () => {
 
       mockReadeckApiService.updateLabel.mockRejectedValue(apiError);
 
-      await expect(service.updateLabel({ id: '999', updates: { name: 'Test' } }))
-        .rejects.toMatchObject({
-          code: LabelErrorCode.UNKNOWN_LABEL_ERROR,
-          labelId: '999',
-        });
+      await expect(
+        service.updateLabel({ id: '999', updates: { name: 'Test' } })
+      ).rejects.toMatchObject({
+        code: LabelErrorCode.UNKNOWN_LABEL_ERROR,
+        labelId: '999',
+      });
     });
   });
 
@@ -257,7 +266,9 @@ describe('LabelsApiService', () => {
 
       await service.deleteLabel({ id: '1', transferToLabel: '2' });
 
-      expect(mockReadeckApiService.deleteLabel).toHaveBeenCalledWith('1', { transfer_to: '2' });
+      expect(mockReadeckApiService.deleteLabel).toHaveBeenCalledWith('1', {
+        transfer_to: '2',
+      });
     });
   });
 
@@ -288,12 +299,13 @@ describe('LabelsApiService', () => {
 
       mockReadeckApiService.assignLabel.mockRejectedValue(apiError);
 
-      await expect(service.assignToArticle({ labelId: '1', articleId: 'article-1' }))
-        .rejects.toMatchObject({
-          code: LabelErrorCode.UNKNOWN_LABEL_ERROR,
-          labelId: '1',
-          articleId: 'article-1',
-        });
+      await expect(
+        service.assignToArticle({ labelId: '1', articleId: 'article-1' })
+      ).rejects.toMatchObject({
+        code: LabelErrorCode.UNKNOWN_LABEL_ERROR,
+        labelId: '1',
+        articleId: 'article-1',
+      });
     });
   });
 
@@ -396,10 +408,12 @@ describe('LabelsApiService', () => {
       const statsData = {
         total_labels: 10,
         total_assignments: 50,
-        most_used: [{
-          label: mockReadeckLabel,
-          article_count: 15,
-        }],
+        most_used: [
+          {
+            label: mockReadeckLabel,
+            article_count: 15,
+          },
+        ],
         unused_count: 2,
         average_labels_per_article: 2.5,
       };
@@ -420,10 +434,12 @@ describe('LabelsApiService', () => {
       expect(result).toEqual({
         totalLabels: 10,
         totalAssignments: 50,
-        mostUsedLabels: [{
-          label: mockLabel,
-          articleCount: 15,
-        }],
+        mostUsedLabels: [
+          {
+            label: mockLabel,
+            articleCount: 15,
+          },
+        ],
         unusedLabels: 2,
         averageLabelsPerArticle: 2.5,
       });
@@ -450,18 +466,24 @@ describe('LabelsApiService', () => {
 
   describe('getLabelsForArticle', () => {
     it('should get labels for article successfully', async () => {
-      const articleLabelsResponse: ReadeckApiResponse<{ labels: ReadeckLabel[] }> = {
+      const articleLabelsResponse: ReadeckApiResponse<{
+        labels: ReadeckLabel[];
+      }> = {
         data: { labels: [mockReadeckLabel] },
         status: 200,
         headers: {},
         timestamp: '2023-01-01T00:00:00Z',
       };
 
-      mockReadeckApiService.getArticleLabels.mockResolvedValue(articleLabelsResponse);
+      mockReadeckApiService.getArticleLabels.mockResolvedValue(
+        articleLabelsResponse
+      );
 
       const result = await service.getLabelsForArticle('article-1');
 
-      expect(mockReadeckApiService.getArticleLabels).toHaveBeenCalledWith('article-1');
+      expect(mockReadeckApiService.getArticleLabels).toHaveBeenCalledWith(
+        'article-1'
+      );
       expect(result).toEqual([mockLabel]);
     });
   });
@@ -498,10 +520,10 @@ describe('LabelsApiService', () => {
 
       // Cache the label
       await service.getLabel('1');
-      
+
       // Clear cache
       service.clearCache();
-      
+
       // Should make API request again
       await service.getLabel('1');
       expect(mockReadeckApiService.getLabel).toHaveBeenCalledTimes(2);
@@ -509,7 +531,7 @@ describe('LabelsApiService', () => {
 
     it('should provide cache statistics', () => {
       const stats = service.getCacheStats();
-      
+
       expect(stats).toHaveProperty('size');
       expect(stats).toHaveProperty('maxSize');
       expect(stats).toHaveProperty('hitRate');
@@ -540,12 +562,13 @@ describe('LabelsApiService', () => {
 
       mockReadeckApiService.updateLabel.mockRejectedValue(apiError);
 
-      await expect(service.updateLabel({ id: 'test-id', updates: { name: 'Test' } }))
-        .rejects.toMatchObject({
-          labelId: 'test-id',
-          statusCode: 500,
-          retryable: true,
-        });
+      await expect(
+        service.updateLabel({ id: 'test-id', updates: { name: 'Test' } })
+      ).rejects.toMatchObject({
+        labelId: 'test-id',
+        statusCode: 500,
+        retryable: true,
+      });
     });
   });
 
@@ -566,10 +589,10 @@ describe('LabelsApiService', () => {
 
       // Use singleton to cache a label
       await labelsApiService.getLabel('1');
-      
+
       // Clear mock
       mockReadeckApiService.getLabel.mockClear();
-      
+
       // Second call should use cache
       await labelsApiService.getLabel('1');
       expect(mockReadeckApiService.getLabel).not.toHaveBeenCalled();

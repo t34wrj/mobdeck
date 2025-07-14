@@ -41,18 +41,18 @@ export interface AppTheme {
 
 const defaultTheme: AppTheme = {
   colors: {
-    primary: '#FE5D26',      // Giants Orange
-    secondary: '#F9BD4D',    // Xanthous
-    background: '#FFFFFF',   // White background
-    surface: '#F8F9FA',      // Light surface from neutral palette
-    text: '#083D77',         // Yale Blue for primary text
+    primary: '#FE5D26', // Giants Orange
+    secondary: '#F9BD4D', // Xanthous
+    background: '#FFFFFF', // White background
+    surface: '#F8F9FA', // Light surface from neutral palette
+    text: '#083D77', // Yale Blue for primary text
     textSecondary: '#6C757D', // Neutral gray for secondary text
-    error: '#E8603C',        // Warm red (kept from original)
-    warning: '#F9BD4D',      // Xanthous
-    success: '#0B5739',      // Castleton Green
-    info: '#7DE2D1',         // Tiffany Blue
-    border: '#DEE2E6',       // Light gray from neutral palette
-    divider: '#CED4DA',      // Medium gray from neutral palette
+    error: '#E8603C', // Warm red (kept from original)
+    warning: '#F9BD4D', // Xanthous
+    success: '#0B5739', // Castleton Green
+    info: '#7DE2D1', // Tiffany Blue
+    border: '#DEE2E6', // Light gray from neutral palette
+    divider: '#CED4DA', // Medium gray from neutral palette
   },
   spacing: {
     xs: 4,
@@ -77,7 +77,7 @@ const defaultTheme: AppTheme = {
 
 /**
  * Hook to access the application theme
- * 
+ *
  * @returns AppTheme object with colors, spacing, and typography values
  * @example
  * ```tsx

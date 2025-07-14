@@ -46,7 +46,7 @@ jest.mock('../../src/utils/logger', () => ({
 describe('AuthStorageService', () => {
   let authStorageService: AuthStorageService;
   const mockKeychainModule = Keychain as jest.Mocked<typeof Keychain>;
-  
+
   // Test data
   const validToken = 'valid-bearer-token-123';
   const validTokenData: AuthToken = {
@@ -55,7 +55,7 @@ describe('AuthStorageService', () => {
     issuedAt: new Date().toISOString(),
     serverUrl: 'https://readeck.example.com',
   };
-  
+
   const expiredTokenData: AuthToken = {
     token: 'expired-bearer-token',
     expiresAt: new Date(Date.now() - 86400000).toISOString(), // 24 hours ago
@@ -67,12 +67,12 @@ describe('AuthStorageService', () => {
     // Reset all mocks before each test
     jest.clearAllMocks();
     jest.restoreAllMocks();
-    
+
     // Mock console methods
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.spyOn(console, 'warn').mockImplementation(() => {});
-    
+
     // Create new instance for each test
     authStorageService = new AuthStorageService();
   });
@@ -80,11 +80,14 @@ describe('AuthStorageService', () => {
   describe('storeToken', () => {
     it('should store a valid token successfully', async () => {
       // Arrange
-      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({ service: 'mobdeck_auth_tokens', storage: 'InternetPassword' } as any);
-      
+      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({
+        service: 'mobdeck_auth_tokens',
+        storage: 'InternetPassword',
+      } as any);
+
       // Act
       const result = await authStorageService.storeToken(validToken);
-      
+
       // Assert
       expect(result).toBe(true);
       expect(mockKeychainModule.setInternetCredentials).toHaveBeenCalledWith(
@@ -104,58 +107,66 @@ describe('AuthStorageService', () => {
     it('should reject empty tokens', async () => {
       // Act
       const result = await authStorageService.storeToken('');
-      
+
       // Assert
       expect(result).toBe(false);
       expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
       // The logger is mocked, so check that instead of console.error
       const { logger } = jest.requireMock('../../src/utils/logger');
-      expect(logger.error).toHaveBeenCalledWith('Invalid token provided for storage');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Invalid token provided for storage'
+      );
     });
 
     it('should reject null tokens', async () => {
       // Act
       const result = await authStorageService.storeToken(null as any);
-      
+
       // Assert
       expect(result).toBe(false);
       expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
       const { logger } = jest.requireMock('../../src/utils/logger');
-      expect(logger.error).toHaveBeenCalledWith('Invalid token provided for storage');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Invalid token provided for storage'
+      );
     });
 
     it('should reject tokens with only whitespace', async () => {
       // Act
       const result = await authStorageService.storeToken('   ');
-      
+
       // Assert
       expect(result).toBe(false);
       expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
       const { logger } = jest.requireMock('../../src/utils/logger');
-      expect(logger.error).toHaveBeenCalledWith('Invalid token provided for storage');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Invalid token provided for storage'
+      );
     });
 
     it('should handle keychain storage failure', async () => {
       // Arrange
       mockKeychainModule.setInternetCredentials.mockResolvedValueOnce(false);
-      
+
       // Act
       const result = await authStorageService.storeToken(validToken);
-      
+
       // Assert
       expect(result).toBe(false);
       const { logger } = jest.requireMock('../../src/utils/logger');
-      expect(logger.error).toHaveBeenCalledWith('Failed to store token in keychain');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Failed to store token in keychain'
+      );
     });
 
     it('should handle keychain errors gracefully', async () => {
       // Arrange
       const error = new Error('Keychain unavailable');
       mockKeychainModule.setInternetCredentials.mockRejectedValueOnce(error);
-      
+
       // Act
       const result = await authStorageService.storeToken(validToken);
-      
+
       // Assert
       expect(result).toBe(false);
       const { logger } = jest.requireMock('../../src/utils/logger');
@@ -165,7 +176,7 @@ describe('AuthStorageService', () => {
           error: expect.objectContaining({
             code: StorageErrorCode.STORAGE_FAILED,
             message: expect.stringContaining('Storage operation failed'),
-          })
+          }),
         })
       );
     });
@@ -173,18 +184,28 @@ describe('AuthStorageService', () => {
     it('should parse JWT tokens for expiration', async () => {
       // Arrange
       // Create a mock JWT token with expiration
-      const mockJWT = 'header.' + btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })) + '.signature';
-      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({ service: 'mobdeck_auth_tokens', storage: 'InternetPassword' } as any);
-      
+      const mockJWT =
+        'header.' +
+        btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })) +
+        '.signature';
+      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({
+        service: 'mobdeck_auth_tokens',
+        storage: 'InternetPassword',
+      } as any);
+
       // Act
       const result = await authStorageService.storeToken(mockJWT);
-      
+
       // Assert
       expect(result).toBe(true);
       const storedData = JSON.parse(
-        (mockKeychainModule.setInternetCredentials as jest.Mock).mock.calls[0][2]
+        (mockKeychainModule.setInternetCredentials as jest.Mock).mock
+          .calls[0][2]
       );
-      expect(new Date(storedData.expiresAt).getTime()).toBeCloseTo(Date.now() + 3600000, -10000);
+      expect(new Date(storedData.expiresAt).getTime()).toBeCloseTo(
+        Date.now() + 3600000,
+        -10000
+      );
     });
   });
 
@@ -196,15 +217,17 @@ describe('AuthStorageService', () => {
         password: JSON.stringify(validTokenData),
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
-        storage: 'InternetPassword'
+        storage: 'InternetPassword',
       } as Keychain.SharedWebCredentials);
-      
+
       // Act
       const result = await authStorageService.retrieveToken();
-      
+
       // Assert
       expect(result).toBe(validToken);
-      expect(mockKeychainModule.getInternetCredentials).toHaveBeenCalledWith('mobdeck_auth_tokens');
+      expect(mockKeychainModule.getInternetCredentials).toHaveBeenCalledWith(
+        'mobdeck_auth_tokens'
+      );
       // Debug logging may not always be called
       expect(result).toBe(validToken);
     });
@@ -212,10 +235,10 @@ describe('AuthStorageService', () => {
     it('should return null when no token exists', async () => {
       // Arrange
       mockKeychainModule.getInternetCredentials.mockResolvedValueOnce(false);
-      
+
       // Act
       const result = await authStorageService.retrieveToken();
-      
+
       // Assert
       expect(result).toBeNull();
       // Debug logging may not always be called
@@ -229,21 +252,25 @@ describe('AuthStorageService', () => {
         password: 'invalid-json-data',
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
-        storage: 'InternetPassword'
+        storage: 'InternetPassword',
       } as Keychain.SharedWebCredentials);
-      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(undefined);
-      
+      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(
+        undefined
+      );
+
       // Act
       const result = await authStorageService.retrieveToken();
-      
+
       // Assert
       expect(result).toBeNull();
-      expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith('mobdeck_auth_tokens');
+      expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith(
+        'mobdeck_auth_tokens'
+      );
       const { logger } = jest.requireMock('../../src/utils/logger');
       expect(logger.error).toHaveBeenCalledWith(
         'Failed to parse stored auth data',
         expect.objectContaining({
-          error: 'Parse error occurred - corrupted auth data detected'
+          error: 'Parse error occurred - corrupted auth data detected',
         })
       );
     });
@@ -260,16 +287,20 @@ describe('AuthStorageService', () => {
         password: JSON.stringify(invalidTokenData),
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
-        storage: 'InternetPassword'
+        storage: 'InternetPassword',
       } as Keychain.SharedWebCredentials);
-      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(undefined);
-      
+      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(
+        undefined
+      );
+
       // Act
       const result = await authStorageService.retrieveToken();
-      
+
       // Assert
       expect(result).toBeNull();
-      expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith('mobdeck_auth_tokens');
+      expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith(
+        'mobdeck_auth_tokens'
+      );
       const { logger } = jest.requireMock('../../src/utils/logger');
       expect(logger.error).toHaveBeenCalledWith('Invalid auth data structure');
     });
@@ -278,10 +309,10 @@ describe('AuthStorageService', () => {
       // Arrange
       const error = new Error('Keychain locked');
       mockKeychainModule.getInternetCredentials.mockRejectedValueOnce(error);
-      
+
       // Act
       const result = await authStorageService.retrieveToken();
-      
+
       // Assert
       expect(result).toBeNull();
       const { logger } = jest.requireMock('../../src/utils/logger');
@@ -290,7 +321,7 @@ describe('AuthStorageService', () => {
         expect.objectContaining({
           error: expect.objectContaining({
             code: StorageErrorCode.RETRIEVAL_FAILED,
-          })
+          }),
         })
       );
     });
@@ -299,25 +330,31 @@ describe('AuthStorageService', () => {
   describe('deleteToken', () => {
     it('should delete token successfully', async () => {
       // Arrange
-      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(undefined);
-      
+      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(
+        undefined
+      );
+
       // Act
       const result = await authStorageService.deleteToken();
-      
+
       // Assert
       expect(result).toBe(true);
-      expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith('mobdeck_auth_tokens');
+      expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith(
+        'mobdeck_auth_tokens'
+      );
       // Logger output varies, just verify success
       expect(result).toBe(true);
     });
 
     it('should handle non-existent token deletion', async () => {
       // Arrange
-      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(undefined);
-      
+      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(
+        undefined
+      );
+
       // Act
       const result = await authStorageService.deleteToken();
-      
+
       // Assert
       expect(result).toBe(true); // Should return true even if no token exists
       // Logger output varies, just verify success
@@ -328,10 +365,10 @@ describe('AuthStorageService', () => {
       // Arrange
       const error = new Error('Deletion failed');
       mockKeychainModule.resetInternetCredentials.mockRejectedValueOnce(error);
-      
+
       // Act
       const result = await authStorageService.deleteToken();
-      
+
       // Assert
       expect(result).toBe(false);
       const { logger } = jest.requireMock('../../src/utils/logger');
@@ -339,7 +376,7 @@ describe('AuthStorageService', () => {
         'Token deletion failed',
         expect.objectContaining({
           errorCode: StorageErrorCode.DELETION_FAILED,
-          message: expect.stringContaining('Storage operation failed')
+          message: expect.stringContaining('Storage operation failed'),
         })
       );
     });
@@ -353,12 +390,12 @@ describe('AuthStorageService', () => {
         password: JSON.stringify(validTokenData),
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
-        storage: 'InternetPassword'
+        storage: 'InternetPassword',
       } as Keychain.SharedWebCredentials);
-      
+
       // Act
       const result = await authStorageService.isTokenStored();
-      
+
       // Assert
       expect(result).toBe(true);
       // Logger output varies, just verify result
@@ -368,10 +405,10 @@ describe('AuthStorageService', () => {
     it('should return false when no token exists', async () => {
       // Arrange
       mockKeychainModule.getInternetCredentials.mockResolvedValueOnce(false);
-      
+
       // Act
       const result = await authStorageService.isTokenStored();
-      
+
       // Assert
       expect(result).toBe(false);
       // Logger output varies, just verify result
@@ -382,10 +419,10 @@ describe('AuthStorageService', () => {
       // Arrange
       const error = new Error('Check failed');
       mockKeychainModule.getInternetCredentials.mockRejectedValueOnce(error);
-      
+
       // Act
       const result = await authStorageService.isTokenStored();
-      
+
       // Assert
       expect(result).toBe(false);
       const { logger } = jest.requireMock('../../src/utils/logger');
@@ -404,12 +441,12 @@ describe('AuthStorageService', () => {
         password: JSON.stringify(validTokenData),
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
-        storage: 'InternetPassword'
+        storage: 'InternetPassword',
       } as Keychain.SharedWebCredentials);
-      
+
       // Act
       const result = await authStorageService.validateStoredToken();
-      
+
       // Assert
       expect(result.isValid).toBe(true);
       expect(result.isExpired).toBe(false);
@@ -424,12 +461,12 @@ describe('AuthStorageService', () => {
         password: JSON.stringify(expiredTokenData),
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
-        storage: 'InternetPassword'
+        storage: 'InternetPassword',
       } as Keychain.SharedWebCredentials);
-      
+
       // Act
       const result = await authStorageService.validateStoredToken();
-      
+
       // Assert
       expect(result.isValid).toBe(false);
       expect(result.isExpired).toBe(true);
@@ -439,10 +476,10 @@ describe('AuthStorageService', () => {
     it('should handle missing tokens', async () => {
       // Arrange
       mockKeychainModule.getInternetCredentials.mockResolvedValueOnce(false);
-      
+
       // Act
       const result = await authStorageService.validateStoredToken();
-      
+
       // Assert
       expect(result).toEqual({
         isValid: false,
@@ -459,12 +496,12 @@ describe('AuthStorageService', () => {
         password: JSON.stringify(invalidData),
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
-        storage: 'InternetPassword'
+        storage: 'InternetPassword',
       } as Keychain.SharedWebCredentials);
-      
+
       // Act
       const result = await authStorageService.validateStoredToken();
-      
+
       // Assert
       expect(result).toEqual({
         isValid: false,
@@ -477,10 +514,10 @@ describe('AuthStorageService', () => {
       // Arrange
       const error = new Error('Validation error');
       mockKeychainModule.getInternetCredentials.mockRejectedValueOnce(error);
-      
+
       // Act
       const result = await authStorageService.validateStoredToken();
-      
+
       // Assert
       expect(result).toEqual({
         isValid: false,
@@ -500,10 +537,10 @@ describe('AuthStorageService', () => {
       // Arrange
       const error = new Error('UserCancel: User cancelled authentication');
       mockKeychainModule.setInternetCredentials.mockRejectedValueOnce(error);
-      
+
       // Act
       const result = await authStorageService.storeToken(validToken);
-      
+
       // Assert
       expect(result).toBe(false);
       const { logger } = jest.requireMock('../../src/utils/logger');
@@ -513,19 +550,21 @@ describe('AuthStorageService', () => {
           error: expect.objectContaining({
             code: StorageErrorCode.USER_CANCELLED,
             message: 'User cancelled keychain access',
-          })
+          }),
         })
       );
     });
 
     it('should handle BiometryNotAvailable errors', async () => {
       // Arrange
-      const error = new Error('BiometryNotAvailable: Device does not support biometry');
+      const error = new Error(
+        'BiometryNotAvailable: Device does not support biometry'
+      );
       mockKeychainModule.setInternetCredentials.mockRejectedValueOnce(error);
-      
+
       // Act
       const result = await authStorageService.storeToken(validToken);
-      
+
       // Assert
       expect(result).toBe(false);
       const { logger } = jest.requireMock('../../src/utils/logger');
@@ -535,7 +574,7 @@ describe('AuthStorageService', () => {
           error: expect.objectContaining({
             code: StorageErrorCode.BIOMETRIC_UNAVAILABLE,
             message: 'Biometric authentication not available',
-          })
+          }),
         })
       );
     });
@@ -544,10 +583,10 @@ describe('AuthStorageService', () => {
       // Arrange
       const error = new Error('KeychainError: Keychain services unavailable');
       mockKeychainModule.setInternetCredentials.mockRejectedValueOnce(error);
-      
+
       // Act
       const result = await authStorageService.storeToken(validToken);
-      
+
       // Assert
       expect(result).toBe(false);
       const { logger } = jest.requireMock('../../src/utils/logger');
@@ -557,7 +596,7 @@ describe('AuthStorageService', () => {
           error: expect.objectContaining({
             code: StorageErrorCode.KEYCHAIN_UNAVAILABLE,
             message: 'Device keychain unavailable',
-          })
+          }),
         })
       );
     });
@@ -566,10 +605,10 @@ describe('AuthStorageService', () => {
       // Arrange
       const error = { unexpected: 'error format' };
       mockKeychainModule.setInternetCredentials.mockRejectedValueOnce(error);
-      
+
       // Act
       const result = await authStorageService.storeToken(validToken);
-      
+
       // Assert
       expect(result).toBe(false);
       const { logger } = jest.requireMock('../../src/utils/logger');
@@ -579,7 +618,7 @@ describe('AuthStorageService', () => {
           error: expect.objectContaining({
             code: StorageErrorCode.STORAGE_FAILED,
             timestamp: expect.any(String),
-          })
+          }),
         })
       );
     });
@@ -589,19 +628,23 @@ describe('AuthStorageService', () => {
     it('should calculate default 24-hour expiration for non-JWT tokens', async () => {
       // Arrange
       const nonJWTToken = 'simple-bearer-token';
-      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({ service: 'mobdeck_auth_tokens', storage: 'InternetPassword' } as any);
+      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({
+        service: 'mobdeck_auth_tokens',
+        storage: 'InternetPassword',
+      } as any);
       const beforeTime = Date.now();
-      
+
       // Act
       await authStorageService.storeToken(nonJWTToken);
-      
+
       // Assert
       const storedData = JSON.parse(
-        (mockKeychainModule.setInternetCredentials as jest.Mock).mock.calls[0][2]
+        (mockKeychainModule.setInternetCredentials as jest.Mock).mock
+          .calls[0][2]
       );
       const expirationTime = new Date(storedData.expiresAt).getTime();
-      const expectedTime = beforeTime + (24 * 60 * 60 * 1000); // 24 hours
-      
+      const expectedTime = beforeTime + 24 * 60 * 60 * 1000; // 24 hours
+
       expect(expirationTime).toBeGreaterThan(beforeTime);
       expect(expirationTime).toBeLessThanOrEqual(expectedTime + 1000); // Allow 1 second tolerance
     });
@@ -609,18 +652,24 @@ describe('AuthStorageService', () => {
     it('should handle malformed JWT tokens gracefully', async () => {
       // Arrange
       const malformedJWT = 'not.a.valid.jwt.token';
-      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({ service: 'mobdeck_auth_tokens', storage: 'InternetPassword' } as any);
-      
+      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({
+        service: 'mobdeck_auth_tokens',
+        storage: 'InternetPassword',
+      } as any);
+
       // Act
       const result = await authStorageService.storeToken(malformedJWT);
-      
+
       // Assert
       expect(result).toBe(true);
       const storedData = JSON.parse(
-        (mockKeychainModule.setInternetCredentials as jest.Mock).mock.calls[0][2]
+        (mockKeychainModule.setInternetCredentials as jest.Mock).mock
+          .calls[0][2]
       );
       // Should fall back to default 24-hour expiration
-      expect(new Date(storedData.expiresAt).getTime()).toBeGreaterThan(Date.now());
+      expect(new Date(storedData.expiresAt).getTime()).toBeGreaterThan(
+        Date.now()
+      );
     });
   });
 
@@ -636,15 +685,19 @@ describe('AuthStorageService', () => {
           lastLoginAt: new Date().toISOString(),
           tokenExpiresAt: new Date(Date.now() + 86400000).toISOString(),
         };
-        mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({ service: 'mobdeck_auth_tokens', storage: 'InternetPassword' } as any);
-        
+        mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({
+          service: 'mobdeck_auth_tokens',
+          storage: 'InternetPassword',
+        } as any);
+
         // Act
         const result = await authStorageService.storeToken(validToken, user);
-        
+
         // Assert
         expect(result).toBe(true);
         const storedData = JSON.parse(
-          (mockKeychainModule.setInternetCredentials as jest.Mock).mock.calls[0][2]
+          (mockKeychainModule.setInternetCredentials as jest.Mock).mock
+            .calls[0][2]
         );
         expect(storedData.user).toEqual({
           id: user.id,
@@ -658,24 +711,30 @@ describe('AuthStorageService', () => {
       it('should reject tokens that are too short', async () => {
         // Act
         const result = await authStorageService.storeToken('short');
-        
+
         // Assert
         expect(result).toBe(false);
-        expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
+        expect(
+          mockKeychainModule.setInternetCredentials
+        ).not.toHaveBeenCalled();
         const { logger } = jest.requireMock('../../src/utils/logger');
-        expect(logger.error).toHaveBeenCalledWith('Token too short for storage');
+        expect(logger.error).toHaveBeenCalledWith(
+          'Token too short for storage'
+        );
       });
 
       it('should reject tokens that are too long', async () => {
         // Arrange
         const longToken = 'a'.repeat(4097);
-        
+
         // Act
         const result = await authStorageService.storeToken(longToken);
-        
+
         // Assert
         expect(result).toBe(false);
-        expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
+        expect(
+          mockKeychainModule.setInternetCredentials
+        ).not.toHaveBeenCalled();
         const { logger } = jest.requireMock('../../src/utils/logger');
         expect(logger.error).toHaveBeenCalledWith('Token too long for storage');
       });
@@ -698,12 +757,12 @@ describe('AuthStorageService', () => {
           password: JSON.stringify(authDataWithUser),
           server: 'mobdeck_auth_tokens',
           service: 'mobdeck_auth_tokens',
-          storage: 'InternetPassword'
+          storage: 'InternetPassword',
         } as Keychain.SharedWebCredentials);
-        
+
         // Act
         const result = await authStorageService.retrieveAuthData();
-        
+
         // Assert
         expect(result).toEqual(authDataWithUser);
       });
@@ -722,12 +781,12 @@ describe('AuthStorageService', () => {
           password: JSON.stringify(legacyTokenData),
           server: 'mobdeck_auth_tokens',
           service: 'mobdeck_auth_tokens',
-          storage: 'InternetPassword'
+          storage: 'InternetPassword',
         } as Keychain.SharedWebCredentials);
-        
+
         // Act
         const result = await authStorageService.retrieveAuthData();
-        
+
         // Assert
         expect(result).toEqual(legacyTokenData);
       });
@@ -744,12 +803,12 @@ describe('AuthStorageService', () => {
           password: JSON.stringify(tokenWithChecksum),
           server: 'mobdeck_auth_tokens',
           service: 'mobdeck_auth_tokens',
-          storage: 'InternetPassword'
+          storage: 'InternetPassword',
         } as Keychain.SharedWebCredentials);
-        
+
         // Act
         const result = await authStorageService.retrieveAuthData();
-        
+
         // Assert
         expect(result).toEqual(tokenWithChecksum);
       });
@@ -758,11 +817,13 @@ describe('AuthStorageService', () => {
     describe('enableBiometricAuth', () => {
       it('should enable biometric authentication when available', async () => {
         // Arrange
-        mockKeychainModule.getSupportedBiometryType.mockResolvedValueOnce('FaceID');
-        
+        mockKeychainModule.getSupportedBiometryType.mockResolvedValueOnce(
+          'FaceID'
+        );
+
         // Act
         const result = await authStorageService.enableBiometricAuth();
-        
+
         // Assert
         expect(result).toBe(true);
         expect(mockKeychainModule.getSupportedBiometryType).toHaveBeenCalled();
@@ -771,24 +832,28 @@ describe('AuthStorageService', () => {
       it('should return false when biometric not available', async () => {
         // Arrange
         mockKeychainModule.getSupportedBiometryType.mockResolvedValueOnce(null);
-        
+
         // Act
         const result = await authStorageService.enableBiometricAuth();
-        
+
         // Assert
         expect(result).toBe(false);
         const { logger } = jest.requireMock('../../src/utils/logger');
-        expect(logger.warn).toHaveBeenCalledWith('Biometric authentication not available on this device');
+        expect(logger.warn).toHaveBeenCalledWith(
+          'Biometric authentication not available on this device'
+        );
       });
 
       it('should handle errors when checking biometric support', async () => {
         // Arrange
         const error = new Error('Biometry check failed');
-        mockKeychainModule.getSupportedBiometryType.mockRejectedValueOnce(error);
-        
+        mockKeychainModule.getSupportedBiometryType.mockRejectedValueOnce(
+          error
+        );
+
         // Act
         const result = await authStorageService.enableBiometricAuth();
-        
+
         // Assert
         expect(result).toBe(false);
         const { logger } = jest.requireMock('../../src/utils/logger');
@@ -803,22 +868,26 @@ describe('AuthStorageService', () => {
       it('should disable biometric authentication', () => {
         // Act
         authStorageService.disableBiometricAuth();
-        
+
         // Assert
         // Just verify it doesn't throw
         const { logger } = jest.requireMock('../../src/utils/logger');
-        expect(logger.info).toHaveBeenCalledWith('Biometric authentication disabled');
+        expect(logger.info).toHaveBeenCalledWith(
+          'Biometric authentication disabled'
+        );
       });
     });
 
     describe('getSecurityConfig', () => {
       it('should return current security configuration', async () => {
         // Arrange
-        mockKeychainModule.getSupportedBiometryType.mockResolvedValueOnce('TouchID');
-        
+        mockKeychainModule.getSupportedBiometryType.mockResolvedValueOnce(
+          'TouchID'
+        );
+
         // Act
         const config = await authStorageService.getSecurityConfig();
-        
+
         // Assert
         expect(config).toEqual({
           biometricEnabled: false,
@@ -833,7 +902,7 @@ describe('AuthStorageService', () => {
         mockKeychainModule.getSupportedBiometryType.mockRejectedValueOnce(
           new Error('Config check failed')
         );
-        
+
         // Act & Assert
         await expect(authStorageService.getSecurityConfig()).rejects.toThrow();
       });

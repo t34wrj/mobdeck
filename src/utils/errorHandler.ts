@@ -52,9 +52,14 @@ export interface ErrorContext {
 /**
  * Common error types that we handle
  */
-export type KnownError = 
-  | Error 
-  | { code: string; message?: string; status?: number; response?: { status: number } }
+export type KnownError =
+  | Error
+  | {
+      code: string;
+      message?: string;
+      status?: number;
+      response?: { status: number };
+    }
   | { message: string; status?: number }
   | { status: number; message?: string }
   | string
@@ -143,20 +148,22 @@ class ErrorHandler {
         originalConsoleError.apply(console, args);
       };
 
-      (global as any).ErrorUtils?.setGlobalHandler?.((error: Error, isFatal: boolean) => {
-        this.handleError(error, {
-          category: ErrorCategory.RUNTIME,
-          severity: isFatal ? ErrorSeverity.CRITICAL : ErrorSeverity.HIGH,
-          context: { isFatal },
-        });
-      });
+      (global as any).ErrorUtils?.setGlobalHandler?.(
+        (error: Error, isFatal: boolean) => {
+          this.handleError(error, {
+            category: ErrorCategory.RUNTIME,
+            severity: isFatal ? ErrorSeverity.CRITICAL : ErrorSeverity.HIGH,
+            context: { isFatal },
+          });
+        }
+      );
     }
   }
 
   public addBreadcrumb(message: string): void {
     const timestamp = new Date().toISOString();
     this.breadcrumbs.push(`[${timestamp}] ${message}`);
-    
+
     if (this.breadcrumbs.length > this.maxBreadcrumbs) {
       this.breadcrumbs.shift();
     }
@@ -167,13 +174,13 @@ class ErrorHandler {
     options: Partial<AppError> = {}
   ): AppError {
     const appError = this.createAppError(error, options);
-    
+
     this.logError(appError);
-    
+
     if (appError.reportable && appError.severity !== ErrorSeverity.LOW) {
       this.reportError(appError);
     }
-    
+
     return appError;
   }
 
@@ -183,10 +190,10 @@ class ErrorHandler {
   ): AppError {
     const id = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const timestamp = new Date().toISOString();
-    
+
     let message: string;
     let stack: string | undefined;
-    
+
     if (isError(error)) {
       message = error.message;
       stack = error.stack;
@@ -197,11 +204,14 @@ class ErrorHandler {
     }
 
     const category = options.category || this.categorizeError(error);
-    const severity = options.severity || this.determineSeverity(category, error);
+    const severity =
+      options.severity || this.determineSeverity(category, error);
     const code = options.code || this.generateErrorCode(category, error);
-    const userMessage = options.userMessage || this.getUserFriendlyMessage(category, code);
+    const userMessage =
+      options.userMessage || this.getUserFriendlyMessage(category, code);
     const retryable = options.retryable ?? this.isRetryable(category, error);
-    const reportable = options.reportable ?? this.isReportable(category, severity);
+    const reportable =
+      options.reportable ?? this.isReportable(category, severity);
 
     return {
       id,
@@ -220,85 +230,111 @@ class ErrorHandler {
   }
 
   private categorizeError(error: KnownError): ErrorCategory {
-    if (hasErrorCode(error) && (error.code === 'NETWORK_ERROR' || error.code === 'AUTH_ERROR' || error.code === 'NOT_FOUND')) {
+    if (
+      hasErrorCode(error) &&
+      (error.code === 'NETWORK_ERROR' ||
+        error.code === 'AUTH_ERROR' ||
+        error.code === 'NOT_FOUND')
+    ) {
       if (error.code === 'NETWORK_ERROR') return ErrorCategory.NETWORK;
       if (error.code === 'AUTH_ERROR') return ErrorCategory.AUTHENTICATION;
       if (error.code === 'NOT_FOUND') return ErrorCategory.VALIDATION;
     }
-    
+
     if (hasErrorStatus(error)) {
       if (error.status === 401) return ErrorCategory.AUTHENTICATION;
       if (error.status === 404) return ErrorCategory.VALIDATION;
-      if (error.status >= 400 && error.status < 500) return ErrorCategory.VALIDATION;
+      if (error.status >= 400 && error.status < 500)
+        return ErrorCategory.VALIDATION;
     }
-    
+
     const message = getErrorMessage(error);
     if (message.includes('network')) {
       return ErrorCategory.NETWORK;
     }
-    
+
     if (message.includes('storage') || message.includes('database')) {
       return ErrorCategory.STORAGE;
     }
-    
+
     if (message.includes('sync')) {
       return ErrorCategory.SYNC;
     }
-    
+
     if (isError(error)) {
       return ErrorCategory.RUNTIME;
     }
-    
+
     return ErrorCategory.UNKNOWN;
   }
 
-  private determineSeverity(category: ErrorCategory, error: KnownError): ErrorSeverity {
+  private determineSeverity(
+    category: ErrorCategory,
+    error: KnownError
+  ): ErrorSeverity {
     if (category === ErrorCategory.AUTHENTICATION) {
       return ErrorSeverity.HIGH;
     }
-    
+
     const message = getErrorMessage(error);
     if (category === ErrorCategory.STORAGE && message.includes('critical')) {
       return ErrorSeverity.CRITICAL;
     }
-    
-    if (category === ErrorCategory.NETWORK && hasErrorStatus(error) && error.status >= 500) {
+
+    if (
+      category === ErrorCategory.NETWORK &&
+      hasErrorStatus(error) &&
+      error.status >= 500
+    ) {
       return ErrorSeverity.MEDIUM;
     }
-    
+
     if (category === ErrorCategory.VALIDATION) {
       return ErrorSeverity.LOW;
     }
-    
+
     return ErrorSeverity.MEDIUM;
   }
 
-  private generateErrorCode(category: ErrorCategory, error: KnownError): string {
+  private generateErrorCode(
+    category: ErrorCategory,
+    error: KnownError
+  ): string {
     const categoryPrefix = category.substr(0, 3).toUpperCase();
     const timestamp = Date.now().toString().substr(-6);
-    
+
     let errorType = 'UNKNOWN';
     if (isError(error)) {
       errorType = error.name;
     } else if (hasErrorCode(error)) {
       errorType = error.code;
     }
-    
+
     return `${categoryPrefix}_${errorType}_${timestamp}`;
   }
 
-  private getUserFriendlyMessage(category: ErrorCategory, _code: string): string {
+  private getUserFriendlyMessage(
+    category: ErrorCategory,
+    _code: string
+  ): string {
     const messages: Record<ErrorCategory, string> = {
-      [ErrorCategory.NETWORK]: 'Unable to connect to the server. Please check your internet connection and try again.',
-      [ErrorCategory.AUTHENTICATION]: 'Authentication failed. Please check your credentials and try logging in again.',
+      [ErrorCategory.NETWORK]:
+        'Unable to connect to the server. Please check your internet connection and try again.',
+      [ErrorCategory.AUTHENTICATION]:
+        'Authentication failed. Please check your credentials and try logging in again.',
       [ErrorCategory.VALIDATION]: 'Please check your input and try again.',
-      [ErrorCategory.STORAGE]: 'Unable to save data locally. Please ensure you have sufficient storage space.',
-      [ErrorCategory.SYNC]: 'Synchronization failed. Your changes will be synced when connection is restored.',
-      [ErrorCategory.SYNC_OPERATION]: 'Sync operation encountered an issue. Your data is safe and sync will retry automatically.',
-      [ErrorCategory.RUNTIME]: 'An unexpected error occurred. Please restart the app if the problem persists.',
-      [ErrorCategory.UNKNOWN]: 'Something went wrong. Please try again or contact support if the issue continues.',
+      [ErrorCategory.STORAGE]:
+        'Unable to save data locally. Please ensure you have sufficient storage space.',
+      [ErrorCategory.SYNC]:
+        'Synchronization failed. Your changes will be synced when connection is restored.',
+      [ErrorCategory.SYNC_OPERATION]:
+        'Sync operation encountered an issue. Your data is safe and sync will retry automatically.',
+      [ErrorCategory.RUNTIME]:
+        'An unexpected error occurred. Please restart the app if the problem persists.',
+      [ErrorCategory.UNKNOWN]:
+        'Something went wrong. Please try again or contact support if the issue continues.',
     };
-    
+
     return messages[category];
   }
 
@@ -308,40 +344,56 @@ class ErrorHandler {
       ErrorCategory.SYNC,
       ErrorCategory.SYNC_OPERATION,
     ];
-    
+
     if (retryableCategories.includes(category)) {
       return true;
     }
-    
+
     if (hasErrorStatus(error) && error.status >= 500 && error.status < 600) {
       return true;
     }
-    
+
     if (hasErrorCode(error) && error.code === 'TIMEOUT_ERROR') {
       return true;
     }
-    
+
     return false;
   }
 
-  private isReportable(category: ErrorCategory, severity: ErrorSeverity): boolean {
+  private isReportable(
+    category: ErrorCategory,
+    severity: ErrorSeverity
+  ): boolean {
     if (severity === ErrorSeverity.LOW) {
       return false;
     }
-    
+
     const nonReportableCategories = [ErrorCategory.VALIDATION];
     return !nonReportableCategories.includes(category);
   }
 
-  private sanitizeDetails(details?: Record<string, any>): Record<string, any> | undefined {
+  private sanitizeDetails(
+    details?: Record<string, any>
+  ): Record<string, any> | undefined {
     if (!details) return undefined;
-    
+
     const sanitized = { ...details };
-    const sensitiveKeys = ['password', 'token', 'authorization', 'secret', 'key', 'credential', 'bearer', 'session', 'cookie', 'auth'];
-    
+    const sensitiveKeys = [
+      'password',
+      'token',
+      'authorization',
+      'secret',
+      'key',
+      'credential',
+      'bearer',
+      'session',
+      'cookie',
+      'auth',
+    ];
+
     const sanitizeValue = (value: any, key: string): any => {
       if (value === null || value === undefined) return value;
-      
+
       // Check if string value looks like sensitive data patterns first
       if (typeof value === 'string') {
         // Bearer token pattern
@@ -357,12 +409,15 @@ class ErrorHandler {
           return '[REDACTED_API_KEY]';
         }
       }
-      
+
       // Then check if key contains sensitive information (only for string values)
-      if (typeof value === 'string' && sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))) {
+      if (
+        typeof value === 'string' &&
+        sensitiveKeys.some(sensitive => key.toLowerCase().includes(sensitive))
+      ) {
         return '[REDACTED]';
       }
-      
+
       // Continue with other string patterns
       if (typeof value === 'string') {
         // Email pattern
@@ -375,14 +430,19 @@ class ErrorHandler {
         }
         // IP addresses
         if (/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/.test(value)) {
-          return value.replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '[REDACTED_IP]');
+          return value.replace(
+            /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g,
+            '[REDACTED_IP]'
+          );
         }
       }
-      
+
       // Recursively sanitize objects and arrays
       if (typeof value === 'object' && value !== null) {
         if (Array.isArray(value)) {
-          return value.map((item, index) => sanitizeValue(item, `${key}[${index}]`));
+          return value.map((item, index) =>
+            sanitizeValue(item, `${key}[${index}]`)
+          );
         } else {
           const sanitizedObj: any = {};
           Object.keys(value).forEach(subKey => {
@@ -391,22 +451,22 @@ class ErrorHandler {
           return sanitizedObj;
         }
       }
-      
+
       return value;
     };
-    
+
     Object.keys(sanitized).forEach(key => {
       sanitized[key] = sanitizeValue(sanitized[key], key);
     });
-    
+
     return sanitized;
   }
 
   private sanitizeContext(context?: ErrorContext): ErrorContext | undefined {
     if (!context) return undefined;
-    
+
     const sanitized = { ...context };
-    
+
     // Sanitize server URL to remove credentials and sensitive info
     if (sanitized.serverUrl) {
       try {
@@ -421,7 +481,14 @@ class ErrorHandler {
         // Remove sensitive query parameters
         if (url.search) {
           const searchParams = new URLSearchParams(url.search);
-          const sensitiveParams = ['token', 'key', 'secret', 'password', 'auth', 'session'];
+          const sensitiveParams = [
+            'token',
+            'key',
+            'secret',
+            'password',
+            'auth',
+            'session',
+          ];
           sensitiveParams.forEach(param => {
             if (searchParams.has(param)) {
               searchParams.set(param, '[REDACTED]');
@@ -436,23 +503,27 @@ class ErrorHandler {
         sanitized.serverUrl = '[INVALID_URL]';
       }
     }
-    
+
     // Sanitize user ID
     if (sanitized.userId) {
-      sanitized.userId = sanitized.userId.length > 0 ? '[USER_ID_PRESENT]' : '[NO_USER_ID]';
+      sanitized.userId =
+        sanitized.userId.length > 0 ? '[USER_ID_PRESENT]' : '[NO_USER_ID]';
     }
-    
+
     // Sanitize API endpoint to remove sensitive path segments
     if (sanitized.apiEndpoint) {
       // Replace long IDs (12+ chars) with [REDACTED_ID]
-      sanitized.apiEndpoint = sanitized.apiEndpoint.replace(/\/[a-zA-Z0-9]{12,}/g, '/[REDACTED_ID]');
+      sanitized.apiEndpoint = sanitized.apiEndpoint.replace(
+        /\/[a-zA-Z0-9]{12,}/g,
+        '/[REDACTED_ID]'
+      );
     }
-    
+
     // Sanitize device info
     if (sanitized.deviceInfo) {
       sanitized.deviceInfo = this.sanitizeDetails(sanitized.deviceInfo) || {};
     }
-    
+
     return sanitized;
   }
 
@@ -464,7 +535,7 @@ class ErrorHandler {
     if (!message || typeof message !== 'string') {
       return message;
     }
-    
+
     return message
       .replace(/Bearer\s+[A-Za-z0-9-_.]+/gi, 'Bearer [REDACTED]')
       .replace(/[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]*/g, '[JWT_TOKEN]')
@@ -484,7 +555,7 @@ class ErrorHandler {
     if (!stack) {
       return '';
     }
-    
+
     return stack
       .replace(/\/Users\/[^\s/]+/g, '/Users/[USERNAME]')
       .replace(/\/home\/[^\s/]+/g, '/home/[USERNAME]')
@@ -495,14 +566,17 @@ class ErrorHandler {
 
   private logError(appError: AppError): void {
     const logLevel = this.getLogLevel(appError.severity);
-    
+
     // Sanitize the message before logging
     const sanitizedMessage = this.sanitizeErrorMessage(appError.message);
-    
+
     // For sync operations and network errors, just log the message without full object details
-    if (appError.category === ErrorCategory.SYNC_OPERATION || 
-        appError.category === ErrorCategory.NETWORK) {
-      const operation = appError.context?.actionType || appError.category.toLowerCase();
+    if (
+      appError.category === ErrorCategory.SYNC_OPERATION ||
+      appError.category === ErrorCategory.NETWORK
+    ) {
+      const operation =
+        appError.context?.actionType || appError.category.toLowerCase();
       logger.log(logLevel, `[${operation}] ${sanitizedMessage}`);
     } else {
       logger.log(logLevel, 'Error handled', {
@@ -517,7 +591,9 @@ class ErrorHandler {
     }
   }
 
-  private getLogLevel(severity: ErrorSeverity): 'debug' | 'info' | 'warn' | 'error' {
+  private getLogLevel(
+    severity: ErrorSeverity
+  ): 'debug' | 'info' | 'warn' | 'error' {
     switch (severity) {
       case ErrorSeverity.LOW:
         return 'debug';
@@ -552,11 +628,10 @@ class ErrorHandler {
         breadcrumbs: [...this.breadcrumbs],
         sessionId: this.sessionId,
       };
-      
+
       if (__DEV__) {
         console.log('[ErrorHandler] Error report generated:', report);
       }
-      
     } catch (reportingError) {
       logger.error('Failed to generate error report', { reportingError });
     }

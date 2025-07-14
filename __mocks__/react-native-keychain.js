@@ -1,6 +1,14 @@
 const keychain = {
   setInternetCredentials: jest.fn(() => Promise.resolve(true)),
-  getInternetCredentials: jest.fn(() => Promise.resolve({ password: JSON.stringify({ token: 'mock-token', expiresAt: '2025-12-31T23:59:59.999Z', issuedAt: '2025-01-01T00:00:00.000Z' }) })),
+  getInternetCredentials: jest.fn(() =>
+    Promise.resolve({
+      password: JSON.stringify({
+        token: 'mock-token',
+        expiresAt: '2025-12-31T23:59:59.999Z',
+        issuedAt: '2025-01-01T00:00:00.000Z',
+      }),
+    })
+  ),
   resetInternetCredentials: jest.fn(() => Promise.resolve(true)),
   canImplyAuthentication: jest.fn(() => Promise.resolve(true)),
   getSupportedBiometryType: jest.fn(() => Promise.resolve('TouchID')),

@@ -232,7 +232,8 @@ class BackgroundTaskManager {
       // This would typically require a native module implementation
       // For now, we'll assume permission is granted and handle gracefully
       return true;
-    } catch (error) { // eslint-disable-line no-unreachable
+    } catch (error) {
+      // eslint-disable-line no-unreachable
       console.warn(
         '[BackgroundTaskManager] Could not check exact alarm permission:',
         error

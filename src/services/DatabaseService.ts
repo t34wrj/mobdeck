@@ -93,8 +93,13 @@ class DatabaseService implements DatabaseServiceInterface {
         await this.db.executeSql('PRAGMA foreign_keys = ON;');
         console.log('[DatabaseService] Foreign key constraints enabled');
       } catch (error) {
-        console.warn('[DatabaseService] Could not enable foreign key constraints:', error);
-        console.log('[DatabaseService] Continuing without foreign key constraints');
+        console.warn(
+          '[DatabaseService] Could not enable foreign key constraints:',
+          error
+        );
+        console.log(
+          '[DatabaseService] Continuing without foreign key constraints'
+        );
       }
 
       // Initialize schema
@@ -189,7 +194,7 @@ class DatabaseService implements DatabaseServiceInterface {
             );`,
 
       // Performance indexes - optimized for common query patterns
-      
+
       // Single column indexes for basic filtering
       'CREATE INDEX IF NOT EXISTS idx_articles_is_archived ON articles(is_archived);',
       'CREATE INDEX IF NOT EXISTS idx_articles_is_favorite ON articles(is_favorite);',
@@ -197,31 +202,30 @@ class DatabaseService implements DatabaseServiceInterface {
       'CREATE INDEX IF NOT EXISTS idx_articles_is_modified ON articles(is_modified);',
       'CREATE INDEX IF NOT EXISTS idx_articles_deleted_at ON articles(deleted_at);',
       'CREATE INDEX IF NOT EXISTS idx_articles_synced_at ON articles(synced_at);',
-      
+
       // Composite indexes for common filtering combinations
       'CREATE INDEX IF NOT EXISTS idx_articles_deleted_archived ON articles(deleted_at, is_archived, created_at DESC);',
       'CREATE INDEX IF NOT EXISTS idx_articles_deleted_favorite ON articles(deleted_at, is_favorite, created_at DESC);',
       'CREATE INDEX IF NOT EXISTS idx_articles_deleted_read ON articles(deleted_at, is_read, created_at DESC);',
       'CREATE INDEX IF NOT EXISTS idx_articles_archived_read ON articles(is_archived, is_read, created_at DESC);',
-      
+
       // Covering indexes for pagination queries (includes commonly selected columns)
       'CREATE INDEX IF NOT EXISTS idx_articles_list_covering ON articles(deleted_at, created_at DESC, id, title, summary, is_archived, is_favorite, is_read);',
       'CREATE INDEX IF NOT EXISTS idx_articles_modified_covering ON articles(is_modified, updated_at DESC, id, synced_at);',
-      
+
       // Time-based indexes for sorting and sync operations
       'CREATE INDEX IF NOT EXISTS idx_articles_created_at ON articles(created_at DESC);',
       'CREATE INDEX IF NOT EXISTS idx_articles_updated_at ON articles(updated_at DESC);',
-      
+
       // Label operations optimization
       'CREATE INDEX IF NOT EXISTS idx_article_labels_article ON article_labels(article_id, label_id);',
       'CREATE INDEX IF NOT EXISTS idx_article_labels_label ON article_labels(label_id, article_id);',
-      
+
       // Sync metadata optimization
       'CREATE INDEX IF NOT EXISTS idx_sync_metadata_entity ON sync_metadata(entity_type, entity_id);',
       'CREATE INDEX IF NOT EXISTS idx_sync_metadata_status ON sync_metadata(sync_status);',
       'CREATE INDEX IF NOT EXISTS idx_sync_metadata_timestamp ON sync_metadata(local_timestamp DESC);',
       'CREATE INDEX IF NOT EXISTS idx_sync_metadata_status_time ON sync_metadata(sync_status, created_at DESC);',
-
 
       // Initial schema version
       `INSERT OR IGNORE INTO schema_version (version, applied_at, description) 
@@ -251,7 +255,7 @@ class DatabaseService implements DatabaseServiceInterface {
 
     try {
       console.log('[DatabaseService] Attempting to initialize FTS5...');
-      
+
       const ftsQueries = [
         // Full-text search table using FTS5
         `CREATE VIRTUAL TABLE IF NOT EXISTS articles_fts USING fts5(
@@ -293,7 +297,9 @@ class DatabaseService implements DatabaseServiceInterface {
       console.log('[DatabaseService] FTS5 initialized successfully');
     } catch (error) {
       // FTS5 is optional - log as debug instead of warning to reduce noise
-      console.log('[DatabaseService] FTS5 not available, continuing without full-text search features');
+      console.log(
+        '[DatabaseService] FTS5 not available, continuing without full-text search features'
+      );
       // Don't throw - FTS5 is optional
     }
   }
@@ -433,7 +439,7 @@ class DatabaseService implements DatabaseServiceInterface {
       // Use centralized error handling for storage operations
       const handledError = errorHandler.handleError(error, {
         category: ErrorCategory.STORAGE,
-        context: { 
+        context: {
           actionType: 'create_article',
         },
       });
@@ -467,7 +473,7 @@ class DatabaseService implements DatabaseServiceInterface {
       // Use centralized error handling for storage operations
       const handledError = errorHandler.handleError(error, {
         category: ErrorCategory.STORAGE,
-        context: { 
+        context: {
           actionType: 'get_article',
         },
       });
@@ -641,8 +647,11 @@ class DatabaseService implements DatabaseServiceInterface {
           },
         };
       } catch (ftsError) {
-        console.warn('[DatabaseService] FTS5 search failed, falling back to LIKE search:', ftsError);
-        
+        console.warn(
+          '[DatabaseService] FTS5 search failed, falling back to LIKE search:',
+          ftsError
+        );
+
         // Fallback to LIKE search if FTS is not available
         const searchTerm = `%${query}%`;
         const sql = `
@@ -653,7 +662,13 @@ class DatabaseService implements DatabaseServiceInterface {
                   LIMIT ? OFFSET ?
               `;
 
-        const result = await this.executeSql(sql, [searchTerm, searchTerm, searchTerm, limit, offset]);
+        const result = await this.executeSql(sql, [
+          searchTerm,
+          searchTerm,
+          searchTerm,
+          limit,
+          offset,
+        ]);
         const items = [];
 
         for (let i = 0; i < result.rows.length; i++) {
@@ -666,7 +681,11 @@ class DatabaseService implements DatabaseServiceInterface {
                   WHERE (title LIKE ? OR summary LIKE ? OR content LIKE ?) 
                   AND deleted_at IS NULL
               `;
-        const countResult = await this.executeSql(countSql, [searchTerm, searchTerm, searchTerm]);
+        const countResult = await this.executeSql(countSql, [
+          searchTerm,
+          searchTerm,
+          searchTerm,
+        ]);
         const totalCount = countResult.rows.item(0).count;
 
         return {
@@ -1133,10 +1152,10 @@ class DatabaseService implements DatabaseServiceInterface {
 
     try {
       const articleIds: string[] = [];
-      
-      await this.executeInTransaction(async (ctx) => {
+
+      await this.executeInTransaction(async ctx => {
         const now = this.createTimestamp();
-        
+
         // Use prepared statement for better performance
         const sql = `
           INSERT INTO articles (
@@ -1145,7 +1164,7 @@ class DatabaseService implements DatabaseServiceInterface {
             updated_at, synced_at, is_modified, deleted_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        
+
         for (const article of articles) {
           const params = [
             article.id,
@@ -1165,12 +1184,12 @@ class DatabaseService implements DatabaseServiceInterface {
             article.is_modified || 0,
             article.deleted_at || null,
           ];
-          
+
           await ctx.executeSql(sql, params);
           articleIds.push(article.id);
         }
       });
-      
+
       return {
         success: true,
         data: articleIds,
@@ -1196,28 +1215,34 @@ class DatabaseService implements DatabaseServiceInterface {
 
     try {
       let totalRowsAffected = 0;
-      
-      await this.executeInTransaction(async (ctx) => {
+
+      await this.executeInTransaction(async ctx => {
         const now = this.createTimestamp();
-        
+
         for (const { id, updates: articleUpdates } of updates) {
-          const updateFields = Object.keys(articleUpdates).filter(key => key !== 'id');
+          const updateFields = Object.keys(articleUpdates).filter(
+            key => key !== 'id'
+          );
           if (updateFields.length === 0) continue;
-          
-          const setClause = updateFields.map(field => `${field} = ?`).join(', ');
+
+          const setClause = updateFields
+            .map(field => `${field} = ?`)
+            .join(', ');
           const sql = `UPDATE articles SET ${setClause}, updated_at = ? WHERE id = ?`;
-          
+
           const params = [
-            ...updateFields.map(field => articleUpdates[field as keyof DBArticle]),
+            ...updateFields.map(
+              field => articleUpdates[field as keyof DBArticle]
+            ),
             now,
             id,
           ];
-          
+
           const result = await ctx.executeSql(sql, params);
           totalRowsAffected += result.rowsAffected || 0;
         }
       });
-      
+
       return {
         success: true,
         rowsAffected: totalRowsAffected,
@@ -1275,17 +1300,17 @@ class DatabaseService implements DatabaseServiceInterface {
    */
   public async clearAllData(): Promise<DatabaseOperationResult> {
     try {
-      await this.executeInTransaction(async (ctx) => {
+      await this.executeInTransaction(async ctx => {
         // Clear all tables in correct order (respecting foreign key constraints)
         await ctx.executeSql('DELETE FROM article_labels');
         await ctx.executeSql('DELETE FROM articles_fts');
         await ctx.executeSql('DELETE FROM articles');
         await ctx.executeSql('DELETE FROM labels');
         await ctx.executeSql('DELETE FROM sync_metadata');
-        
+
         console.log('[DatabaseService] All user data cleared from database');
       });
-      
+
       return { success: true };
     } catch (error) {
       console.error('[DatabaseService] Failed to clear all data:', error);
@@ -1379,7 +1404,8 @@ class DatabaseService implements DatabaseServiceInterface {
     const migrations: Migration[] = [
       {
         version: 2,
-        description: 'Add optimized composite and covering indexes for performance',
+        description:
+          'Add optimized composite and covering indexes for performance',
         up: async (tx: DatabaseTransaction) => {
           const indexQueries = [
             // Remove any conflicting indexes first (if they exist)
@@ -1392,25 +1418,25 @@ class DatabaseService implements DatabaseServiceInterface {
             'DROP INDEX IF EXISTS idx_article_labels_article',
             'DROP INDEX IF EXISTS idx_article_labels_label',
             'DROP INDEX IF EXISTS idx_sync_metadata_status_time',
-            
+
             // Create optimized composite indexes
             'CREATE INDEX IF NOT EXISTS idx_articles_deleted_archived ON articles(deleted_at, is_archived, created_at DESC)',
             'CREATE INDEX IF NOT EXISTS idx_articles_deleted_favorite ON articles(deleted_at, is_favorite, created_at DESC)',
             'CREATE INDEX IF NOT EXISTS idx_articles_deleted_read ON articles(deleted_at, is_read, created_at DESC)',
             'CREATE INDEX IF NOT EXISTS idx_articles_archived_read ON articles(is_archived, is_read, created_at DESC)',
-            
+
             // Create covering indexes for better performance
             'CREATE INDEX IF NOT EXISTS idx_articles_list_covering ON articles(deleted_at, created_at DESC, id, title, summary, is_archived, is_favorite, is_read)',
             'CREATE INDEX IF NOT EXISTS idx_articles_modified_covering ON articles(is_modified, updated_at DESC, id, synced_at)',
-            
+
             // Optimize article-label joins
             'CREATE INDEX IF NOT EXISTS idx_article_labels_article ON article_labels(article_id, label_id)',
             'CREATE INDEX IF NOT EXISTS idx_article_labels_label ON article_labels(label_id, article_id)',
-            
+
             // Additional sync optimization
             'CREATE INDEX IF NOT EXISTS idx_sync_metadata_status_time ON sync_metadata(sync_status, created_at DESC)',
           ];
-          
+
           for (const query of indexQueries) {
             tx.executeSql(
               query,
@@ -1436,14 +1462,19 @@ class DatabaseService implements DatabaseServiceInterface {
             'DROP INDEX IF EXISTS idx_article_labels_label',
             'DROP INDEX IF EXISTS idx_sync_metadata_status_time',
           ];
-          
+
           for (const query of rollbackQueries) {
-            tx.executeSql(query, [], () => {}, () => false);
+            tx.executeSql(
+              query,
+              [],
+              () => {},
+              () => false
+            );
           }
         },
       },
     ];
-    
+
     await this.runMigrations(migrations);
   }
 
@@ -1529,7 +1560,7 @@ class DatabaseService implements DatabaseServiceInterface {
     // Use centralized error handling for consistent error categorization and logging
     errorHandler.handleError(originalError || new Error(message), {
       category: ErrorCategory.STORAGE,
-      context: { 
+      context: {
         actionType: 'database_operation',
         errorCode: code,
       },
