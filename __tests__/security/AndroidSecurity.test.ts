@@ -309,7 +309,7 @@ describe('Android Security Configuration Tests', () => {
       });
 
       expect(localhostConfig).toBeTruthy();
-      expect((localhostConfig as Element)?.getAttribute('cleartextTrafficPermitted')).toBe('true');
+      expect((localhostConfig as Element | null)?.getAttribute('cleartextTrafficPermitted')).toBe('true');
     });
 
     it('should trust system certificates', () => {

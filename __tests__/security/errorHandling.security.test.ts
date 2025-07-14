@@ -7,12 +7,10 @@ import { logger } from '../../src/utils/logger';
 
 // Declare global ErrorUtils for React Native
 declare global {
-  interface ErrorUtils {
+  var ErrorUtils: {
     setGlobalHandler: (handler: (error: Error, isFatal: boolean) => void) => void;
     getGlobalHandler: () => ((error: Error, isFatal: boolean) => void) | undefined;
-  }
-  
-  var ErrorUtils: ErrorUtils | undefined;
+  } | undefined;
 }
 import { sanitizeForLogging, sanitizeErrorMessage, sanitizeStackTrace } from '../../src/utils/security';
 
