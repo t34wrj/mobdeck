@@ -47,11 +47,6 @@ export default function BackgroundSyncSettings() {
   const [syncHistory, setSyncHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  // Load sync history on component mount
-  useEffect(() => {
-    loadSyncHistory();
-  }, [loadSyncHistory]);
-
   const loadSyncHistory = useCallback(async () => {
     setIsLoadingHistory(true);
     try {
@@ -63,6 +58,11 @@ export default function BackgroundSyncSettings() {
       setIsLoadingHistory(false);
     }
   }, [getSyncHistory]);
+
+  // Load sync history on component mount
+  useEffect(() => {
+    loadSyncHistory();
+  }, [loadSyncHistory]);
 
   const handleToggleEnabled = async (enabled: boolean) => {
     try {

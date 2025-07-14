@@ -7,7 +7,14 @@ import NetInfo, { NetInfoState, NetInfoStateType } from '@react-native-community
 import { logger } from './logger';
 import { NetworkType } from '../types/sync';
 
-export interface ConnectivityStatus {
+export enum ConnectivityStatus {
+  ONLINE = 'online',
+  OFFLINE = 'offline',
+  SERVER_UNREACHABLE = 'server_unreachable',
+  CHECKING = 'checking'
+}
+
+export interface ConnectivityDetails {
   isConnected: boolean;
   isInternetReachable: boolean;
   networkType: NetworkType;
@@ -29,7 +36,7 @@ class ConnectivityManager {
   private netInfoUnsubscribe: (() => void) | null = null;
   private isMonitoring = false;
   
-  private currentStatus: ConnectivityStatus = {
+  private currentStatus: ConnectivityDetails = {
     isConnected: false,
     isInternetReachable: false,
     networkType: NetworkType.NONE,
@@ -83,9 +90,37 @@ class ConnectivityManager {
   }
 
   /**
+   * Add event listener (alias for addListener)
+   */
+  public on(event: 'statusChanged', listener: ConnectivityListener): void {
+    if (event === 'statusChanged') {
+      this.addListener(listener);
+    }
+  }
+
+  /**
+   * Remove event listener (alias for removeListener)
+   */
+  public off(event: 'statusChanged', listener: ConnectivityListener): void {
+    if (event === 'statusChanged') {
+      this.removeListener(listener);
+    }
+  }
+
+  /**
    * Get current connectivity status
    */
   public getStatus(): ConnectivityStatus {
+    if (!this.currentStatus.isConnected || !this.currentStatus.isInternetReachable) {
+      return ConnectivityStatus.OFFLINE;
+    }
+    return ConnectivityStatus.ONLINE;
+  }
+
+  /**
+   * Get detailed connectivity information
+   */
+  public getDetails(): ConnectivityDetails {
     return { ...this.currentStatus };
   }
 

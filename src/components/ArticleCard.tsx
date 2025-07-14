@@ -92,7 +92,7 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(({
             variant='h6'
             numberOfLines={2}
             ellipsizeMode='tail'
-            style={[styles.title, article.isRead && styles.readTitle]}
+            style={[styles.title, ...(article.isRead ? [styles.readTitle] : [])]}
           >
             {article.title || 'Untitled'}
           </Text>

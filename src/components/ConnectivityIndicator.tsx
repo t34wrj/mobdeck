@@ -44,7 +44,7 @@ export const ConnectivityIndicator: React.FC = () => {
     };
   }, [animatedValue, isUserAuthenticated]);
   
-  if (!visible && animatedValue._value === 0) {
+  if (!visible && (animatedValue as any)._value === 0) {
     return null;
   }
   

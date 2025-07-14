@@ -203,7 +203,7 @@ class AuthStorageService implements IAuthStorageService {
    */
   deleteToken = async (): Promise<boolean> => {
     try {
-      const result = await Keychain.resetInternetCredentials(this.SERVICE_NAME);
+      await Keychain.resetInternetCredentials(this.SERVICE_NAME);
 
       // resetInternetCredentials returns boolean or void
       // Both void and true are considered success

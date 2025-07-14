@@ -34,7 +34,7 @@
       "@navigation/*": ["src/navigation/*"]
     },
     "typeRoots": ["./node_modules/@types"],
-    "types": ["jest"]
+    "types": ["jest", "node"]
   },
   "include": [
     "src/**/*.ts",
