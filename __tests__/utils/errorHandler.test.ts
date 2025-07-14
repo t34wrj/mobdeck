@@ -276,7 +276,8 @@ describe('ErrorHandler', () => {
       
       const result = errorHandler.handleError(circularError);
       expect(result.message).toBe('Circular error');
-      expect(result.details).toBeDefined();
+      // Details are only set when explicitly provided in options
+      expect(result.details).toBeUndefined();
     });
 
     it('should handle very large error messages', () => {

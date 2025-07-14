@@ -685,7 +685,7 @@ describe('DatabaseService', () => {
             const result = await dbService.getArticle('test-id');
             
             expect(result.success).toBe(false);
-            expect(result.error).toContain('Failed to get article');
+            expect(result.error).toContain('Unable to save data locally');
         });
 
         it('should handle constraint violations', async () => {

@@ -87,6 +87,7 @@ jest.mock('../../src/utils/connectivityManager', () => ({
     unsubscribe: jest.fn(),
     isConnected: jest.fn(),
     refresh: jest.fn(),
+    checkConnectivity: jest.fn(),
   },
   ConnectivityStatus: {
     ONLINE: 'ONLINE',
@@ -180,6 +181,7 @@ describe('SyncService', () => {
       networkType: NetworkType.WIFI,
     });
     (connectivityManager.refresh as jest.Mock).mockResolvedValue('ONLINE');
+    (connectivityManager.checkConnectivity as jest.Mock).mockResolvedValue('ONLINE');
     
     // Mock database operations
     mockDatabaseService.isConnected.mockReturnValue(true);
