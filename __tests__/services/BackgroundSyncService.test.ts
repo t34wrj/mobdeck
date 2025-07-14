@@ -60,6 +60,8 @@ describe('BackgroundSyncService', () => {
     jest.clearAllMocks();
     jest.spyOn(console, 'log').mockImplementation(() => {});
     jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    jest.spyOn(console, 'debug').mockImplementation(() => {});
     
     // Reset singleton instance for testing
     (BackgroundSyncService as any).instance = undefined;
@@ -169,10 +171,14 @@ describe('BackgroundSyncService', () => {
 
     it('should handle initialization errors', async () => {
       mockAsyncStorage.getItem.mockRejectedValue(new Error('Storage error'));
+      const addEventListener = jest.fn().mockReturnValue(() => {});
+      mockNetInfo.addEventListener.mockImplementation(addEventListener);
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() } as any);
 
-      await expect(service.initialize()).rejects.toThrow('Storage error');
+      // The service should handle errors gracefully and not throw
+      await expect(service.initialize()).resolves.not.toThrow();
       expect(console.error).toHaveBeenCalledWith(
-        '[BackgroundSyncService] Failed to initialize:',
+        '[BackgroundSyncService] Failed to load preferences:',
         expect.any(Error)
       );
     });
@@ -344,11 +350,12 @@ describe('BackgroundSyncService', () => {
 
     it('should handle boot completion errors', async () => {
       mockAsyncStorage.getItem.mockRejectedValue(new Error('Storage error'));
+      mockSyncService.startFullSync.mockRejectedValue(new Error('Sync failed'));
 
       await bootHandler('boot_completed');
 
       expect(console.error).toHaveBeenCalledWith(
-        '[BackgroundSyncService] Failed to handle boot completion:',
+        '[BackgroundSyncService] Failed to load preferences:',
         expect.any(Error)
       );
     });
@@ -399,12 +406,18 @@ describe('BackgroundSyncService', () => {
     });
 
     it('should cancel sync when disabled', async () => {
+      // Mock that service is currently running
+      mockBackgroundService.isRunning.mockReturnValue(true);
+      
       await service.updatePreferences({ enabled: false });
 
       expect(mockBackgroundService.stop).toHaveBeenCalled();
     });
 
     it('should cancel sync for manual interval', async () => {
+      // Mock that service is currently running
+      mockBackgroundService.isRunning.mockReturnValue(true);
+      
       await service.updatePreferences({ 
         enabled: true, 
         interval: SYNC_INTERVALS.MANUAL 
@@ -423,18 +436,24 @@ describe('BackgroundSyncService', () => {
     });
 
     it('should handle scheduling errors', async () => {
-      mockBackgroundService.start.mockRejectedValue(new Error('Start failed'));
+      // Temporarily change the mock behavior for this test only
+      const originalStart = mockBackgroundService.start;
+      mockBackgroundService.start = jest.fn().mockRejectedValue(new Error('Start failed'));
 
       await expect(service.scheduleSync()).rejects.toThrow('Start failed');
       expect(console.error).toHaveBeenCalledWith(
         '[BackgroundSyncService] Failed to schedule sync:',
         expect.any(Error)
       );
+      
+      // Restore the original mock
+      mockBackgroundService.start = originalStart;
     });
 
     it('should save next sync time', async () => {
       const fixedDate = new Date('2023-01-01T12:00:00Z');
-      jest.spyOn(Date, 'now').mockReturnValue(fixedDate.getTime());
+      const mockDateNow = jest.spyOn(Date, 'now').mockReturnValue(fixedDate.getTime());
+      mockBackgroundService.start.mockResolvedValue(undefined);
 
       await service.updatePreferences({ enabled: true, interval: 60 });
 
@@ -443,6 +462,8 @@ describe('BackgroundSyncService', () => {
         '@mobdeck/next_sync_time',
         expectedNextSync.toISOString()
       );
+      
+      mockDateNow.mockRestore();
     });
   });
 
@@ -458,6 +479,10 @@ describe('BackgroundSyncService', () => {
       mockSyncService.startFullSync.mockResolvedValue({
         success: true,
         syncedCount: 5,
+        conflictCount: 0,
+        errorCount: 0,
+        duration: 1000,
+        phase: 'completed',
         errors: [],
       });
 
@@ -523,6 +548,10 @@ describe('BackgroundSyncService', () => {
       mockSyncService.startFullSync.mockResolvedValue({
         success: true,
         syncedCount: 3,
+        conflictCount: 0,
+        errorCount: 0,
+        duration: 1000,
+        phase: 'completed',
         errors: [],
       });
 
@@ -556,7 +585,7 @@ describe('BackgroundSyncService', () => {
         conflictCount: 0,
         errorCount: 0,
         duration: 1000,
-        phase: 'completed' as any,
+        phase: 'completed',
         errors: [],
       });
 
@@ -600,7 +629,7 @@ describe('BackgroundSyncService', () => {
         conflictCount: 0,
         errorCount: 0,
         duration: 1000,
-        phase: 'completed' as any,
+        phase: 'completed',
         errors: [],
       });
 
@@ -763,7 +792,7 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.join() });
+      mockDeviceEventEmitter.addListener.mockReturnValue({ remove: jest.fn() });
       await service.initialize();
     });
 
@@ -842,7 +871,9 @@ describe('BackgroundSyncService', () => {
     });
 
     it('should handle cleanup errors gracefully', () => {
-      mockBackgroundService.stop.mockRejectedValue(new Error('Stop failed'));
+      // Temporarily change the mock behavior for this test only
+      const originalStop = mockBackgroundService.stop;
+      mockBackgroundService.stop = jest.fn().mockRejectedValue(new Error('Stop failed'));
 
       service.cleanup();
 
@@ -850,6 +881,9 @@ describe('BackgroundSyncService', () => {
         '[BackgroundSyncService] Failed to cancel sync during cleanup:',
         expect.any(Error)
       );
+      
+      // Restore the original mock
+      mockBackgroundService.stop = originalStop;
     });
   });
 

@@ -36,6 +36,7 @@ jest.mock('../../src/utils/logger', () => ({
     error: jest.fn(),
     warn: jest.fn(),
     debug: jest.fn(),
+    log: jest.fn(),
   },
 }));
 
@@ -51,10 +52,19 @@ describe('Storage Security: AuthStorageService', () => {
     (validateToken as jest.Mock).mockReturnValue({ isValid: true });
     (generateSecureRandom as jest.Mock).mockReturnValue('random-salt-value');
     (hashData as jest.Mock).mockReturnValue('hashed-checksum');
+    
+    // Mock console methods to prevent actual logging during tests
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    jest.spyOn(console, 'debug').mockImplementation(() => {});
   });
 
   describe('Token Storage', () => {
     it('should validate token before storing', async () => {
+      // Mock validation to return false for this test
+      (validateToken as jest.Mock).mockReturnValueOnce({ isValid: false });
+      
       // Test with invalid token (too short)
       const result = await authService.storeToken('short');
 

@@ -152,9 +152,10 @@ describe('SyncService', () => {
     jest.restoreAllMocks();
     
     // Mock console methods
-    console.log = jest.fn();
-    console.error = jest.fn();
-    console.warn = jest.fn();
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    jest.spyOn(console, 'debug').mockImplementation(() => {});
     
     // Configure store mock
     (store.dispatch as jest.Mock).mockClear();
@@ -208,6 +209,16 @@ describe('SyncService', () => {
       page: 1,
       limit: 50,
     });
+    
+    // Mock errorHandler to return proper error objects
+    (errorHandler.handle as jest.Mock).mockImplementation((error) => ({ 
+      message: error.message || 'Unknown error', 
+      code: 'HANDLED_ERROR' 
+    }));
+    (errorHandler.handleError as jest.Mock).mockImplementation((error) => ({ 
+      message: error.message || 'Unknown error', 
+      code: 'HANDLED_ERROR' 
+    }));
     
     // Get singleton instance
     syncService = SyncService.getInstance();
@@ -298,6 +309,10 @@ describe('SyncService', () => {
         isConnected: false,
         networkType: NetworkType.NONE,
       });
+      (readeckApiService.getNetworkState as jest.Mock).mockReturnValue({
+        isOnline: false,
+        isAuthenticated: true,
+      });
       
       const result = await syncService.startFullSync();
       
@@ -319,6 +334,10 @@ describe('SyncService', () => {
       (connectivityManager.getStatus as jest.Mock).mockReturnValue({
         isConnected: true,
         networkType: NetworkType.CELLULAR,
+      });
+      (readeckApiService.getNetworkState as jest.Mock).mockReturnValue({
+        isOnline: true,
+        isAuthenticated: true,
       });
       
       const result = await syncService.startFullSync();
