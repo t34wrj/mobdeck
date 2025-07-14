@@ -81,9 +81,9 @@ const createTestArticles = (count: number): Article[] => {
     isRead: i % 4 === 0,
     tags: [`tag-${i % 5}`, `category-${i % 3}`],
     sourceUrl: 'https://example.com',
-    createdAt: new Date(Date.now() - i * 3600000), // 1 hour apart
-    updatedAt: new Date(Date.now() - i * 1800000), // 30 min apart
-    syncedAt: new Date(),
+    createdAt: new Date(Date.now() - i * 3600000).toISOString(), // 1 hour apart
+    updatedAt: new Date(Date.now() - i * 1800000).toISOString(), // 30 min apart
+    syncedAt: new Date().toISOString(),
     isModified: false,
   }));
 };
@@ -110,10 +110,9 @@ describe('Article Operations Performance Tests', () => {
       // Simulate fulfilled fetchArticles action
       store.dispatch(fetchArticles.fulfilled({
         items: articles,
-        totalCount: 50,
-        hasMore: false,
-        limit: 50,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: 50,
       }, 'test', { page: 1, limit: 50 }));
 
       const { result: screen, metrics } = performanceTestHelper.measureSync(
@@ -159,10 +158,9 @@ describe('Article Operations Performance Tests', () => {
       const articles = createTestArticles(200);
       store.dispatch(fetchArticles.fulfilled({
         items: articles,
-        totalCount: articles.length,
-        hasMore: false,
-        limit: articles.length,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: articles.length,
       }, 'test', { page: 1, limit: articles.length }));
 
       const { result: screen } = performanceTestHelper.measureSync(
@@ -222,10 +220,9 @@ describe('Article Operations Performance Tests', () => {
       const articles = createTestArticles(100);
       store.dispatch(fetchArticles.fulfilled({
         items: articles,
-        totalCount: articles.length,
-        hasMore: false,
-        limit: articles.length,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: articles.length,
       }, 'test', { page: 1, limit: articles.length }));
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
@@ -243,10 +240,9 @@ describe('Article Operations Performance Tests', () => {
           updatedArticles[0] = { ...updatedArticles[0], isRead: true };
           store.dispatch(fetchArticles.fulfilled({
             items: updatedArticles,
-            totalCount: updatedArticles.length,
-            hasMore: false,
-            limit: updatedArticles.length,
-            offset: 0
+            page: 1,
+            totalPages: 1,
+            totalItems: updatedArticles.length,
           }, 'test', { page: 1, limit: updatedArticles.length }));
 
           await waitFor(() => {
@@ -266,10 +262,9 @@ describe('Article Operations Performance Tests', () => {
       const articles = createTestArticles(100);
       store.dispatch(fetchArticles.fulfilled({
         items: articles,
-        totalCount: articles.length,
-        hasMore: false,
-        limit: articles.length,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: articles.length,
       }, 'test', { page: 1, limit: articles.length }));
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
@@ -309,10 +304,9 @@ describe('Article Operations Performance Tests', () => {
       const articles = createTestArticles(150);
       store.dispatch(fetchArticles.fulfilled({
         items: articles,
-        totalCount: articles.length,
-        hasMore: false,
-        limit: articles.length,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: articles.length,
       }, 'test', { page: 1, limit: articles.length }));
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
@@ -351,10 +345,9 @@ describe('Article Operations Performance Tests', () => {
       const articles = createTestArticles(100);
       store.dispatch(fetchArticles.fulfilled({
         items: articles,
-        totalCount: articles.length,
-        hasMore: false,
-        limit: articles.length,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: articles.length,
       }, 'test', { page: 1, limit: articles.length }));
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
@@ -422,10 +415,9 @@ describe('Article Operations Performance Tests', () => {
 
       store.dispatch(fetchArticles.fulfilled({
         items: articlesWithImages,
-        totalCount: articlesWithImages.length,
-        hasMore: false,
-        limit: articlesWithImages.length,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: articlesWithImages.length,
       }, 'test', { page: 1, limit: articlesWithImages.length }));
 
       const screen = render(
@@ -489,10 +481,9 @@ describe('Article Operations Performance Tests', () => {
 
       store.dispatch(fetchArticles.fulfilled({
         items: initialArticles,
-        totalCount: initialArticles.length,
-        hasMore: false,
-        limit: initialArticles.length,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: initialArticles.length,
       }, 'test', { page: 1, limit: initialArticles.length }));
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
@@ -513,10 +504,9 @@ describe('Article Operations Performance Tests', () => {
           setTimeout(() => {
             store.dispatch(fetchArticles.fulfilled({
               items: [...initialArticles, ...moreArticles],
-              totalCount: initialArticles.length + moreArticles.length,
-              hasMore: false,
-              limit: initialArticles.length + moreArticles.length,
-              offset: 0
+              page: 1,
+              totalPages: 1,
+              totalItems: initialArticles.length + moreArticles.length,
             }, 'test', { page: 1, limit: initialArticles.length + moreArticles.length }));
           }, 100);
 
@@ -535,10 +525,9 @@ describe('Article Operations Performance Tests', () => {
       const initialArticles = articles.slice(0, 50);
       store.dispatch(fetchArticles.fulfilled({
         items: initialArticles,
-        totalCount: initialArticles.length,
-        hasMore: false,
-        limit: initialArticles.length,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: initialArticles.length,
       }, 'test', { page: 1, limit: initialArticles.length }));
 
       const screen = renderWithProviders(<MockArticlesListScreen />);
@@ -564,10 +553,9 @@ describe('Article Operations Performance Tests', () => {
         async () => {
           store.dispatch(fetchArticles.fulfilled({
         items: articles,
-        totalCount: articles.length,
-        hasMore: false,
-        limit: articles.length,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: articles.length,
       }, 'test', { page: 1, limit: articles.length }));
 
           await waitFor(() => {
@@ -591,10 +579,9 @@ describe('Article Operations Performance Tests', () => {
       const articles = createTestArticles(100);
       store.dispatch(fetchArticles.fulfilled({
         items: articles,
-        totalCount: articles.length,
-        hasMore: false,
-        limit: articles.length,
-        offset: 0
+        page: 1,
+        totalPages: 1,
+        totalItems: articles.length,
       }, 'test', { page: 1, limit: articles.length }));
 
       const initialMemory = performanceTestHelper['getCurrentMemoryUsage']() || 0;
