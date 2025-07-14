@@ -29,6 +29,7 @@ jest.mock('react-native-keychain', () => ({
 jest.mock('../../src/utils/security', () => ({
   generateSecureRandom: jest.fn(() => 'mocked-random-salt'),
   hashData: jest.fn(() => 'mocked-hash-checksum'),
+  validateToken: jest.fn(() => ({ isValid: true })),
 }));
 
 // Mock logger
@@ -38,6 +39,7 @@ jest.mock('../../src/utils/logger', () => ({
     error: jest.fn(),
     warn: jest.fn(),
     debug: jest.fn(),
+    log: jest.fn(),
   },
 }));
 
@@ -106,10 +108,9 @@ describe('AuthStorageService', () => {
       // Assert
       expect(result).toBe(false);
       expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Invalid token provided for storage'),
-        undefined
-      );
+      // The logger is mocked, so check that instead of console.error
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith('Invalid token provided for storage');
     });
 
     it('should reject null tokens', async () => {
@@ -119,10 +120,8 @@ describe('AuthStorageService', () => {
       // Assert
       expect(result).toBe(false);
       expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Invalid token provided for storage'),
-        undefined
-      );
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith('Invalid token provided for storage');
     });
 
     it('should reject tokens with only whitespace', async () => {
@@ -132,10 +131,8 @@ describe('AuthStorageService', () => {
       // Assert
       expect(result).toBe(false);
       expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Invalid token provided for storage'),
-        undefined
-      );
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith('Invalid token provided for storage');
     });
 
     it('should handle keychain storage failure', async () => {

@@ -32,12 +32,14 @@ jest.mock('../../src/utils/logger', () => ({
     error: jest.fn(),
     warn: jest.fn(),
     debug: jest.fn(),
+    log: jest.fn(),
   },
 }));
 
 jest.mock('../../src/utils/security', () => ({
   generateSecureRandom: jest.fn(() => 'mocked-random-salt'),
   hashData: jest.fn(() => 'mocked-hash-checksum'),
+  validateToken: jest.fn(() => ({ isValid: true })),
 }));
 
 // Console mocks for testing

@@ -5,6 +5,7 @@
 
 import * as Keychain from 'react-native-keychain';
 import { errorHandler, ErrorCategory } from '../utils/errorHandler';
+import { validateToken, generateSecureRandom, hashData } from '../utils/security';
 import {
   IAuthStorageService,
   AuthToken,
@@ -24,7 +25,6 @@ interface AuthStorageData extends AuthToken {
     lastLoginAt: string;
   };
 }
-import { generateSecureRandom, hashData } from '../utils/security';
 import { logger } from '../utils/logger';
 
 /**
@@ -66,6 +66,13 @@ class AuthStorageService implements IAuthStorageService {
 
       // Flexible token validation for Readeck API tokens
       const trimmedToken = token.trim();
+      
+      // Validate token using security utility
+      const validation = validateToken(trimmedToken);
+      if (!validation.isValid) {
+        logger.error('Token validation failed', { error: validation.error });
+        return false;
+      }
       
       // Basic validation: must be at least 10 characters
       if (trimmedToken.length < 10) {
@@ -432,6 +439,7 @@ class AuthStorageService implements IAuthStorageService {
       const biometryType = await Keychain.getSupportedBiometryType();
       if (biometryType) {
         this.keychainOptions.touchID = true;
+        (this.keychainOptions as any).biometryType = biometryType;
         logger.info('Biometric authentication enabled', { type: biometryType });
         return true;
       } else {

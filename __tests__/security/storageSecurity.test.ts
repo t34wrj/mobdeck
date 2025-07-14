@@ -17,6 +17,9 @@ jest.mock('react-native-keychain', () => ({
   ACCESSIBLE: {
     WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WHEN_UNLOCKED_THIS_DEVICE_ONLY',
   },
+  ACCESS_CONTROL: {
+    BIOMETRY_CURRENT_SET: 'BIOMETRY_CURRENT_SET',
+  },
   BIOMETRY_TYPE: {
     BIOMETRICS: 'Biometrics',
     TOUCH_ID: 'TouchID',
@@ -73,9 +76,13 @@ describe('Storage Security: AuthStorageService', () => {
     });
 
     it('should store token with security metadata', async () => {
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue(true);
+      (validateToken as jest.Mock).mockReturnValue({ isValid: true });
+      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue({ service: 'mobdeck_auth_tokens', username: 'api_token' });
 
       const result = await authService.storeToken(mockToken);
+      
+      console.log('Test result:', result);
+      console.log('setInternetCredentials called with:', (Keychain.setInternetCredentials as jest.Mock).mock.calls);
 
       expect(result).toBe(true);
       expect(Keychain.setInternetCredentials).toHaveBeenCalledWith(
@@ -89,7 +96,8 @@ describe('Storage Security: AuthStorageService', () => {
     });
 
     it('should generate and store token checksum', async () => {
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue(true);
+      (validateToken as jest.Mock).mockReturnValue({ isValid: true });
+      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue({ service: 'mobdeck_auth_tokens', username: 'api_token' });
 
       await authService.storeToken(mockToken);
 
@@ -114,7 +122,8 @@ describe('Storage Security: AuthStorageService', () => {
     });
 
     it('should extract expiration from JWT', async () => {
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue(true);
+      (validateToken as jest.Mock).mockReturnValue({ isValid: true });
+      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue({ service: 'mobdeck_auth_tokens', username: 'api_token' });
 
       await authService.storeToken(mockToken);
 
