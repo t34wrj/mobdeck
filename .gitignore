@@ -235,9 +235,15 @@ ios/Podfile.lock
 # AI and development assistance (project-specific)
 .claude-temp/
 copilot-cache/
-.github/workflows/
-.github/ISSUE_TEMPLATE/
-.github/PULL_REQUEST_TEMPLATE/
+
+# Note: GitHub Actions workflows should be tracked for CI/CD
+# .github/workflows/ - Keep tracked for automated releases
+# .github/ISSUE_TEMPLATE/ - Keep tracked for issue templates
+# .github/PULL_REQUEST_TEMPLATE/ - Keep tracked for PR templates
+
+# ESLint report files
+eslint-report.txt
+eslint-json.txt
 
 # Mobdeck specific cache and data
 mobdeck-cache/
@@ -248,6 +254,10 @@ CLAUDE.md
 GEMINI.md
 TEST_FRAMEWORK_STATUS.md
 *.ai.md
+
+# Metro bundler logs
+metro.log
+metro-*.log
 
 # Development screenshots and images
 emulatormenu.png
@@ -269,3 +279,48 @@ android/android/
 # Performance reports and temporary test files
 performance-report.txt
 *.skip
+
+# Additional React Native and Android build patterns
+android/app/src/main/res/drawable-*/node_modules_*
+android/app/src/main/res/raw/keep.xml
+android/app/src/main/res/drawable/play_store_512.png
+
+# NDK build artifacts
+android/app/.cxx/
+android/app/src/main/jniLibs/
+android/app/build/intermediates/
+
+# Gradle build cache and temp files
+android/.gradle/
+android/build/
+android/app/build/
+android/gradle/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+
+# Android Studio project files
+android/.idea/
+android/*.iml
+
+# CMake build files
+.cxx/
+.externalNativeBuild/
+
+# Asset bundles (auto-generated)
+android/app/src/main/assets/index.android.bundle
+ios/main.jsbundle
+
+# VSCode React Native extension
+.vscode-react-native/
+
+# iOS build artifacts (when iOS support is added)
+ios/build/
+ios/Pods/
+ios/Podfile.lock
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+
+# Additional Metro bundler patterns
+.metro-cache/
+.metro-health-check*
