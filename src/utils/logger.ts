@@ -357,8 +357,8 @@ class Logger {
 
   private getMemoryUsage(): number {
     try {
-      if (global.performance?.memory) {
-        return global.performance.memory.usedJSHeapSize;
+      if ((global as any)?.performance?.memory) {
+        return (global as any).performance.memory.usedJSHeapSize;
       }
     } catch (error) {
       // Memory API not available

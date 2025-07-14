@@ -1,4 +1,5 @@
 import { logger } from './logger';
+import { KnownError, getErrorMessage, hasErrorCode, hasErrorStatus } from './errorHandler';
 
 export interface RetryOptions {
   maxRetries?: number;
@@ -6,9 +7,9 @@ export interface RetryOptions {
   initialDelay?: number;
   maxDelay?: number;
   backoffMultiplier?: number;
-  retryCondition?: (error: any) => boolean;
-  shouldRetry?: (error: any) => boolean;
-  onRetry?: (error: any, attempt: number, delay?: number) => void;
+  retryCondition?: (error: KnownError) => boolean;
+  shouldRetry?: (error: KnownError) => boolean;
+  onRetry?: (error: KnownError, attempt: number, delay?: number) => void;
   jitter?: boolean;
   getDelay?: (attempt: number) => number;
   signal?: AbortSignal;
@@ -16,17 +17,20 @@ export interface RetryOptions {
 
 export interface RetryContext {
   attempt: number;
-  previousError: any;
+  previousError: KnownError | null;
 }
 
 interface RetryState {
   attempts: number;
-  lastError: any;
+  lastError: KnownError | null;
   nextDelay: number;
 }
 
 export class RetryManager {
-  private static defaultOptions: Required<RetryOptions> = {
+  private static defaultOptions: Required<Omit<RetryOptions, 'getDelay' | 'signal'>> & {
+    getDelay?: (attempt: number) => number;
+    signal?: AbortSignal;
+  } = {
     maxRetries: 3,
     maxAttempts: 3,
     initialDelay: 1000, // 1 second
@@ -34,16 +38,27 @@ export class RetryManager {
     backoffMultiplier: 2,
     retryCondition: (error) => {
       // Retry on network errors and 5xx errors
-      return error.code === 'CONNECTION_ERROR' ||
-             error.code === 'ECONNREFUSED' ||
-             error.code === 'TIMEOUT_ERROR' ||
-             (error.response?.status >= 500 && error.response?.status < 600);
+      if (hasErrorCode(error)) {
+        return error.code === 'CONNECTION_ERROR' ||
+               error.code === 'ECONNREFUSED' ||
+               error.code === 'TIMEOUT_ERROR';
+      }
+      
+      if (hasErrorStatus(error)) {
+        return error.status >= 500 && error.status < 600;
+      }
+      
+      // Check for response.status pattern (axios errors)
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const response = (error as any).response;
+        return response?.status >= 500 && response?.status < 600;
+      }
+      
+      return false;
     },
     shouldRetry: () => true, // Default to retry all errors unless explicitly overridden
     onRetry: () => {},
     jitter: false,
-    getDelay: undefined,
-    signal: undefined,
   };
   
   /**
@@ -84,11 +99,12 @@ export class RetryManager {
         // Check if we should retry
         if (state.attempts > opts.maxRetries || !opts.retryCondition(error)) {
           // Only log as warning if it's not a 404 error (which may be expected)
-          const is404 = error.message?.includes('404') || error.status === 404;
+          const errorMsg = getErrorMessage(error);
+          const is404 = errorMsg.includes('404') || (typeof error === 'object' && error !== null && 'status' in error && error.status === 404);
           if (is404) {
-            logger.debug(`[RetryManager] Resource not found after ${state.attempts} attempts: ${error.message || error}`);
+            logger.debug(`[RetryManager] Resource not found after ${state.attempts} attempts: ${errorMsg}`);
           } else {
-            logger.warn(`[RetryManager] Failed after ${state.attempts} attempts: ${error.message || error}`);
+            logger.warn(`[RetryManager] Failed after ${state.attempts} attempts: ${errorMsg}`);
           }
           throw error;
         }
@@ -102,7 +118,7 @@ export class RetryManager {
           opts.maxDelay
         );
         
-        logger.debug(`[RetryManager] Attempt ${state.attempts} failed, will retry in ${state.nextDelay}ms: ${error.message || error}`);
+        logger.debug(`[RetryManager] Attempt ${state.attempts} failed, will retry in ${state.nextDelay}ms: ${getErrorMessage(error)}`);
       }
     }
     
@@ -137,7 +153,7 @@ export class RetryManager {
   /**
    * Check if an error is retryable based on default conditions
    */
-  static isRetryableError(error: any): boolean {
+  static isRetryableError(error: KnownError): boolean {
     return this.defaultOptions.retryCondition(error);
   }
 
@@ -157,7 +173,7 @@ export class RetryManager {
     }
     
     let attempt = 0;
-    let previousError: any = null;
+    let previousError: KnownError | null = null;
     
     while (attempt < maxAttempts) {
       attempt++;
@@ -200,7 +216,7 @@ export class RetryManager {
         // If this is the last attempt or we shouldn't retry, throw the error
         if (attempt >= maxAttempts || !shouldRetryResult) {
           if (attempt >= maxAttempts) {
-            logger.warn(`[RetryManager] Failed after ${attempt} attempts: ${error.message || error}`);
+            logger.warn(`[RetryManager] Failed after ${attempt} attempts: ${getErrorMessage(error)}`);
           }
           throw error;
         }
@@ -235,7 +251,7 @@ export class RetryManager {
           }
         }
         
-        logger.debug(`[RetryManager] Attempt ${attempt} failed, will retry in ${delay}ms: ${error.message || error}`);
+        logger.debug(`[RetryManager] Attempt ${attempt} failed, will retry in ${delay}ms: ${getErrorMessage(error)}`);
         
         // Set previous error for next attempt
         previousError = error;

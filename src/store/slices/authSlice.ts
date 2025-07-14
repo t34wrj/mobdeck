@@ -72,7 +72,6 @@ export const loginUser = createAsyncThunk<
       context: { 
         actionType: 'login',
         serverUrl: credentials.serverUrl,
-        username: credentials.username,
       },
     });
     

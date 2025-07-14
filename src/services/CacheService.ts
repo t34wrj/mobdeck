@@ -11,7 +11,7 @@
  * - Thread-safe operations
  */
 
-import { Article, Label } from '../types';
+import { Article, DBLabel } from '../types';
 
 interface CacheEntry<T> {
   data: T;
@@ -44,7 +44,7 @@ interface CacheStats {
  * Generic high-performance cache implementation
  * Optimized for sub-millisecond cache hits
  */
-export class Cache<T> {
+class CacheImpl<T> {
   private cache: Map<string, CacheEntry<T>>;
   private accessOrder: Map<string, number>;
   private options: Required<CacheOptions>;
@@ -315,27 +315,27 @@ export class Cache<T> {
  */
 class CacheService {
   private static instance: CacheService;
-  private articleCache: Cache<Article>;
-  private labelCache: Cache<Label>;
-  private genericCache: Cache<any>;
+  private articleCache: CacheImpl<Article>;
+  private labelCache: CacheImpl<DBLabel>;
+  private genericCache: CacheImpl<any>;
 
   private constructor() {
     // Initialize caches with optimized settings
-    this.articleCache = new Cache<Article>({
+    this.articleCache = new CacheImpl<Article>({
       maxSize: 500,
       maxMemory: 20 * 1024 * 1024, // 20MB for articles
       ttl: 10 * 60 * 1000, // 10 minutes
       enableSerialization: false, // Articles are already objects
     });
 
-    this.labelCache = new Cache<Label>({
+    this.labelCache = new CacheImpl<DBLabel>({
       maxSize: 200,
       maxMemory: 5 * 1024 * 1024, // 5MB for labels
       ttl: 30 * 60 * 1000, // 30 minutes
       enableSerialization: false,
     });
 
-    this.genericCache = new Cache<any>({
+    this.genericCache = new CacheImpl<any>({
       maxSize: 1000,
       maxMemory: 10 * 1024 * 1024, // 10MB for generic data
       ttl: 5 * 60 * 1000, // 5 minutes
@@ -368,11 +368,11 @@ class CacheService {
   }
 
   // Label cache operations
-  getLabel(id: string): Label | null {
+  getLabel(id: string): DBLabel | null {
     return this.labelCache.get(id);
   }
 
-  setLabel(id: string, label: Label, ttl?: number): void {
+  setLabel(id: string, label: DBLabel, ttl?: number): void {
     this.labelCache.set(id, label, ttl);
   }
 
@@ -430,7 +430,7 @@ class CacheService {
 export const cacheService = CacheService.getInstance();
 
 // Export Cache class for custom cache instances
-export { Cache };
+export { CacheImpl as Cache };
 
 // Export types
 export type { CacheOptions, CacheStats, CacheEntry };

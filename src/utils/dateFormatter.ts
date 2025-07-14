@@ -44,8 +44,8 @@ export const getDeviceLocale = (): string => {
     }
     
     // Secondary: Use navigator locale as fallback (for web environments and tests)
-    if (typeof navigator !== 'undefined' && navigator.language) {
-      return navigator.language;
+    if (typeof (global as any)?.navigator !== 'undefined' && (global as any).navigator.language) {
+      return (global as any).navigator.language;
     }
     
     // Final fallback: Always return en-US

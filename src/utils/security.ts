@@ -4,7 +4,7 @@
  */
 
 import { Platform } from 'react-native';
-import CryptoJS from 'crypto-js';
+import * as CryptoJS from 'crypto-js';
 
 /**
  * URL validation patterns and security checks
@@ -354,8 +354,8 @@ export const generateSecureRandom = (length: number = 32): string => {
   const randomValues = new Uint8Array(length);
   
   // Use crypto.getRandomValues for secure random generation
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(randomValues);
+  if (typeof (global as any)?.crypto !== 'undefined' && (global as any).crypto.getRandomValues) {
+    (global as any).crypto.getRandomValues(randomValues);
   } else {
     // Fallback for environments without crypto API
     for (let i = 0; i < length; i++) {
@@ -707,7 +707,8 @@ export class RateLimiter {
 
   private cleanup(): void {
     const now = Date.now();
-    for (const [key, attempts] of this.attempts.entries()) {
+    const entries = Array.from(this.attempts.entries());
+    for (const [key, attempts] of entries) {
       const validAttempts = attempts.filter(timestamp => now - timestamp < this.windowMs);
       if (validAttempts.length === 0) {
         this.attempts.delete(key);

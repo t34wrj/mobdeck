@@ -18,10 +18,24 @@ class PerformanceTestHelper {
   private activeTimers: Map<string, number> = new Map();
 
   /**
+   * Get performance timing with fallback to Date.now()
+   */
+  private getPerformanceNow(): number {
+    try {
+      if (typeof (global as any)?.performance?.now === 'function') {
+        return (global as any).performance.now();
+      }
+    } catch (error) {
+      // Performance API not available
+    }
+    return Date.now();
+  }
+
+  /**
    * Start timing an operation
    */
   startOperation(operationName: string): void {
-    const startTime = performance.now();
+    const startTime = this.getPerformanceNow();
     this.activeTimers.set(operationName, startTime);
     logger.info(`Performance test started: ${operationName}`);
   }
@@ -35,7 +49,7 @@ class PerformanceTestHelper {
       throw new Error(`No active timer found for operation: ${operationName}`);
     }
 
-    const duration = performance.now() - startTime;
+    const duration = this.getPerformanceNow() - startTime;
     const memoryUsed = this.getCurrentMemoryUsage();
 
     const metrics: PerformanceMetrics = {
@@ -170,7 +184,7 @@ class PerformanceTestHelper {
   generateReport(): string {
     const report: string[] = ['=== Performance Test Report ===\n'];
 
-    const operationNames = [...new Set(this.metrics.map(m => m.operationName))];
+    const operationNames = Array.from(new Set(this.metrics.map(m => m.operationName)));
 
     operationNames.forEach(operationName => {
       const avgMetrics = this.getAverageMetrics(operationName);
@@ -207,8 +221,12 @@ class PerformanceTestHelper {
    * Get current memory usage if available
    */
   private getCurrentMemoryUsage(): number | undefined {
-    if (global.performance && 'memory' in global.performance) {
-      return (global.performance as any).memory.usedJSHeapSize;
+    try {
+      if ((global as any)?.performance && 'memory' in (global as any).performance) {
+        return (global as any).performance.memory.usedJSHeapSize;
+      }
+    } catch (error) {
+      // Memory API not available
     }
     return undefined;
   }

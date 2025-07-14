@@ -46,6 +46,62 @@ export interface ErrorContext {
   apiEndpoint?: string;
   networkState?: string;
   deviceInfo?: Record<string, any>;
+  isFatal?: boolean;
+}
+
+/**
+ * Common error types that we handle
+ */
+export type KnownError = 
+  | Error 
+  | { code: string; message?: string; status?: number; response?: { status: number } }
+  | { message: string; status?: number }
+  | { status: number; message?: string }
+  | string
+  | unknown;
+
+/**
+ * Type guard to check if error is an Error instance
+ */
+export function isError(error: unknown): error is Error {
+  return error instanceof Error;
+}
+
+/**
+ * Type guard to check if error has a code property
+ */
+export function hasErrorCode(error: unknown): error is { code: string } {
+  return typeof error === 'object' && error !== null && 'code' in error;
+}
+
+/**
+ * Type guard to check if error has a status property
+ */
+export function hasErrorStatus(error: unknown): error is { status: number } {
+  return typeof error === 'object' && error !== null && 'status' in error;
+}
+
+/**
+ * Type guard to check if error has a message property
+ */
+export function hasErrorMessage(error: unknown): error is { message: string } {
+  return typeof error === 'object' && error !== null && 'message' in error;
+}
+
+/**
+ * Extract error message from any error type safely
+ */
+export function getErrorMessage(error: unknown): string {
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (isError(error)) {
+    return error.message;
+  }
+  if (hasErrorMessage(error)) {
+    return error.message;
+  }
+  return 'Unknown error occurred';
 }
 
 export interface ErrorReport {
@@ -87,7 +143,7 @@ class ErrorHandler {
         originalConsoleError.apply(console, args);
       };
 
-      global.ErrorUtils?.setGlobalHandler?.((error: Error, isFatal: boolean) => {
+      (global as any).ErrorUtils?.setGlobalHandler?.((error: Error, isFatal: boolean) => {
         this.handleError(error, {
           category: ErrorCategory.RUNTIME,
           severity: isFatal ? ErrorSeverity.CRITICAL : ErrorSeverity.HIGH,
@@ -107,7 +163,7 @@ class ErrorHandler {
   }
 
   public handleError(
-    error: Error | string | any,
+    error: KnownError,
     options: Partial<AppError> = {}
   ): AppError {
     const appError = this.createAppError(error, options);
@@ -122,7 +178,7 @@ class ErrorHandler {
   }
 
   private createAppError(
-    error: Error | string | any,
+    error: KnownError,
     options: Partial<AppError>
   ): AppError {
     const id = `error_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -131,13 +187,13 @@ class ErrorHandler {
     let message: string;
     let stack: string | undefined;
     
-    if (error instanceof Error) {
+    if (isError(error)) {
       message = error.message;
       stack = error.stack;
     } else if (typeof error === 'string') {
       message = error;
     } else {
-      message = 'Unknown error occurred';
+      message = getErrorMessage(error);
     }
 
     const category = options.category || this.categorizeError(error);
@@ -163,52 +219,50 @@ class ErrorHandler {
     };
   }
 
-  private categorizeError(error: any): ErrorCategory {
-    if (error?.code === 'NETWORK_ERROR' || error?.message?.includes('network')) {
+  private categorizeError(error: KnownError): ErrorCategory {
+    if (hasErrorCode(error) && (error.code === 'NETWORK_ERROR' || error.code === 'AUTH_ERROR' || error.code === 'NOT_FOUND')) {
+      if (error.code === 'NETWORK_ERROR') return ErrorCategory.NETWORK;
+      if (error.code === 'AUTH_ERROR') return ErrorCategory.AUTHENTICATION;
+      if (error.code === 'NOT_FOUND') return ErrorCategory.VALIDATION;
+    }
+    
+    if (hasErrorStatus(error)) {
+      if (error.status === 401) return ErrorCategory.AUTHENTICATION;
+      if (error.status === 404) return ErrorCategory.VALIDATION;
+      if (error.status >= 400 && error.status < 500) return ErrorCategory.VALIDATION;
+    }
+    
+    const message = getErrorMessage(error);
+    if (message.includes('network')) {
       return ErrorCategory.NETWORK;
     }
     
-    if (error?.status === 401 || error?.code === 'AUTH_ERROR') {
-      return ErrorCategory.AUTHENTICATION;
-    }
-    
-    if (error?.status === 404 || error?.code === 'NOT_FOUND') {
-      return ErrorCategory.VALIDATION;
-    }
-    
-    if (error?.status >= 400 && error?.status < 500) {
-      return ErrorCategory.VALIDATION;
-    }
-    
-    if (error?.message?.includes('storage') || error?.message?.includes('database')) {
+    if (message.includes('storage') || message.includes('database')) {
       return ErrorCategory.STORAGE;
     }
     
-    if (error?.message?.includes('sync')) {
+    if (message.includes('sync')) {
       return ErrorCategory.SYNC;
     }
     
-    if (error?.context?.actionType?.includes('sync')) {
-      return ErrorCategory.SYNC_OPERATION;
-    }
-    
-    if (error instanceof Error) {
+    if (isError(error)) {
       return ErrorCategory.RUNTIME;
     }
     
     return ErrorCategory.UNKNOWN;
   }
 
-  private determineSeverity(category: ErrorCategory, error: any): ErrorSeverity {
+  private determineSeverity(category: ErrorCategory, error: KnownError): ErrorSeverity {
     if (category === ErrorCategory.AUTHENTICATION) {
       return ErrorSeverity.HIGH;
     }
     
-    if (category === ErrorCategory.STORAGE && error?.message?.includes('critical')) {
+    const message = getErrorMessage(error);
+    if (category === ErrorCategory.STORAGE && message.includes('critical')) {
       return ErrorSeverity.CRITICAL;
     }
     
-    if (category === ErrorCategory.NETWORK && error?.status >= 500) {
+    if (category === ErrorCategory.NETWORK && hasErrorStatus(error) && error.status >= 500) {
       return ErrorSeverity.MEDIUM;
     }
     
@@ -219,10 +273,16 @@ class ErrorHandler {
     return ErrorSeverity.MEDIUM;
   }
 
-  private generateErrorCode(category: ErrorCategory, error: any): string {
+  private generateErrorCode(category: ErrorCategory, error: KnownError): string {
     const categoryPrefix = category.substr(0, 3).toUpperCase();
     const timestamp = Date.now().toString().substr(-6);
-    const errorType = error?.name || error?.code || 'UNKNOWN';
+    
+    let errorType = 'UNKNOWN';
+    if (isError(error)) {
+      errorType = error.name;
+    } else if (hasErrorCode(error)) {
+      errorType = error.code;
+    }
     
     return `${categoryPrefix}_${errorType}_${timestamp}`;
   }
@@ -242,7 +302,7 @@ class ErrorHandler {
     return messages[category];
   }
 
-  private isRetryable(category: ErrorCategory, error: any): boolean {
+  private isRetryable(category: ErrorCategory, error: KnownError): boolean {
     const retryableCategories = [
       ErrorCategory.NETWORK,
       ErrorCategory.SYNC,
@@ -253,11 +313,11 @@ class ErrorHandler {
       return true;
     }
     
-    if (error?.status >= 500 && error?.status < 600) {
+    if (hasErrorStatus(error) && error.status >= 500 && error.status < 600) {
       return true;
     }
     
-    if (error?.code === 'TIMEOUT_ERROR') {
+    if (hasErrorCode(error) && error.code === 'TIMEOUT_ERROR') {
       return true;
     }
     
@@ -503,7 +563,7 @@ class ErrorHandler {
   }
 
   public getNetworkErrorHandler() {
-    return (error: any) => {
+    return (error: KnownError) => {
       return this.handleError(error, {
         category: ErrorCategory.NETWORK,
         context: { actionType: 'network_request' },
@@ -512,7 +572,7 @@ class ErrorHandler {
   }
 
   public getStorageErrorHandler() {
-    return (error: any) => {
+    return (error: KnownError) => {
       return this.handleError(error, {
         category: ErrorCategory.STORAGE,
         context: { actionType: 'storage_operation' },
@@ -521,7 +581,7 @@ class ErrorHandler {
   }
 
   public getSyncErrorHandler() {
-    return (error: any) => {
+    return (error: KnownError) => {
       return this.handleError(error, {
         category: ErrorCategory.SYNC,
         context: { actionType: 'sync_operation' },

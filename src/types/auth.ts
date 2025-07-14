@@ -49,6 +49,8 @@ export interface KeychainOptions {
   showModal?: boolean;
   kSecAccessControl?: string;
   authenticatePrompt?: string;
+  accessControl?: string;
+  accessible?: string;
 }
 
 // Token validation result

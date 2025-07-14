@@ -46,12 +46,9 @@ class AuthStorageService implements IAuthStorageService {
 
   private readonly keychainOptions: KeychainOptions = {
     service: this.SERVICE_NAME,
-    accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
     touchID: false, // Will be configurable later
     showModal: false,
     authenticatePrompt: 'Authenticate to access your Readeck account',
-    biometryType: Keychain.BIOMETRY_TYPE.BIOMETRICS,
-    authenticationPrompt: 'Biometric authentication required',
   };
 
   /**
@@ -102,7 +99,11 @@ class AuthStorageService implements IAuthStorageService {
         this.SERVICE_NAME,
         this.USERNAME_KEY,
         JSON.stringify(tokenData),
-        this.keychainOptions
+        {
+          ...this.keychainOptions,
+          accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_CURRENT_SET,
+          accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+        }
       );
 
       if (result) {
@@ -204,15 +205,12 @@ class AuthStorageService implements IAuthStorageService {
     try {
       const result = await Keychain.resetInternetCredentials(this.SERVICE_NAME);
 
-      if (result) {
-        logger.info('Token deleted successfully');
-        // Clear rotation check
-        this.lastRotationCheck = null;
-        return true;
-      } else {
-        logger.warn('Token deletion completed (may not have existed)');
-        return true; // Consider success if no token to delete
-      }
+      // resetInternetCredentials returns boolean or void
+      // Both void and true are considered success
+      logger.info('Token deleted successfully');
+      // Clear rotation check
+      this.lastRotationCheck = null;
+      return true;
     } catch (error) {
       const storageError = this.handleStorageError(
         error,
@@ -308,7 +306,6 @@ class AuthStorageService implements IAuthStorageService {
       category: ErrorCategory.STORAGE,
       context: { 
         actionType: 'auth_storage_operation',
-        storageErrorCode: defaultCode,
       },
     });
 
@@ -435,7 +432,6 @@ class AuthStorageService implements IAuthStorageService {
       const biometryType = await Keychain.getSupportedBiometryType();
       if (biometryType) {
         this.keychainOptions.touchID = true;
-        this.keychainOptions.biometryType = biometryType;
         logger.info('Biometric authentication enabled', { type: biometryType });
         return true;
       } else {

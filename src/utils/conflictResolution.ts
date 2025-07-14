@@ -397,7 +397,7 @@ function performThreeWayMerge(
       new Date(localArticle.updatedAt).getTime(),
       new Date(remoteArticle.updatedAt).getTime()
     )
-  );
+  ).toISOString();
   merged.syncedAt = new Date().toISOString();
   merged.isModified = false;
 
@@ -428,11 +428,11 @@ export function validateResolution(
   }
 
   // Ensure timestamps are reasonable
-  if (resolvedArticle.createdAt > new Date()) {
+  if (new Date(resolvedArticle.createdAt) > new Date()) {
     errors.push('Resolved article creation date cannot be in the future');
   }
 
-  if (resolvedArticle.updatedAt > new Date()) {
+  if (new Date(resolvedArticle.updatedAt) > new Date()) {
     errors.push('Resolved article update date cannot be in the future');
   }
 
