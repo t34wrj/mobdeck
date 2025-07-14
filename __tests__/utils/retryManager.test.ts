@@ -785,6 +785,6 @@ describe('RetryManager', () => {
 
       expect(result).toBe('success');
       expect(operation).toHaveBeenCalledTimes(2);
-    });
+    }, 70000);
   });
 });

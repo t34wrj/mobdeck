@@ -118,22 +118,6 @@ jest.mock('react-native-sqlite-storage', () => ({
   DEBUG: jest.fn(),
 }));
 
-// Mock React Native RNFS
-jest.mock('react-native-fs', () => ({
-  DocumentDirectoryPath: '/mock/documents',
-  CachesDirectoryPath: '/mock/caches',
-  writeFile: jest.fn(() => Promise.resolve()),
-  readFile: jest.fn(() => Promise.resolve('')),
-  exists: jest.fn(() => Promise.resolve(true)),
-  unlink: jest.fn(() => Promise.resolve()),
-  mkdir: jest.fn(() => Promise.resolve()),
-  readDir: jest.fn(() => Promise.resolve([])),
-}));
-
-// Mock React Native Share
-jest.mock('react-native-share', () => ({
-  open: jest.fn(() => Promise.resolve()),
-}));
 
 // Mock Background Actions
 jest.mock('react-native-background-actions', () => ({

@@ -1,6 +1,8 @@
 import React from 'react';
-import { TextInput, View, StyleSheet, Button } from 'react-native';
+import { TextInput, View, StyleSheet } from 'react-native';
 import { theme } from './ui/theme';
+import { Button } from './ui/Button';
+import { Text } from './ui/Text';
 
 interface SearchBarProps {
   searchQuery: string;
@@ -18,11 +20,23 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <TextInput
         style={styles.input}
         placeholder='Search articles...'
+        placeholderTextColor={theme.colors.neutral[500]}
         value={searchQuery}
         onChangeText={onSearchChange}
         onSubmitEditing={onSearchSubmit}
+        accessibilityLabel='Search articles input'
+        accessibilityHint='Enter keywords to search your articles'
+        accessibilityRole='search'
       />
-      <Button title='Search' onPress={onSearchSubmit} />
+      <Button 
+        variant='primary' 
+        size='sm' 
+        onPress={onSearchSubmit}
+        accessibilityLabel='Search button'
+        accessibilityHint='Tap to search for articles'
+      >
+        <Text>Search</Text>
+      </Button>
     </View>
   );
 };
@@ -45,6 +59,8 @@ const styles = StyleSheet.create({
     marginRight: theme.spacing[2],
     backgroundColor: theme.colors.neutral[50],
     color: theme.colors.neutral[800],
+    minHeight: theme.accessibility.minTouchTarget.height,
+    fontSize: theme.typography.fontSize.base,
   },
 });
 

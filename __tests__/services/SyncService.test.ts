@@ -665,4 +665,279 @@ describe('SyncService', () => {
       expect(duration).toBeLessThan(10000); // Should complete within 10 seconds
     });
   });
+
+  describe('Advanced Sync Scenarios', () => {
+    it('should handle network disconnect during sync', async () => {
+      // Start with connected
+      (connectivityManager.getStatus as jest.Mock).mockReturnValue({
+        isConnected: true,
+        networkType: NetworkType.WIFI,
+      });
+      
+      // Disconnect during sync
+      let callCount = 0;
+      (articlesApiService.getArticles as jest.Mock).mockImplementation(() => {
+        callCount++;
+        if (callCount > 1) {
+          (connectivityManager.getStatus as jest.Mock).mockReturnValue({
+            isConnected: false,
+            networkType: NetworkType.NONE,
+          });
+          throw new Error('Network disconnected');
+        }
+        return Promise.resolve({
+          articles: [testArticle],
+          total: 1,
+          page: 1,
+          limit: 50,
+        });
+      });
+      
+      const result = await syncService.startFullSync();
+      
+      expect(result.errorCount).toBeGreaterThan(0);
+      expect(result.errors.some(e => e.error.includes('Network'))).toBe(true);
+    });
+
+    it('should handle partial sync failure', async () => {
+      // Mock multiple articles with some failing
+      const articles = [
+        { ...testArticle, id: 'success-1' },
+        { ...testArticle, id: 'fail-1' },
+        { ...testArticle, id: 'success-2' },
+      ];
+      
+      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+        articles,
+        total: 3,
+        page: 1,
+        limit: 50,
+      });
+      
+      (mockDatabaseService.createArticle as jest.Mock)
+        .mockResolvedValueOnce({ success: true, data: 'success-1' })
+        .mockResolvedValueOnce({ success: false, error: 'Database error' })
+        .mockResolvedValueOnce({ success: true, data: 'success-2' });
+      
+      const result = await syncService.startFullSync();
+      
+      expect(result.syncedCount).toBe(2);
+      expect(result.errorCount).toBe(1);
+    });
+    
+    it('should handle concurrent modifications', async () => {
+      // Mock article being modified during sync
+      const article = { ...testArticle, isModified: true };
+      
+      (mockDatabaseService.getArticles as jest.Mock)
+        .mockResolvedValueOnce({
+          success: true,
+          data: { 
+            items: [{ ...article, is_modified: 1 }],
+            totalCount: 1,
+            hasMore: false,
+          },
+        })
+        .mockResolvedValueOnce({
+          success: true,
+          data: { 
+            items: [
+              {
+                ...article,
+                title: 'Modified during sync',
+                is_modified: 1,
+              }
+            ],
+            totalCount: 1,
+            hasMore: false,
+          },
+        });
+      
+      const result = await syncService.startFullSync();
+      
+      expect(result.conflictCount).toBeGreaterThanOrEqual(0);
+    });
+    
+    it('should respect batch size configuration', async () => {
+      // Mock many articles
+      const manyArticles = Array(25).fill(null).map((_, i) => ({
+        ...testArticle,
+        id: `article-${i}`,
+      }));
+      
+      // Update config with small batch size
+      syncService.updateConfig({ batchSize: 10 });
+      
+      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+        articles: manyArticles,
+        total: 25,
+        page: 1,
+        limit: 50,
+      });
+      
+      (mockDatabaseService.createArticle as jest.Mock).mockResolvedValue({
+        success: true,
+        data: 'test-id',
+      });
+      
+      const result = await syncService.startFullSync();
+      
+      expect(result.success).toBe(true);
+      // Verify batching occurred (this would need internal tracking)
+    });
+  });
+
+  describe('Sync Queue Management', () => {
+    it('should handle sync abort properly', async () => {
+      // Mock slow operation
+      (articlesApiService.getArticles as jest.Mock).mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({
+          articles: [testArticle],
+          total: 1,
+          page: 1,
+          limit: 50,
+        }), 2000))
+      );
+      
+      // Start sync and abort
+      const syncPromise = syncService.startFullSync();
+      setTimeout(() => syncService.stopSync(), 50);
+      
+      const result = await syncPromise;
+      
+      expect(result.success).toBe(false);
+      expect(result.errors.some(e => e.error.toLowerCase().includes('abort') || e.error.toLowerCase().includes('cancel'))).toBe(true);
+    });
+  });
+
+  describe('Full Text Sync', () => {
+    it('should fetch full article content when enabled', async () => {
+      // Enable full text sync
+      syncService.updateConfig({ fullTextSync: true });
+      
+      const articleWithoutContent = {
+        ...testArticle,
+        content: '', // Empty content
+      };
+      
+      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+        articles: [articleWithoutContent],
+        total: 1,
+        page: 1,
+        limit: 50,
+      });
+      
+      (readeckApiService.getArticle as jest.Mock).mockResolvedValue({
+        success: true,
+        data: {
+          ...articleWithoutContent,
+          content: 'Full article content here',
+        },
+      });
+      
+      const result = await syncService.startFullSync();
+      
+      expect(readeckApiService.getArticle).toHaveBeenCalledWith(articleWithoutContent.id);
+      expect(mockDatabaseService.createArticle).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: 'Full article content here',
+        })
+      );
+    });
+    
+    it('should skip full content fetch when disabled', async () => {
+      // Disable full text sync
+      syncService.updateConfig({ fullTextSync: false });
+      
+      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+        articles: [testArticle],
+        total: 1,
+        page: 1,
+        limit: 50,
+      });
+      
+      await syncService.startFullSync();
+      
+      expect(readeckApiService.getArticle).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Retry Logic', () => {
+    it('should retry failed operations', async () => {
+      const article = { ...testArticle, isModified: true };
+      
+      (mockDatabaseService.getArticles as jest.Mock).mockResolvedValue({
+        success: true,
+        data: { 
+          items: [{ ...article, is_modified: 1 }],
+          totalCount: 1,
+          hasMore: false,
+        },
+      });
+      
+      // Fail first, succeed on retry
+      (articlesApiService.updateArticle as jest.Mock)
+        .mockRejectedValueOnce(new Error('Temporary network error'))
+        .mockResolvedValueOnce(article);
+      
+      const result = await syncService.startFullSync();
+      
+      expect(articlesApiService.updateArticle).toHaveBeenCalledTimes(2);
+      expect(result.syncedCount).toBe(1);
+    });
+    
+    it('should identify retryable errors correctly', () => {
+      // Network errors should be retryable
+      expect(syncService.isRetryableError(new Error('Network request failed'))).toBe(true);
+      expect(syncService.isRetryableError(new Error('ETIMEDOUT'))).toBe(true);
+      expect(syncService.isRetryableError(new Error('ECONNRESET'))).toBe(true);
+      
+      // Auth errors should not be retryable
+      expect(syncService.isRetryableError(new Error('401 Unauthorized'))).toBe(false);
+      expect(syncService.isRetryableError(new Error('403 Forbidden'))).toBe(false);
+    });
+  });
+
+  describe('Database Initialization', () => {
+    it('should ensure database is initialized before sync', async () => {
+      mockDatabaseService.isConnected.mockReturnValue(false);
+      mockDatabaseService.init.mockResolvedValue({ success: true });
+      
+      await syncService.startFullSync();
+      
+      expect(mockDatabaseService.init).toHaveBeenCalled();
+    });
+    
+    it('should handle database initialization failure', async () => {
+      mockDatabaseService.isConnected.mockReturnValue(false);
+      mockDatabaseService.init.mockResolvedValue({ success: false, error: 'Init failed' });
+      
+      const result = await syncService.startFullSync();
+      
+      expect(result.success).toBe(false);
+      expect(result.errors[0].error).toContain('Database initialization failed');
+    });
+  });
+
+  describe('Memory Management', () => {
+    it('should handle memory pressure during large syncs', async () => {
+      // Mock memory pressure
+      const originalMemoryUsage = process.memoryUsage;
+      process.memoryUsage = jest.fn().mockReturnValue({
+        heapUsed: 1024 * 1024 * 1024, // 1GB
+        heapTotal: 1024 * 1024 * 1024 * 1.5,
+        external: 0,
+        arrayBuffers: 0,
+        rss: 1024 * 1024 * 1024 * 2,
+      });
+      
+      const result = await syncService.startFullSync();
+      
+      // Should still complete but may have reduced batch size
+      expect(result).toBeDefined();
+      
+      // Restore
+      process.memoryUsage = originalMemoryUsage;
+    });
+  });
 });

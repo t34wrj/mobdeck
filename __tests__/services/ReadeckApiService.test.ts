@@ -426,4 +426,269 @@ describe('ReadeckApiService Core Functionality', () => {
       expect(result.status).toBe(201);
     });
   });
+
+  describe('Authentication Edge Cases', () => {
+    it('should handle missing authentication headers', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockRejectedValue({
+        response: {
+          status: 401,
+          data: { error: 'Authorization header missing' },
+        },
+      });
+
+      await expect(service.validateToken()).rejects.toThrow();
+    });
+
+    it('should handle expired tokens', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockRejectedValue({
+        response: {
+          status: 401,
+          data: { error: 'Token expired' },
+        },
+      });
+
+      await expect(service.getArticles()).rejects.toThrow();
+    });
+  });
+
+  describe('Error Handling Edge Cases', () => {
+    it('should handle network timeout', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockRejectedValue({
+        code: 'ECONNABORTED',
+        message: 'timeout of 30000ms exceeded',
+      });
+
+      await expect(service.getArticles()).rejects.toThrow();
+    });
+
+    it('should handle DNS resolution errors', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockRejectedValue({
+        code: 'ENOTFOUND',
+        message: 'getaddrinfo ENOTFOUND example.com',
+      });
+
+      await expect(service.getArticles()).rejects.toThrow();
+    });
+
+    it('should handle connection refused', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockRejectedValue({
+        code: 'ECONNREFUSED',
+        message: 'connect ECONNREFUSED 127.0.0.1:8000',
+      });
+
+      await expect(service.getArticles()).rejects.toThrow();
+    });
+
+    it('should handle SSL certificate errors', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockRejectedValue({
+        code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
+        message: 'unable to verify the first certificate',
+      });
+
+      await expect(service.getArticles()).rejects.toThrow();
+    });
+  });
+
+  describe('Rate Limiting', () => {
+    it('should handle rate limit with retry-after header', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockRejectedValue({
+        response: {
+          status: 429,
+          headers: { 'retry-after': '60' },
+          data: { error: 'Too many requests' },
+        },
+      });
+
+      await expect(service.getArticles()).rejects.toThrow();
+    });
+
+    it('should handle rate limit without retry-after header', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockRejectedValue({
+        response: {
+          status: 429,
+          data: { error: 'Rate limit exceeded' },
+        },
+      });
+
+      await expect(service.getArticles()).rejects.toThrow();
+    });
+  });
+
+  describe('Request/Response Processing', () => {
+    it('should handle large request payloads', async () => {
+      const largeContent = 'A'.repeat(1024 * 1024); // 1MB content
+      const mockClient = (service as any).client;
+      mockClient.request.mockResolvedValue({
+        data: { id: 'large-article', content: largeContent },
+        status: 201,
+      });
+
+      const result = await service.createArticle({
+        url: 'https://example.com',
+        title: 'Large Article',
+        content: largeContent,
+      });
+
+      expect(result.data.content).toHaveLength(1024 * 1024);
+    });
+
+    it('should handle empty response bodies', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockResolvedValue({
+        data: '',
+        status: 204,
+      });
+
+      const result = await service.getArticles();
+      expect(result.data).toBe('');
+      expect(result.status).toBe(204);
+    });
+
+    it('should handle non-JSON response types', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockResolvedValue({
+        data: '<html><body>Error</body></html>',
+        status: 500,
+        headers: { 'content-type': 'text/html' },
+      });
+
+      const result = await service.getArticles();
+      expect(result.data).toBe('<html><body>Error</body></html>');
+    });
+  });
+
+  describe('Concurrent Request Handling', () => {
+    it('should handle multiple simultaneous requests', async () => {
+      const mockClient = (service as any).client;
+      let callCount = 0;
+      mockClient.request.mockImplementation(() => {
+        callCount++;
+        return Promise.resolve({
+          data: { id: `response-${callCount}` },
+          status: 200,
+        });
+      });
+
+      const promises = Array(10).fill(null).map(() => service.getArticles());
+      const results = await Promise.all(promises);
+
+      expect(results).toHaveLength(10);
+      expect(mockClient.request).toHaveBeenCalledTimes(10);
+      results.forEach((result, index) => {
+        expect(result.data.id).toBe(`response-${index + 1}`);
+      });
+    });
+
+    it('should handle request cancellation', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockRejectedValue({
+        name: 'CanceledError',
+        message: 'Request canceled',
+      });
+
+      await expect(service.getArticles()).rejects.toThrow();
+    });
+  });
+
+  describe('Configuration Edge Cases', () => {
+    it('should handle configuration updates during requests', () => {
+      const newConfig = {
+        timeout: 45000,
+        baseUrl: 'https://api.example.com',
+      };
+
+      service.updateConfig(newConfig);
+      const config = service.getConfig();
+
+      expect(config.timeout).toBe(45000);
+      expect(config.baseUrl).toBe('https://api.example.com');
+    });
+
+    it('should validate configuration parameters', () => {
+      // Test that invalid configurations are handled appropriately
+      const invalidConfigs = [
+        { timeout: -1000 },
+        { retryAttempts: -1 },
+        { retryDelay: -500 },
+      ];
+
+      invalidConfigs.forEach(config => {
+        expect(() => service.updateConfig(config)).not.toThrow();
+      });
+    });
+  });
+
+  describe('Memory and Performance', () => {
+    it('should handle streaming large responses', async () => {
+      const mockClient = (service as any).client;
+      const largeResponse = {
+        articles: Array(1000).fill(null).map((_, i) => ({
+          id: `article-${i}`,
+          title: `Article ${i}`,
+          content: 'X'.repeat(1000),
+        })),
+      };
+
+      mockClient.request.mockResolvedValue({
+        data: largeResponse,
+        status: 200,
+      });
+
+      const result = await service.getArticles();
+      expect(result.data.articles).toHaveLength(1000);
+    });
+
+    it('should handle rapid sequential requests', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockResolvedValue({
+        data: { success: true },
+        status: 200,
+      });
+
+      const startTime = Date.now();
+      
+      for (let i = 0; i < 100; i++) {
+        await service.getArticles();
+      }
+      
+      const endTime = Date.now();
+      expect(endTime - startTime).toBeLessThan(5000); // Should complete within 5 seconds
+    });
+  });
+
+  describe('Security Edge Cases', () => {
+    it('should handle malformed authentication responses', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockResolvedValue({
+        data: { malformed: 'response' },
+        status: 200,
+      });
+
+      const result = await service.login({
+        username: 'test',
+        password: 'test',
+      });
+
+      expect(result.data.malformed).toBe('response');
+    });
+
+    it('should handle unexpected response formats', async () => {
+      const mockClient = (service as any).client;
+      mockClient.request.mockResolvedValue({
+        data: [1, 2, 3], // Array instead of object
+        status: 200,
+      });
+
+      const result = await service.getArticles();
+      expect(Array.isArray(result.data)).toBe(true);
+    });
+  });
 });

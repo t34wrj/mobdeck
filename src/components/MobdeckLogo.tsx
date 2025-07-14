@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, Image } from 'react-native';
+import { theme } from './ui/theme';
 
 interface MobdeckLogoProps {
   size?: number;
@@ -8,7 +9,7 @@ interface MobdeckLogoProps {
 
 const MobdeckLogo: React.FC<MobdeckLogoProps> = ({ 
   size = 24, 
-  color: _color = '#f9bd4d' // This prop is now unused but kept for compatibility
+  color: _color = theme.colors.secondary[500] // Use theme color instead of hardcoded value
 }) => {
   return (
     <View style={[styles.container, { width: size, height: size }]}>

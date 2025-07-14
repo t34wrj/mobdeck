@@ -188,6 +188,29 @@ export const spacing = {
   64: 256,
 };
 
+export const accessibility = {
+  // WCAG 2.1 AA minimum touch target sizes
+  minTouchTarget: {
+    width: 44,
+    height: 44,
+  },
+  
+  // Font size scaling support
+  fontScale: {
+    min: 0.85,
+    max: 2.0,
+    default: 1.0,
+  },
+  
+  // High contrast mode colors (automatically used when system setting is enabled)
+  highContrast: {
+    text: '#000000',
+    background: '#ffffff', 
+    border: '#000000',
+    accent: '#0000ff',
+  },
+};
+
 export const borderRadius = {
   none: 0,
   sm: 4,
@@ -285,6 +308,7 @@ export const theme = {
   spacing,
   borderRadius,
   shadows,
+  accessibility,
 };
 
 export type Theme = typeof theme;

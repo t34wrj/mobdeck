@@ -579,4 +579,225 @@ describe('AuthStorageService', () => {
       expect(new Date(storedData.expiresAt).getTime()).toBeGreaterThan(Date.now());
     });
   });
+
+  describe('Enhanced Features', () => {
+    describe('storeToken with user data', () => {
+      it('should store token with user information', async () => {
+        // Arrange
+        const user = {
+          id: 'user-123',
+          username: 'testuser',
+          email: 'test@example.com',
+          serverUrl: 'https://readeck.example.com',
+          lastLoginAt: new Date().toISOString(),
+          tokenExpiresAt: new Date(Date.now() + 86400000).toISOString(),
+        };
+        mockKeychainModule.setInternetCredentials.mockResolvedValueOnce(true);
+        
+        // Act
+        const result = await authStorageService.storeToken(validToken, user);
+        
+        // Assert
+        expect(result).toBe(true);
+        const storedData = JSON.parse(
+          (mockKeychainModule.setInternetCredentials as jest.Mock).mock.calls[0][2]
+        );
+        expect(storedData.user).toEqual({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          lastLoginAt: user.lastLoginAt,
+        });
+        expect(storedData.serverUrl).toBe(user.serverUrl);
+      });
+
+      it('should reject tokens that are too short', async () => {
+        // Act
+        const result = await authStorageService.storeToken('short');
+        
+        // Assert
+        expect(result).toBe(false);
+        expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith(
+          expect.stringContaining('[ERROR] Token too short for storage'),
+          undefined
+        );
+      });
+
+      it('should reject tokens that are too long', async () => {
+        // Arrange
+        const longToken = 'a'.repeat(4097);
+        
+        // Act
+        const result = await authStorageService.storeToken(longToken);
+        
+        // Assert
+        expect(result).toBe(false);
+        expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
+        expect(console.error).toHaveBeenCalledWith(
+          expect.stringContaining('[ERROR] Token too long for storage'),
+          undefined
+        );
+      });
+    });
+
+    describe('retrieveAuthData', () => {
+      it('should retrieve complete auth data with user info', async () => {
+        // Arrange
+        const authDataWithUser = {
+          ...validTokenData,
+          user: {
+            id: 'user-123',
+            username: 'testuser',
+            email: 'test@example.com',
+            lastLoginAt: new Date().toISOString(),
+          },
+        };
+        mockKeychainModule.getInternetCredentials.mockResolvedValueOnce({
+          username: 'api_token',
+          password: JSON.stringify(authDataWithUser),
+          server: 'mobdeck_auth_tokens',
+        });
+        
+        // Act
+        const result = await authStorageService.retrieveAuthData();
+        
+        // Assert
+        expect(result).toEqual(authDataWithUser);
+      });
+
+      it('should handle missing version in legacy tokens', async () => {
+        // Arrange
+        const legacyTokenData = {
+          token: validToken,
+          expiresAt: validTokenData.expiresAt,
+          issuedAt: validTokenData.issuedAt,
+          serverUrl: validTokenData.serverUrl,
+          // No version field
+        };
+        mockKeychainModule.getInternetCredentials.mockResolvedValueOnce({
+          username: 'api_token',
+          password: JSON.stringify(legacyTokenData),
+          server: 'mobdeck_auth_tokens',
+        });
+        
+        // Act
+        const result = await authStorageService.retrieveAuthData();
+        
+        // Assert
+        expect(result).toEqual(legacyTokenData);
+      });
+
+      it('should handle tokens with checksum', async () => {
+        // Arrange
+        const tokenWithChecksum = {
+          ...validTokenData,
+          version: '1.0',
+          checksum: 'mock-checksum',
+        };
+        mockKeychainModule.getInternetCredentials.mockResolvedValueOnce({
+          username: 'api_token',
+          password: JSON.stringify(tokenWithChecksum),
+          server: 'mobdeck_auth_tokens',
+        });
+        
+        // Act
+        const result = await authStorageService.retrieveAuthData();
+        
+        // Assert
+        expect(result).toEqual(tokenWithChecksum);
+      });
+    });
+
+    describe('enableBiometricAuth', () => {
+      it('should enable biometric authentication when available', async () => {
+        // Arrange
+        mockKeychainModule.getSupportedBiometryType = jest.fn().mockResolvedValueOnce(
+          'FaceID'
+        );
+        
+        // Act
+        const result = await authStorageService.enableBiometricAuth();
+        
+        // Assert
+        expect(result).toBe(true);
+        expect(mockKeychainModule.getSupportedBiometryType).toHaveBeenCalled();
+      });
+
+      it('should return false when biometric not available', async () => {
+        // Arrange
+        mockKeychainModule.getSupportedBiometryType = jest.fn().mockResolvedValueOnce(null);
+        
+        // Act
+        const result = await authStorageService.enableBiometricAuth();
+        
+        // Assert
+        expect(result).toBe(false);
+        expect(console.warn).toHaveBeenCalledWith(
+          expect.stringContaining('[WARN] Biometric authentication not available on this device'),
+          undefined
+        );
+      });
+
+      it('should handle errors when checking biometric support', async () => {
+        // Arrange
+        const error = new Error('Biometry check failed');
+        mockKeychainModule.getSupportedBiometryType = jest.fn().mockRejectedValueOnce(error);
+        
+        // Act
+        const result = await authStorageService.enableBiometricAuth();
+        
+        // Assert
+        expect(result).toBe(false);
+        expect(console.error).toHaveBeenCalledWith(
+          expect.stringContaining('[ERROR] Failed to enable biometric authentication'),
+          expect.objectContaining({ error: expect.any(Object) })
+        );
+      });
+    });
+
+    describe('disableBiometricAuth', () => {
+      it('should disable biometric authentication', () => {
+        // Act
+        authStorageService.disableBiometricAuth();
+        
+        // Assert
+        // Just verify it doesn't throw
+        expect(console.log).toHaveBeenCalledWith(
+          expect.stringContaining('[INFO] Biometric authentication disabled'),
+          undefined
+        );
+      });
+    });
+
+    describe('getSecurityConfig', () => {
+      it('should return current security configuration', async () => {
+        // Arrange
+        mockKeychainModule.getSupportedBiometryType = jest.fn().mockResolvedValueOnce(
+          'TouchID'
+        );
+        
+        // Act
+        const config = await authStorageService.getSecurityConfig();
+        
+        // Assert
+        expect(config).toEqual({
+          biometricEnabled: false,
+          biometricType: 'TouchID',
+          tokenRotationEnabled: true,
+          lastRotationCheck: null,
+        });
+      });
+
+      it('should handle errors when getting security config', async () => {
+        // Arrange
+        mockKeychainModule.getSupportedBiometryType = jest.fn().mockRejectedValueOnce(
+          new Error('Config check failed')
+        );
+        
+        // Act & Assert
+        await expect(authStorageService.getSecurityConfig()).rejects.toThrow();
+      });
+    });
+  });
 });

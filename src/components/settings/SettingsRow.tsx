@@ -21,6 +21,12 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
     onPress={onPress}
     disabled={!onPress}
     activeOpacity={onPress ? 0.7 : 1}
+    accessibilityRole={onPress ? 'button' : 'text'}
+    accessibilityLabel={value ? `${label}: ${value}` : label}
+    accessibilityHint={onPress ? 'Tap to modify this setting' : undefined}
+    accessibilityState={{
+      disabled: !onPress,
+    }}
   >
     <View style={styles.settingsRowContent}>
       <Text variant='body1' style={styles.settingsLabel}>
@@ -45,7 +51,7 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing[3],
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: theme.colors.neutral[200],
-    minHeight: 56,
+    minHeight: Math.max(56, theme.accessibility.minTouchTarget.height),
   },
   settingsRowContent: {
     flex: 1,

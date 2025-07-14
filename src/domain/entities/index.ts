@@ -1,2 +1,0 @@
-// Domain entities exports
-export {};

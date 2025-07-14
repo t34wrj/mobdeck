@@ -65,7 +65,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: release-apk
-        path: android/app/build/outputs/apk/release/app-release.apk
+        path: android/app/build/outputs/apk/release/app-universal-release.apk
         retention-days: 90
         
   create-release:
@@ -135,11 +135,11 @@ jobs:
           - Requires self-hosted Readeck instance
           
           ## Verification
-          - APK SHA256: `${{ hashFiles('./apk/app-release.apk') }}`
+          - APK SHA256: `${{ hashFiles('./apk/app-universal-release.apk') }}`
           - Built from commit: `${{ github.sha }}`
           
         files: |
-          ./apk/app-release.apk
+          ./apk/app-universal-release.apk
         draft: false
         prerelease: false
         generate_release_notes: false
@@ -151,7 +151,7 @@ jobs:
           "name": "Mobdeck",
           "version": "${{ steps.version.outputs.VERSION }}",
           "versionCode": "$(date +%s)",
-          "apkUrl": "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}/app-release.apk",
+          "apkUrl": "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}/app-universal-release.apk",
           "releaseDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
           "changelog": "${{ steps.changelog.outputs.CHANGELOG }}",
           "minSdkVersion": 24,
