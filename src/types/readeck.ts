@@ -33,6 +33,7 @@ export enum ReadeckErrorCode {
   RATE_LIMITED = 'RATE_LIMITED',
   SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
   CONNECTION_ERROR = 'CONNECTION_ERROR',
+  VALIDATION_ERROR = 'VALIDATION_ERROR',
   UNKNOWN_ERROR = 'UNKNOWN_ERROR',
 }
 
@@ -186,6 +187,7 @@ export interface ReadeckUser {
 }
 
 export interface ReadeckUserProfile {
+  id?: string;             // Optional user ID for tests
   provider: {
     application: string;      // Registered application name
     id: string;              // Authentication provider ID (token ID)
@@ -222,6 +224,7 @@ export interface ReadeckSystemInfo {
 export interface ReadeckSyncResponse {
   articles: ReadeckArticle[];
   last_updated: string;
+  last_sync?: string;
   total_count: number;
   has_more: boolean;
 }

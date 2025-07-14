@@ -5,12 +5,16 @@
 import { errorHandler, ErrorCategory, ErrorSeverity } from '../../src/utils/errorHandler';
 import { logger } from '../../src/utils/logger';
 
-// Declare global ErrorUtils for React Native
+// Extend global interface for React Native ErrorUtils
 declare global {
-  var ErrorUtils: {
-    setGlobalHandler: (handler: (error: Error, isFatal: boolean) => void) => void;
-    getGlobalHandler: () => ((error: Error, isFatal: boolean) => void) | undefined;
-  } | undefined;
+  namespace NodeJS {
+    interface Global {
+      ErrorUtils?: {
+        setGlobalHandler: (handler: (error: Error, isFatal: boolean) => void) => void;
+        getGlobalHandler: () => ((error: Error, isFatal: boolean) => void) | undefined;
+      };
+    }
+  }
 }
 import { sanitizeForLogging, sanitizeErrorMessage, sanitizeStackTrace } from '../../src/utils/security';
 
@@ -229,11 +233,11 @@ describe('Error Handling Security Tests', () => {
 
   describe('Global Error Handler Security', () => {
     it('should sanitize unhandled errors', () => {
-      const originalErrorHandler = global.ErrorUtils?.setGlobalHandler;
+      const originalErrorHandler = (global as any).ErrorUtils?.setGlobalHandler;
       const mockGlobalHandler = jest.fn();
       
-      if (global.ErrorUtils) {
-        global.ErrorUtils.setGlobalHandler = mockGlobalHandler;
+      if ((global as any).ErrorUtils) {
+        (global as any).ErrorUtils.setGlobalHandler = mockGlobalHandler;
       }
 
       try {
@@ -241,16 +245,16 @@ describe('Error Handling Security Tests', () => {
         const sensitiveError = new Error('Unhandled error with Bearer token123');
         
         // The global handler should be set up to sanitize errors
-        if (global.ErrorUtils?.setGlobalHandler) {
-          global.ErrorUtils.setGlobalHandler((error: Error, isFatal: boolean) => {
+        if ((global as any).ErrorUtils?.setGlobalHandler) {
+          (global as any).ErrorUtils.setGlobalHandler((error: Error, isFatal: boolean) => {
             const sanitizedMessage = sanitizeErrorMessage(error.message);
             expect(sanitizedMessage).not.toContain('Bearer token123');
             expect(sanitizedMessage).toContain('[REDACTED]');
           });
         }
       } finally {
-        if (global.ErrorUtils && originalErrorHandler) {
-          global.ErrorUtils.setGlobalHandler = originalErrorHandler;
+        if ((global as any).ErrorUtils && originalErrorHandler) {
+          (global as any).ErrorUtils.setGlobalHandler = originalErrorHandler;
         }
       }
     });
