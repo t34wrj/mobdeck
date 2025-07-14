@@ -61,8 +61,8 @@ describe('ArticleCard', () => {
       expect(image.props.source).toEqual({ uri: mockArticle.imageUrl });
     });
 
-    it('should render article without image when imageUrl is null', () => {
-      const articleWithoutImage = { ...mockArticle, imageUrl: null };
+    it('should render article without image when imageUrl is undefined', () => {
+      const articleWithoutImage = { ...mockArticle, imageUrl: undefined };
       const { queryByTestId } = render(
         <ArticleCard {...defaultProps} article={articleWithoutImage} />
       );
@@ -78,7 +78,7 @@ describe('ArticleCard', () => {
       
       const container = getByTestId('article-card-container');
       const styles = Array.isArray(container.props.style) ? container.props.style : [container.props.style];
-      const hasOpacity = styles.some(style => style && typeof style === 'object' && style.opacity === 0.7);
+      const hasOpacity = styles.some((style: any) => style && typeof style === 'object' && style.opacity === 0.7);
       expect(hasOpacity).toBe(true);
     });
 
@@ -103,13 +103,13 @@ describe('ArticleCard', () => {
     it('should display tags when present', () => {
       const { getByText } = render(<ArticleCard {...defaultProps} />);
       
-      mockArticle.tags.forEach(tag => {
+      mockArticle.tags?.forEach(tag => {
         expect(getByText(tag)).toBeTruthy();
       });
     });
 
     it('should handle articles without summary', () => {
-      const articleWithoutSummary = { ...mockArticle, summary: null };
+      const articleWithoutSummary = { ...mockArticle, summary: undefined };
       const { queryByText } = render(
         <ArticleCard {...defaultProps} article={articleWithoutSummary} />
       );
@@ -118,7 +118,7 @@ describe('ArticleCard', () => {
     });
 
     it('should handle articles without read time', () => {
-      const articleWithoutReadTime = { ...mockArticle, readTime: null };
+      const articleWithoutReadTime = { ...mockArticle, readTime: undefined };
       const { queryByText } = render(
         <ArticleCard {...defaultProps} article={articleWithoutReadTime} />
       );
@@ -134,7 +134,7 @@ describe('ArticleCard', () => {
       
       const container = getByTestId('article-card-container');
       const styles = Array.isArray(container.props.style) ? container.props.style : [container.props.style];
-      const hasCustomStyle = styles.some(style => 
+      const hasCustomStyle = styles.some((style: any) => 
         style && 
         typeof style === 'object' && 
         style.backgroundColor === 'red'
@@ -310,7 +310,7 @@ describe('ArticleCard', () => {
     it('should handle missing source URL', () => {
       const noSourceArticle = {
         ...mockArticle,
-        sourceUrl: null,
+        sourceUrl: undefined,
       };
       
       const { queryByText } = render(

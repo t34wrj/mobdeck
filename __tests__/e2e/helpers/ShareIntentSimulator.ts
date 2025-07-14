@@ -9,7 +9,7 @@ export interface ShareIntentSimulationOptions {
   text?: string;
   subject?: string;
   type?: string;
-  timestamp?: string;
+  timestamp?: number;
   sourceApp?: string;
 }
 
@@ -26,13 +26,18 @@ export class ShareIntentSimulator {
     const sharedData: SharedData = {
       text: options.text || url,
       subject: options.subject,
+      timestamp: options.timestamp || Date.now(),
+    };
+    
+    // Add non-SharedData fields for simulation tracking
+    const simulationData = {
+      ...sharedData,
       type: options.type || 'text/plain',
-      timestamp: options.timestamp || new Date().toISOString(),
       sourceApp: options.sourceApp || 'test.app',
     };
 
     this.sharedDataStore = sharedData;
-    console.log('[ShareIntentSimulator] Simulated share intent:', sharedData);
+    console.log('[ShareIntentSimulator] Simulated share intent:', simulationData);
   }
 
   /**
@@ -105,9 +110,9 @@ export class ShareIntentSimulator {
 
     const data = scenarios[scenario];
     this.sharedDataStore = {
-      ...data,
-      timestamp: new Date().toISOString(),
-      sourceApp: 'test.invalid.app',
+      text: data.text,
+      subject: data.subject,
+      timestamp: Date.now(),
     };
   }
 

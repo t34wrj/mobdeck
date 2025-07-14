@@ -38,15 +38,15 @@ export interface Article {
   id: string;
   /** Article title */
   title: string;
-  /** Brief summary or excerpt */
-  summary: string;
+  /** Brief summary or excerpt (can be null/undefined if not available) */
+  summary?: string;
   /** Full article content */
   content: string;
   /** Original article URL */
   url: string;
-  /** Optional featured image URL */
+  /** Optional featured image URL (can be null/undefined if not available) */
   imageUrl?: string;
-  /** Estimated reading time in minutes */
+  /** Estimated reading time in minutes (can be null/undefined if not calculated) */
   readTime?: number;
   /** Whether article is archived */
   isArchived: boolean;
@@ -56,7 +56,7 @@ export interface Article {
   isRead: boolean;
   /** Optional array of tag strings */
   tags?: string[];
-  /** Original source URL if different from url */
+  /** Original source URL if different from url (can be null/undefined) */
   sourceUrl?: string;
   /** ISO timestamp when article was created */
   createdAt: string;

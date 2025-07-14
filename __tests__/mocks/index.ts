@@ -4,30 +4,68 @@ export * from './async-storage';
 export * from './sqlite-storage';
 export * from './navigation';
 
+import { AxiosStatic, AxiosInstance, AxiosResponse, AxiosRequestConfig } from 'axios';
+
 // Additional utility mocks
 export const mockAxios = {
-  get: jest.fn(() => Promise.resolve({ data: {} })),
-  post: jest.fn(() => Promise.resolve({ data: {} })),
-  put: jest.fn(() => Promise.resolve({ data: {} })),
-  delete: jest.fn(() => Promise.resolve({ data: {} })),
-  patch: jest.fn(() => Promise.resolve({ data: {} })),
-  create: jest.fn(() => mockAxios),
+  get: jest.fn(() => Promise.resolve({ data: {} } as AxiosResponse)),
+  post: jest.fn(() => Promise.resolve({ data: {} } as AxiosResponse)),
+  put: jest.fn(() => Promise.resolve({ data: {} } as AxiosResponse)),
+  delete: jest.fn(() => Promise.resolve({ data: {} } as AxiosResponse)),
+  patch: jest.fn(() => Promise.resolve({ data: {} } as AxiosResponse)),
+  head: jest.fn(() => Promise.resolve({ data: {} } as AxiosResponse)),
+  options: jest.fn(() => Promise.resolve({ data: {} } as AxiosResponse)),
+  request: jest.fn(() => Promise.resolve({ data: {} } as AxiosResponse)),
+  create: jest.fn(() => mockAxios as unknown as AxiosInstance),
   defaults: {
     baseURL: '',
     headers: {},
     timeout: 5000,
-  },
+    adapter: undefined,
+    transformRequest: undefined,
+    transformResponse: undefined,
+    paramsSerializer: undefined,
+    timeoutErrorMessage: 'timeout',
+    withCredentials: false,
+    responseType: 'json',
+    xsrfCookieName: 'XSRF-TOKEN',
+    xsrfHeaderName: 'X-XSRF-TOKEN',
+    maxContentLength: -1,
+    maxBodyLength: -1,
+    validateStatus: jest.fn(() => true),
+    maxRedirects: 5,
+    socketPath: null,
+    httpAgent: undefined,
+    httpsAgent: undefined,
+    proxy: false,
+    cancelToken: undefined,
+    decompress: true,
+  } as AxiosRequestConfig,
   interceptors: {
     request: {
       use: jest.fn(),
       eject: jest.fn(),
+      clear: jest.fn(),
     },
     response: {
       use: jest.fn(),
       eject: jest.fn(),
+      clear: jest.fn(),
     },
   },
-};
+  getUri: jest.fn(() => ''),
+  isCancel: jest.fn(() => false),
+  CancelToken: {
+    source: jest.fn(() => ({
+      token: { promise: Promise.resolve(), throwIfRequested: jest.fn() },
+      cancel: jest.fn(),
+    })),
+  } as any,
+  Cancel: jest.fn(),
+  isAxiosError: jest.fn(() => false),
+  all: jest.fn(() => Promise.resolve([])),
+  spread: jest.fn((callback) => callback),
+} as unknown as jest.Mocked<AxiosStatic>;
 
 export const mockNetInfo = {
   addEventListener: jest.fn(() => jest.fn()),

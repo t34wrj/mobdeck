@@ -31,11 +31,17 @@ export type { ShareIntentSimulationOptions } from './ShareIntentSimulator';
 export { SyncTestHelper };
 export type { SyncTestScenario, MockSyncServiceOptions } from './SyncTestHelper';
 
+export interface E2ETestEnvironmentSetup {
+  mockShareModule: ReturnType<typeof ShareIntentSimulator.createMockShareModule>;
+  mockSyncService: ReturnType<typeof SyncTestHelper.createMockSyncService>;
+  mockSyncActions: ReturnType<typeof SyncTestHelper.createMockSyncActions>;
+}
+
 /**
  * Comprehensive E2E test setup utility
  * Sets up all necessary mocks and test environment for article management E2E tests
  */
-export const setupE2ETestEnvironment = () => {
+export const setupE2ETestEnvironment = (): E2ETestEnvironmentSetup => {
   // Reset all test helpers
   ArticleTestDataFactory.resetCounter();
   ShareIntentSimulator.reset();
@@ -57,7 +63,7 @@ export const setupE2ETestEnvironment = () => {
 /**
  * Cleanup utility for E2E tests
  */
-export const cleanupE2ETestEnvironment = () => {
+export const cleanupE2ETestEnvironment = (): void => {
   ArticleTestDataFactory.resetCounter();
   ShareIntentSimulator.reset();
   SyncTestHelper.reset();
@@ -67,10 +73,17 @@ export const cleanupE2ETestEnvironment = () => {
   jest.clearAllMocks();
 };
 
+export interface CommonE2EScenarios {
+  shareScenarios: ReturnType<typeof ShareIntentSimulator.getCommonShareScenarios>;
+  syncScenarios: ReturnType<typeof SyncTestHelper.createSyncScenarios>;
+  conflictScenarios: ReturnType<typeof SyncTestHelper.createConflictScenarios>;
+  articleStates: ReturnType<typeof ArticleTestDataFactory.createArticleWithStates>;
+}
+
 /**
  * Common test scenarios for E2E article management testing
  */
-export const getCommonE2EScenarios = () => ({
+export const getCommonE2EScenarios = (): CommonE2EScenarios => ({
   shareScenarios: ShareIntentSimulator.getCommonShareScenarios(),
   syncScenarios: SyncTestHelper.createSyncScenarios(),
   conflictScenarios: SyncTestHelper.createConflictScenarios(),
@@ -80,11 +93,11 @@ export const getCommonE2EScenarios = () => ({
 /**
  * Waits for async operations to complete in tests
  */
-export const waitForAsyncOperations = async (timeout: number = 5000) => {
-  await new Promise(resolve => setTimeout(resolve, 100));
+export const waitForAsyncOperations = async (timeout: number = 5000): Promise<void> => {
+  await new Promise<void>(resolve => setTimeout(resolve, 100));
   
   // Wait for any pending promises to resolve
-  await new Promise(resolve => setImmediate(resolve));
+  await new Promise<void>(resolve => setImmediate(resolve));
 };
 
 /**
