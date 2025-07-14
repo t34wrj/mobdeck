@@ -143,7 +143,7 @@ jest.mock('react-native-safe-area-context', () => ({
 
 // Global test utilities
 global.fetch = jest.fn();
-global.XMLHttpRequest = jest.fn();
+global.XMLHttpRequest = jest.fn() as any;
 
 // Skip problematic animated mock - not essential for basic testing
 

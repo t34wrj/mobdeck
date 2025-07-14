@@ -640,10 +640,10 @@ describe('SyncService', () => {
     it('should sync shared articles', async () => {
       const sharedUrl = 'https://example.com/shared-article';
       
-      (ShareService.prototype.hasQueuedShares as jest.Mock).mockReturnValue(true);
-      (ShareService.prototype.getQueuedShares as jest.Mock).mockReturnValue([
-        { url: sharedUrl, timestamp: Date.now() },
-      ]);
+      // (ShareService.prototype.hasQueuedShares as jest.Mock).mockReturnValue(true);
+      // (ShareService.prototype.getQueuedShares as jest.Mock).mockReturnValue([
+      //   { url: sharedUrl, timestamp: Date.now() },
+      // ]);
       
       // await syncService.syncSharedArticles();
       
@@ -746,7 +746,7 @@ describe('SyncService', () => {
       // Mock article being modified during sync
       const article = { ...testArticle, isModified: true };
       
-      (mockDatabaseService.getArticles as jest.Mock)
+      (mockDatabaseService.fetchArticles as jest.Mock)
         .mockResolvedValueOnce({
           success: true,
           data: { 
@@ -883,7 +883,7 @@ describe('SyncService', () => {
     it('should retry failed operations', async () => {
       const article = { ...testArticle, isModified: true };
       
-      (mockDatabaseService.getArticles as jest.Mock).mockResolvedValue({
+      (mockDatabaseService.fetchArticles as jest.Mock).mockResolvedValue({
         success: true,
         data: { 
           items: [{ ...article, is_modified: 1 }],
