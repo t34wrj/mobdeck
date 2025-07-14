@@ -13,7 +13,7 @@ import BackgroundSyncService, {
 } from '../../src/services/BackgroundSyncService';
 import { syncService } from '../../src/services/SyncService';
 import { store } from '../../src/store';
-import { NetworkType, SyncStatus } from '../../src/types/sync';
+import { NetworkType, SyncStatus, SyncPhase } from '../../src/types/sync';
 
 // Mock dependencies
 jest.mock('react-native-background-actions', () => ({
@@ -233,7 +233,7 @@ describe('BackgroundSyncService', () => {
         isConnected: true,
         isInternetReachable: true,
         details: { isConnectionExpensive: true },
-      };
+      } as any;
 
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
@@ -254,7 +254,7 @@ describe('BackgroundSyncService', () => {
         isConnected: true,
         isInternetReachable: true,
         details: { isConnectionExpensive: false },
-      };
+      } as any;
 
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
@@ -275,7 +275,7 @@ describe('BackgroundSyncService', () => {
         isConnected: true,
         isInternetReachable: true,
         details: { isConnectionExpensive: false },
-      };
+      } as any;
 
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
@@ -482,7 +482,7 @@ describe('BackgroundSyncService', () => {
         conflictCount: 0,
         errorCount: 0,
         duration: 1000,
-        phase: 'completed',
+        phase: SyncPhase.FINALIZING,
         errors: [],
       });
 
@@ -551,7 +551,7 @@ describe('BackgroundSyncService', () => {
         conflictCount: 0,
         errorCount: 0,
         duration: 1000,
-        phase: 'completed',
+        phase: SyncPhase.FINALIZING,
         errors: [],
       });
 
@@ -585,7 +585,7 @@ describe('BackgroundSyncService', () => {
         conflictCount: 0,
         errorCount: 0,
         duration: 1000,
-        phase: 'completed',
+        phase: SyncPhase.FINALIZING,
         errors: [],
       });
 
@@ -629,7 +629,7 @@ describe('BackgroundSyncService', () => {
         conflictCount: 0,
         errorCount: 0,
         duration: 1000,
-        phase: 'completed',
+        phase: SyncPhase.FINALIZING,
         errors: [],
       });
 
@@ -647,7 +647,7 @@ describe('BackgroundSyncService', () => {
         isConnected: true,
         isInternetReachable: true,
         details: { isConnectionExpensive: true },
-      };
+      } as any;
       
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
@@ -672,7 +672,7 @@ describe('BackgroundSyncService', () => {
         isConnected: true,
         isInternetReachable: true,
         details: { isConnectionExpensive: false },
-      };
+      } as any;
       
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
@@ -696,7 +696,7 @@ describe('BackgroundSyncService', () => {
         isConnected: true,
         isInternetReachable: true,
         details: { isConnectionExpensive: true },
-      };
+      } as any;
       
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);

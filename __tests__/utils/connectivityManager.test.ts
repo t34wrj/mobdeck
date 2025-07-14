@@ -88,7 +88,7 @@ describe('ConnectivityManager', () => {
       // Simulate network state change
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       netInfoListener({
-        type: 'cellular',
+        type: 'cellular' as any,
         isConnected: true,
         isInternetReachable: true,
         details: {
@@ -128,7 +128,7 @@ describe('ConnectivityManager', () => {
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
-        type: 'cellular',
+        type: 'cellular' as any,
         isConnected: true,
         isInternetReachable: true,
       });
@@ -247,7 +247,7 @@ describe('ConnectivityManager', () => {
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
-        type: 'cellular',
+        type: 'cellular' as any,
         isConnected: true,
         isInternetReachable: true,
         details: {
@@ -296,7 +296,7 @@ describe('ConnectivityManager', () => {
       
       // Trigger a state change - this should trigger listeners
       netInfoListener({
-        type: 'cellular',
+        type: 'cellular' as any,
         isConnected: true,
         isInternetReachable: true,
         details: {
@@ -320,7 +320,7 @@ describe('ConnectivityManager', () => {
       
       // Trigger a state change to test listeners
       netInfoListener({
-        type: 'cellular',
+        type: 'cellular' as any,
         isConnected: true,
         isInternetReachable: true,
       });
@@ -368,7 +368,7 @@ describe('ConnectivityManager', () => {
   describe('Async Operations', () => {
     it('should refresh connection status', async () => {
       mockNetInfo.fetch.mockResolvedValue({
-        type: 'cellular',
+        type: 'cellular' as any,
         isConnected: true,
         isInternetReachable: true,
         details: {
@@ -548,7 +548,7 @@ describe('ConnectivityManager', () => {
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
-        type: 'cellular',
+        type: 'cellular' as any,
         isConnected: true,
         isInternetReachable: true,
         details: {
@@ -582,7 +582,7 @@ describe('ConnectivityManager', () => {
       const netInfoListener = mockNetInfo.addEventListener.mock.calls[0][0];
       
       netInfoListener({
-        type: 'cellular',
+        type: 'cellular' as any,
         isConnected: true,
         isInternetReachable: true,
       });
