@@ -137,6 +137,14 @@ class ConnectivityManager {
   }
 
   /**
+   * Check connectivity status and return string result
+   */
+  public async checkConnectivity(): Promise<string> {
+    await this.refresh();
+    return this.getStatus();
+  }
+
+  /**
    * Wait for connection with timeout
    */
   public async waitForConnection(timeoutMs: number): Promise<boolean> {
