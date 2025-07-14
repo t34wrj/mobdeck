@@ -362,8 +362,8 @@ describe('ReadeckApiService Core Functionality', () => {
       mockClient.request.mockResolvedValue(mockResponse);
 
       const filters: ArticleFilters = {
-        page: 1,
-        per_page: 10,
+        limit: 10,
+        offset: 0,
         search: 'test',
         is_archived: false,
       };
@@ -410,8 +410,7 @@ describe('ReadeckApiService Core Functionality', () => {
       const createRequest: CreateArticleRequest = {
         url: 'https://example.com/new',
         title: 'New Article',
-        is_favorite: false,
-        tags: ['new'],
+        labels: ['new'],
       };
 
       const result = await service.createArticle(createRequest);
@@ -534,7 +533,6 @@ describe('ReadeckApiService Core Functionality', () => {
       const result = await service.createArticle({
         url: 'https://example.com',
         title: 'Large Article',
-        content: largeContent,
       });
 
       expect(result.data.content).toHaveLength(1024 * 1024);

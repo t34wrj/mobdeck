@@ -23,7 +23,7 @@ import { Article } from '../../src/types';
 // Mock dependencies
 const mockDatabaseService = {
   isConnected: jest.fn(),
-  getArticles: jest.fn(),
+  fetchArticles: jest.fn(),
   createArticle: jest.fn(),
   updateArticle: jest.fn(),
   deleteArticle: jest.fn(),
@@ -50,7 +50,7 @@ jest.mock('../../src/services/ReadeckApiService', () => ({
     authenticate: jest.fn(),
     logout: jest.fn(),
     refreshToken: jest.fn(),
-    getArticles: jest.fn(),
+    fetchArticles: jest.fn(),
     createArticle: jest.fn(),
     updateArticle: jest.fn(),
     deleteArticle: jest.fn(),
@@ -58,7 +58,7 @@ jest.mock('../../src/services/ReadeckApiService', () => ({
 }));
 jest.mock('../../src/services/ArticlesApiService', () => ({
   articlesApiService: {
-    getArticles: jest.fn(),
+    fetchArticles: jest.fn(),
     createArticle: jest.fn(),
     updateArticle: jest.fn(),
     deleteArticle: jest.fn(),
@@ -86,7 +86,7 @@ jest.mock('../../src/utils/connectivityManager', () => ({
     subscribe: jest.fn(),
     unsubscribe: jest.fn(),
     isConnected: jest.fn(),
-    checkConnectivity: jest.fn(),
+    refresh: jest.fn(),
   },
   ConnectivityStatus: {
     ONLINE: 'ONLINE',
@@ -95,10 +95,9 @@ jest.mock('../../src/utils/connectivityManager', () => ({
 }));
 jest.mock('../../src/utils/errorHandler', () => ({
   errorHandler: {
-    handle: jest.fn(),
+    handleError: jest.fn(),
     report: jest.fn(),
     sanitize: jest.fn(),
-    handleError: jest.fn(),
   },
   ErrorCategory: {
     SYNC_OPERATION: 'SYNC_OPERATION',
@@ -180,11 +179,11 @@ describe('SyncService', () => {
       isConnected: true,
       networkType: NetworkType.WIFI,
     });
-    (connectivityManager.checkConnectivity as jest.Mock).mockResolvedValue('ONLINE');
+    (connectivityManager.refresh as jest.Mock).mockResolvedValue('ONLINE');
     
     // Mock database operations
     mockDatabaseService.isConnected.mockReturnValue(true);
-    mockDatabaseService.getArticles.mockResolvedValue({
+    mockDatabaseService.fetchArticles.mockResolvedValue({
       success: true,
       data: { items: [], totalCount: 0, hasMore: false },
     });
@@ -202,7 +201,7 @@ describe('SyncService', () => {
       isOnline: true,
       isAuthenticated: true,
     });
-    (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+    (articlesApiService.fetchArticles as jest.Mock).mockResolvedValue({
       articles: [],
       total: 0,
       page: 1,
@@ -210,7 +209,7 @@ describe('SyncService', () => {
     });
     
     // Mock errorHandler to return proper error objects
-    (errorHandler.handle as jest.Mock).mockImplementation((error) => ({ 
+    (errorHandler.handleError as jest.Mock).mockImplementation((error) => ({ 
       message: error.message || 'Unknown error', 
       code: 'HANDLED_ERROR' 
     }));
@@ -273,7 +272,7 @@ describe('SyncService', () => {
   describe('Sync Execution', () => {
     it('should start sync successfully', async () => {
       // Mock successful sync
-      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+      (articlesApiService.fetchArticles as jest.Mock).mockResolvedValue({
         articles: [testArticle],
         total: 1,
         page: 1,
@@ -322,7 +321,7 @@ describe('SyncService', () => {
 
     it('should respect WiFi-only setting', async () => {
       // Update config to WiFi only
-      store.getState.mockReturnValue({
+      (store.getState as jest.Mock).mockReturnValue({
         sync: { isRunning: false },
         settings: {
           syncConfig: { ...testConfig, syncOnWifiOnly: true },
@@ -367,7 +366,7 @@ describe('SyncService', () => {
         { ...testArticle, id: 'server-2' },
       ];
       
-      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+      (articlesApiService.fetchArticles as jest.Mock).mockResolvedValue({
         articles: serverArticles,
         total: 2,
         page: 1,
@@ -375,7 +374,7 @@ describe('SyncService', () => {
       });
       
       // Mock local has no articles
-      (DatabaseService.getArticles as jest.Mock).mockResolvedValue({
+      (DatabaseService.fetchArticles as jest.Mock).mockResolvedValue({
         success: true,
         data: { items: [], totalCount: 0, hasMore: false },
       });
@@ -388,7 +387,7 @@ describe('SyncService', () => {
 
     it('should handle pull errors gracefully', async () => {
       // Mock API error
-      (articlesApiService.getArticles as jest.Mock).mockRejectedValue(
+      (articlesApiService.fetchArticles as jest.Mock).mockRejectedValue(
         new Error('API Error')
       );
       
@@ -405,7 +404,7 @@ describe('SyncService', () => {
         id: `server-${i}`,
       }));
       
-      (articlesApiService.getArticles as jest.Mock)
+      (articlesApiService.fetchArticles as jest.Mock)
         .mockResolvedValueOnce({
           articles: manyArticles.slice(0, 50),
           total: 150,
@@ -428,7 +427,7 @@ describe('SyncService', () => {
       const result = await syncService.startFullSync();
       
       expect(result.success).toBe(true);
-      expect(articlesApiService.getArticles).toHaveBeenCalledTimes(3);
+      expect(articlesApiService.fetchArticles).toHaveBeenCalledTimes(3);
     });
   });
 
@@ -437,7 +436,7 @@ describe('SyncService', () => {
       // Mock local modified articles
       const modifiedArticle = { ...testArticle, isModified: true };
       
-      (DatabaseService.getArticles as jest.Mock).mockResolvedValue({
+      (DatabaseService.fetchArticles as jest.Mock).mockResolvedValue({
         success: true,
         data: { 
           items: [DatabaseService.convertArticleToDBArticle(modifiedArticle)],
@@ -461,7 +460,7 @@ describe('SyncService', () => {
       // Mock local modified article
       const modifiedArticle = { ...testArticle, isModified: true };
       
-      (DatabaseService.getArticles as jest.Mock).mockResolvedValue({
+      (DatabaseService.fetchArticles as jest.Mock).mockResolvedValue({
         success: true,
         data: { 
           items: [DatabaseService.convertArticleToDBArticle(modifiedArticle)],
@@ -502,7 +501,7 @@ describe('SyncService', () => {
         data: DatabaseService.convertArticleToDBArticle(localArticle),
       });
       
-      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+      (articlesApiService.fetchArticles as jest.Mock).mockResolvedValue({
         articles: [remoteArticle],
         total: 1,
         page: 1,
@@ -584,7 +583,7 @@ describe('SyncService', () => {
   describe('Sync Cancellation', () => {
     it('should cancel running sync', async () => {
       // Mock slow API call
-      (articlesApiService.getArticles as jest.Mock).mockImplementation(
+      (articlesApiService.fetchArticles as jest.Mock).mockImplementation(
         () => new Promise(resolve => setTimeout(resolve, 1000))
       );
       
@@ -603,7 +602,7 @@ describe('SyncService', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors', async () => {
-      (DatabaseService.getArticles as jest.Mock).mockResolvedValue({
+      (DatabaseService.fetchArticles as jest.Mock).mockResolvedValue({
         success: false,
         error: 'Database error',
       });
@@ -615,7 +614,7 @@ describe('SyncService', () => {
     });
 
     it('should handle unexpected errors', async () => {
-      (articlesApiService.getArticles as jest.Mock).mockImplementation(() => {
+      (articlesApiService.fetchArticles as jest.Mock).mockImplementation(() => {
         throw new Error('Unexpected error');
       });
       
@@ -627,7 +626,7 @@ describe('SyncService', () => {
 
     it('should report retryable vs non-retryable errors', async () => {
       // Mock network error (retryable)
-      (articlesApiService.getArticles as jest.Mock).mockRejectedValue(
+      (articlesApiService.fetchArticles as jest.Mock).mockRejectedValue(
         new Error('Network timeout')
       );
       
@@ -662,7 +661,7 @@ describe('SyncService', () => {
         id: `article-${i}`,
       }));
       
-      (articlesApiService.getArticles as jest.Mock).mockImplementation(
+      (articlesApiService.fetchArticles as jest.Mock).mockImplementation(
         ({ page = 1, limit = 50 }) => {
           const start = (page - 1) * limit;
           const end = start + limit;
@@ -694,7 +693,7 @@ describe('SyncService', () => {
       
       // Disconnect during sync
       let callCount = 0;
-      (articlesApiService.getArticles as jest.Mock).mockImplementation(() => {
+      (articlesApiService.fetchArticles as jest.Mock).mockImplementation(() => {
         callCount++;
         if (callCount > 1) {
           (connectivityManager.getStatus as jest.Mock).mockReturnValue({
@@ -725,7 +724,7 @@ describe('SyncService', () => {
         { ...testArticle, id: 'success-2' },
       ];
       
-      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+      (articlesApiService.fetchArticles as jest.Mock).mockResolvedValue({
         articles,
         total: 3,
         page: 1,
@@ -747,7 +746,7 @@ describe('SyncService', () => {
       // Mock article being modified during sync
       const article = { ...testArticle, isModified: true };
       
-      (mockDatabaseService.getArticles as jest.Mock)
+      (mockDatabaseService.fetchArticles as jest.Mock)
         .mockResolvedValueOnce({
           success: true,
           data: { 
@@ -786,7 +785,7 @@ describe('SyncService', () => {
       // Update config with small batch size
       syncService.updateConfig({ batchSize: 10 });
       
-      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+      (articlesApiService.fetchArticles as jest.Mock).mockResolvedValue({
         articles: manyArticles,
         total: 25,
         page: 1,
@@ -808,7 +807,7 @@ describe('SyncService', () => {
   describe('Sync Queue Management', () => {
     it('should handle sync abort properly', async () => {
       // Mock slow operation
-      (articlesApiService.getArticles as jest.Mock).mockImplementation(
+      (articlesApiService.fetchArticles as jest.Mock).mockImplementation(
         () => new Promise(resolve => setTimeout(() => resolve({
           articles: [testArticle],
           total: 1,
@@ -838,7 +837,7 @@ describe('SyncService', () => {
         content: '', // Empty content
       };
       
-      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+      (articlesApiService.fetchArticles as jest.Mock).mockResolvedValue({
         articles: [articleWithoutContent],
         total: 1,
         page: 1,
@@ -867,7 +866,7 @@ describe('SyncService', () => {
       // Disable full text sync
       syncService.updateConfig({ fullTextSync: false });
       
-      (articlesApiService.getArticles as jest.Mock).mockResolvedValue({
+      (articlesApiService.fetchArticles as jest.Mock).mockResolvedValue({
         articles: [testArticle],
         total: 1,
         page: 1,
@@ -884,7 +883,7 @@ describe('SyncService', () => {
     it('should retry failed operations', async () => {
       const article = { ...testArticle, isModified: true };
       
-      (mockDatabaseService.getArticles as jest.Mock).mockResolvedValue({
+      (mockDatabaseService.fetchArticles as jest.Mock).mockResolvedValue({
         success: true,
         data: { 
           items: [{ ...article, is_modified: 1 }],
