@@ -206,7 +206,7 @@ describe('BackgroundSyncService', () => {
         isConnected: true,
         isInternetReachable: true,
         details: { isConnectionExpensive: false },
-      };
+      } as any;
 
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
@@ -290,7 +290,7 @@ describe('BackgroundSyncService', () => {
         isConnected: false,
         isInternetReachable: false,
         details: {},
-      };
+      } as any;
 
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
@@ -313,13 +313,13 @@ describe('BackgroundSyncService', () => {
     beforeEach(async () => {
       const addEventListener = jest.fn().mockReturnValue(() => {});
       mockNetInfo.addEventListener.mockImplementation(addEventListener);
-      mockDeviceEventEmitter.addListener.mockImplementation((event, handler) => {
+      mockDeviceEventEmitter.addListener.mockImplementation((event: string, handler: (data: any) => void) => {
         if (event === 'DeviceBootCompleted') {
           bootHandler = handler;
         } else if (event === 'BackgroundSyncEvent') {
           syncEventHandler = handler;
         }
-        return { remove: jest.fn() };
+        return { remove: jest.fn() } as any;
       });
       
       await service.initialize();
@@ -553,6 +553,10 @@ describe('BackgroundSyncService', () => {
       mockSyncService.startFullSync.mockResolvedValue({
         success: true,
         syncedCount: 1,
+        conflictCount: 0,
+        errorCount: 0,
+        duration: 1000,
+        phase: 'completed' as any,
         errors: [],
       });
 
@@ -585,7 +589,7 @@ describe('BackgroundSyncService', () => {
         isConnected: true,
         isInternetReachable: true,
         details: { isConnectionExpensive: false },
-      };
+      } as any;
       
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
@@ -593,6 +597,10 @@ describe('BackgroundSyncService', () => {
       mockSyncService.startFullSync.mockResolvedValue({
         success: true,
         syncedCount: 1,
+        conflictCount: 0,
+        errorCount: 0,
+        duration: 1000,
+        phase: 'completed' as any,
         errors: [],
       });
 
@@ -679,7 +687,7 @@ describe('BackgroundSyncService', () => {
         isConnected: false,
         isInternetReachable: false,
         details: {},
-      };
+      } as any;
       
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
@@ -889,7 +897,7 @@ describe('BackgroundSyncService', () => {
         isConnected: true,
         isInternetReachable: true,
         details: { isConnectionExpensive: false },
-      };
+      } as any;
       
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
