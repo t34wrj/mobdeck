@@ -28,7 +28,7 @@ export interface ConnectivityDetails {
   };
 }
 
-type ConnectivityListener = (status: ConnectivityStatus) => void;
+type ConnectivityListener = (details: ConnectivityDetails) => void;
 
 class ConnectivityManager {
   private static instance: ConnectivityManager;
@@ -156,8 +156,8 @@ class ConnectivityManager {
         }
       }, timeoutMs);
 
-      const connectionListener = (status: ConnectivityStatus) => {
-        if (!resolved && status.isConnected && status.isInternetReachable) {
+      const connectionListener = (details: ConnectivityDetails) => {
+        if (!resolved && details.isConnected && details.isInternetReachable) {
           resolved = true;
           clearTimeout(timeout);
           this.removeListener(connectionListener);
@@ -294,7 +294,7 @@ class ConnectivityManager {
     }
   }
 
-  private hasStatusChanged(previous: ConnectivityStatus, current: ConnectivityStatus): boolean {
+  private hasStatusChanged(previous: ConnectivityDetails, current: ConnectivityDetails): boolean {
     return (
       previous.isConnected !== current.isConnected ||
       previous.isInternetReachable !== current.isInternetReachable ||
@@ -304,10 +304,10 @@ class ConnectivityManager {
   }
 
   private notifyListeners(): void {
-    const status = { ...this.currentStatus };
+    const details = { ...this.currentStatus };
     this.listeners.forEach((listener) => {
       try {
-        listener(status);
+        listener(details);
       } catch (error) {
         logger.error('[ConnectivityManager] Error in listener callback:', error);
       }

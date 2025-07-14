@@ -560,7 +560,7 @@ class BackgroundSyncService {
       // Add new entry and keep last 20 entries
       history.unshift(entry);
       if (history.length > 20) {
-        history.pop();
+        history.splice(20);
       }
 
       await AsyncStorage.setItem(historyKey, JSON.stringify(history));
@@ -660,9 +660,16 @@ class BackgroundSyncService {
     const lastSyncTime = await AsyncStorage.getItem(LAST_SYNC_KEY);
     const nextSyncTime = await AsyncStorage.getItem('@mobdeck/next_sync_time');
     const historyData = await AsyncStorage.getItem('@mobdeck/sync_history');
-    const history: SyncHistoryEntry[] = historyData
-      ? JSON.parse(historyData)
-      : [];
+    
+    let history: SyncHistoryEntry[] = [];
+    if (historyData) {
+      try {
+        history = JSON.parse(historyData);
+      } catch (error) {
+        console.warn('[BackgroundSyncService] Failed to parse sync history, using empty array');
+        history = [];
+      }
+    }
 
     return {
       isRunning: BackgroundService.isRunning() || store.getState().sync.status === SyncStatus.SYNCING,

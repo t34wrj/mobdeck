@@ -779,7 +779,7 @@ describe('ArticlesApiService', () => {
 
   describe('getArticleStats', () => {
     it('should get article statistics successfully', async () => {
-      const userProfile: ReadeckUserProfile = {
+      const userProfileWithStats = {
         id: '1',
         username: 'testuser',
         provider: {
@@ -802,11 +802,17 @@ describe('ArticlesApiService', () => {
             font_size: 16,
             line_height: 1.5
           }
+        },
+        stats: {
+          total_articles: 100,
+          read_articles: 75,
+          favorite_articles: 25,
+          archived_articles: 10
         }
       };
 
       mockReadeckApiService.getUserProfile.mockResolvedValue(
-        createMockApiResponse(userProfile)
+        createMockApiResponse(userProfileWithStats)
       );
 
       const result = await service.getArticleStats();

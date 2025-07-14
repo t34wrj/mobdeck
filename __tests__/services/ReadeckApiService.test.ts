@@ -98,72 +98,107 @@ class TestableReadeckApiService {
   }
 
   async login(credentials: ReadeckLoginRequest): Promise<any> {
-    const response = await this.client.request({
-      method: 'POST',
-      url: '/auth/login',
-      data: credentials,
-    });
+    try {
+      const response = await this.client.request({
+        method: 'POST',
+        url: '/auth/login',
+        data: credentials,
+      });
 
-    return {
-      data: response.data,
-      status: response.status,
-      headers: response.headers || {},
-      timestamp: new Date().toISOString(),
-    };
+      return {
+        data: response.data,
+        status: response.status,
+        headers: response.headers || {},
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async validateToken(): Promise<any> {
-    const response = await this.client.request({
-      method: 'GET',
-      url: '/auth/me',
-    });
+    try {
+      const response = await this.client.request({
+        method: 'GET',
+        url: '/auth/me',
+      });
 
-    return {
-      data: response.data,
-      status: response.status,
-      headers: response.headers || {},
-      timestamp: new Date().toISOString(),
-    };
+      return {
+        data: response.data,
+        status: response.status,
+        headers: response.headers || {},
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getArticles(filters?: ArticleFilters): Promise<any> {
-    const response = await this.client.request({
-      method: 'GET',
-      url: '/articles',
-      params: filters,
-    });
+    try {
+      const response = await this.client.request({
+        method: 'GET',
+        url: '/articles',
+        params: filters,
+      });
 
-    return {
-      data: response.data,
-      status: response.status,
-      headers: response.headers || {},
-      timestamp: new Date().toISOString(),
-    };
+      return {
+        data: response.data,
+        status: response.status,
+        headers: response.headers || {},
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async createArticle(article: CreateArticleRequest): Promise<any> {
-    const response = await this.client.request({
-      method: 'POST',
-      url: '/articles',
-      data: article,
-    });
+    try {
+      const response = await this.client.request({
+        method: 'POST',
+        url: '/articles',
+        data: article,
+      });
 
-    return {
-      data: response.data,
-      status: response.status,
-      headers: response.headers || {},
-      timestamp: new Date().toISOString(),
-    };
+      return {
+        data: response.data,
+        status: response.status,
+        headers: response.headers || {},
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 }
 
 describe('ReadeckApiService Core Functionality', () => {
   let service: TestableReadeckApiService;
   let mockAxios: jest.Mocked<typeof axios>;
+  let mockClient: any;
 
   beforeEach(() => {
     jest.clearAllMocks();
     mockAxios = axios as jest.Mocked<typeof axios>;
+    
+    // Create a consistent mock client that will be used across tests
+    mockClient = {
+      request: jest.fn(),
+      defaults: {
+        baseURL: 'http://localhost:8000/api/v1',
+        timeout: 30000,
+        headers: {},
+      },
+      interceptors: {
+        request: { use: jest.fn() },
+        response: { use: jest.fn() },
+      },
+    };
+    
+    // Ensure axios.create returns our consistent mock client
+    mockAxios.create.mockReturnValue(mockClient);
+    
     service = new TestableReadeckApiService();
   });
 
@@ -428,7 +463,6 @@ describe('ReadeckApiService Core Functionality', () => {
 
   describe('Authentication Edge Cases', () => {
     it('should handle missing authentication headers', async () => {
-      const mockClient = (service as any).client;
       mockClient.request.mockRejectedValue({
         response: {
           status: 401,
@@ -440,7 +474,6 @@ describe('ReadeckApiService Core Functionality', () => {
     });
 
     it('should handle expired tokens', async () => {
-      const mockClient = (service as any).client;
       mockClient.request.mockRejectedValue({
         response: {
           status: 401,
@@ -454,7 +487,6 @@ describe('ReadeckApiService Core Functionality', () => {
 
   describe('Error Handling Edge Cases', () => {
     it('should handle network timeout', async () => {
-      const mockClient = (service as any).client;
       mockClient.request.mockRejectedValue({
         code: 'ECONNABORTED',
         message: 'timeout of 30000ms exceeded',
@@ -464,7 +496,6 @@ describe('ReadeckApiService Core Functionality', () => {
     });
 
     it('should handle DNS resolution errors', async () => {
-      const mockClient = (service as any).client;
       mockClient.request.mockRejectedValue({
         code: 'ENOTFOUND',
         message: 'getaddrinfo ENOTFOUND example.com',
@@ -474,7 +505,6 @@ describe('ReadeckApiService Core Functionality', () => {
     });
 
     it('should handle connection refused', async () => {
-      const mockClient = (service as any).client;
       mockClient.request.mockRejectedValue({
         code: 'ECONNREFUSED',
         message: 'connect ECONNREFUSED 127.0.0.1:8000',
@@ -484,7 +514,6 @@ describe('ReadeckApiService Core Functionality', () => {
     });
 
     it('should handle SSL certificate errors', async () => {
-      const mockClient = (service as any).client;
       mockClient.request.mockRejectedValue({
         code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE',
         message: 'unable to verify the first certificate',
@@ -496,7 +525,6 @@ describe('ReadeckApiService Core Functionality', () => {
 
   describe('Rate Limiting', () => {
     it('should handle rate limit with retry-after header', async () => {
-      const mockClient = (service as any).client;
       mockClient.request.mockRejectedValue({
         response: {
           status: 429,
@@ -509,7 +537,6 @@ describe('ReadeckApiService Core Functionality', () => {
     });
 
     it('should handle rate limit without retry-after header', async () => {
-      const mockClient = (service as any).client;
       mockClient.request.mockRejectedValue({
         response: {
           status: 429,
@@ -586,7 +613,6 @@ describe('ReadeckApiService Core Functionality', () => {
     });
 
     it('should handle request cancellation', async () => {
-      const mockClient = (service as any).client;
       mockClient.request.mockRejectedValue({
         name: 'CanceledError',
         message: 'Request canceled',

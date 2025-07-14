@@ -315,7 +315,7 @@ class ArticlesApiService implements IArticlesApiService {
     // Don't log here as error will be handled by calling code
     if (error.code && error.message) {
       // ReadeckApiError - for specific operations, wrap the error message
-      const wrapperOperations = ['Update article', 'Get article'];
+      const wrapperOperations = ['Update article', 'Get article', 'Create article'];
       if (wrapperOperations.includes(operation)) {
         throw new Error(`${operation} failed: ${error.message}`);
       }

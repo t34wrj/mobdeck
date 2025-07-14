@@ -50,10 +50,12 @@ describe('ConnectivityManager', () => {
   describe('Initialization', () => {
     it('should initialize with default offline state', () => {
       const status = connectivityManager.getStatus();
+      const details = connectivityManager.getDetails();
       
-      expect(status.isConnected).toBe(false);
-      expect(status.networkType).toBe(NetworkType.NONE);
-      expect(status.isInternetReachable).toBe(false);
+      expect(status).toBe(ConnectivityStatus.OFFLINE);
+      expect(details.isConnected).toBe(false);
+      expect(details.networkType).toBe(NetworkType.NONE);
+      expect(details.isInternetReachable).toBe(false);
     });
 
     it('should start monitoring on first listener', async () => {
@@ -98,11 +100,13 @@ describe('ConnectivityManager', () => {
       });
       
       const status = connectivityManager.getStatus();
+      const details = connectivityManager.getDetails();
       
-      expect(status.isConnected).toBe(true);
-      expect(status.networkType).toBe(NetworkType.CELLULAR);
-      expect(status.isInternetReachable).toBe(true);
-      expect(listener).toHaveBeenCalledWith(status);
+      expect(status).toBe(ConnectivityStatus.ONLINE);
+      expect(details.isConnected).toBe(true);
+      expect(details.networkType).toBe(NetworkType.CELLULAR);
+      expect(details.isInternetReachable).toBe(true);
+      expect(listener).toHaveBeenCalledWith(details);
     });
 
     it('should handle WiFi connection', () => {
@@ -117,8 +121,8 @@ describe('ConnectivityManager', () => {
         isInternetReachable: true,
       });
       
-      const status = connectivityManager.getStatus();
-      expect(status.networkType).toBe(NetworkType.WIFI);
+      const details = connectivityManager.getDetails();
+      expect(details.networkType).toBe(NetworkType.WIFI);
     });
 
     it('should handle cellular connection', () => {
@@ -133,8 +137,8 @@ describe('ConnectivityManager', () => {
         isInternetReachable: true,
       });
       
-      const status = connectivityManager.getStatus();
-      expect(status.networkType).toBe(NetworkType.CELLULAR);
+      const details = connectivityManager.getDetails();
+      expect(details.networkType).toBe(NetworkType.CELLULAR);
     });
 
     it('should handle ethernet connection', () => {
@@ -149,8 +153,8 @@ describe('ConnectivityManager', () => {
         isInternetReachable: true,
       });
       
-      const status = connectivityManager.getStatus();
-      expect(status.networkType).toBe(NetworkType.ETHERNET);
+      const details = connectivityManager.getDetails();
+      expect(details.networkType).toBe(NetworkType.ETHERNET);
     });
 
     it('should handle bluetooth connection', () => {
@@ -165,8 +169,8 @@ describe('ConnectivityManager', () => {
         isInternetReachable: true,
       });
       
-      const status = connectivityManager.getStatus();
-      expect(status.networkType).toBe(NetworkType.OTHER);
+      const details = connectivityManager.getDetails();
+      expect(details.networkType).toBe(NetworkType.OTHER);
     });
 
     it('should handle no connection', () => {
@@ -182,8 +186,10 @@ describe('ConnectivityManager', () => {
       });
       
       const status = connectivityManager.getStatus();
-      expect(status.networkType).toBe(NetworkType.NONE);
-      expect(status.isConnected).toBe(false);
+      const details = connectivityManager.getDetails();
+      expect(status).toBe(ConnectivityStatus.OFFLINE);
+      expect(details.networkType).toBe(NetworkType.NONE);
+      expect(details.isConnected).toBe(false);
     });
 
     it('should handle unknown connection type', () => {
@@ -198,8 +204,8 @@ describe('ConnectivityManager', () => {
         isInternetReachable: true,
       });
       
-      const status = connectivityManager.getStatus();
-      expect(status.networkType).toBe(NetworkType.OTHER);
+      const details = connectivityManager.getDetails();
+      expect(details.networkType).toBe(NetworkType.OTHER);
     });
   });
 
@@ -218,8 +224,10 @@ describe('ConnectivityManager', () => {
       });
       
       const status = connectivityManager.getStatus();
-      expect(status.isConnected).toBe(true);
-      expect(status.isInternetReachable).toBe(false);
+      const details = connectivityManager.getDetails();
+      expect(status).toBe(ConnectivityStatus.OFFLINE);
+      expect(details.isConnected).toBe(true);
+      expect(details.isInternetReachable).toBe(false);
     });
 
     it('should handle null internet reachability', () => {
@@ -234,8 +242,8 @@ describe('ConnectivityManager', () => {
         isInternetReachable: null,
       });
       
-      const status = connectivityManager.getStatus();
-      expect(status.isInternetReachable).toBe(false);
+      const details = connectivityManager.getDetails();
+      expect(details.isInternetReachable).toBe(false);
     });
   });
 
@@ -256,9 +264,9 @@ describe('ConnectivityManager', () => {
         },
       });
       
-      const status = connectivityManager.getStatus();
-      expect(status.isConnectionExpensive).toBe(true);
-      expect(status.details?.cellularGeneration).toBe('4g');
+      const details = connectivityManager.getDetails();
+      expect(details.isConnectionExpensive).toBe(true);
+      expect(details.details?.cellularGeneration).toBe('4g');
     });
 
     it('should include WiFi details when available', () => {
@@ -278,9 +286,9 @@ describe('ConnectivityManager', () => {
         },
       });
       
-      const status = connectivityManager.getStatus();
-      expect(status.details?.ssid).toBe('TestNetwork');
-      expect(status.details?.ipAddress).toBe('192.168.1.100');
+      const details = connectivityManager.getDetails();
+      expect(details.details?.ssid).toBe('TestNetwork');
+      expect(details.details?.ipAddress).toBe('192.168.1.100');
     });
   });
 
@@ -378,9 +386,9 @@ describe('ConnectivityManager', () => {
       
       await connectivityManager.refresh();
       
-      const status = connectivityManager.getStatus();
-      expect(status.networkType).toBe(NetworkType.CELLULAR);
-      expect(status.details?.cellularGeneration).toBe('5g');
+      const details = connectivityManager.getDetails();
+      expect(details.networkType).toBe(NetworkType.CELLULAR);
+      expect(details.details?.cellularGeneration).toBe('5g');
     });
 
     it('should handle refresh errors', async () => {
@@ -440,8 +448,10 @@ describe('ConnectivityManager', () => {
       
       // Verify we're actually disconnected before testing timeout
       const status = connectivityManager.getStatus();
-      expect(status.isConnected).toBe(false);
-      expect(status.isInternetReachable).toBe(false);
+      const details = connectivityManager.getDetails();
+      expect(status).toBe(ConnectivityStatus.OFFLINE);
+      expect(details.isConnected).toBe(false);
+      expect(details.isInternetReachable).toBe(false);
       
       const connected = await connectivityManager.waitForConnection(100);
       expect(connected).toBe(false);
@@ -505,8 +515,8 @@ describe('ConnectivityManager', () => {
         isInternetReachable: true,
       });
       
-      const status = connectivityManager.getStatus();
-      expect(status.networkType).toBe(NetworkType.VPN);
+      const details = connectivityManager.getDetails();
+      expect(details.networkType).toBe(NetworkType.VPN);
     });
 
     it('should handle other connection types', () => {
@@ -521,8 +531,8 @@ describe('ConnectivityManager', () => {
         isInternetReachable: true,
       });
       
-      const status = connectivityManager.getStatus();
-      expect(status.networkType).toBe(NetworkType.OTHER);
+      const details = connectivityManager.getDetails();
+      expect(details.networkType).toBe(NetworkType.OTHER);
     });
 
     it('should provide connection type string', () => {

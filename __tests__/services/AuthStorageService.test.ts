@@ -144,10 +144,8 @@ describe('AuthStorageService', () => {
       
       // Assert
       expect(result).toBe(false);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Failed to store token in keychain'),
-        undefined
-      );
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith('Failed to store token in keychain');
     });
 
     it('should handle keychain errors gracefully', async () => {
@@ -160,8 +158,9 @@ describe('AuthStorageService', () => {
       
       // Assert
       expect(result).toBe(false);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Token storage failed'),
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Token storage failed',
         expect.objectContaining({
           error: expect.objectContaining({
             code: StorageErrorCode.STORAGE_FAILED,
@@ -240,8 +239,9 @@ describe('AuthStorageService', () => {
       // Assert
       expect(result).toBeNull();
       expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith('mobdeck_auth_tokens');
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringMatching(/\[ERROR\] Failed to parse stored auth data/),
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Failed to parse stored auth data',
         expect.objectContaining({
           error: 'Parse error occurred - corrupted auth data detected'
         })
@@ -270,10 +270,8 @@ describe('AuthStorageService', () => {
       // Assert
       expect(result).toBeNull();
       expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith('mobdeck_auth_tokens');
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Invalid auth data structure'),
-        undefined
-      );
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith('Invalid auth data structure');
     });
 
     it('should handle keychain retrieval errors', async () => {
@@ -286,8 +284,9 @@ describe('AuthStorageService', () => {
       
       // Assert
       expect(result).toBeNull();
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Token retrieval failed'),
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Token retrieval failed',
         expect.objectContaining({
           error: expect.objectContaining({
             code: StorageErrorCode.RETRIEVAL_FAILED,
@@ -335,8 +334,9 @@ describe('AuthStorageService', () => {
       
       // Assert
       expect(result).toBe(false);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringMatching(/\[ERROR\] Token deletion failed/),
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Token deletion failed',
         expect.objectContaining({
           errorCode: StorageErrorCode.DELETION_FAILED,
           message: expect.stringContaining('Storage operation failed')
@@ -388,8 +388,9 @@ describe('AuthStorageService', () => {
       
       // Assert
       expect(result).toBe(false);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Token existence check failed'),
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Token existence check failed',
         expect.objectContaining({ error: expect.any(Object) })
       );
     });
@@ -486,8 +487,9 @@ describe('AuthStorageService', () => {
         isExpired: true,
         error: 'Token validation failed',
       });
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Token validation failed'),
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Token validation failed',
         expect.objectContaining({ error: expect.any(Object) })
       );
     });
@@ -504,8 +506,9 @@ describe('AuthStorageService', () => {
       
       // Assert
       expect(result).toBe(false);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Token storage failed'),
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Token storage failed',
         expect.objectContaining({
           error: expect.objectContaining({
             code: StorageErrorCode.USER_CANCELLED,
@@ -525,8 +528,9 @@ describe('AuthStorageService', () => {
       
       // Assert
       expect(result).toBe(false);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Token storage failed'),
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Token storage failed',
         expect.objectContaining({
           error: expect.objectContaining({
             code: StorageErrorCode.BIOMETRIC_UNAVAILABLE,
@@ -546,8 +550,9 @@ describe('AuthStorageService', () => {
       
       // Assert
       expect(result).toBe(false);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Token storage failed'),
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Token storage failed',
         expect.objectContaining({
           error: expect.objectContaining({
             code: StorageErrorCode.KEYCHAIN_UNAVAILABLE,
@@ -567,8 +572,9 @@ describe('AuthStorageService', () => {
       
       // Assert
       expect(result).toBe(false);
-      expect(console.error).toHaveBeenCalledWith(
-        expect.stringContaining('[ERROR] Token storage failed'),
+      const { logger } = jest.requireMock('../../src/utils/logger');
+      expect(logger.error).toHaveBeenCalledWith(
+        'Token storage failed',
         expect.objectContaining({
           error: expect.objectContaining({
             code: StorageErrorCode.STORAGE_FAILED,
@@ -656,10 +662,8 @@ describe('AuthStorageService', () => {
         // Assert
         expect(result).toBe(false);
         expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
-        expect(console.error).toHaveBeenCalledWith(
-          expect.stringContaining('[ERROR] Token too short for storage'),
-          undefined
-        );
+        const { logger } = jest.requireMock('../../src/utils/logger');
+        expect(logger.error).toHaveBeenCalledWith('Token too short for storage');
       });
 
       it('should reject tokens that are too long', async () => {
@@ -672,10 +676,8 @@ describe('AuthStorageService', () => {
         // Assert
         expect(result).toBe(false);
         expect(mockKeychainModule.setInternetCredentials).not.toHaveBeenCalled();
-        expect(console.error).toHaveBeenCalledWith(
-          expect.stringContaining('[ERROR] Token too long for storage'),
-          undefined
-        );
+        const { logger } = jest.requireMock('../../src/utils/logger');
+        expect(logger.error).toHaveBeenCalledWith('Token too long for storage');
       });
     });
 
@@ -756,9 +758,7 @@ describe('AuthStorageService', () => {
     describe('enableBiometricAuth', () => {
       it('should enable biometric authentication when available', async () => {
         // Arrange
-        mockKeychainModule.getSupportedBiometryType = jest.fn().mockResolvedValueOnce(
-          'FaceID'
-        );
+        mockKeychainModule.getSupportedBiometryType.mockResolvedValueOnce('FaceID');
         
         // Act
         const result = await authStorageService.enableBiometricAuth();
@@ -770,31 +770,30 @@ describe('AuthStorageService', () => {
 
       it('should return false when biometric not available', async () => {
         // Arrange
-        mockKeychainModule.getSupportedBiometryType = jest.fn().mockResolvedValueOnce(null);
+        mockKeychainModule.getSupportedBiometryType.mockResolvedValueOnce(null);
         
         // Act
         const result = await authStorageService.enableBiometricAuth();
         
         // Assert
         expect(result).toBe(false);
-        expect(console.warn).toHaveBeenCalledWith(
-          expect.stringContaining('[WARN] Biometric authentication not available on this device'),
-          undefined
-        );
+        const { logger } = jest.requireMock('../../src/utils/logger');
+        expect(logger.warn).toHaveBeenCalledWith('Biometric authentication not available on this device');
       });
 
       it('should handle errors when checking biometric support', async () => {
         // Arrange
         const error = new Error('Biometry check failed');
-        mockKeychainModule.getSupportedBiometryType = jest.fn().mockRejectedValueOnce(error);
+        mockKeychainModule.getSupportedBiometryType.mockRejectedValueOnce(error);
         
         // Act
         const result = await authStorageService.enableBiometricAuth();
         
         // Assert
         expect(result).toBe(false);
-        expect(console.error).toHaveBeenCalledWith(
-          expect.stringContaining('[ERROR] Failed to enable biometric authentication'),
+        const { logger } = jest.requireMock('../../src/utils/logger');
+        expect(logger.error).toHaveBeenCalledWith(
+          'Failed to enable biometric authentication',
           expect.objectContaining({ error: expect.any(Object) })
         );
       });
@@ -807,19 +806,15 @@ describe('AuthStorageService', () => {
         
         // Assert
         // Just verify it doesn't throw
-        expect(console.log).toHaveBeenCalledWith(
-          expect.stringContaining('[INFO] Biometric authentication disabled'),
-          undefined
-        );
+        const { logger } = jest.requireMock('../../src/utils/logger');
+        expect(logger.info).toHaveBeenCalledWith('Biometric authentication disabled');
       });
     });
 
     describe('getSecurityConfig', () => {
       it('should return current security configuration', async () => {
         // Arrange
-        mockKeychainModule.getSupportedBiometryType = jest.fn().mockResolvedValueOnce(
-          'TouchID'
-        );
+        mockKeychainModule.getSupportedBiometryType.mockResolvedValueOnce('TouchID');
         
         // Act
         const config = await authStorageService.getSecurityConfig();
@@ -835,7 +830,7 @@ describe('AuthStorageService', () => {
 
       it('should handle errors when getting security config', async () => {
         // Arrange
-        mockKeychainModule.getSupportedBiometryType = jest.fn().mockRejectedValueOnce(
+        mockKeychainModule.getSupportedBiometryType.mockRejectedValueOnce(
           new Error('Config check failed')
         );
         

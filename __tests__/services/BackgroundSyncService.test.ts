@@ -496,6 +496,9 @@ describe('BackgroundSyncService', () => {
     });
 
     it('should skip sync when user not authenticated', async () => {
+      // Clear previous mock calls first
+      mockSyncService.startFullSync.mockClear();
+      
       mockStore.getState.mockReturnValue({
         auth: { isAuthenticated: false },
         sync: { status: SyncStatus.IDLE },
@@ -510,6 +513,9 @@ describe('BackgroundSyncService', () => {
     });
 
     it('should skip sync when already syncing', async () => {
+      // Clear previous mock calls first
+      mockSyncService.startFullSync.mockClear();
+      
       mockStore.getState.mockReturnValue({
         auth: { isAuthenticated: true },
         sync: { status: SyncStatus.SYNCING },
@@ -579,25 +585,38 @@ describe('BackgroundSyncService', () => {
         return Promise.resolve(null);
       });
 
-      mockSyncService.startFullSync.mockResolvedValue({
-        success: true,
-        syncedCount: 1,
-        conflictCount: 0,
-        errorCount: 0,
-        duration: 1000,
-        phase: SyncPhase.FINALIZING,
-        errors: [],
+      // Use mockImplementation instead of mockResolvedValue to ensure it works
+      mockSyncService.startFullSync.mockImplementation(() => {
+        return Promise.resolve({
+          success: true,
+          syncedCount: 1,
+          conflictCount: 0,
+          errorCount: 0,
+          duration: 1000,
+          phase: SyncPhase.FINALIZING,
+          errors: [],
+        });
       });
 
       await service.triggerManualSync();
-
-      const savedHistory = JSON.parse(
-        mockAsyncStorage.setItem.mock.calls.find(
-          call => call[0] === '@mobdeck/sync_history'
-        )?.[1] || '[]'
-      );
       
-      expect(savedHistory).toHaveLength(20);
+      // Wait for async history saving to complete
+      await new Promise(resolve => setTimeout(resolve, 10));
+
+      // Debug: Check all setItem calls
+      const allSetItemCalls = mockAsyncStorage.setItem.mock.calls;
+      console.log('All setItem calls:', allSetItemCalls.map(call => [call[0], typeof call[1]]));
+      
+      const historyCall = allSetItemCalls.find(call => call[0] === '@mobdeck/sync_history');
+      console.log('History call found:', !!historyCall);
+      
+      if (historyCall) {
+        const savedHistory = JSON.parse(historyCall[1]);
+        console.log('Saved history length:', savedHistory.length);
+        expect(savedHistory).toHaveLength(20);
+      } else {
+        throw new Error('No sync history call found');
+      }
     });
   });
 
@@ -639,6 +658,9 @@ describe('BackgroundSyncService', () => {
     });
 
     it('should block sync on cellular when WiFi-only enabled', async () => {
+      // Clear any previous calls
+      mockSyncService.startFullSync.mockClear();
+      
       await service.updatePreferences({ wifiOnly: true });
       
       // Simulate cellular network
@@ -655,12 +677,15 @@ describe('BackgroundSyncService', () => {
       await service.triggerManualSync();
 
       expect(console.log).toHaveBeenCalledWith(
-        '[BackgroundSyncService] Network conditions not met for sync'
+        '[BackgroundSyncService] Sync requires WiFi, current network is not WiFi'
       );
       expect(mockSyncService.startFullSync).not.toHaveBeenCalled();
     });
 
     it('should block sync on cellular when cellular disabled', async () => {
+      // Clear any previous calls
+      mockSyncService.startFullSync.mockClear();
+      
       await service.updatePreferences({ 
         wifiOnly: false, 
         allowCellular: false 
@@ -680,12 +705,15 @@ describe('BackgroundSyncService', () => {
       await service.triggerManualSync();
 
       expect(console.log).toHaveBeenCalledWith(
-        '[BackgroundSyncService] Network conditions not met for sync'
+        '[BackgroundSyncService] Cellular sync disabled'
       );
       expect(mockSyncService.startFullSync).not.toHaveBeenCalled();
     });
 
     it('should block sync on metered when metered disabled', async () => {
+      // Clear any previous calls
+      mockSyncService.startFullSync.mockClear();
+      
       await service.updatePreferences({ 
         allowMetered: false 
       });
@@ -704,12 +732,15 @@ describe('BackgroundSyncService', () => {
       await service.triggerManualSync();
 
       expect(console.log).toHaveBeenCalledWith(
-        '[BackgroundSyncService] Network conditions not met for sync'
+        '[BackgroundSyncService] Metered connection sync disabled'
       );
       expect(mockSyncService.startFullSync).not.toHaveBeenCalled();
     });
 
     it('should block sync when offline', async () => {
+      // Clear previous mock calls
+      mockSyncService.startFullSync.mockClear();
+      
       // Simulate offline state
       const networkState = {
         type: 'none',
@@ -830,7 +861,7 @@ describe('BackgroundSyncService', () => {
         isRunning: true,
         lastSyncTime,
         nextScheduledSync: nextSyncTime,
-        currentNetworkType: NetworkType.UNKNOWN, // Default when no network state
+        currentNetworkType: NetworkType.WIFI, // Set by beforeEach network state
         syncHistory,
       });
     });
@@ -863,6 +894,9 @@ describe('BackgroundSyncService', () => {
     });
 
     it('should cleanup resources', () => {
+      // Mock BackgroundService.isRunning to return true so stop gets called
+      mockBackgroundService.isRunning.mockReturnValue(true);
+      
       service.cleanup();
 
       expect(unsubscribe).toHaveBeenCalled();
@@ -870,15 +904,21 @@ describe('BackgroundSyncService', () => {
       expect(mockBackgroundService.stop).toHaveBeenCalled();
     });
 
-    it('should handle cleanup errors gracefully', () => {
+    it('should handle cleanup errors gracefully', async () => {
+      // Mock BackgroundService.isRunning to return true so stop gets called
+      mockBackgroundService.isRunning.mockReturnValue(true);
+      
       // Temporarily change the mock behavior for this test only
       const originalStop = mockBackgroundService.stop;
       mockBackgroundService.stop = jest.fn().mockRejectedValue(new Error('Stop failed'));
 
       service.cleanup();
+      
+      // Wait for the async cancelSync to complete
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       expect(console.error).toHaveBeenCalledWith(
-        '[BackgroundSyncService] Failed to cancel sync during cleanup:',
+        '[BackgroundSyncService] Failed to cancel sync:',
         expect.any(Error)
       );
       
@@ -935,6 +975,9 @@ describe('BackgroundSyncService', () => {
       
       const handler = mockNetInfo.addEventListener.mock.calls[0][0];
       handler(networkState);
+      
+      // Wait for async checkAndTriggerSync to complete
+      await new Promise(resolve => setTimeout(resolve, 10));
 
       expect(console.log).toHaveBeenCalledWith(
         '[BackgroundSyncService] Too soon since last sync, skipping'
