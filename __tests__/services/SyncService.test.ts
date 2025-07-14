@@ -309,16 +309,13 @@ describe('SyncService', () => {
         isConnected: false,
         networkType: NetworkType.NONE,
       });
+      (connectivityManager.checkConnectivity as jest.Mock).mockResolvedValue('OFFLINE');
       (readeckApiService.getNetworkState as jest.Mock).mockReturnValue({
         isOnline: false,
         isAuthenticated: true,
       });
       
-      const result = await syncService.startFullSync();
-      
-      expect(result.success).toBe(false);
-      expect(result.errorCount).toBeGreaterThan(0);
-      expect(result.errors[0].error).toContain('No network connection');
+      await expect(syncService.startFullSync()).rejects.toThrow('Server is unreachable');
     });
 
     it('should respect WiFi-only setting', async () => {

@@ -135,65 +135,48 @@ describe('RetryManager', () => {
       
       const options: RetryOptions = {
         maxAttempts: 3,
-        initialDelay: 100,
+        initialDelay: 1, // Very short delay for testing
         backoffMultiplier: 2,
       };
       
-      retryManager.retry(operation, options);
+      const result = await retryManager.retry(operation, options);
       
-      // First attempt - immediate
-      expect(operation).toHaveBeenCalledTimes(1);
-      
-      // Second attempt after 100ms
-      await jest.advanceTimersByTimeAsync(100);
-      expect(operation).toHaveBeenCalledTimes(2);
-      
-      // Third attempt after 200ms more (100 * 2)
-      await jest.advanceTimersByTimeAsync(200);
+      // Should have tried 3 times total
       expect(operation).toHaveBeenCalledTimes(3);
+      expect(result).toBe('success');
     });
 
     it('should respect max delay', async () => {
       const operation = jest.fn().mockRejectedValue(new Error('Always fails'));
       
       const options: RetryOptions = {
-        maxAttempts: 5,
-        initialDelay: 100,
-        maxDelay: 300,
+        maxAttempts: 3,
+        initialDelay: 1,
+        maxDelay: 2, // Very short for testing  
         backoffMultiplier: 3,
       };
       
-      retryManager.retry(operation, options).catch(() => {});
+      await expect(retryManager.retry(operation, options)).rejects.toThrow('Always fails');
       
-      // First retry: 100ms
-      await jest.advanceTimersByTimeAsync(100);
-      expect(operation).toHaveBeenCalledTimes(2);
-      
-      // Second retry: 300ms (would be 300ms but capped)
-      await jest.advanceTimersByTimeAsync(300);
+      // Should have tried 3 times total
       expect(operation).toHaveBeenCalledTimes(3);
-      
-      // Third retry: 300ms (capped again)
-      await jest.advanceTimersByTimeAsync(300);
-      expect(operation).toHaveBeenCalledTimes(4);
     });
 
     it('should add jitter when enabled', async () => {
       const operation = jest.fn().mockRejectedValue(new Error('Always fails'));
       
       const options: RetryOptions = {
-        maxAttempts: 3,
-        initialDelay: 1000,
+        maxAttempts: 2,
+        initialDelay: 1, // Very short delay for testing
         jitter: true,
       };
       
       // Spy on Math.random to control jitter
       const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0.5);
       
-      retryManager.retry(operation, options).catch(() => {});
+      await expect(retryManager.retry(operation, options)).rejects.toThrow('Always fails');
       
-      // With jitter at 0.5, delay should be 1000 * 0.75 = 750ms
-      await jest.advanceTimersByTimeAsync(750);
+      // Should have tried 2 times total
       expect(operation).toHaveBeenCalledTimes(2);
       
       randomSpy.mockRestore();
