@@ -12,7 +12,34 @@ import {
 } from '../../src/types/auth';
 
 // Mock react-native-keychain
-jest.mock('react-native-keychain');
+jest.mock('react-native-keychain', () => ({
+  setInternetCredentials: jest.fn(),
+  getInternetCredentials: jest.fn(),
+  resetInternetCredentials: jest.fn(),
+  getSupportedBiometryType: jest.fn(),
+  ACCESS_CONTROL: {
+    BIOMETRY_CURRENT_SET: 'biometry_current_set',
+  },
+  ACCESSIBLE: {
+    WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'when_unlocked_this_device_only',
+  },
+}));
+
+// Mock security utilities
+jest.mock('../../src/utils/security', () => ({
+  generateSecureRandom: jest.fn(() => 'mocked-random-salt'),
+  hashData: jest.fn(() => 'mocked-hash-checksum'),
+}));
+
+// Mock logger
+jest.mock('../../src/utils/logger', () => ({
+  logger: {
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  },
+}));
 
 describe('AuthStorageService', () => {
   let authStorageService: AuthStorageService;
@@ -39,10 +66,10 @@ describe('AuthStorageService', () => {
     jest.clearAllMocks();
     jest.restoreAllMocks();
     
-    // Reset console mocks
-    (console.log as jest.Mock).mockClear();
-    (console.error as jest.Mock).mockClear();
-    (console.warn as jest.Mock).mockClear();
+    // Mock console methods
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
     
     // Create new instance for each test
     authStorageService = new AuthStorageService();
@@ -51,7 +78,7 @@ describe('AuthStorageService', () => {
   describe('storeToken', () => {
     it('should store a valid token successfully', async () => {
       // Arrange
-      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce(false);
+      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({ service: 'mobdeck_auth_tokens', storage: 'InternetPassword' } as any);
       
       // Act
       const result = await authStorageService.storeToken(validToken);
@@ -151,7 +178,7 @@ describe('AuthStorageService', () => {
       // Arrange
       // Create a mock JWT token with expiration
       const mockJWT = 'header.' + btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })) + '.signature';
-      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce(false);
+      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({ service: 'mobdeck_auth_tokens', storage: 'InternetPassword' } as any);
       
       // Act
       const result = await authStorageService.storeToken(mockJWT);
@@ -290,7 +317,7 @@ describe('AuthStorageService', () => {
 
     it('should handle non-existent token deletion', async () => {
       // Arrange
-      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(false as any);
+      mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(undefined);
       
       // Act
       const result = await authStorageService.deleteToken();
@@ -559,7 +586,7 @@ describe('AuthStorageService', () => {
     it('should calculate default 24-hour expiration for non-JWT tokens', async () => {
       // Arrange
       const nonJWTToken = 'simple-bearer-token';
-      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce(false);
+      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({ service: 'mobdeck_auth_tokens', storage: 'InternetPassword' } as any);
       const beforeTime = Date.now();
       
       // Act
@@ -579,7 +606,7 @@ describe('AuthStorageService', () => {
     it('should handle malformed JWT tokens gracefully', async () => {
       // Arrange
       const malformedJWT = 'not.a.valid.jwt.token';
-      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce(false);
+      mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({ service: 'mobdeck_auth_tokens', storage: 'InternetPassword' } as any);
       
       // Act
       const result = await authStorageService.storeToken(malformedJWT);
@@ -606,7 +633,7 @@ describe('AuthStorageService', () => {
           lastLoginAt: new Date().toISOString(),
           tokenExpiresAt: new Date(Date.now() + 86400000).toISOString(),
         };
-        mockKeychainModule.setInternetCredentials.mockResolvedValueOnce(false);
+        mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({ service: 'mobdeck_auth_tokens', storage: 'InternetPassword' } as any);
         
         // Act
         const result = await authStorageService.storeToken(validToken, user);
