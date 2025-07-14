@@ -188,6 +188,7 @@ export interface ReadeckUser {
 
 export interface ReadeckUserProfile {
   id?: string;             // Optional user ID for tests
+  username?: string;       // Optional username for tests
   provider: {
     application: string;      // Registered application name
     id: string;              // Authentication provider ID (token ID)
