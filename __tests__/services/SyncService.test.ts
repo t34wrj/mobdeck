@@ -16,7 +16,6 @@ import {
   SyncPhase,
   ConflictResolutionStrategy,
   NetworkType,
-  SyncConflict,
   ConflictType,
 } from '../../src/types/sync';
 import { Article } from '../../src/types';

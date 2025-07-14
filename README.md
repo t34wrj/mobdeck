@@ -1,6 +1,6 @@
 # Mobdeck Mobile App
 
-Mobdeck is a React Native mobile application that provides seamless access to your self-hosted Readeck instances. Designed for self-hosting enthusiasts, it offers offline-first article reading, background synchronization, and Android share integration for a complete mobile reading experience.
+Mobdeck is a React Native mobile application that provides seamless access to your self-hosted [Readeck] (https://readeck.org/en/)  instance. Designed for self-hosting enthusiasts, it offers offline-first article reading, background synchronization, and Android share integration for a complete mobile reading experience.
 
 ![Android](https://img.shields.io/badge/Android-7.0%2B-green) ![React Native](https://img.shields.io/badge/React%20Native-0.80.0-blue) ![License](https://img.shields.io/badge/License-MIT-yellow)
 
