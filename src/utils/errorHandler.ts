@@ -125,7 +125,10 @@ class ErrorHandler {
 
   private constructor() {
     this.sessionId = this.generateSessionId();
-    this.setupGlobalErrorHandlers();
+    // Only setup global handlers in production/development, not in tests
+    if (process.env.NODE_ENV !== 'test') {
+      this.setupGlobalErrorHandlers();
+    }
   }
 
   public static getInstance(): ErrorHandler {
@@ -140,7 +143,8 @@ class ErrorHandler {
   }
 
   private setupGlobalErrorHandlers(): void {
-    if (typeof global !== 'undefined') {
+    // Skip global error handlers in test environment
+    if (typeof global !== 'undefined' && process.env.NODE_ENV !== 'test') {
       // Only add breadcrumb without intercepting console.error to avoid double logging
       const originalConsoleError = console.error;
       console.error = (...args: any[]) => {
