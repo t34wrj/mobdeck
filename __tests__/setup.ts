@@ -1,7 +1,16 @@
 import 'react-native-gesture-handler/jestSetup';
-import mockAsyncStorage from '@react-native-async-storage/async-storage/jest/async-storage-mock';
+import { 
+  mockAsyncStorage, 
+  mockKeychain, 
+  mockSQLite, 
+  mockNetInfo, 
+  mockNavigation, 
+  mockRoute, 
+  mockBackgroundActions,
+  resetAllMocks 
+} from './mocks/strategicMocks';
 
-// Mock AsyncStorage
+// Strategic External Dependency Mocking
 jest.mock('@react-native-async-storage/async-storage', () => mockAsyncStorage);
 
 // Mock React Native modules
@@ -53,14 +62,9 @@ jest.mock('react-native', () => ({
   },
 }));
 
-// Mock Keychain
+// Mock Keychain (External Dependency)
 jest.mock('react-native-keychain', () => ({
-  setInternetCredentials: jest.fn(() => Promise.resolve()),
-  getInternetCredentials: jest.fn(() =>
-    Promise.resolve({ username: 'test', password: 'test' })
-  ),
-  resetInternetCredentials: jest.fn(() => Promise.resolve()),
-  canImplyAuthentication: jest.fn(() => Promise.resolve(true)),
+  ...mockKeychain,
   ACCESSIBLE: {
     WHEN_UNLOCKED_THIS_DEVICE_ONLY: 'WhenUnlockedThisDeviceOnly',
     WHEN_UNLOCKED: 'WhenUnlocked',
@@ -78,63 +82,25 @@ jest.mock('react-native-keychain', () => ({
   },
 }));
 
-// Mock NetInfo
-jest.mock('@react-native-community/netinfo', () => ({
-  addEventListener: jest.fn(),
-  fetch: jest.fn(() =>
-    Promise.resolve({
-      type: 'wifi',
-      isConnected: true,
-      isInternetReachable: true,
-    })
-  ),
-}));
+// Mock NetInfo (External Dependency)
+jest.mock('@react-native-community/netinfo', () => mockNetInfo);
 
-// Mock React Navigation
+// Mock React Navigation (UI Boundary)
 jest.mock('@react-navigation/native', () => ({
-  useNavigation: () => ({
-    navigate: jest.fn(),
-    goBack: jest.fn(),
-    dispatch: jest.fn(),
-    setOptions: jest.fn(),
-    isFocused: jest.fn(() => true),
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-  }),
-  useRoute: () => ({
-    params: {},
-    key: 'test-route',
-    name: 'test-route',
-  }),
+  useNavigation: () => mockNavigation,
+  useRoute: () => mockRoute,
   useFocusEffect: jest.fn(),
-  NavigationContainer: ({ children }: { children: React.ReactNode }) =>
-    children,
+  NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-// Mock SQLite Storage
+// Mock SQLite Storage (External Dependency)
 jest.mock('react-native-sqlite-storage', () => ({
-  openDatabase: jest.fn(() => ({
-    transaction: jest.fn(callback => {
-      callback({
-        executeSql: jest.fn((sql, params, success) => {
-          if (success) success([], { rows: { _array: [] } });
-        }),
-      });
-    }),
-    close: jest.fn(),
-  })),
-  enablePromise: jest.fn(),
+  ...mockSQLite,
   DEBUG: jest.fn(),
 }));
 
-// Mock Background Actions
-jest.mock('react-native-background-actions', () => ({
-  start: jest.fn(() => Promise.resolve()),
-  stop: jest.fn(() => Promise.resolve()),
-  updateNotification: jest.fn(() => Promise.resolve()),
-  isRunning: jest.fn(() => false),
-  on: jest.fn(),
-}));
+// Mock Background Actions (System Boundary)
+jest.mock('react-native-background-actions', () => mockBackgroundActions);
 
 // Mock React Native Screens
 jest.mock('react-native-screens', () => ({
@@ -179,8 +145,8 @@ jest.mock('../src/utils/connectivityManager', () => ({
   },
 }));
 
-// Mock ArticlesApiService for all tests
-jest.mock('../src/services/ArticlesApiService', () => {
+// Mock ReadeckApiService for all tests
+jest.mock('../src/services/ReadeckApiService', () => {
   const mockMethods = {
     fetchArticles: jest.fn(() =>
       Promise.resolve({

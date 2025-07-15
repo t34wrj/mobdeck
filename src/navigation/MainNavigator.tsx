@@ -4,7 +4,7 @@ import { ArticlesListScreen } from '../screens/main/ArticlesListScreen';
 import { ArticleDetailScreen } from '../screens/main/ArticleDetailScreen';
 import { SettingsScreen } from '../screens/main/SettingsScreen';
 import { MainStackParamList } from './types';
-import { theme } from '../components/ui/theme';
+import { theme } from "../../components/theme"';
 
 const Stack = createStackNavigator<MainStackParamList>();
 

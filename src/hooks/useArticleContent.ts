@@ -6,7 +6,7 @@ import {
   updateArticleLocal,
   updateArticleLocalWithDB,
 } from '../store/slices/articlesSlice';
-import { articlesApiService } from '../services/ArticlesApiService';
+import { readeckApiService } from '../services/ReadeckApiService';
 
 export const useArticleContent = (
   article: Article | undefined,
@@ -36,12 +36,12 @@ export const useArticleContent = (
           );
 
           try {
-            const createdArticle = await articlesApiService.createArticle({
+            const createdArticle = await readeckApiService.createArticleWithMetadata({
               title: article.title,
               url: article.url,
             });
 
-            const serverArticle = await articlesApiService.getArticle(
+            const serverArticle = await readeckApiService.getArticleWithContent(
               createdArticle.id
             );
 
@@ -69,9 +69,10 @@ export const useArticleContent = (
           }
         } else if (article.contentUrl) {
           try {
-            const htmlContent = await articlesApiService.getArticleContent(
-              article.contentUrl
+            const fullArticle = await readeckApiService.getArticleWithContent(
+              article.id
             );
+            const htmlContent = fullArticle.content;
 
             dispatch(
               updateArticleLocalWithDB({
@@ -105,13 +106,13 @@ export const useArticleContent = (
       let updatedArticle;
 
       if (article.id.startsWith('local_')) {
-        const createdArticle = await articlesApiService.createArticle({
+        const createdArticle = await readeckApiService.createArticleWithMetadata({
           title: article.title,
           url: article.url,
         });
-        updatedArticle = await articlesApiService.getArticle(createdArticle.id);
+        updatedArticle = await readeckApiService.getArticleWithContent(createdArticle.id);
       } else {
-        updatedArticle = await articlesApiService.getArticle(article.id);
+        updatedArticle = await readeckApiService.getArticleWithContent(article.id);
       }
 
       const updateData = {

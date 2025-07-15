@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '../store';
-import DatabaseService from '../services/DatabaseService';
+import { localStorageService } from '../services/LocalStorageService';
 import {
   initializeSyncService,
   startSyncOperation,
@@ -38,7 +38,7 @@ export const useAppInitialization = () => {
         // Initialize database first
         console.log('[AppInit] Initializing database...');
         try {
-          await DatabaseService.initialize();
+          await localStorageService.initialize();
           console.log('[AppInit] Database initialized successfully');
         } catch (dbError) {
           console.error('[AppInit] Database initialization failed:', {

@@ -1,8 +1,7 @@
 import React from 'react';
 import { TextInput, View, StyleSheet } from 'react-native';
-import { theme } from './ui/theme';
-import { Button } from './ui/Button';
-import { Text } from './ui/Text';
+import { theme } from './theme';
+import { SimpleButton } from './SimpleButton';
 
 interface SearchBarProps {
   searchQuery: string;
@@ -28,15 +27,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
         accessibilityHint='Enter keywords to search your articles'
         accessibilityRole='search'
       />
-      <Button
+      <SimpleButton
+        title='Search'
         variant='primary'
         size='sm'
         onPress={onSearchSubmit}
         accessibilityLabel='Search button'
         accessibilityHint='Tap to search for articles'
-      >
-        <Text>Search</Text>
-      </Button>
+      />
     </View>
   );
 };

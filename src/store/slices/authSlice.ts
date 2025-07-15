@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { authStorageService } from '../../services/AuthStorageService';
+import { localStorageService } from '../../services/LocalStorageService';
 import { errorHandler, ErrorCategory } from '../../utils/errorHandler';
 import { logger } from '../../utils/logger';
 import {
@@ -57,8 +57,9 @@ export const loginUser = createAsyncThunk<
       ).toISOString(),
     };
 
-    const tokenStored = await authStorageService.storeToken(
-      loginResponse.token
+    const tokenStored = await localStorageService.storeToken(
+      loginResponse.token,
+      user
     );
     if (!tokenStored) {
       logger.warn('Failed to store token securely');
@@ -87,7 +88,7 @@ export const logoutUser = createAsyncThunk<
 >('auth/logoutUser', async (_, { rejectWithValue, dispatch }) => {
   try {
     // Clear auth token from secure storage
-    const tokenDeleted = await authStorageService.deleteToken();
+    const tokenDeleted = await localStorageService.deleteToken();
     if (!tokenDeleted) {
       console.warn('[AuthSlice] Failed to delete token from secure storage');
     }
@@ -97,16 +98,13 @@ export const logoutUser = createAsyncThunk<
       // Import here to avoid circular dependencies
       const { clearAll: clearAllArticles } = await import('./articlesSlice');
       const { resetSyncState, resetSyncStats } = await import('./syncSlice');
-      const databaseService = (await import('../../services/DatabaseService'))
-        .default;
-
       // Clear Redux state
       dispatch(clearAllArticles());
       dispatch(resetSyncState());
       dispatch(resetSyncStats());
 
-      // Clear database data
-      const clearResult = await databaseService.clearAllData();
+      // Clear all local storage data
+      const clearResult = await localStorageService.clearAllData();
       if (!clearResult.success) {
         console.warn(
           '[AuthSlice] Failed to clear database data:',
@@ -137,32 +135,30 @@ export const initializeAuth = createAsyncThunk<
   { rejectValue: string }
 >('auth/initializeAuth', async (_, { rejectWithValue }) => {
   try {
-    // Use the enhanced retrieveAuthData method to get both token and user data
-    const authData = await (authStorageService as any).retrieveAuthData();
+    // Check if token is stored and valid
+    const isTokenStored = await localStorageService.isTokenStored();
+    if (!isTokenStored) {
+      return null;
+    }
+    
+    const token = await localStorageService.retrieveToken();
+    if (!token) {
+      return null;
+    }
+    
+    const validation = await localStorageService.validateStoredToken();
+    const authData = { token, isValid: validation.isValid, isExpired: validation.isExpired };
 
-    if (authData && authData.token) {
-      const validation = await authStorageService.validateStoredToken();
-
-      if (validation.isValid && !validation.isExpired) {
-        // Restore user data from stored auth data
-        const user: AuthenticatedUser = authData.user
-          ? {
-              id: authData.user.id,
-              username: authData.user.username,
-              email: authData.user.email,
-              serverUrl: authData.serverUrl,
-              lastLoginAt: authData.user.lastLoginAt,
-              tokenExpiresAt: authData.expiresAt,
-            }
-          : {
-              // Fallback for legacy tokens without user data
-              id: 'readeck-user',
-              username: 'Readeck User',
-              email: 'user@readeck.local',
-              serverUrl: authData.serverUrl || '',
-              lastLoginAt: new Date().toISOString(),
-              tokenExpiresAt: authData.expiresAt,
-            };
+    if (authData && authData.token && authData.isValid && !authData.isExpired) {
+        // Create user data - simplified since we don't store full user data
+        const user: AuthenticatedUser = {
+          id: 'readeck-user',
+          username: 'Readeck User',
+          email: 'user@readeck.local',
+          serverUrl: '', // This will need to be set separately
+          lastLoginAt: new Date().toISOString(),
+          tokenExpiresAt: validation.expiresAt || new Date(Date.now() + 86400000).toISOString(), // 24h default
+        };
 
         // Configure the ReadeckApiService with the restored server URL
         if (user.serverUrl) {
@@ -207,11 +203,10 @@ export const initializeAuth = createAsyncThunk<
           serverUrl: user.serverUrl,
         });
         return { user, token: authData.token };
-      } else {
-        logger.info('Stored token is invalid or expired, clearing auth data');
-        await authStorageService.deleteToken();
-        return null;
-      }
+    } else {
+      logger.info('Stored token is invalid or expired, clearing auth data');
+      await localStorageService.deleteToken();
+      return null;
     }
 
     logger.debug('No stored auth data found');
@@ -231,7 +226,7 @@ export const restoreAuthState = createAsyncThunk<
   { rejectValue: string }
 >('auth/restoreAuthState', async (_, { rejectWithValue }) => {
   try {
-    const token = await authStorageService.retrieveToken();
+    const token = await localStorageService.retrieveToken();
 
     if (!token) {
       return null;
@@ -254,7 +249,7 @@ export const refreshToken = createAsyncThunk<
   { rejectValue: string }
 >('auth/refreshToken', async (serverUrl, { rejectWithValue }) => {
   try {
-    const currentToken = await authStorageService.retrieveToken();
+    const currentToken = await localStorageService.retrieveToken();
 
     if (!currentToken) {
       throw new Error('No token available for refresh');
@@ -274,7 +269,7 @@ export const refreshToken = createAsyncThunk<
 
     const refreshResponse = await response.json();
 
-    const tokenStored = await authStorageService.storeToken(
+    const tokenStored = await localStorageService.storeToken(
       refreshResponse.token
     );
     if (!tokenStored) {

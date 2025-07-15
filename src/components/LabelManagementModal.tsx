@@ -13,7 +13,7 @@ import {
 import { Text } from './ui/Text';
 import { Button } from './ui/Button';
 import { theme } from './ui/theme';
-import { labelsApiService } from '../services/LabelsApiService';
+import { readeckApiService } from '../services/ReadeckApiService';
 import { Label } from '../types/labels';
 
 export interface LabelManagementModalProps {
@@ -61,7 +61,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
 
     try {
       setLoading(true);
-      const response = await labelsApiService.fetchLabels({
+      const response = await readeckApiService.getLabels({
         limit: 100,
         searchQuery: searchQuery || undefined,
         sortBy: 'name',
@@ -114,7 +114,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
 
     try {
       setLoading(true);
-      const newLabel = await labelsApiService.createLabel({
+      const newLabel = await readeckApiService.createLabel({
         name: newLabelName.trim(),
         color: newLabelColor,
       });
@@ -155,12 +155,12 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       const promises: Promise<void>[] = [];
 
       labelsToAdd.forEach(labelId => {
-        promises.push(labelsApiService.assignToArticle({ labelId, articleId }));
+        promises.push(readeckApiService.assignLabel({ labelId, articleId }));
       });
 
       labelsToRemove.forEach(labelId => {
         promises.push(
-          labelsApiService.removeFromArticle({ labelId, articleId })
+          readeckApiService.removeLabel({ labelId, articleId })
         );
       });
 

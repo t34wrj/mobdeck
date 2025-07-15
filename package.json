@@ -21,19 +21,7 @@
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
     "build:types": "tsc --emitDeclarationOnly --declaration --outDir dist/types",
-    "code-quality": "npm run lint && npm run format:check && npm run type-check",
-    "test:performance": "jest --testPathPattern='.*\\.perf\\.test\\.(ts|tsx)$' --verbose",
-    "test:performance:sync": "jest --testPathPattern='SyncService.test.ts' --testNamePattern='Performance Benchmarks' --verbose",
-    "test:performance:ui": "jest --testPathPattern='UIResponsiveness.perf.test.tsx' --verbose",
-    "test:performance:articles": "jest --testPathPattern='ArticleOperations.perf.test.ts' --verbose",
-    "test:performance:network": "jest --testPathPattern='NetworkPerformance.perf.test.ts' --verbose",
-    "test:performance:device": "jest --testPathPattern='.*\\.perf\\.test\\.(ts|tsx)$' --verbose --testTimeout=60000",
-    "test:performance:network-device": "jest --testPathPattern='NetworkPerformance.perf.test.ts' --verbose --testTimeout=60000",
-    "performance:report": "npm run test:performance > performance-report.txt 2>&1",
-    "performance:setup-device": "./scripts/setup-device-tests.sh",
-    "performance:check-device": "adb devices && adb shell 'ps | grep com.mobdeck'",
-    "performance:device": "RUN_DEVICE_TESTS=true npm run test:performance:device",
-    "performance:network-device": "RUN_DEVICE_TESTS=true npm run test:performance:network-device"
+    "code-quality": "npm run lint && npm run format:check && npm run type-check"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.23.1",

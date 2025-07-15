@@ -10,7 +10,7 @@ import {
   ArticleLoadingState,
   ArticleErrorState,
 } from '../../components/article/ArticleErrorStates';
-import { theme } from '../../components/ui/theme';
+import { theme } from "../../components/theme"';
 import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
 import { selectArticleById } from '../../store/slices/articlesSlice';

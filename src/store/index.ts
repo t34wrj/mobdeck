@@ -6,8 +6,6 @@ import syncReducer from './slices/syncSlice';
 import {
   loggerMiddleware,
   errorHandlerMiddleware,
-  performanceMiddleware,
-  productionErrorMiddleware,
 } from './middleware';
 
 // Root reducer configuration
@@ -49,10 +47,10 @@ const storeConfig: ConfigureStoreOptions = {
 
     const baseMiddleware = getDefaultMiddleware(middlewareConfig);
 
-    // Add custom middleware - optimized for production vs development
+    // Add custom middleware - simplified
     return baseMiddleware.concat(
-      __DEV__ ? errorHandlerMiddleware : productionErrorMiddleware,
-      ...(__DEV__ ? [loggerMiddleware, performanceMiddleware] : [])
+      errorHandlerMiddleware,
+      ...(__DEV__ ? [loggerMiddleware] : [])
     );
   },
   // Optimize Redux DevTools for development

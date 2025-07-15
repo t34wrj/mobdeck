@@ -12,8 +12,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from './store';
 import AppNavigator from './navigation/AppNavigator';
 import { useAppInitialization } from './hooks/useAppInitialization';
-import { Text } from './components/ui/Text';
-import { theme } from './components/ui/theme';
+import { SimpleText } from './components/SimpleText';
+import { theme } from './components/theme';
 
 // Debug functions for testing through React Native debugger
 if (__DEV__) {

@@ -10,11 +10,11 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Text } from '../../components/ui/Text';
-import { Button } from '../../components/ui/Button';
+import { SimpleText } from "../../components";
+import { SimpleButton } from "../../components";
 import { ArticleCard } from '../../components/ArticleCard';
 import MobdeckLogo from '../../components/MobdeckLogo';
-import { theme } from '../../components/ui/theme';
+import { theme } from "../../components/theme"';
 import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
 import {

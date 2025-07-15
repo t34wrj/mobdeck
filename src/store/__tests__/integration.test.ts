@@ -50,13 +50,11 @@ describe('Redux Store Integration', () => {
       lastTokenRefresh: undefined,
     });
 
-    // Verify articles state structure (it uses entity adapter)
-    expect(state.articles).toHaveProperty('ids');
-    expect(state.articles).toHaveProperty('entities');
+    // Verify articles state structure (simplified array-based)
+    expect(state.articles).toHaveProperty('articles');
     expect(state.articles).toHaveProperty('loading');
     expect(state.articles).toHaveProperty('error');
     expect(state.articles).toHaveProperty('pagination');
-    expect(state.articles.ids).toEqual([]);
-    expect(state.articles.entities).toEqual({});
+    expect(state.articles.articles).toEqual([]);
   });
 });

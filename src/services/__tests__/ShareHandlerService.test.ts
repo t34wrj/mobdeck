@@ -4,12 +4,12 @@
  */
 
 import ShareHandlerService, { ShareErrorCode } from '../ShareHandlerService';
-import { articlesApiService } from '../ArticlesApiService';
+import { readeckApiService } from '../ReadeckApiService';
 import { validateUrl, extractUrlFromText } from '../../utils/urlValidation';
 import { SharedData } from '../../types';
 
 // Mock dependencies
-jest.mock('../ArticlesApiService');
+jest.mock('../ReadeckApiService');
 jest.mock('../../utils/urlValidation');
 // Mock the ShareModule while preserving other react-native mocks
 jest.mock('react-native', () => ({

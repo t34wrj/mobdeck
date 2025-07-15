@@ -9,10 +9,10 @@ import {
 import { startSyncOperation } from '../store/thunks/syncThunks';
 import ArticleCard from '../components/ArticleCard';
 import SearchBar from '../components/SearchBar';
-import { Text } from '../components/ui/Text';
+import { SimpleText } from "../../components";
 import { MainScreenProps } from '../navigation/types';
 import { RootState, AppDispatch } from '../store';
-import { theme } from '../components/ui/theme';
+import { theme } from "../../components/theme"';
 import { Article } from '../types';
 
 const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({

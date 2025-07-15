@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Image, StyleSheet, ActivityIndicator } from 'react-native';
-import { Text } from '../components/ui/Text';
+import { SimpleText } from "../../components";
 import { fetchArticleById } from '../services/api';
 import { MainScreenProps } from '../navigation/types';
-import { colors } from '../components/ui/theme';
+import { colors } from "../../components/theme"';
 
 const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
   navigation: _navigation,

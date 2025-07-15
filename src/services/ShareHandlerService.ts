@@ -3,7 +3,7 @@
  * Processes shared URLs from Android share intents and adds them to Readeck
  */
 
-import { articlesApiService, CreateArticleParams } from './ArticlesApiService';
+import { readeckApiService } from './ReadeckApiService';
 import {
   validateUrl,
   extractUrlFromText,
@@ -346,7 +346,7 @@ class ShareHandlerService {
   /**
    * Create article with retry logic
    */
-  private async createArticleWithRetry(params: CreateArticleParams): Promise<{
+  private async createArticleWithRetry(params: { url: string; title?: string }): Promise<{
     success: boolean;
     article?: Article;
     error?: ShareHandlerError;
@@ -366,7 +366,7 @@ class ShareHandlerService {
           );
         }
 
-        const article = await articlesApiService.createArticle(params);
+        const article = await readeckApiService.createArticleWithMetadata(params);
 
         if (__DEV__) {
           console.log(

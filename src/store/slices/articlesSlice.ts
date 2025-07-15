@@ -2,23 +2,16 @@ import {
   createSlice,
   createAsyncThunk,
   PayloadAction,
-  createEntityAdapter,
 } from '@reduxjs/toolkit';
 import { Article, PaginatedResponse } from '../../types';
 import { RootState } from '../index';
-import { articlesApiService } from '../../services/ArticlesApiService';
-import DatabaseService from '../../services/DatabaseService';
+import { readeckApiService } from '../../services/ReadeckApiService';
+import { localStorageService } from '../../services/LocalStorageService';
 
-// Entity adapter for normalized state management
-const articlesAdapter = createEntityAdapter<Article>({
-  selectId: article => article.id,
-  sortComparer: (a, b) =>
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-});
-
-// Enhanced state interface with sync state and pagination
-export interface ArticlesState
-  extends ReturnType<typeof articlesAdapter.getInitialState> {
+// Simple state interface without entity adapter
+export interface ArticlesState {
+  // Article data as simple array
+  articles: Article[];
   // Loading states
   loading: {
     fetch: boolean;
@@ -72,7 +65,7 @@ export interface ArticlesState
 
 // Initial state
 const initialState: ArticlesState = {
-  ...articlesAdapter.getInitialState(),
+  articles: [],
   loading: {
     fetch: false,
     create: false,
@@ -164,7 +157,7 @@ export const fetchArticles = createAsyncThunk<
 
     const currentPage = params.page || state.articles.pagination.page;
 
-    const response = await articlesApiService.fetchArticles({
+    const response = await readeckApiService.fetchArticlesWithFilters({
       ...params,
       page: currentPage,
       limit: params.limit || state.articles.pagination.limit,
@@ -210,7 +203,7 @@ export const createArticle = createAsyncThunk<
   { rejectValue: string }
 >('articles/createArticle', async (params, { rejectWithValue }) => {
   try {
-    const article = await articlesApiService.createArticle(params);
+    const article = await readeckApiService.createArticleWithMetadata(params);
     return article;
   } catch (error) {
     const errorMessage =
@@ -226,7 +219,7 @@ export const updateArticle = createAsyncThunk<
 >('articles/updateArticle', async (params, { rejectWithValue }) => {
   try {
     // Update via API first
-    const article = await articlesApiService.updateArticle(params);
+    const article = await readeckApiService.updateArticleWithMetadata(params);
 
     // Also persist to local database with is_modified flag for sync
     try {
@@ -236,7 +229,7 @@ export const updateArticle = createAsyncThunk<
         syncedAt: null, // Clear synced timestamp since it's now modified
       };
 
-      await DatabaseService.updateArticle(article.id, updatedArticleForDB);
+      await localStorageService.updateArticleFromAppFormat(article.id, updatedArticleForDB);
       console.log(
         '[ArticlesSlice] Article updated in database and marked for sync:',
         article.id
@@ -266,7 +259,7 @@ export const updateArticleLocalWithDB = createAsyncThunk<
   async (params, { rejectWithValue, getState }) => {
     try {
       const state = getState() as RootState;
-      const existingArticle = state.articles.entities[params.id];
+      const existingArticle = state.articles.articles.find(article => article.id === params.id);
 
       if (!existingArticle) {
         throw new Error('Article not found');
@@ -282,7 +275,7 @@ export const updateArticleLocalWithDB = createAsyncThunk<
       };
 
       // Persist to database
-      await DatabaseService.updateArticle(params.id, updatedArticle);
+      await localStorageService.updateArticleFromAppFormat(params.id, updatedArticle);
       console.log(
         '[ArticlesSlice] Article updated locally in database and marked for sync:',
         params.id
@@ -305,7 +298,7 @@ export const deleteArticle = createAsyncThunk<
   { rejectValue: string }
 >('articles/deleteArticle', async (params, { rejectWithValue }) => {
   try {
-    await articlesApiService.deleteArticle(params);
+    await readeckApiService.deleteArticle(params.id, params.permanent);
     return params.id;
   } catch (error) {
     const errorMessage =
@@ -326,7 +319,7 @@ export const loadLocalArticles = createAsyncThunk<
     const limit = params.limit || 20;
     const offset = (page - 1) * limit;
 
-    const result = await DatabaseService.getArticles({
+    const result = await localStorageService.getArticles({
       limit,
       offset,
       searchQuery: params.searchQuery,
@@ -395,7 +388,16 @@ export const syncArticles = createAsyncThunk<
 >('articles/syncArticles', async (params, { rejectWithValue, dispatch }) => {
   try {
     const syncStartTime = Date.now();
-    const result = await articlesApiService.syncArticles(params);
+    // Use simplified sync service instead
+    const { syncService } = await import('../../services/SyncService');
+    const syncResult = await syncService.startFullSync(params.fullSync);
+    
+    // Convert sync result to expected format
+    const result = {
+      syncedCount: syncResult.syncedCount,
+      conflictCount: syncResult.conflictCount,
+      articles: [], // Articles will be loaded from local storage after sync
+    };
 
     // Also update the main sync slice's lastSyncTime for the Settings screen
     const syncEndTime = Date.now();
@@ -495,15 +497,13 @@ const articlesSlice = createSlice({
       action: PayloadAction<{ id: string; updates: Partial<Article> }>
     ) => {
       const { id, updates } = action.payload;
-      const existingArticle = state.entities[id];
-      if (existingArticle) {
-        articlesAdapter.updateOne(state, {
-          id,
-          changes: {
-            ...updates,
-            updatedAt: new Date().toISOString(),
-          },
-        });
+      const articleIndex = state.articles.findIndex(article => article.id === id);
+      if (articleIndex !== -1) {
+        state.articles[articleIndex] = {
+          ...state.articles[articleIndex],
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        };
 
         // Mark as having pending changes for sync
         if (!state.sync.pendingChanges.includes(id)) {
@@ -535,13 +535,8 @@ const articlesSlice = createSlice({
     },
 
     // Clear all articles data (used during logout)
-    clearAll: state => {
-      articlesAdapter.removeAll(state);
-      return {
-        ...initialState,
-        ids: state.ids,
-        entities: state.entities,
-      };
+    clearAll: () => {
+      return initialState;
     },
   },
 
@@ -569,9 +564,14 @@ const articlesSlice = createSlice({
 
         // Handle pagination: replace for page 1, append for subsequent pages
         if (page === 1) {
-          articlesAdapter.setAll(state, items);
+          state.articles = items.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         } else {
-          articlesAdapter.addMany(state, items);
+          const newArticles = [...state.articles, ...items];
+          state.articles = newArticles.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         }
       })
       .addCase(fetchArticles.rejected, (state, action) => {
@@ -601,9 +601,14 @@ const articlesSlice = createSlice({
 
         // Handle pagination: replace for page 1, append for subsequent pages
         if (pagination.page === 1) {
-          articlesAdapter.setAll(state, items);
+          state.articles = items.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         } else {
-          articlesAdapter.addMany(state, items);
+          const newArticles = [...state.articles, ...items];
+          state.articles = newArticles.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         }
       })
       .addCase(loadLocalArticles.rejected, (state, action) => {
@@ -619,7 +624,7 @@ const articlesSlice = createSlice({
       .addCase(createArticle.fulfilled, (state, action) => {
         state.loading.create = false;
         state.error.create = null;
-        articlesAdapter.addOne(state, action.payload);
+        state.articles.unshift(action.payload); // Add to beginning for newest-first order
         state.pagination.totalItems += 1;
       })
       .addCase(createArticle.rejected, (state, action) => {
@@ -636,10 +641,10 @@ const articlesSlice = createSlice({
         state.loading.update = false;
         state.error.update = null;
 
-        // Get existing article to preserve fields that might not be in API response
-        const existingArticle = state.entities[action.payload.id];
-
-        if (existingArticle) {
+        const articleIndex = state.articles.findIndex(article => article.id === action.payload.id);
+        
+        if (articleIndex !== -1) {
+          const existingArticle = state.articles[articleIndex];
           // Create a smart merge that preserves important fields like content
           const mergedChanges = { ...existingArticle };
 
@@ -676,16 +681,10 @@ const articlesSlice = createSlice({
             }
           });
 
-          articlesAdapter.updateOne(state, {
-            id: action.payload.id,
-            changes: mergedChanges,
-          });
+          state.articles[articleIndex] = mergedChanges;
         } else {
-          // No existing article, use the payload as-is
-          articlesAdapter.updateOne(state, {
-            id: action.payload.id,
-            changes: action.payload,
-          });
+          // No existing article, add it
+          state.articles.unshift(action.payload);
         }
 
         // Remove from pending changes after successful sync
@@ -706,10 +705,10 @@ const articlesSlice = createSlice({
       .addCase(updateArticleLocalWithDB.fulfilled, (state, action) => {
         state.loading.update = false;
         state.error.update = null;
-        articlesAdapter.updateOne(state, {
-          id: action.payload.id,
-          changes: action.payload,
-        });
+        const articleIndex = state.articles.findIndex(article => article.id === action.payload.id);
+        if (articleIndex !== -1) {
+          state.articles[articleIndex] = action.payload;
+        }
         // Mark as having pending changes for sync
         if (!state.sync.pendingChanges.includes(action.payload.id)) {
           state.sync.pendingChanges.push(action.payload.id);
@@ -729,7 +728,7 @@ const articlesSlice = createSlice({
       .addCase(deleteArticle.fulfilled, (state, action) => {
         state.loading.delete = false;
         state.error.delete = null;
-        articlesAdapter.removeOne(state, action.payload);
+        state.articles = state.articles.filter(article => article.id !== action.payload);
         state.pagination.totalItems = Math.max(
           0,
           state.pagination.totalItems - 1
@@ -771,7 +770,18 @@ const articlesSlice = createSlice({
 
         // Add or update synced articles in the store
         if (articles && articles.length > 0) {
-          articlesAdapter.upsertMany(state, articles);
+          articles.forEach(syncedArticle => {
+            const existingIndex = state.articles.findIndex(article => article.id === syncedArticle.id);
+            if (existingIndex !== -1) {
+              state.articles[existingIndex] = syncedArticle;
+            } else {
+              state.articles.push(syncedArticle);
+            }
+          });
+          // Re-sort after sync
+          state.articles.sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         }
 
         // Clear pending changes for successfully synced articles
@@ -788,14 +798,14 @@ const articlesSlice = createSlice({
   },
 });
 
-// Export selectors created by entity adapter
-export const {
-  selectAll: selectAllArticles,
-  selectById: selectArticleById,
-  selectIds: selectArticleIds,
-  selectEntities: selectArticleEntities,
-  selectTotal: selectTotalArticles,
-} = articlesAdapter.getSelectors((state: RootState) => state.articles);
+// Export simple selectors for articles
+export const selectAllArticles = (state: RootState) => state.articles.articles;
+export const selectArticleById = (state: RootState, id: string) => 
+  state.articles.articles.find(article => article.id === id);
+export const selectArticleIds = (state: RootState) => 
+  state.articles.articles.map(article => article.id);
+export const selectTotalArticles = (state: RootState) => 
+  state.articles.articles.length;
 
 // Export action creators
 export const {

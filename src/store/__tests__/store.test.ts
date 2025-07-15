@@ -24,14 +24,12 @@ describe('Redux Store Configuration', () => {
       lastTokenRefresh: undefined,
     });
 
-    // Test basic articles state structure (it uses entity adapter)
-    expect(state.articles).toHaveProperty('ids');
-    expect(state.articles).toHaveProperty('entities');
+    // Test basic articles state structure (simplified array-based)
+    expect(state.articles).toHaveProperty('articles');
     expect(state.articles).toHaveProperty('loading');
     expect(state.articles).toHaveProperty('error');
     expect(state.articles).toHaveProperty('pagination');
-    expect(state.articles.ids).toEqual([]);
-    expect(state.articles.entities).toEqual({});
+    expect(state.articles.articles).toEqual([]);
   });
 
   it('should handle auth actions correctly', () => {
@@ -95,8 +93,8 @@ describe('Redux Store Configuration', () => {
     );
 
     const state = store.getState();
-    expect(state.articles.ids).toHaveLength(1);
-    expect(state.articles.entities['1']).toEqual(testArticles[0]);
+    expect(state.articles.articles).toHaveLength(1);
+    expect(state.articles.articles[0]).toEqual(testArticles[0]);
     expect(state.articles.pagination.totalItems).toBe(1);
   });
 

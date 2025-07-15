@@ -49,8 +49,7 @@ describe('Articles Slice', () => {
     it('should have correct initial state', () => {
       const state = store.getState().articles;
 
-      expect(state.ids).toEqual([]);
-      expect(state.entities).toEqual({});
+      expect(state.articles).toEqual([]);
       expect(state.loading).toEqual({
         fetch: false,
         create: false,
@@ -117,8 +116,7 @@ describe('Articles Slice', () => {
     it('should handle updateArticleLocal', () => {
       // First add an article to the store (simulate)
       const initialState: ArticlesState = {
-        ids: ['1'],
-        entities: { '1': mockArticle },
+        articles: [mockArticle],
         loading: {
           fetch: false,
           create: false,
@@ -159,10 +157,15 @@ describe('Articles Slice', () => {
         selectedArticleIds: [],
       };
 
-      // Create store with initial state
+      // Create store with initial state that has an article
+      const stateWithArticle = {
+        ...initialState,
+        articles: [mockArticle],
+      };
+      
       const storeWithData = configureStore({
         reducer: { articles: articlesReducer },
-        preloadedState: { articles: initialState },
+        preloadedState: { articles: stateWithArticle },
       });
 
       // Update the article
@@ -174,8 +177,9 @@ describe('Articles Slice', () => {
       );
 
       const state = storeWithData.getState().articles;
-      expect(state.entities['1']?.title).toBe('Updated Title');
-      expect(state.entities['1']?.isFavorite).toBe(true);
+      const updatedArticle = state.articles.find(a => a.id === '1');
+      expect(updatedArticle?.title).toBe('Updated Title');
+      expect(updatedArticle?.isFavorite).toBe(true);
       expect(state.sync.pendingChanges).toContain('1');
     });
   });
@@ -202,8 +206,7 @@ describe('Articles Slice', () => {
       const state = store.getState().articles;
       expect(state.loading.fetch).toBe(false);
       expect(state.error.fetch).toBe(null);
-      expect(state.ids).toContain('1');
-      expect(state.entities['1']).toEqual(mockArticle);
+      expect(state.articles).toContain(mockArticle);
       expect(state.pagination.totalItems).toBe(1);
     });
 
@@ -229,8 +232,7 @@ describe('Articles Slice', () => {
       const state = store.getState().articles;
       expect(state.loading.create).toBe(false);
       expect(state.error.create).toBe(null);
-      expect(state.ids).toContain('1');
-      expect(state.entities['1']).toEqual(mockArticle);
+      expect(state.articles).toContain(mockArticle);
       expect(state.pagination.totalItems).toBe(1);
     });
   });

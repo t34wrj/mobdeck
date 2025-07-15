@@ -10,14 +10,14 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { Button } from '../../components/ui/Button';
-import { Text } from '../../components/ui/Text';
-import { theme } from '../../components/ui/theme';
+import { SimpleButton } from "../../components";
+import { SimpleText } from "../../components";
+import { theme } from "../../components/theme"';
 import MobdeckLogo from '../../components/MobdeckLogo';
 import { AuthScreenProps } from '../../navigation/types';
 import { AppDispatch, RootState } from '../../store';
 import { clearError } from '../../store/slices/authSlice';
-import { authStorageService } from '../../services/AuthStorageService';
+import { localStorageService } from '../../services/LocalStorageService';
 import { validateApiToken } from '../../services/api';
 import { readeckApiService } from '../../services/ReadeckApiService';
 import { startSyncOperation } from '../../store/thunks/syncThunks';
@@ -113,7 +113,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
       };
 
       // Store the token securely after successful validation
-      const tokenStored = await authStorageService.storeToken(
+      const tokenStored = await localStorageService.storeToken(
         apiToken,
         userForStorage
       );

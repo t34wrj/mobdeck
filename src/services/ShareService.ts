@@ -1,6 +1,6 @@
 import { NativeModules } from 'react-native';
 import { SharedData } from '../types';
-import DatabaseService from './DatabaseService';
+import { localStorageService } from './LocalStorageService';
 // import { DBSyncMetadata } from '../types/database'; // Currently unused
 
 const { MobdeckShareModule } = NativeModules;

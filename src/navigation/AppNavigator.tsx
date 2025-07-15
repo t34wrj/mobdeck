@@ -9,7 +9,7 @@ import { initializeAuth } from '../store/slices/authSlice';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native';
-import { theme } from '../components/ui/theme';
+import { theme } from "../../components/theme"';
 import { useShareIntent } from '../hooks/useShareIntent';
 import { ShareService } from '../services/ShareService';
 import {
@@ -17,7 +17,7 @@ import {
   loadLocalArticles,
 } from '../store/slices/articlesSlice';
 import { AppDispatch } from '../store';
-import DatabaseService from '../services/DatabaseService';
+import { localStorageService } from '../services/LocalStorageService';
 import NetInfo from '@react-native-community/netinfo';
 import { ConnectivityIndicator } from '../components/ConnectivityIndicator';
 

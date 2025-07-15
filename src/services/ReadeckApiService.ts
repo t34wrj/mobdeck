@@ -18,6 +18,7 @@ import {
   defaultRateLimiter,
   maskSensitiveData,
 } from '../utils/security';
+import { Article, PaginatedResponse } from '../types';
 import {
   IReadeckApiService,
   ReadeckApiConfig,
@@ -41,6 +42,9 @@ import {
   RetryConfig,
   ApiRequestOptions,
 } from '../types/readeck';
+import { RetryManager } from '../utils/retryManager';
+import { connectivityManager } from '../utils/connectivityManager';
+import { cacheService } from './CacheService';
 
 /**
  * ReadeckApiService - Production-ready API client for Readeck servers
@@ -189,7 +193,7 @@ class ReadeckApiService implements IReadeckApiService {
    * @private
    */
   private generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `req_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   /**
@@ -1115,6 +1119,291 @@ class ReadeckApiService implements IReadeckApiService {
     // Check if any certificate in the chain matches our pins
     return certificateChain.some(cert => pins.includes(cert));
   }
+
+  // High-level article operations (consolidated from ArticlesApiService)
+  /**
+   * Fetch articles with filtering and pagination
+   */
+  async fetchArticlesWithFilters(
+    params: {
+      page?: number;
+      limit?: number;
+      searchQuery?: string;
+      filters?: {
+        isArchived?: boolean;
+        isFavorite?: boolean;
+        isRead?: boolean;
+        tags?: string[];
+      };
+      forceRefresh?: boolean;
+      fetchFullContent?: boolean;
+    }
+  ): Promise<PaginatedResponse<Article>> {
+    // Check connectivity first
+    if (!connectivityManager.isOnline()) {
+      throw {
+        code: 'CONNECTION_ERROR',
+        message: 'Cannot fetch articles while offline',
+      };
+    }
+
+    return RetryManager.withRetry(
+      async () => {
+        const filters = this.convertFiltersToReadeckFilters(params);
+        const response = await this.getArticles(filters);
+
+        // Convert response to expected format
+        let articles: Article[] = [];
+        let pagination = {
+          page: params.page || 1,
+          totalPages: 1,
+          totalItems: 0,
+        };
+
+        if (Array.isArray(response.data)) {
+          articles = response.data.map(readeckArticle => 
+            this.convertReadeckArticleToArticle(readeckArticle)
+          );
+          pagination = {
+            page: params.page || 1,
+            totalPages: 1,
+            totalItems: articles.length,
+          };
+        } else if (response.data.articles && Array.isArray(response.data.articles)) {
+          articles = response.data.articles.map(readeckArticle =>
+            this.convertReadeckArticleToArticle(readeckArticle)
+          );
+          if (response.data.pagination) {
+            pagination = {
+              page: response.data.pagination.page || 1,
+              totalPages: response.data.pagination.total_pages || 1,
+              totalItems: response.data.pagination.total_count || articles.length,
+            };
+          }
+        }
+
+        return {
+          items: articles,
+          page: pagination.page,
+          totalPages: pagination.totalPages,
+          totalItems: pagination.totalItems,
+        };
+      },
+      {
+        maxRetries: 3,
+        onRetry: (error, attempt) => {
+          console.debug(
+            `[ReadeckApiService] Retrying fetch articles (attempt ${attempt}):`,
+            error instanceof Error ? error.message : String(error)
+          );
+        },
+      }
+    );
+  }
+
+  /**
+   * Create article with enhanced parameters
+   */
+  async createArticleWithMetadata(
+    params: {
+      title: string;
+      url: string;
+      summary?: string;
+      content?: string;
+      tags?: string[];
+    }
+  ): Promise<Article> {
+    const createRequest: CreateArticleRequest = {
+      url: params.url,
+      title: params.title,
+      labels: params.tags, // Note: API uses labels instead of tags
+    };
+
+    const response = await this.createArticle(createRequest);
+    return this.convertReadeckArticleToArticle(response.data);
+  }
+
+  /**
+   * Update article with enhanced parameters
+   */
+  async updateArticleWithMetadata(
+    params: {
+      id: string;
+      updates: Partial<Omit<Article, 'id' | 'createdAt' | 'updatedAt'>>;
+    }
+  ): Promise<Article> {
+    const updateRequest = this.convertArticleToUpdateRequest(params.updates);
+    const response = await this.updateArticle(params.id, updateRequest);
+    const article = this.convertReadeckArticleToArticle(response.data);
+    
+    // Update cache
+    cacheService.setArticle(params.id, article);
+    
+    return article;
+  }
+
+  /**
+   * Get article with full content
+   */
+  async getArticleWithContent(id: string): Promise<Article> {
+    // Check cache first
+    const cachedArticle = cacheService.getArticle(id);
+    if (cachedArticle) {
+      return cachedArticle;
+    }
+
+    const response = await this.getArticle(id);
+    const article = this.convertReadeckArticleToArticle(response.data);
+
+    // If article has a contentUrl but no content, fetch the content
+    if (article.contentUrl && !article.content) {
+      try {
+        const htmlContent = await this.getArticleContent(article.contentUrl);
+        article.content = htmlContent;
+      } catch (error) {
+        console.error('[ReadeckApiService] Failed to fetch article content:', error);
+      }
+    }
+
+    // Cache the article
+    cacheService.setArticle(id, article);
+    return article;
+  }
+
+  /**
+   * Convert ReadeckArticle to Article format
+   */
+  private convertReadeckArticleToArticle(readeckArticle: ReadeckArticle | any): Article {
+    const ensureString = (value: any): string => {
+      if (value === null || value === undefined) return '';
+      return String(value);
+    };
+
+    const ensureNumber = (value: any): number => {
+      const num = Number(value);
+      return isNaN(num) ? 0 : num;
+    };
+
+    const ensureBoolean = (value: any): boolean => {
+      return Boolean(value);
+    };
+
+    const ensureArray = (value: any): string[] => {
+      if (Array.isArray(value)) return value.map(ensureString);
+      return [];
+    };
+
+    let content = '';
+    if (readeckArticle.resources?.article?.src) {
+      content = ''; // Will be fetched on demand
+    } else {
+      content = ensureString(
+        readeckArticle.content ||
+          readeckArticle.content_html ||
+          readeckArticle.html ||
+          readeckArticle.text ||
+          readeckArticle.body ||
+          readeckArticle.cached_content ||
+          ''
+      );
+    }
+
+    return {
+      id: ensureString(readeckArticle.id),
+      title: ensureString(readeckArticle.title),
+      summary: ensureString(readeckArticle.description),
+      content,
+      url: ensureString(readeckArticle.url),
+      imageUrl: ensureString(
+        readeckArticle.resources?.image?.src ||
+          readeckArticle.resources?.thumbnail?.src
+      ),
+      readTime: ensureNumber(readeckArticle.reading_time),
+      isArchived: ensureBoolean(readeckArticle.is_archived),
+      isFavorite: ensureBoolean(readeckArticle.is_marked),
+      isRead: ensureBoolean(
+        readeckArticle.read_progress !== undefined &&
+          readeckArticle.read_progress >= 100
+      ),
+      tags: ensureArray(readeckArticle.labels),
+      sourceUrl: ensureString(readeckArticle.url),
+      createdAt: ensureString(
+        readeckArticle.created || new Date().toISOString()
+      ),
+      updatedAt: ensureString(
+        readeckArticle.updated || new Date().toISOString()
+      ),
+      syncedAt: new Date().toISOString(),
+      contentUrl: ensureString(readeckArticle.resources?.article?.src),
+    };
+  }
+
+  /**
+   * Convert Article updates to UpdateArticleRequest format
+   */
+  private convertArticleToUpdateRequest(
+    updates: Partial<Article>
+  ): UpdateArticleRequest {
+    const request: UpdateArticleRequest = {};
+
+    if (updates.title !== undefined) request.title = updates.title;
+    if (updates.isArchived !== undefined)
+      request.is_archived = updates.isArchived;
+    if (updates.isFavorite !== undefined)
+      request.is_marked = updates.isFavorite;
+    if (updates.tags !== undefined) request.labels = updates.tags;
+    if (updates.isRead !== undefined) {
+      request.read_progress = updates.isRead ? 100 : 0;
+    }
+
+    return request;
+  }
+
+  /**
+   * Convert filter parameters to ArticleFilters format
+   */
+  private convertFiltersToReadeckFilters(
+    params: {
+      page?: number;
+      limit?: number;
+      searchQuery?: string;
+      filters?: {
+        isArchived?: boolean;
+        isFavorite?: boolean;
+        isRead?: boolean;
+        tags?: string[];
+      };
+    }
+  ): ArticleFilters {
+    const filters: ArticleFilters = {
+      limit: params.limit || 20,
+      offset: ((params.page || 1) - 1) * (params.limit || 20),
+      sort: ['-created'],
+    };
+
+    if (params.searchQuery) {
+      filters.search = params.searchQuery;
+    }
+
+    if (params.filters) {
+      if (params.filters.isArchived !== undefined) {
+        filters.is_archived = params.filters.isArchived;
+      }
+      if (params.filters.isFavorite !== undefined) {
+        filters.is_marked = params.filters.isFavorite;
+      }
+      if (params.filters.isRead !== undefined) {
+        filters.read_status = params.filters.isRead
+          ? ['read']
+          : ['unread', 'reading'];
+      }
+      if (params.filters.tags && params.filters.tags.length > 0) {
+        filters.labels = params.filters.tags.join(',');
+      }
+    }
+
+    return filters;
+  }
 }
 
 // Export singleton instance for consistent usage across the app
@@ -1122,3 +1411,6 @@ export const readeckApiService = new ReadeckApiService();
 
 // Export class for testing and custom instantiation
 export default ReadeckApiService;
+
+// Export types for compatibility with existing code
+export type { PaginatedResponse };

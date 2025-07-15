@@ -1,19 +1,21 @@
 /**
- * SyncService - Comprehensive Bidirectional Synchronization Service
- *
+ * SyncService - Simplified bidirectional synchronization service
+ * 
+ * Consolidated from:
+ * - Original SyncService
+ * - BackgroundSyncService (without background complexity)
+ * - BackgroundTaskManager (without background complexity)
+ * 
  * Features:
- * - Two-way sync between local SQLite and Readeck server
- * - Last-Write-Wins conflict resolution strategy
+ * - Simple two-way sync between local and remote
  * - Network-aware sync with retry logic
- * - Batch processing for efficient data transfer
- * - Comprehensive error handling and recovery
- * - Integration with Redux sync slice for state management
- * - Progress tracking and status reporting
+ * - Conflict resolution with Last-Write-Wins
+ * - App lifecycle sync (no background tasks)
+ * - Integration with consolidated services
  */
 
-import DatabaseService, { DatabaseUtilityFunctions } from './DatabaseService';
 import { readeckApiService } from './ReadeckApiService';
-import { articlesApiService } from './ArticlesApiService';
+import { localStorageService } from './LocalStorageService';
 import { ShareService } from './ShareService';
 import { store } from '../store';
 import { errorHandler, ErrorCategory } from '../utils/errorHandler';
@@ -40,30 +42,9 @@ import {
   connectivityManager,
   ConnectivityStatus,
 } from '../utils/connectivityManager';
+import { DatabaseUtilityFunctions } from './DatabaseService';
 
-interface SyncOperation {
-  id: string;
-  type: 'create' | 'update' | 'delete';
-  entity: 'article' | 'label';
-  localData?: any;
-  remoteData?: any;
-  timestamp: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  error?: string;
-  retryCount: number;
-}
-
-interface SyncBatch {
-  operations: SyncOperation[];
-  batchId: string;
-  startTime: number;
-  endTime?: number;
-  totalOperations: number;
-  completedOperations: number;
-  failedOperations: number;
-}
-
-interface SyncResult {
+export interface SyncResult {
   success: boolean;
   syncedCount: number;
   conflictCount: number;
@@ -77,35 +58,42 @@ interface SyncResult {
   }>;
 }
 
+export interface SimpleSyncServiceInterface {
+  initialize(): Promise<void>;
+  startFullSync(forceSync?: boolean): Promise<SyncResult>;
+  syncUp(): Promise<SyncResult>;
+  syncDown(): Promise<SyncResult>;
+  isSyncRunning(): boolean;
+  stopSync(): Promise<void>;
+  updateConfiguration(config: Partial<SyncConfiguration>): void;
+  getConfiguration(): SyncConfiguration;
+  getSyncStats(): Promise<any>;
+  triggerManualSync(): Promise<void>;
+}
+
 /**
- * SyncService - Manages bidirectional synchronization between local and remote data
+ * SyncService - Simplified sync management without background complexity
  */
-class SyncService {
+class SyncService implements SimpleSyncServiceInterface {
   private static instance: SyncService;
   private isRunning = false;
-  private currentBatch: SyncBatch | null = null;
-  private syncQueue: SyncOperation[] = [];
-  private retryQueue: SyncOperation[] = [];
   private config: SyncConfiguration;
   private abortController: AbortController | null = null;
 
   private constructor() {
-    // Initialize with default configuration
+    // Initialize with mobile-friendly configuration
     this.config = {
-      backgroundSyncEnabled: true,
-      syncInterval: 15,
+      backgroundSyncEnabled: false, // Disabled - no background tasks
+      syncInterval: 30, // 30 minutes for manual sync intervals
       syncOnWifiOnly: false,
       syncOnCellular: true,
       downloadImages: true,
       fullTextSync: true,
       conflictResolutionStrategy: ConflictResolutionStrategy.LAST_WRITE_WINS,
-      batchSize: 50,
+      batchSize: 25, // Smaller batch size for mobile
     };
   }
 
-  /**
-   * Get singleton instance of SyncService
-   */
   public static getInstance(): SyncService {
     if (!SyncService.instance) {
       SyncService.instance = new SyncService();
@@ -113,12 +101,9 @@ class SyncService {
     return SyncService.instance;
   }
 
-  /**
-   * Initialize sync service and set up background tasks
-   */
-  public async initialize(): Promise<void> {
+  async initialize(): Promise<void> {
     try {
-      console.log('[SyncService] Initializing sync service...');
+      console.log('[SyncService] Initializing simplified sync service...');
 
       // Get current sync configuration from Redux store
       const state = store.getState();
@@ -130,40 +115,29 @@ class SyncService {
       // Process any pending sync operations
       await this.processPendingSyncOperations();
 
-      console.log('[SyncService] Sync service initialized successfully');
+      console.log('[SyncService] Simplified sync service initialized successfully');
     } catch (error) {
       console.error('[SyncService] Failed to initialize:', error);
       throw error;
     }
   }
 
-  /**
-   * Update sync configuration
-   */
-  public updateConfiguration(newConfig: Partial<SyncConfiguration>): void {
+  updateConfiguration(newConfig: Partial<SyncConfiguration>): void {
     this.config = { ...this.config, ...newConfig };
     console.log('[SyncService] Configuration updated:', newConfig);
   }
 
-  /**
-   * Get current sync configuration
-   */
-  public getConfiguration(): SyncConfiguration {
+  getConfiguration(): SyncConfiguration {
     return { ...this.config };
   }
 
-  /**
-   * Start full bidirectional synchronization
-   */
-  public async startFullSync(forceSync = false): Promise<SyncResult> {
+  async startFullSync(forceSync = false): Promise<SyncResult> {
     if (this.isRunning && !forceSync) {
       throw new Error('Sync already in progress');
     }
 
     // Check connectivity before starting sync
-    console.log('[SyncService] Checking connectivity...');
     const connectivityStatus = await connectivityManager.checkConnectivity();
-    console.log('[SyncService] Connectivity status:', connectivityStatus);
     if (connectivityStatus !== ConnectivityStatus.ONLINE) {
       console.log('[SyncService] Cannot sync - server unreachable');
       store.dispatch(
@@ -183,7 +157,6 @@ class SyncService {
 
     const startTime = Date.now();
 
-    // Dispatch sync start action
     store.dispatch(
       startSync({
         fullSync: true,
@@ -194,10 +167,8 @@ class SyncService {
 
     try {
       const result = await this.executeFullSync();
-
       const duration = Date.now() - startTime;
 
-      // Dispatch sync success
       store.dispatch(
         syncSuccess({
           syncDuration: duration,
@@ -207,7 +178,6 @@ class SyncService {
         })
       );
 
-      // Update sync statistics
       store.dispatch(
         updateSyncStats({
           articlesCreated: result.syncedCount,
@@ -226,7 +196,6 @@ class SyncService {
     } catch (error) {
       const duration = Date.now() - startTime;
 
-      // Use centralized error handling
       const handledError = errorHandler.handleError(error, {
         category: ErrorCategory.SYNC_OPERATION,
         context: {
@@ -235,7 +204,6 @@ class SyncService {
         },
       });
 
-      // Dispatch sync error
       store.dispatch(
         syncError({
           error: handledError.message,
@@ -266,9 +234,6 @@ class SyncService {
     }
   }
 
-  /**
-   * Execute the complete synchronization process
-   */
   private async executeFullSync(): Promise<SyncResult> {
     const syncResult: SyncResult = {
       success: true,
@@ -313,7 +278,7 @@ class SyncService {
       syncResult.errorCount += downloadResult.errorCount;
       syncResult.errors.push(...downloadResult.errors);
 
-      // Phase 3: Resolve any pending conflicts
+      // Phase 3: Resolve conflicts if any
       if (syncResult.conflictCount > 0) {
         store.dispatch(
           syncProgress({
@@ -327,7 +292,10 @@ class SyncService {
         await this.resolveAllConflicts();
       }
 
-      // Phase 4: Finalize sync
+      // Phase 4: Process pending shared URLs
+      await this.processPendingSharedUrls();
+
+      // Phase 5: Finalize sync
       store.dispatch(
         syncProgress({
           phase: SyncPhase.FINALIZING,
@@ -351,10 +319,7 @@ class SyncService {
     }
   }
 
-  /**
-   * Sync Up: Upload local changes to server
-   */
-  public async syncUp(): Promise<SyncResult> {
+  async syncUp(): Promise<SyncResult> {
     console.log('[SyncService] Starting sync up (local -> remote)...');
 
     const result: SyncResult = {
@@ -368,11 +333,10 @@ class SyncService {
     };
 
     try {
-      // Ensure database is initialized before sync operations
-      await this.ensureDatabaseInitialized();
+      await localStorageService.initialize();
 
-      // Get all locally modified articles
-      const modifiedArticlesResult = await DatabaseService.getArticles({
+      // Get locally modified articles
+      const modifiedArticlesResult = await localStorageService.getArticles({
         isModified: true,
         sortBy: 'updated_at',
         sortOrder: 'ASC',
@@ -390,10 +354,7 @@ class SyncService {
       );
 
       // Process articles in batches
-      const batches = this.createBatches(
-        modifiedArticles,
-        this.config.batchSize
-      );
+      const batches = this.createBatches(modifiedArticles, this.config.batchSize);
 
       for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
@@ -436,10 +397,7 @@ class SyncService {
     }
   }
 
-  /**
-   * Sync Down: Download remote changes to local
-   */
-  public async syncDown(): Promise<SyncResult> {
+  async syncDown(): Promise<SyncResult> {
     console.log('[SyncService] Starting sync down (remote -> local)...');
 
     const result: SyncResult = {
@@ -453,11 +411,10 @@ class SyncService {
     };
 
     try {
-      // Ensure database is initialized before sync operations
-      await this.ensureDatabaseInitialized();
+      await localStorageService.initialize();
 
       // Get last sync timestamp
-      const lastSyncResult = await DatabaseService.getStats();
+      const lastSyncResult = await localStorageService.getStats();
       const lastSyncTimestamp =
         lastSyncResult.success && lastSyncResult.data?.lastSyncAt
           ? new Date(lastSyncResult.data.lastSyncAt * 1000)
@@ -467,9 +424,8 @@ class SyncService {
         `[SyncService] Last sync: ${lastSyncTimestamp.toISOString()}`
       );
 
-      // Fetch articles modified since last sync
-      const remoteArticles =
-        await this.fetchRemoteArticlesSince(lastSyncTimestamp);
+      // Fetch articles from remote
+      const remoteArticles = await this.fetchRemoteArticlesSince(lastSyncTimestamp);
       console.log(
         `[SyncService] Found ${remoteArticles.length} remote articles to sync`
       );
@@ -522,7 +478,6 @@ class SyncService {
       );
       return result;
     } catch (error) {
-      // Use centralized error handling
       const handledError = errorHandler.handleError(error, {
         category: ErrorCategory.SYNC_OPERATION,
         context: {
@@ -542,9 +497,6 @@ class SyncService {
     }
   }
 
-  /**
-   * Upload a batch of articles to the server
-   */
   private async uploadBatch(articles: any[]): Promise<SyncResult> {
     const result: SyncResult = {
       success: true,
@@ -556,22 +508,16 @@ class SyncService {
       errors: [],
     };
 
-    // Ensure database is initialized
-    await this.ensureDatabaseInitialized();
-
     for (const dbArticle of articles) {
       try {
-        const article =
-          DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle);
+        const article = DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle);
 
         // Check if article exists on server
-        const existsOnServer = await this.checkArticleExistsOnServer(
-          article.id
-        );
+        const existsOnServer = await this.checkArticleExistsOnServer(article.id);
 
         if (existsOnServer) {
           // Update existing article
-          await articlesApiService.updateArticle({
+          await readeckApiService.updateArticleWithMetadata({
             id: article.id,
             updates: {
               title: article.title,
@@ -583,21 +529,16 @@ class SyncService {
           });
 
           // Mark as synced in local database
-          await DatabaseService.updateArticle(article.id, {
+          await localStorageService.updateArticle(article.id, {
             is_modified: 0,
             synced_at: Math.floor(Date.now() / 1000),
           });
 
           result.syncedCount++;
         } else {
-          // Check if this is a locally created article (has local ID)
-          const isLocallyCreated = article.id.startsWith('local_');
-
           // Create new article on server
-          console.log(
-            `[SyncService] Creating article on server: ${article.title}`
-          );
-          const createResult = await articlesApiService.createArticle({
+          console.log(`[SyncService] Creating article on server: ${article.title}`);
+          const serverArticle = await readeckApiService.createArticleWithMetadata({
             title: article.title,
             url: article.url,
             summary: article.summary,
@@ -605,64 +546,21 @@ class SyncService {
             tags: article.tags || [],
           });
 
-          if (createResult.success && createResult.data) {
-            const serverArticle = createResult.data;
-            console.log(
-              `[SyncService] Article created on server with ID: ${serverArticle.id}`
-            );
-
-            if (isLocallyCreated) {
-              // For locally created articles, we need to replace the local record with the server record
-              const oldLocalId = article.id;
-
-              // Delete the old local record
-              await DatabaseService.deleteArticle(oldLocalId);
-
-              // Create new record with server ID
-              await DatabaseService.createArticle({
-                id: serverArticle.id,
-                title: serverArticle.title || article.title,
-                url: serverArticle.url || article.url,
-                summary: serverArticle.summary || article.summary,
-                content: serverArticle.content || article.content,
-                imageUrl: serverArticle.image_url || article.imageUrl || '',
-                readTime: serverArticle.read_time || article.readTime,
-                sourceUrl:
-                  serverArticle.source_url || article.sourceUrl || article.url,
-                isArchived: serverArticle.is_archived || article.isArchived,
-                isFavorite: serverArticle.is_favorite || article.isFavorite,
-                isRead: serverArticle.is_read || article.isRead,
-                isModified: false, // Mark as synced
-                createdAt: serverArticle.created_at
-                  ? Math.floor(
-                      new Date(serverArticle.created_at).getTime() / 1000
-                    )
-                  : article.createdAt,
-                updatedAt: serverArticle.updated_at
-                  ? Math.floor(
-                      new Date(serverArticle.updated_at).getTime() / 1000
-                    )
-                  : Math.floor(Date.now() / 1000),
-                syncedAt: Math.floor(Date.now() / 1000),
-              });
-
-              console.log(
-                `[SyncService] Replaced local article ${oldLocalId} with server article ${serverArticle.id}`
-              );
-            } else {
-              // For articles with server IDs, just mark as synced
-              await DatabaseService.updateArticle(article.id, {
-                is_modified: 0,
-                synced_at: Math.floor(Date.now() / 1000),
-              });
-            }
-
-            result.syncedCount++;
+          // Update local article with server ID if it was a local article
+          if (article.id.startsWith('local_')) {
+            await localStorageService.deleteArticle(article.id);
+            await localStorageService.createArticleFromAppFormat({
+              ...serverArticle,
+              id: serverArticle.id,
+            });
           } else {
-            throw new Error(
-              createResult.error || 'Failed to create article on server'
-            );
+            await localStorageService.updateArticle(article.id, {
+              is_modified: 0,
+              synced_at: Math.floor(Date.now() / 1000),
+            });
           }
+
+          result.syncedCount++;
         }
       } catch (error) {
         console.error(
@@ -681,137 +579,54 @@ class SyncService {
     return result;
   }
 
-  /**
-   * Fetch full article content if fullTextSync is enabled
-   */
-  private async fetchFullArticleContent(
-    articleId: string
-  ): Promise<Article | null> {
-    try {
-      if (!this.config.fullTextSync) {
-        return null;
-      }
-
-      console.log(
-        `[SyncService] Fetching full content for article: ${articleId}`
-      );
-      const response = await readeckApiService.getArticle(articleId);
-
-      if (response.success && response.data) {
-        // Convert ReadeckArticle to Article format manually
-        const readeckArticle = response.data;
-        const fullArticle: Article = {
-          id: readeckArticle.id,
-          title: readeckArticle.title || '',
-          summary: readeckArticle.summary || '',
-          content: readeckArticle.content || '',
-          url: readeckArticle.url || '',
-          imageUrl: readeckArticle.image_url || '',
-          readTime: readeckArticle.read_time || 0,
-          isArchived: readeckArticle.is_archived || false,
-          isFavorite: readeckArticle.is_favorite || false,
-          isRead: readeckArticle.is_read || false,
-          tags: readeckArticle.tags || [],
-          sourceUrl: readeckArticle.source_url || readeckArticle.url || '',
-          createdAt: readeckArticle.created_at || new Date().toISOString(),
-          updatedAt: readeckArticle.updated_at || new Date().toISOString(),
-          syncedAt: new Date().toISOString(),
-        };
-        console.log(
-          `[SyncService] Full content fetched for article: ${articleId}, content length: ${fullArticle.content?.length || 0}`
-        );
-        return fullArticle;
-      }
-
-      console.warn(
-        `[SyncService] Failed to fetch full content for article: ${articleId}`
-      );
-      return null;
-    } catch (error) {
-      console.error(
-        `[SyncService] Error fetching full content for article: ${articleId}`,
-        error
-      );
-      return null;
-    }
-  }
-
-  /**
-   * Sync a remote article to local database
-   */
   private async syncRemoteArticle(remoteArticle: Article): Promise<{
     success: boolean;
     conflict: boolean;
     error?: string;
   }> {
     try {
-      // Ensure database is initialized
-      await this.ensureDatabaseInitialized();
-
-      // Fetch full content if fullTextSync is enabled and content is missing
-      let articleToSync = remoteArticle;
-      if (
-        this.config.fullTextSync &&
-        (!remoteArticle.content || remoteArticle.content.trim() === '')
-      ) {
-        const fullArticle = await this.fetchFullArticleContent(
-          remoteArticle.id
-        );
-        if (fullArticle) {
-          articleToSync = fullArticle;
-        }
-      }
+      await localStorageService.initialize();
 
       // Check if article exists locally
-      const localArticleResult = await DatabaseService.getArticle(
-        articleToSync.id
-      );
+      const localArticle = await localStorageService.getArticleAsAppFormat(remoteArticle.id);
 
-      if (!localArticleResult.success) {
+      if (!localArticle) {
         // Article doesn't exist locally, create it
-        const dbArticle =
-          DatabaseUtilityFunctions.convertArticleToDBArticle(articleToSync);
-        dbArticle.synced_at = Math.floor(Date.now() / 1000);
-        dbArticle.is_modified = 0;
-
-        const createResult = await DatabaseService.createArticle(dbArticle);
+        const created = await localStorageService.createArticleFromAppFormat({
+          ...remoteArticle,
+          syncedAt: new Date().toISOString(),
+          isModified: false,
+        });
 
         return {
-          success: createResult.success,
+          success: !!created,
           conflict: false,
-          error: createResult.error,
+          error: created ? undefined : 'Failed to create local article',
         };
       }
 
       // Article exists locally, check for conflicts
-      const localArticle = DatabaseUtilityFunctions.convertDBArticleToArticle(
-        localArticleResult.data
-      );
-
-      if (this.hasConflict(localArticle, articleToSync)) {
-        // Handle conflict based on strategy
-        const resolved = await this.handleConflict(localArticle, articleToSync);
-
+      if (this.hasConflict(localArticle, remoteArticle)) {
+        const resolved = await this.handleConflict(localArticle, remoteArticle);
         return {
           success: resolved,
           conflict: !resolved,
         };
       } else {
         // No conflict, update local article
-        const remoteDbArticle =
-          DatabaseUtilityFunctions.convertArticleToDBArticle(articleToSync);
-        remoteDbArticle.synced_at = Math.floor(Date.now() / 1000);
-        remoteDbArticle.is_modified = 0;
-
-        const updateResult = await DatabaseService.updateArticle(
-          articleToSync.id,
-          remoteDbArticle
+        const updated = await localStorageService.updateArticleFromAppFormat(
+          remoteArticle.id,
+          {
+            ...remoteArticle,
+            syncedAt: new Date().toISOString(),
+            isModified: false,
+          }
         );
 
         return {
-          success: updateResult.success,
+          success: updated,
           conflict: false,
-          error: updateResult.error,
+          error: updated ? undefined : 'Failed to update local article',
         };
       }
     } catch (error) {
@@ -823,15 +638,11 @@ class SyncService {
     }
   }
 
-  /**
-   * Check if there's a conflict between local and remote articles
-   */
   private hasConflict(localArticle: Article, remoteArticle: Article): boolean {
     // Check if both articles have been modified since last sync
     const localModified = localArticle.isModified || false;
     const remoteModified =
-      new Date(remoteArticle.updatedAt) >
-      (localArticle.syncedAt || new Date(0));
+      new Date(remoteArticle.updatedAt) > new Date(localArticle.syncedAt || 0);
 
     if (!localModified || !remoteModified) {
       return false;
@@ -848,16 +659,11 @@ class SyncService {
     );
   }
 
-  /**
-   * Handle conflict between local and remote articles
-   */
   private async handleConflict(
     localArticle: Article,
     remoteArticle: Article
   ): Promise<boolean> {
-    console.log(
-      `[SyncService] Conflict detected for article: ${localArticle.id}`
-    );
+    console.log(`[SyncService] Conflict detected for article: ${localArticle.id}`);
 
     // Add conflict to Redux state
     store.dispatch(
@@ -873,17 +679,12 @@ class SyncService {
     switch (this.config.conflictResolutionStrategy) {
       case ConflictResolutionStrategy.LAST_WRITE_WINS:
         return await this.resolveLastWriteWins(localArticle, remoteArticle);
-
       case ConflictResolutionStrategy.LOCAL_WINS:
         return await this.resolveLocalWins(localArticle, remoteArticle);
-
       case ConflictResolutionStrategy.REMOTE_WINS:
         return await this.resolveRemoteWins(localArticle, remoteArticle);
-
       case ConflictResolutionStrategy.MANUAL:
-        // For manual resolution, we'll store the conflict and return false
-        return false;
-
+        return false; // Manual resolution required
       default:
         console.warn(
           `[SyncService] Unknown conflict resolution strategy: ${this.config.conflictResolutionStrategy}`
@@ -892,9 +693,6 @@ class SyncService {
     }
   }
 
-  /**
-   * Resolve conflict using Last-Write-Wins strategy
-   */
   private async resolveLastWriteWins(
     localArticle: Article,
     remoteArticle: Article
@@ -906,19 +704,16 @@ class SyncService {
         ConflictResolutionStrategy.LAST_WRITE_WINS
       );
 
-      // Update local database with resolved article
-      const dbArticle =
-        DatabaseUtilityFunctions.convertArticleToDBArticle(resolvedArticle);
-      dbArticle.synced_at = Math.floor(Date.now() / 1000);
-      dbArticle.is_modified = 0;
-
-      const updateResult = await DatabaseService.updateArticle(
+      const updated = await localStorageService.updateArticleFromAppFormat(
         resolvedArticle.id,
-        dbArticle
+        {
+          ...resolvedArticle,
+          syncedAt: new Date().toISOString(),
+          isModified: false,
+        }
       );
 
-      if (updateResult.success) {
-        // Mark conflict as resolved
+      if (updated) {
         store.dispatch(
           resolveConflict({
             conflictId: `${localArticle.id}_${Date.now()}`,
@@ -943,24 +738,20 @@ class SyncService {
     }
   }
 
-  /**
-   * Resolve conflict using Local-Wins strategy
-   */
   private async resolveLocalWins(
     localArticle: Article,
     _remoteArticle: Article
   ): Promise<boolean> {
     try {
-      // Keep local version, but update sync timestamp
-      const updateResult = await DatabaseService.updateArticle(
+      const updated = await localStorageService.updateArticleFromAppFormat(
         localArticle.id,
         {
-          synced_at: Math.floor(Date.now() / 1000),
-          is_modified: 1, // Keep as modified to upload later
+          syncedAt: new Date().toISOString(),
+          isModified: true, // Keep as modified to upload later
         }
       );
 
-      if (updateResult.success) {
+      if (updated) {
         store.dispatch(
           resolveConflict({
             conflictId: `${localArticle.id}_${Date.now()}`,
@@ -985,26 +776,21 @@ class SyncService {
     }
   }
 
-  /**
-   * Resolve conflict using Remote-Wins strategy
-   */
   private async resolveRemoteWins(
     localArticle: Article,
     remoteArticle: Article
   ): Promise<boolean> {
     try {
-      // Use remote version
-      const dbArticle =
-        DatabaseUtilityFunctions.convertArticleToDBArticle(remoteArticle);
-      dbArticle.synced_at = Math.floor(Date.now() / 1000);
-      dbArticle.is_modified = 0;
-
-      const updateResult = await DatabaseService.updateArticle(
+      const updated = await localStorageService.updateArticleFromAppFormat(
         remoteArticle.id,
-        dbArticle
+        {
+          ...remoteArticle,
+          syncedAt: new Date().toISOString(),
+          isModified: false,
+        }
       );
 
-      if (updateResult.success) {
+      if (updated) {
         store.dispatch(
           resolveConflict({
             conflictId: `${localArticle.id}_${Date.now()}`,
@@ -1029,9 +815,6 @@ class SyncService {
     }
   }
 
-  /**
-   * Resolve all pending conflicts
-   */
   private async resolveAllConflicts(): Promise<void> {
     const state = store.getState();
     const conflicts = state.sync.conflicts;
@@ -1051,10 +834,7 @@ class SyncService {
       );
 
       try {
-        await this.handleConflict(
-          conflict.localVersion,
-          conflict.remoteVersion
-        );
+        await this.handleConflict(conflict.localVersion, conflict.remoteVersion);
       } catch (error) {
         console.error(
           `[SyncService] Failed to resolve conflict for article: ${conflict.articleId}`,
@@ -1064,14 +844,10 @@ class SyncService {
     }
   }
 
-  /**
-   * Fetch remote articles modified since a specific timestamp
-   */
   private async fetchRemoteArticlesSince(since: Date): Promise<Article[]> {
-    // Use the existing ArticlesApiService to fetch articles
-    const response = await articlesApiService.fetchArticles({
+    const response = await readeckApiService.fetchArticlesWithFilters({
       page: 1,
-      limit: 1000, // Fetch a large batch for sync
+      limit: 1000,
       forceRefresh: true,
     });
 
@@ -1081,80 +857,20 @@ class SyncService {
     );
   }
 
-  /**
-   * Check if an article exists on the server
-   */
-  private async checkArticleExistsOnServer(
-    articleId: string
-  ): Promise<boolean> {
+  private async checkArticleExistsOnServer(articleId: string): Promise<boolean> {
     try {
-      await articlesApiService.getArticle(articleId);
+      await readeckApiService.getArticleWithContent(articleId);
       return true;
     } catch (error) {
       return false;
     }
   }
 
-  /**
-   * Process any pending sync operations from previous sessions
-   */
   private async processPendingSyncOperations(): Promise<void> {
-    try {
-      // Ensure database is initialized
-      await this.ensureDatabaseInitialized();
-
-      const pendingResult = await DatabaseService.getSyncMetadata({
-        syncStatus: 'pending',
-        limit: 100,
-      });
-
-      if (pendingResult.success && pendingResult.data?.items.length > 0) {
-        console.log(
-          `[SyncService] Found ${pendingResult.data.items.length} pending sync operations`
-        );
-
-        // Skip processing old shared URL queue - we now save articles directly offline-first
-        // await this.processPendingSharedUrls();
-
-        // Process other pending operations
-        await this.processPendingOperations();
-      }
-    } catch (error) {
-      console.error(
-        '[SyncService] Failed to process pending sync operations:',
-        error
-      );
-    }
+    // Simplified - just process shared URLs
+    await this.processPendingSharedUrls();
   }
 
-  /**
-   * Set up network monitoring
-   */
-  private setupNetworkMonitoring(): void {
-    // TODO: Implement network monitoring using NetInfo
-    // For now, assume we're online
-    store.dispatch(
-      updateNetworkStatus({
-        isOnline: true,
-        networkType: NetworkType.WIFI,
-      })
-    );
-  }
-
-  /**
-   * Create batches from an array
-   */
-  private createBatches<T>(items: T[], batchSize: number): T[][] {
-    const batches: T[][] = [];
-    for (let i = 0; i < items.length; i += batchSize) {
-      batches.push(items.slice(i, i + batchSize));
-    }
-    return batches;
-  }
-
-  /**
-   * Process pending shared URLs when coming back online
-   */
   private async processPendingSharedUrls(): Promise<void> {
     try {
       const pendingUrls = await ShareService.getPendingSharedUrls();
@@ -1174,95 +890,56 @@ class SyncService {
             `[SyncService] Creating article from shared URL: ${sharedUrl.url}`
           );
 
-          // Create article using ArticlesApiService
-          const result = await articlesApiService.createArticle({
+          const article = await readeckApiService.createArticleWithMetadata({
             url: sharedUrl.url,
             title: sharedUrl.title,
           });
 
-          if (result.success) {
-            console.log(
-              `[SyncService] Successfully created article for shared URL: ${sharedUrl.id}`
-            );
+          console.log(
+            `[SyncService] Successfully created article for shared URL: ${sharedUrl.id}`
+          );
 
-            // Remove from queue
-            await ShareService.removeFromQueue(sharedUrl.id);
-
-            // Show success notification
-            // TODO: Add notification service
-            console.log(
-              `[SyncService] Article "${sharedUrl.title}" added successfully`
-            );
-          } else {
-            console.error(
-              `[SyncService] Failed to create article for shared URL: ${sharedUrl.id}`,
-              result.error
-            );
-          }
+          // Remove from queue
+          await ShareService.removeFromQueue(sharedUrl.id);
         } catch (error) {
           console.error(
             `[SyncService] Error processing shared URL ${sharedUrl.id}:`,
             error
           );
-
-          // For now, we'll keep the URL in the queue for retry
-          // TODO: Implement retry logic with exponential backoff
         }
       }
     } catch (error) {
-      console.error(
-        '[SyncService] Error processing pending shared URLs:',
-        error
-      );
+      console.error('[SyncService] Error processing pending shared URLs:', error);
     }
   }
 
-  /**
-   * Process other pending sync operations
-   */
-  private async processPendingOperations(): Promise<void> {
-    try {
-      // TODO: Implement processing of other pending operations
-      console.log(
-        '[SyncService] Processing other pending operations - not implemented yet'
-      );
-    } catch (error) {
-      console.error(
-        '[SyncService] Error processing pending operations:',
-        error
-      );
-    }
+  private setupNetworkMonitoring(): void {
+    // Simplified network monitoring
+    store.dispatch(
+      updateNetworkStatus({
+        isOnline: true,
+        networkType: NetworkType.WIFI,
+      })
+    );
   }
 
-  /**
-   * Ensure database is initialized before sync operations
-   */
-  private async ensureDatabaseInitialized(): Promise<void> {
-    try {
-      await DatabaseService.initialize();
-    } catch (error) {
-      console.error('[SyncService] Database initialization failed:', error);
-      throw new Error(`Database initialization failed: ${error.message}`);
+  private createBatches<T>(items: T[], batchSize: number): T[][] {
+    const batches: T[][] = [];
+    for (let i = 0; i < items.length; i += batchSize) {
+      batches.push(items.slice(i, i + batchSize));
     }
+    return batches;
   }
 
-  /**
-   * Check if an error is retryable
-   */
   private isRetryableError(error: any): boolean {
-    // Network errors, timeouts, and server errors are retryable
     if (error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT') return true;
     if (error.status >= 500 && error.status < 600) return true;
     if (error.message.includes('network') || error.message.includes('timeout'))
       return true;
-
     return false;
   }
 
-  /**
-   * Stop sync if currently running
-   */
-  public async stopSync(): Promise<void> {
+  async stopSync(): Promise<void> {
     if (this.isRunning && this.abortController) {
       console.log('[SyncService] Stopping sync...');
       this.abortController.abort();
@@ -1270,27 +947,18 @@ class SyncService {
     }
   }
 
-  /**
-   * Update sync configuration
-   */
-  public updateConfig(config: Partial<SyncConfiguration>): void {
-    this.config = { ...this.config, ...config };
-    console.log('[SyncService] Configuration updated:', config);
-  }
-
-  /**
-   * Get current sync status
-   */
-  public isSyncRunning(): boolean {
+  isSyncRunning(): boolean {
     return this.isRunning;
   }
 
-  /**
-   * Get sync statistics
-   */
-  public async getSyncStats(): Promise<any> {
+  async getSyncStats(): Promise<any> {
     const state = store.getState();
     return state.sync.stats;
+  }
+
+  async triggerManualSync(): Promise<void> {
+    console.log('[SyncService] Manual sync triggered');
+    await this.startFullSync(true);
   }
 }
 
@@ -1299,3 +967,6 @@ export const syncService = SyncService.getInstance();
 
 // Export class for testing
 export default SyncService;
+
+// Export types
+export type { SyncResult, SimpleSyncServiceInterface };

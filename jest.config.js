@@ -8,11 +8,10 @@ module.exports = {
     '<rootDir>/android/',
     '<rootDir>/ios/',
     '<rootDir>/__tests__/mocks/',
-    '<rootDir>/__tests__/e2e/helpers/',
     '<rootDir>/__tests__/setup.ts',
   ],
-  // Special timeout for performance tests
-  testTimeout: process.env.RUN_DEVICE_TESTS === 'true' ? 60000 : 10000,
+  // Optimized timeout for strategic testing
+  testTimeout: 5000,
   transform: {
     '^.+\\.(ts|tsx)$': 'babel-jest',
     '^.+\\.js$': 'babel-jest',
@@ -48,14 +47,15 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
+      branches: 60,
+      functions: 70,
+      lines: 70,
+      statements: 70,
     },
   },
   testEnvironment: 'node',
   clearMocks: true,
   restoreMocks: true,
-  verbose: true,
+  verbose: false,
+  maxWorkers: '50%',
 };

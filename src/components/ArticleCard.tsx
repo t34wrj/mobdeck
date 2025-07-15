@@ -7,8 +7,8 @@ import {
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
-import { Text } from './ui/Text';
-import { theme } from './ui/theme';
+import { SimpleText } from './SimpleText';
+import { theme } from './theme';
 import { Article } from '../types';
 
 export interface ArticleCardProps {
@@ -101,8 +101,8 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
           )}
 
           <View style={styles.textContent}>
-            <Text
-              variant='h6'
+            <SimpleText
+              variant='h3'
               numberOfLines={2}
               ellipsizeMode='tail'
               style={[
@@ -111,49 +111,49 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
               ]}
             >
               {article.title || 'Untitled'}
-            </Text>
+            </SimpleText>
 
             {article.summary && article.summary.trim() && (
-              <Text
-                variant='body2'
+              <SimpleText
+                variant='body'
                 numberOfLines={3}
                 ellipsizeMode='tail'
                 style={styles.summary}
               >
                 {String(article.summary).trim()}
-              </Text>
+              </SimpleText>
             )}
 
             <View style={styles.metadata}>
-              <Text variant='caption' style={styles.date}>
+              <SimpleText variant='caption' style={styles.date}>
                 {formattedDate}
-              </Text>
+              </SimpleText>
 
               {!!article.readTime && (
-                <Text variant='caption' style={styles.separator}>
+                <SimpleText variant='caption' style={styles.separator}>
                   •
-                </Text>
+                </SimpleText>
               )}
               {!!article.readTime && (
-                <Text variant='caption' style={styles.readTime}>
+                <SimpleText variant='caption' style={styles.readTime}>
                   {formattedReadTime}
-                </Text>
+                </SimpleText>
               )}
 
               {sourceHostname ? (
-                <Text variant='caption' style={styles.separator}>
+                <SimpleText variant='caption' style={styles.separator}>
                   •
-                </Text>
+                </SimpleText>
               ) : null}
               {sourceHostname ? (
-                <Text
+                <SimpleText
                   variant='caption'
                   numberOfLines={1}
                   ellipsizeMode='tail'
                   style={styles.source}
                 >
                   {sourceHostname}
-                </Text>
+                </SimpleText>
               ) : null}
             </View>
 
@@ -161,15 +161,15 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
               <View style={styles.tagsContainer} testID='tags-container'>
                 {article.tags.slice(0, 3).map(tag => (
                   <View key={tag} style={styles.tag}>
-                    <Text variant='caption' style={styles.tagText}>
+                    <SimpleText variant='caption' style={styles.tagText}>
                       {tag}
-                    </Text>
+                    </SimpleText>
                   </View>
                 ))}
                 {article.tags.length > 3 && (
-                  <Text variant='caption' style={styles.moreTagsText}>
+                  <SimpleText variant='caption' style={styles.moreTagsText}>
                     +{article.tags.length - 3}
-                  </Text>
+                  </SimpleText>
                 )}
               </View>
             )}
@@ -181,25 +181,25 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
                 style={styles.favoriteIndicator}
                 testID='favorite-indicator'
               >
-                <Text variant='caption' style={styles.favoriteIcon}>
+                <SimpleText variant='caption' style={styles.favoriteIcon}>
                   ♥
-                </Text>
+                </SimpleText>
               </View>
             )}
 
             {article.isArchived && (
               <View style={styles.archivedIndicator} testID='archive-indicator'>
-                <Text variant='caption' style={styles.archivedIcon}>
+                <SimpleText variant='caption' style={styles.archivedIcon}>
                   📦
-                </Text>
+                </SimpleText>
               </View>
             )}
 
             {article.isRead && (
               <View style={styles.readIndicator}>
-                <Text variant='caption' style={styles.readIcon}>
+                <SimpleText variant='caption' style={styles.readIcon}>
                   ✓
-                </Text>
+                </SimpleText>
               </View>
             )}
           </View>
@@ -217,9 +217,9 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
                 }
                 accessibilityRole='button'
               >
-                <Text variant='caption' style={styles.actionButtonText}>
+                <SimpleText variant='caption' style={styles.actionButtonText}>
                   {article.isFavorite ? '♥' : '♡'}
-                </Text>
+                </SimpleText>
               </TouchableOpacity>
             )}
 
@@ -233,9 +233,9 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
                 }
                 accessibilityRole='button'
               >
-                <Text variant='caption' style={styles.actionButtonText}>
+                <SimpleText variant='caption' style={styles.actionButtonText}>
                   {article.isArchived ? '📤' : '📦'}
-                </Text>
+                </SimpleText>
               </TouchableOpacity>
             )}
           </View>

@@ -19,12 +19,14 @@ jest.mock('axios', () => ({
   create: jest.fn(),
 }));
 
-// Mock authStorageService
-jest.mock('../../src/services/AuthStorageService', () => ({
-  authStorageService: {
+// Mock localStorageService
+jest.mock('../../src/services/LocalStorageService', () => ({
+  localStorageService: {
     retrieveToken: jest.fn(),
     storeToken: jest.fn(),
-    clearToken: jest.fn(),
+    deleteToken: jest.fn(),
+    isTokenStored: jest.fn(),
+    validateStoredToken: jest.fn(),
   },
 }));
 
