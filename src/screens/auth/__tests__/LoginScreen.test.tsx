@@ -18,8 +18,29 @@ import { readeckApiService } from '../../../services/ReadeckApiService';
 jest.mock('../../../services/AuthStorageService');
 jest.mock('../../../services/api');
 jest.mock('../../../services/ReadeckApiService');
-jest.mock('../../../components/ui/Button');
-jest.mock('../../../components/ui/Text');
+jest.mock('../../../components/ui/Button', () => {
+  const { TouchableOpacity, Text } = require('react-native');
+  return {
+    Button: ({ onPress, children, disabled, testID, ...props }: any) => (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled}
+        testID={testID}
+        {...props}
+      >
+        <Text>{children}</Text>
+      </TouchableOpacity>
+    ),
+  };
+});
+
+jest.mock('../../../components/ui/Text', () => {
+  const { Text } = require('react-native');
+  return {
+    Text: ({ children, ...props }: any) => <Text {...props}>{children}</Text>,
+  };
+});
+
 jest.mock('../../../components/MobdeckLogo', () => {
   const { View } = require('react-native');
   return () => <View testID='mobdeck-logo' />;

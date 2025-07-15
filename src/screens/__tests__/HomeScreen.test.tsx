@@ -12,6 +12,16 @@ import authReducer from '../../store/slices/authSlice';
 import syncReducer from '../../store/slices/syncSlice';
 import { NavigationContainer } from '@react-navigation/native';
 
+// Get the mocked function from the setup file
+const { articlesApiService } = require('../../services/ArticlesApiService');
+const mockFetchArticles = articlesApiService.fetchArticles;
+
+jest.mock('../../services/SyncService', () => ({
+  syncService: {
+    startSync: jest.fn(() => Promise.resolve()),
+  },
+}));
+
 // Mock components
 jest.mock('../../components/ArticleCard', () => {
   const { View, Text } = require('react-native');
@@ -28,12 +38,14 @@ jest.mock('../../components/ArticleCard', () => {
 
 jest.mock('../../components/SearchBar', () => {
   const { View, TextInput } = require('react-native');
-  const MockSearchBar = ({ onSearch, placeholder }: any) => (
+  const MockSearchBar = ({ searchQuery, onSearchChange, onSearchSubmit }: any) => (
     <View>
       <TextInput
         testID='search-bar'
-        placeholder={placeholder}
-        onChangeText={onSearch}
+        placeholder='Search articles...'
+        value={searchQuery}
+        onChangeText={onSearchChange}
+        onSubmitEditing={onSearchSubmit}
       />
     </View>
   );
@@ -79,6 +91,7 @@ const createTestStore = (initialState?: any) => {
         error: { fetch: null, create: null, update: null, delete: null },
         filters: { archived: false, starred: false, searchQuery: '' },
         selectedTags: [],
+        pagination: { page: 1, limit: 20, total: 0, hasMore: false },
         ...initialState?.articles,
       },
       auth: {
@@ -87,6 +100,7 @@ const createTestStore = (initialState?: any) => {
         error: null,
         serverUrl: 'https://example.com',
         apiToken: 'test-token',
+        user: { id: 1, email: 'test@example.com', name: 'Test User' },
         ...initialState?.auth,
       },
       sync: {
@@ -121,6 +135,13 @@ const renderWithProviders = (component: React.ReactElement, store?: any) => {
 describe('HomeScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset API mock to default success behavior
+    mockFetchArticles.mockResolvedValue({
+      items: [],
+      page: 1,
+      totalPages: 1,
+      totalItems: 0,
+    });
   });
 
   it('should render loading state', () => {
@@ -141,10 +162,18 @@ describe('HomeScreen', () => {
     expect(UNSAFE_getByType('ActivityIndicator')).toBeTruthy();
   });
 
-  it('should render error state', () => {
+  it('should render error state', async () => {
+    // Make the API call fail
+    mockFetchArticles.mockRejectedValue(new Error('Failed to fetch articles'));
+
     const store = createTestStore({
-      articles: {
-        error: { fetch: 'Failed to fetch articles' },
+      auth: {
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+        serverUrl: 'https://example.com',
+        apiToken: 'test-token',
+        user: { id: 1, email: 'test@example.com', name: 'Test User' },
       },
     });
 
@@ -156,26 +185,53 @@ describe('HomeScreen', () => {
       store
     );
 
-    expect(getByText('Failed to fetch articles')).toBeTruthy();
+    await waitFor(() => {
+      expect(getByText('Failed to fetch articles')).toBeTruthy();
+    });
   });
 
-  it('should render empty state when no articles', () => {
+  it('should render empty state when no articles', async () => {
+    const store = createTestStore({
+      articles: {
+        entities: {},
+        ids: [],
+        loading: { fetch: false, create: false, update: false, delete: false },
+        error: { fetch: null, create: null, update: null, delete: null },
+      },
+    });
+
     const { getByTestId } = renderWithProviders(
-      <HomeScreen navigation={mockNavigation as any} route={mockRoute as any} />
+      <HomeScreen navigation={mockNavigation as any} route={mockRoute as any} />,
+      store
     );
 
     // Should render search bar even when empty
-    expect(getByTestId('search-bar')).toBeTruthy();
+    await waitFor(() => {
+      expect(getByTestId('search-bar')).toBeTruthy();
+    });
   });
 
-  it('should render article list', () => {
+  it('should render article list', async () => {
     const articles = {
-      '1': { id: '1', title: 'Article 1', url: 'http://example.com/1' },
-      '2': { id: '2', title: 'Article 2', url: 'http://example.com/2' },
+      '1': { id: '1', title: 'Article 1', url: 'http://example.com/1', createdAt: '2024-01-01' },
+      '2': { id: '2', title: 'Article 2', url: 'http://example.com/2', createdAt: '2024-01-02' },
     };
 
+    // Mock API to return the articles
+    mockFetchArticles.mockResolvedValue({
+      items: Object.values(articles),
+      page: 1,
+      totalPages: 1,
+      totalItems: 2,
+    });
+
     const store = createTestStore({
-      articles: { entities: articles, ids: ['1', '2'] },
+      articles: { 
+        entities: articles, 
+        ids: ['1', '2'],
+        loading: { fetch: false, create: false, update: false, delete: false },
+        error: { fetch: null, create: null, update: null, delete: null },
+      },
     });
 
     const { getByTestId } = renderWithProviders(
@@ -186,12 +242,19 @@ describe('HomeScreen', () => {
       store
     );
 
-    expect(getByTestId('article-1')).toBeTruthy();
-    expect(getByTestId('article-2')).toBeTruthy();
+    await waitFor(() => {
+      expect(getByTestId('article-1')).toBeTruthy();
+      expect(getByTestId('article-2')).toBeTruthy();
+    });
   });
 
   it('should handle search input', async () => {
-    const store = createTestStore();
+    const store = createTestStore({
+      articles: {
+        loading: { fetch: false, create: false, update: false, delete: false },
+        error: { fetch: null, create: null, update: null, delete: null },
+      },
+    });
 
     const { getByTestId } = renderWithProviders(
       <HomeScreen
@@ -200,14 +263,17 @@ describe('HomeScreen', () => {
       />,
       store
     );
+
+    await waitFor(() => {
+      expect(getByTestId('search-bar')).toBeTruthy();
+    });
 
     const searchBar = getByTestId('search-bar');
     fireEvent.changeText(searchBar, 'test search');
 
-    await waitFor(() => {
-      const state = store.getState();
-      expect(state.articles.filters.searchQuery).toBe('test search');
-    });
+    // Note: The component uses local state for search, not Redux filters immediately
+    // The Redux state is only updated when the search is submitted
+    expect(searchBar.props.value).toBe('test search');
   });
 
   it('should not fetch articles when not authenticated', () => {

@@ -37,6 +37,7 @@ jest.mock('react-native', () => ({
   Image: 'Image',
   Modal: 'Modal',
   ActivityIndicator: 'ActivityIndicator',
+  KeyboardAvoidingView: 'KeyboardAvoidingView',
   NativeModules: {
     RNCNetInfo: {
       getCurrentState: jest.fn(() =>
@@ -146,6 +147,61 @@ jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => children,
   useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
   useSafeAreaFrame: () => ({ x: 0, y: 0, width: 375, height: 812 }),
+}));
+
+// Mock ConnectivityManager
+jest.mock('../src/utils/connectivityManager', () => ({
+  connectivityManager: {
+    isOnline: jest.fn(() => true),
+    getStatus: jest.fn(() => 'online'),
+    getDetails: jest.fn(() => ({
+      isConnected: true,
+      isInternetReachable: true,
+      networkType: 'wifi',
+      isConnectionExpensive: false,
+    })),
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    refresh: jest.fn(() => Promise.resolve()),
+  },
+  default: {
+    isOnline: jest.fn(() => true),
+    getStatus: jest.fn(() => 'online'),
+    getDetails: jest.fn(() => ({
+      isConnected: true,
+      isInternetReachable: true,
+      networkType: 'wifi',
+      isConnectionExpensive: false,
+    })),
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    refresh: jest.fn(() => Promise.resolve()),
+  },
+}));
+
+// Mock ArticlesApiService for all tests
+jest.mock('../src/services/ArticlesApiService', () => ({
+  articlesApiService: {
+    fetchArticles: jest.fn(() =>
+      Promise.resolve({
+        items: [],
+        page: 1,
+        totalPages: 1,
+        totalItems: 0,
+      })
+    ),
+    createArticle: jest.fn(() =>
+      Promise.resolve({
+        id: 'test-id',
+        title: 'Test Article',
+        url: 'https://example.com',
+        createdAt: new Date().toISOString(),
+      })
+    ),
+    updateArticle: jest.fn(() => Promise.resolve()),
+    deleteArticle: jest.fn(() => Promise.resolve()),
+  },
+  __esModule: true,
 }));
 
 // Global test utilities

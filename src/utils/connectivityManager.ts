@@ -211,6 +211,13 @@ class ConnectivityManager {
   }
 
   /**
+   * Check if device is online (connected and internet reachable)
+   */
+  public isOnline(): boolean {
+    return this.currentStatus.isConnected && this.currentStatus.isInternetReachable;
+  }
+
+  /**
    * Get human-readable connection type string
    */
   public getConnectionTypeString(): string {
