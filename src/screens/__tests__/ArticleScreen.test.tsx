@@ -5,14 +5,16 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 
-// Mock the API first
-jest.mock('../../services/api', () => ({
-  fetchArticleById: jest.fn(),
+// Mock the ReadeckApiService
+jest.mock('../../services/ReadeckApiService', () => ({
+  readeckApiService: {
+    getArticle: jest.fn(),
+  },
 }));
 
 // Import the component and dependencies after mocks
 import ArticleScreen from '../ArticleScreen';
-import { fetchArticleById } from '../../services/api';
+import { readeckApiService } from '../../services/ReadeckApiService';
 
 // Mock navigation
 const mockNavigation = {
@@ -38,7 +40,7 @@ describe('ArticleScreen', () => {
   });
 
   it('should render loading state initially', () => {
-    (fetchArticleById as jest.Mock).mockReturnValue(new Promise(() => {}));
+    (readeckApiService.getArticle as jest.Mock).mockReturnValue(new Promise(() => {}));
 
     const { UNSAFE_getByType } = render(
       <ArticleScreen
@@ -60,7 +62,7 @@ describe('ArticleScreen', () => {
       publishedAt: '2024-01-01',
     };
 
-    (fetchArticleById as jest.Mock).mockResolvedValue(mockArticle);
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: mockArticle });
 
     const { getByText } = render(
       <ArticleScreen
@@ -77,7 +79,7 @@ describe('ArticleScreen', () => {
   });
 
   it('should render error state when article fetch fails', async () => {
-    (fetchArticleById as jest.Mock).mockRejectedValue(
+    (readeckApiService.getArticle as jest.Mock).mockRejectedValue(
       new Error('Network error')
     );
 
@@ -94,7 +96,7 @@ describe('ArticleScreen', () => {
   });
 
   it('should render error state when article is null', async () => {
-    (fetchArticleById as jest.Mock).mockResolvedValue(null);
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: null });
 
     const { getByText } = render(
       <ArticleScreen
@@ -115,7 +117,7 @@ describe('ArticleScreen', () => {
       content: 'Another content',
     };
 
-    (fetchArticleById as jest.Mock).mockResolvedValue(mockArticle);
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: mockArticle });
 
     render(
       <ArticleScreen
@@ -125,7 +127,7 @@ describe('ArticleScreen', () => {
     );
 
     await waitFor(() => {
-      expect(fetchArticleById).toHaveBeenCalledWith('456');
+      expect(readeckApiService.getArticle).toHaveBeenCalledWith('456');
     });
   });
 
@@ -137,7 +139,7 @@ describe('ArticleScreen', () => {
       image: 'https://example.com/article-image.jpg',
     };
 
-    (fetchArticleById as jest.Mock).mockResolvedValue(mockArticle);
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: mockArticle });
 
     const { UNSAFE_getByType } = render(
       <ArticleScreen
@@ -162,7 +164,7 @@ describe('ArticleScreen', () => {
       image: null,
     };
 
-    (fetchArticleById as jest.Mock).mockResolvedValue(mockArticle);
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: mockArticle });
 
     const renderResult = render(
       <ArticleScreen
@@ -181,7 +183,7 @@ describe('ArticleScreen', () => {
   it('should log error to console when fetch fails', async () => {
     const consoleError = jest.spyOn(console, 'error').mockImplementation();
     const error = new Error('Fetch failed');
-    (fetchArticleById as jest.Mock).mockRejectedValue(error);
+    (readeckApiService.getArticle as jest.Mock).mockRejectedValue(error);
 
     render(
       <ArticleScreen
@@ -208,7 +210,7 @@ describe('ArticleScreen', () => {
       publishedAt: '2024-01-15',
     };
 
-    (fetchArticleById as jest.Mock).mockResolvedValue(mockArticle);
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: mockArticle });
 
     const { getByText } = render(
       <ArticleScreen

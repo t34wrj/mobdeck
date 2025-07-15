@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Image, StyleSheet, ActivityIndicator } from 'react-native';
-import { SimpleText } from "../../components";
-import { fetchArticleById } from '../services/api';
+import { View, Image, StyleSheet, ActivityIndicator, Text } from 'react-native';
+import { SimpleText } from '../components';
+import { readeckApiService } from '../services/ReadeckApiService';
 import { MainScreenProps } from '../navigation/types';
-import { colors } from "../../components/theme"';
+import { colors } from '../components/theme';
 
 const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
   navigation: _navigation,
@@ -16,8 +16,8 @@ const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
   useEffect(() => {
     const getArticle = async () => {
       try {
-        const data = await fetchArticleById(articleId);
-        setArticle(data);
+        const response = await readeckApiService.getArticle(articleId);
+        setArticle(response.data);
       } catch (error) {
         console.error('Error fetching article:', error);
       } finally {
