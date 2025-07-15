@@ -10,7 +10,7 @@ const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
   route,
 }) => {
   const { articleId } = route.params;
-  const [article, setArticle] = useState(null);
+  const [article, setArticle] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,9 +46,17 @@ const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
 
   return (
     <View style={styles.container}>
-      <Image source={{ uri: article.image }} style={styles.image} />
+      {article.image && (
+        <Image source={{ uri: article.image }} style={styles.image} />
+      )}
       <Text style={styles.title}>{article.title}</Text>
-      <Text style={styles.summary}>{article.summary}</Text>
+      {article.author && <Text style={styles.author}>By {article.author}</Text>}
+      {article.publishedAt && (
+        <Text style={styles.publishDate}>Published: {article.publishedAt}</Text>
+      )}
+      {article.summary && (
+        <Text style={styles.summary}>{article.summary}</Text>
+      )}
       <Text style={styles.content}>{article.content}</Text>
     </View>
   );
@@ -79,6 +87,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     marginVertical: 8,
+  },
+  author: {
+    fontSize: 14,
+    color: colors.neutral[700],
+    marginBottom: 4,
+  },
+  publishDate: {
+    fontSize: 12,
+    color: colors.neutral[500],
+    marginBottom: 8,
   },
   summary: {
     fontSize: 16,

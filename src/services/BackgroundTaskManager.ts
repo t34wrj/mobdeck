@@ -228,18 +228,9 @@ class BackgroundTaskManager {
    * Check exact alarm permission using native Android API
    */
   private async checkExactAlarmPermission(): Promise<boolean> {
-    try {
-      // This would typically require a native module implementation
-      // For now, we'll assume permission is granted and handle gracefully
-      return true;
-    } catch (error) {
-      // eslint-disable-line no-unreachable
-      console.warn(
-        '[BackgroundTaskManager] Could not check exact alarm permission:',
-        error
-      );
-      return false;
-    }
+    // This would typically require a native module implementation
+    // For now, we'll assume permission is granted and handle gracefully
+    return true;
   }
 
   /**

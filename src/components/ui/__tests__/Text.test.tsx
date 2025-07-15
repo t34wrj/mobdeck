@@ -236,9 +236,9 @@ describe('Text', () => {
     });
 
     it('should handle undefined/null children gracefully', () => {
-      const { container } = render(<Text>{null}</Text>);
+      const { UNSAFE_root } = render(<Text>{null}</Text>);
 
-      expect(container).toBeTruthy();
+      expect(UNSAFE_root).toBeTruthy();
     });
 
     it('should handle invalid color gracefully', () => {

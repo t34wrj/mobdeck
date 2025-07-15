@@ -29,9 +29,7 @@ export interface IArticlesApiService {
   createArticle(params: CreateArticleParams): Promise<Article>;
   updateArticle(params: UpdateArticleParams): Promise<Article>;
   deleteArticle(params: DeleteArticleParams): Promise<void>;
-  syncArticles(
-    params: SyncArticlesParams
-  ): Promise<{
+  syncArticles(params: SyncArticlesParams): Promise<{
     syncedCount: number;
     conflictCount: number;
     articles: Article[];
@@ -778,9 +776,7 @@ class ArticlesApiService implements IArticlesApiService {
   /**
    * Sync articles with server
    */
-  async syncArticles(
-    params: SyncArticlesParams
-  ): Promise<{
+  async syncArticles(params: SyncArticlesParams): Promise<{
     syncedCount: number;
     conflictCount: number;
     articles: Article[];

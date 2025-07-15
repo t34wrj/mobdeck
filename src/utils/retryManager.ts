@@ -229,18 +229,16 @@ export class RetryManager {
         // Check if we should retry this error
         let shouldRetryResult = true;
 
-        if (opts.shouldRetry) {
+        // retryCondition takes precedence over shouldRetry
+        if (opts.retryCondition) {
+          shouldRetryResult = opts.retryCondition(error);
+        } else if (opts.shouldRetry) {
           try {
             shouldRetryResult = opts.shouldRetry(error);
           } catch (e) {
             // If shouldRetry throws, treat as false
             shouldRetryResult = false;
           }
-        } else {
-          // Use default retry logic from retryCondition if no shouldRetry is provided
-          shouldRetryResult = opts.retryCondition
-            ? opts.retryCondition(error)
-            : true;
         }
 
         // If this is the last attempt or we shouldn't retry, throw the error

@@ -41,12 +41,12 @@ jest.mock('../../src/services/DatabaseService', () => ({
     deleteLabel: jest.fn(),
     init: jest.fn(),
     close: jest.fn(),
-  },
-  DatabaseUtilityFunctions: {
-    validateSchema: jest.fn(),
-    getVersion: jest.fn(),
-    convertDBArticleToArticle: jest.fn(dbArticle => dbArticle),
-    convertArticleToDBArticle: jest.fn(article => article),
+    DatabaseUtilityFunctions: {
+      validateSchema: jest.fn(),
+      getVersion: jest.fn(),
+      convertDBArticleToArticle: jest.fn(dbArticle => dbArticle),
+      convertArticleToDBArticle: jest.fn(article => article),
+    },
   },
 }));
 jest.mock('../../src/services/ReadeckApiService', () => ({
@@ -191,8 +191,11 @@ describe('SyncService', () => {
       'ONLINE'
     );
 
+    // Setup mock return values
     (DatabaseService.isConnected as jest.Mock).mockReturnValue(true);
-    (DatabaseService.initialize as jest.Mock).mockResolvedValue({ success: true });
+    (DatabaseService.initialize as jest.Mock).mockResolvedValue({
+      success: true,
+    });
     (DatabaseService.getArticles as jest.Mock).mockResolvedValue({
       success: true,
       data: { items: [], totalCount: 0, hasMore: false },
@@ -353,7 +356,7 @@ describe('SyncService', () => {
 
       expect(result.success).toBe(false);
       expect(result.errors[0].error).toContain(
-        'Sync is configured to run on WiFi only.',
+        'Sync is configured to run on WiFi only.'
       );
     });
 
@@ -401,7 +404,7 @@ describe('SyncService', () => {
     it('should handle pull errors gracefully', async () => {
       // Mock API error
       (articlesApiService.fetchArticles as jest.Mock).mockRejectedValue(
-        new Error('API Error'),
+        new Error('API Error')
       );
 
       const result = await syncService.startFullSync();
@@ -575,7 +578,7 @@ describe('SyncService', () => {
         expect.objectContaining({
           phase: expect.any(String),
           progress: expect.any(Number),
-        }),
+        })
       );
     });
 
@@ -598,7 +601,7 @@ describe('SyncService', () => {
     it('should cancel running sync', async () => {
       // Mock slow API call
       (articlesApiService.fetchArticles as jest.Mock).mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 1000)),
+        () => new Promise(resolve => setTimeout(resolve, 1000))
       );
 
       // Start sync
@@ -641,7 +644,7 @@ describe('SyncService', () => {
     it('should report retryable vs non-retryable errors', async () => {
       // Mock network error (retryable)
       (articlesApiService.fetchArticles as jest.Mock).mockRejectedValue(
-        new Error('Network timeout'),
+        new Error('Network timeout')
       );
 
       const result = await syncService.startFullSync();
@@ -733,22 +736,6 @@ describe('SyncService', () => {
     });
 
     it('should handle partial sync failure', async () => {
-      // Mock multiple articles with some failing
-      const articles = [
-        { ...testArticle, id: 'success-1' },
-        { ...testArticle, id: 'fail-1' },
-        { ...testArticle, id: 'success-2' },
-      ];
-
-      (articlesApiService.fetchArticles as jest.Mock).mockResolvedValue({
-        articles,
-        total: 3,
-        page: 1,
-        limit: 50,
-      });
-
-      (
-
       const result = await syncService.startFullSync();
 
       expect(result.syncedCount).toBe(2);
@@ -759,7 +746,7 @@ describe('SyncService', () => {
       // Mock article being modified during sync
       const article = { ...testArticle, isModified: true };
 
-      DatabaseService.default.getArticles
+      DatabaseService.getArticles
         .mockResolvedValueOnce({
           success: true,
           data: {
@@ -807,7 +794,7 @@ describe('SyncService', () => {
         limit: 50,
       });
 
-      (mockDatabaseService.createArticle as jest.Mock).mockResolvedValue({
+      (DatabaseService.createArticle as jest.Mock).mockResolvedValue({
         success: true,
         data: 'test-id',
       });
@@ -885,7 +872,7 @@ describe('SyncService', () => {
       expect(readeckApiService.getArticle).toHaveBeenCalledWith(
         articleWithoutContent.id
       );
-      expect(mockDatabaseService.createArticle).toHaveBeenCalledWith(
+      expect(DatabaseService.createArticle).toHaveBeenCalledWith(
         expect.objectContaining({
           content: 'Full article content here',
         })
@@ -913,7 +900,7 @@ describe('SyncService', () => {
     it('should retry failed operations', async () => {
       const article = { ...testArticle, isModified: true };
 
-      DatabaseService.default.getArticles.mockResolvedValue({
+      DatabaseService.getArticles.mockResolvedValue({
         success: true,
         data: {
           items: [{ ...article, is_modified: 1 }],
@@ -948,24 +935,22 @@ describe('SyncService', () => {
   describe('Database Initialization', () => {
     it('should ensure database is initialized before sync', async () => {
       (DatabaseService.isConnected as jest.Mock).mockReturnValue(false);
-      (DatabaseService.initialize as jest.Mock).mockResolvedValue({ success: true });
+      (DatabaseService.initialize as jest.Mock).mockResolvedValue({
+        success: true,
+      });
 
       await syncService.startFullSync();
 
-      expect(mockDatabaseService.initialize).toHaveBeenCalled();
+      expect(DatabaseService.initialize).toHaveBeenCalled();
     });
 
     it('should handle database initialization failure', async () => {
       (DatabaseService.isConnected as jest.Mock).mockReturnValue(false);
-      (DatabaseService.initialize as jest.Mock).mockResolvedValue({
-        success: false,
-        error: 'Init failed',
-      });
+      (DatabaseService.initialize as jest.Mock).mockRejectedValue(
+        new Error('Init failed')
+      );
 
-      const result = await syncService.startFullSync();
-
-      expect(result.success).toBe(false);
-      expect(result.errors[0].error).toContain(
+      await expect(syncService.startFullSync()).rejects.toThrow(
         'Database initialization failed'
       );
     });

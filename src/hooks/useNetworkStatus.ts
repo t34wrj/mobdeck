@@ -32,13 +32,21 @@ export const useNetworkStatus = (): NetworkStatus => {
 
   useEffect(() => {
     const updateNetworkStatus = () => {
-      const isOnline = readeckApiService.isOnline();
-      const networkState = readeckApiService.getNetworkState();
+      try {
+        const isOnline = readeckApiService.isOnline();
+        const networkState = readeckApiService.getNetworkState();
 
-      setNetworkStatus({
-        isOnline,
-        isConnected: networkState.isConnected,
-      });
+        setNetworkStatus({
+          isOnline,
+          isConnected: networkState?.isConnected ?? false,
+        });
+      } catch (error) {
+        // Gracefully handle errors by using offline state
+        setNetworkStatus({
+          isOnline: false,
+          isConnected: false,
+        });
+      }
     };
 
     // Initial check

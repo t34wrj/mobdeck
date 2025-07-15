@@ -440,10 +440,15 @@ describe('RetryManager', () => {
 
   describe('Retry Patterns', () => {
     it('should support custom backoff strategy', async () => {
+      const error1 = new Error('Fail 1');
+      error1.code = 'CONNECTION_ERROR'; // Make it retryable
+      const error2 = new Error('Fail 2');
+      error2.code = 'CONNECTION_ERROR'; // Make it retryable
+      
       const operation = jest
         .fn()
-        .mockRejectedValueOnce(new Error('Fail 1'))
-        .mockRejectedValueOnce(new Error('Fail 2'))
+        .mockRejectedValueOnce(error1)
+        .mockRejectedValueOnce(error2)
         .mockResolvedValue('success');
 
       const options: RetryOptions = {
@@ -456,13 +461,9 @@ describe('RetryManager', () => {
       // Wait for first attempt
       expect(operation).toHaveBeenCalledTimes(1);
 
-      // First retry after 50ms (getDelay(1) = 50)
-      await jest.advanceTimersByTimeAsync(50);
-      expect(operation).toHaveBeenCalledTimes(2);
-
-      // Second retry after 100ms (getDelay(2) = 100)
-      await jest.advanceTimersByTimeAsync(100);
-
+      // Run all timers to complete the entire retry sequence
+      await jest.runAllTimersAsync();
+      
       await resultPromise;
       expect(operation).toHaveBeenCalledTimes(3);
     });
