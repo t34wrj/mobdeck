@@ -180,8 +180,8 @@ jest.mock('../src/utils/connectivityManager', () => ({
 }));
 
 // Mock ArticlesApiService for all tests
-jest.mock('../src/services/ArticlesApiService', () => ({
-  articlesApiService: {
+jest.mock('../src/services/ArticlesApiService', () => {
+  const mockMethods = {
     fetchArticles: jest.fn(() =>
       Promise.resolve({
         items: [],
@@ -200,9 +200,17 @@ jest.mock('../src/services/ArticlesApiService', () => ({
     ),
     updateArticle: jest.fn(() => Promise.resolve()),
     deleteArticle: jest.fn(() => Promise.resolve()),
-  },
-  __esModule: true,
-}));
+  };
+
+  // Mock class constructor that returns an object with the same methods
+  const MockArticlesApiService = jest.fn().mockImplementation(() => mockMethods);
+
+  return {
+    articlesApiService: mockMethods,
+    default: MockArticlesApiService,
+    __esModule: true,
+  };
+});
 
 // Global test utilities
 global.fetch = jest.fn();
