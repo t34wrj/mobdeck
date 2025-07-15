@@ -36,6 +36,7 @@ jest.mock('react-native', () => ({
   FlatList: 'FlatList',
   Image: 'Image',
   Modal: 'Modal',
+  ActivityIndicator: 'ActivityIndicator',
   NativeModules: {
     RNCNetInfo: {
       getCurrentState: jest.fn(() =>

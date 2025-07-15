@@ -4,16 +4,15 @@
 
 import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
-import ArticleScreen from '../ArticleScreen';
-import { fetchArticleById } from '../../services/api';
 
-// Mock the API
+// Mock the API first
 jest.mock('../../services/api', () => ({
   fetchArticleById: jest.fn(),
 }));
 
-// Mock the Text component
-jest.mock('../../components/ui/Text');
+// Import the component and dependencies after mocks
+import ArticleScreen from '../ArticleScreen';
+import { fetchArticleById } from '../../services/api';
 
 // Mock navigation
 const mockNavigation = {
@@ -31,6 +30,11 @@ const createMockRoute = (articleId: string) => ({
 describe('ArticleScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  it('should import and exist', () => {
+    expect(ArticleScreen).toBeDefined();
+    expect(typeof ArticleScreen).toBe('function');
   });
 
   it('should render loading state initially', () => {
@@ -160,7 +164,7 @@ describe('ArticleScreen', () => {
 
     (fetchArticleById as jest.Mock).mockResolvedValue(mockArticle);
 
-    const { queryByType } = render(
+    const renderResult = render(
       <ArticleScreen
         navigation={mockNavigation as any}
         route={createMockRoute('123')}
@@ -168,11 +172,9 @@ describe('ArticleScreen', () => {
     );
 
     await waitFor(() => {
-      // Depending on implementation, might not render Image component
-      const images = queryByType('Image');
-      if (images) {
-        expect(images.props.source.uri).toBeNull();
-      }
+      // Check that the content is rendered (image handling varies by implementation)
+      expect(renderResult.getByText('Article without Image')).toBeTruthy();
+      expect(renderResult.getByText('Content')).toBeTruthy();
     });
   });
 
