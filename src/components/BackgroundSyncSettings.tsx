@@ -14,7 +14,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useBackgroundSync, SYNC_INTERVALS } from '../hooks/useBackgroundSync';
-import { theme } from "../../components/theme"';
+import { theme } from "./theme";
 
 interface SyncIntervalOption {
   label: string;

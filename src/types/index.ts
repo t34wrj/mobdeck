@@ -164,3 +164,27 @@ export interface ShareModuleInterface {
   getSharedData(): Promise<SharedData | null>;
   clearSharedData(): Promise<boolean>;
 }
+
+// Re-export all auth types
+export {
+  AuthErrorCode,
+  StorageErrorCode,
+  TokenValidationResult,
+  StorageError,
+  IAuthStorageService,
+  KeychainOptions,
+  AuthenticatedUser,
+} from './auth';
+
+// Re-export all sync types
+export {
+  SyncStatus,
+  SyncPhase,
+  ConflictType,
+  ConflictResolutionStrategy,
+  NetworkType,
+  SyncConfiguration,
+  SyncProgress,
+  SyncConflict,
+  SyncStats,
+} from './sync';

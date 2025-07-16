@@ -10,11 +10,10 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SimpleText } from "../../components";
-import { SimpleButton } from "../../components";
+import { SimpleText, SimpleButton } from "../../components";
 import { ArticleCard } from '../../components/ArticleCard';
 import MobdeckLogo from '../../components/MobdeckLogo';
-import { theme } from "../../components/theme"';
+import { theme } from "../../components/theme";
 import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
 import {
@@ -344,20 +343,20 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
 
     return (
       <View style={styles.emptyContainer}>
-        <Text variant='h4' style={styles.emptyTitle}>
+        <SimpleText variant='h4' style={styles.emptyTitle}>
           {title}
-        </Text>
-        <Text variant='body1' style={styles.emptyMessage}>
+        </SimpleText>
+        <SimpleText variant='body1' style={styles.emptyMessage}>
           {message}
-        </Text>
+        </SimpleText>
         {showClearButton && (
-          <Button
+          <SimpleButton
             variant='outline'
             onPress={handleClearSearch}
             style={styles.clearButton}
           >
-            <Text>Clear Search</Text>
-          </Button>
+            Clear Search
+          </SimpleButton>
         )}
       </View>
     );
@@ -370,9 +369,9 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size='small' color={theme.colors.primary[500]} />
-        <Text variant='caption' style={styles.loadingText}>
+        <SimpleText variant='caption' style={styles.loadingText}>
           Loading more articles...
-        </Text>
+        </SimpleText>
       </View>
     );
   }, [loading.fetch, pagination.page]);
@@ -395,7 +394,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
               ]}
               onPress={() => handleFilterPress(item.key)}
             >
-              <Text
+              <SimpleText
                 variant='body2'
                 style={[
                   styles.filterChipText,
@@ -403,7 +402,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
                 ]}
               >
                 {item.label}
-              </Text>
+              </SimpleText>
             </TouchableOpacity>
           )}
         />
@@ -421,15 +420,15 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
             size={24}
             color={theme.colors.accent[500]} // Tiffany Blue for contrast on green
           />
-          <Text variant='h3' style={styles.headerTitle}>
+          <SimpleText variant='h3' style={styles.headerTitle}>
             Mobdeck
-          </Text>
+          </SimpleText>
         </View>
         <TouchableOpacity
           style={styles.settingsButton}
           onPress={() => navigation.navigate('Settings')}
         >
-          <Text style={styles.settingsIcon}>⚙️</Text>
+          <SimpleText style={styles.settingsIcon}>⚙️</SimpleText>
         </TouchableOpacity>
       </View>
 
@@ -447,7 +446,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
             style={styles.clearSearchButton}
             onPress={handleClearSearch}
           >
-            <Text style={styles.clearSearchIcon}>✕</Text>
+            <SimpleText style={styles.clearSearchIcon}>✕</SimpleText>
           </TouchableOpacity>
         )}
       </View>
@@ -458,23 +457,23 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       {/* Error State */}
       {error.fetch && (
         <View style={styles.errorContainer}>
-          <Text variant='body1' style={styles.errorText}>
+          <SimpleText variant='body1' style={styles.errorText}>
             {error.fetch}
-          </Text>
+          </SimpleText>
           <View style={styles.errorButtonsContainer}>
             {error.fetch.includes('server settings') ||
             error.fetch.includes('Authentication') ||
             error.fetch.includes('Server not found') ? (
-              <Button
+              <SimpleButton
                 variant='primary'
                 size='sm'
                 onPress={() => navigation.navigate('Settings')}
                 style={styles.settingsButton}
               >
-                <Text>Settings</Text>
-              </Button>
+                Settings
+              </SimpleButton>
             ) : null}
-            <Button
+            <SimpleButton
               variant='outline'
               size='sm'
               onPress={() => {
@@ -483,8 +482,8 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
               }}
               style={styles.retryButton}
             >
-              <Text>Retry</Text>
-            </Button>
+              Retry
+            </SimpleButton>
           </View>
         </View>
       )}
@@ -518,9 +517,9 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       {loading.fetch && articles.length === 0 && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size='large' color={theme.colors.primary[500]} />
-          <Text variant='body1' style={styles.loadingText}>
+          <SimpleText variant='body1' style={styles.loadingText}>
             Loading articles...
-          </Text>
+          </SimpleText>
         </View>
       )}
     </View>

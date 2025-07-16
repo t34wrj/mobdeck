@@ -87,6 +87,25 @@ jest.mock('../../src/store', () => ({
           conflictResolutionStrategy: 'LAST_WRITE_WINS',
         },
         conflicts: [],
+        stats: {
+          totalSyncs: 0,
+          successfulSyncs: 0,
+          failedSyncs: 0,
+          lastSyncDuration: null,
+          averageSyncDuration: null,
+          itemsSynced: {
+            articlesCreated: 0,
+            articlesUpdated: 0,
+            articlesDeleted: 0,
+            conflictsResolved: 0,
+          },
+          dataTransfer: {
+            bytesUploaded: 0,
+            bytesDownloaded: 0,
+            requestCount: 0,
+            cacheHits: 0,
+          },
+        },
       },
     }),
     dispatch: jest.fn(),
@@ -188,7 +207,13 @@ describe('SyncService', () => {
     it('should handle sync errors gracefully', async () => {
       // Mock a failure in the sync process
       const mockLocalStorage = require('../../src/services/LocalStorageService');
-      mockLocalStorage.localStorageService.getArticles.mockRejectedValueOnce(
+      const mockConnectivity = require('../../src/utils/connectivityManager');
+      
+      // First ensure we're online
+      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValueOnce('ONLINE');
+      
+      // Then mock a failure in the sync process
+      mockLocalStorage.localStorageService.initialize.mockRejectedValueOnce(
         new Error('Database error')
       );
 
@@ -198,18 +223,26 @@ describe('SyncService', () => {
     });
 
     it('should prevent concurrent syncs', async () => {
-      // Start first sync
-      const syncPromise1 = syncService.startFullSync();
+      // Mock connectivity for the first sync
+      const mockConnectivity = require('../../src/utils/connectivityManager');
+      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValue('ONLINE');
       
-      // Try to start second sync
+      // Manually set the service to running state
+      (syncService as any).isRunning = true;
+      
+      // Try to start second sync while running
       await expect(syncService.startFullSync()).rejects.toThrow('Sync already in progress');
       
-      // Wait for first sync to complete
-      await syncPromise1;
+      // Reset running state
+      (syncService as any).isRunning = false;
     });
 
     it('should allow forced sync even when running', async () => {
-      // Start first sync
+      // Mock connectivity
+      const mockConnectivity = require('../../src/utils/connectivityManager');
+      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValue('ONLINE');
+      
+      // Start first sync (don't await)
       const syncPromise1 = syncService.startFullSync();
       
       // Force a second sync

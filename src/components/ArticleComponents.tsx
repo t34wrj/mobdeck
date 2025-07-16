@@ -117,6 +117,36 @@ export const ArticleErrorStates: React.FC<ArticleErrorStatesProps> = ({ error, o
   </View>
 );
 
+interface ArticleLoadingStateProps {}
+
+export const ArticleLoadingState: React.FC<ArticleLoadingStateProps> = () => (
+  <View style={styles.loadingContainer}>
+    <SimpleText variant="body" style={styles.loadingText}>
+      Loading article...
+    </SimpleText>
+  </View>
+);
+
+interface ArticleErrorStateProps {
+  title: string;
+  message: string;
+  onGoBack?: () => void;
+}
+
+export const ArticleErrorState: React.FC<ArticleErrorStateProps> = ({ title, message, onGoBack }) => (
+  <View style={styles.errorContainer}>
+    <SimpleText variant="h3" style={styles.errorTitle}>
+      {title}
+    </SimpleText>
+    <SimpleText variant="body" style={styles.errorText}>
+      {message}
+    </SimpleText>
+    {onGoBack && (
+      <SimpleButton title="Go Back" variant="primary" size="sm" onPress={onGoBack} />
+    )}
+  </View>
+);
+
 const styles = StyleSheet.create({
   header: {
     padding: 16,
@@ -164,5 +194,19 @@ const styles = StyleSheet.create({
     color: '#dc2626',
     textAlign: 'center',
     marginBottom: 12,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  loadingText: {
+    color: '#6b7280',
+  },
+  errorTitle: {
+    color: '#dc2626',
+    marginBottom: 8,
+    textAlign: 'center',
   },
 });

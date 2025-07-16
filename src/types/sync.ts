@@ -1,8 +1,16 @@
 // Sync Types - Simple Mobile Sync Operations
 export interface SyncState {
-  isSyncing: boolean;
+  status: SyncStatus;
+  isSyncing?: boolean;
   lastSyncTime: string | null;
-  syncError: string | null;
+  syncError?: string | null;
+  error: string | null;
+  progress: SyncProgress;
+  isOnline: boolean;
+  networkType: NetworkType | null;
+  config: SyncConfiguration;
+  conflicts: SyncConflict[];
+  stats: SyncStats;
 }
 
 export interface SyncOptions {
@@ -46,7 +54,8 @@ export enum SyncPhase {
 }
 
 export enum ConflictType {
-  CONTENT_CONFLICT = 'content_conflict',
+  CONTENT_MODIFIED = 'content_modified',
+  STATUS_CHANGED = 'status_changed',
   METADATA_CONFLICT = 'metadata_conflict',
   DELETION_CONFLICT = 'deletion_conflict',
 }
@@ -65,4 +74,43 @@ export interface SyncConfiguration {
   fullTextSync: boolean;
   conflictResolutionStrategy: ConflictResolutionStrategy;
   batchSize: number;
+}
+
+export interface SyncProgress {
+  phase: SyncPhase;
+  totalItems: number;
+  processedItems: number;
+  currentItem: string;
+  estimatedTimeRemaining: number;
+}
+
+export interface SyncConflict {
+  id: string;
+  articleId: string;
+  type: ConflictType;
+  localVersion: any;
+  remoteVersion: any;
+  createdAt: string;
+  resolvedAt: string | null;
+  resolution: any;
+}
+
+export interface SyncStats {
+  totalSyncs: number;
+  successfulSyncs: number;
+  failedSyncs: number;
+  lastSyncDuration: number;
+  averageSyncDuration: number;
+  itemsSynced: {
+    articlesCreated: number;
+    articlesUpdated: number;
+    articlesDeleted: number;
+    conflictsResolved: number;
+  };
+  dataTransfer: {
+    bytesUploaded: number;
+    bytesDownloaded: number;
+    requestCount: number;
+    cacheHits: number;
+  };
 }

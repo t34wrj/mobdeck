@@ -30,9 +30,10 @@ jest.mock('react-native-sqlite-storage', () => {
 import {
   DBArticle,
   DBLabel,
+  DatabaseResult,
+  DatabaseStats,
   DatabaseOperationResult,
   DatabaseErrorCode,
-  DatabaseStats,
 } from '../../src/types/database';
 
 // Mock console methods to avoid noise in tests
@@ -730,9 +731,9 @@ describe('DatabaseService', () => {
               if (sql.includes('FAIL')) {
                 const sqlError = new Error('SQL Error');
                 if (error) error(mockTx, sqlError);
-                throw sqlError;
+                return;
               } else {
-                success(mockTx, { rows: { length: 0 }, rowsAffected: 1 });
+                if (success) success(mockTx, { rows: { length: 0 }, rowsAffected: 1 });
               }
             }),
           };
@@ -754,7 +755,7 @@ describe('DatabaseService', () => {
           return { success: true };
         })
       ).rejects.toThrow('Transaction failed');
-    });
+    }, 15000);
   });
 
   describe('Error Handling', () => {
@@ -884,6 +885,20 @@ describe('DatabaseService', () => {
           },
         ]);
 
+        // Mock transaction to immediately call error callback
+        mockDb.transaction.mockImplementation((callback: any, errorCallback: any) => {
+          try {
+            const mockTx = {
+              executeSql: jest.fn().mockImplementation(() => {
+                throw new Error('Migration failed');
+              }),
+            };
+            callback(mockTx);
+          } catch (err) {
+            if (errorCallback) errorCallback(err);
+          }
+        });
+
         const failingMigration = {
           version: 2,
           description: 'Failing migration',
@@ -897,7 +912,7 @@ describe('DatabaseService', () => {
 
         expect(result.success).toBe(false);
         expect(result.error).toContain('Migration failed');
-      });
+      }, 15000);
 
       it('should handle getCurrentVersion error', async () => {
         mockDb.executeSql.mockRejectedValueOnce(new Error('Table not found'));

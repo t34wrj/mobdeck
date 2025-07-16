@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from "../../components/theme"';
+import { theme } from "../../components/theme";
 import { MainScreenProps } from '../../navigation/types';
 import { useSettingsHandlers } from '../../hooks/useSettingsHandlers';
 import { useSettingsData } from '../../hooks/useSettingsData';

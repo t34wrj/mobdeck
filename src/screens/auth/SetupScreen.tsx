@@ -7,9 +7,8 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { SimpleButton } from "../../components";
-import { SimpleText } from "../../components";
-import { theme } from "../../components/theme"';
+import { SimpleButton, SimpleText } from "../../components";
+import { theme } from "../../components/theme";
 import { AuthScreenProps } from '../../navigation/types';
 import { authStorageService } from '../../services/AuthStorageService';
 

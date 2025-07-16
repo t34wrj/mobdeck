@@ -4,13 +4,8 @@ import { useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArticleContent } from '../../components/ArticleContent';
 import { LabelManagementModal } from '../../components/LabelManagementModal';
-import { ArticleHeader } from '../../components/article/ArticleHeader';
-import { ArticleActions } from '../../components/article/ArticleActions';
-import {
-  ArticleLoadingState,
-  ArticleErrorState,
-} from '../../components/article/ArticleErrorStates';
-import { theme } from "../../components/theme"';
+import { ArticleHeader, ArticleActions, ArticleLoadingState, ArticleErrorState } from '../../components/ArticleComponents';
+import { theme } from "../../components/theme";
 import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
 import { selectArticleById } from '../../store/slices/articlesSlice';

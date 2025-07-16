@@ -3,7 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import LoginScreen from '../screens/auth/LoginScreen';
 import SetupScreen from '../screens/auth/SetupScreen';
 import { AuthStackParamList } from './types';
-import { theme } from "../../components/theme"';
+import { theme } from "../components/theme";
 
 const Stack = createStackNavigator<AuthStackParamList>();
 
