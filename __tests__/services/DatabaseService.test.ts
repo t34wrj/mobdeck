@@ -30,8 +30,6 @@ jest.mock('react-native-sqlite-storage', () => {
 import {
   DBArticle,
   DBLabel,
-  DatabaseResult,
-  DatabaseStats,
   DatabaseOperationResult,
   DatabaseErrorCode,
 } from '../../src/types/database';

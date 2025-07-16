@@ -18,7 +18,7 @@ describe('Critical User Journeys', () => {
       };
 
       // Mock credential storage
-      mockKeychain.setInternetCredentials.mockResolvedValue(true);
+      mockKeychain.setInternetCredentials.mockResolvedValue(undefined);
       mockKeychain.getInternetCredentials.mockResolvedValue({
         username: 'user',
         password: JSON.stringify(credentials)
@@ -39,12 +39,15 @@ describe('Critical User Journeys', () => {
 
     it('should handle missing credentials gracefully', async () => {
       // Mock missing credentials
-      mockKeychain.getInternetCredentials.mockResolvedValue(false);
+      mockKeychain.getInternetCredentials.mockRejectedValue(new Error('Credentials not found'));
       
       // Try to get non-existent credentials
-      const result = await mockKeychain.getInternetCredentials('non-existent');
-      
-      expect(result).toBe(false);
+      try {
+        await mockKeychain.getInternetCredentials('non-existent');
+        fail('Should have thrown an error');
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
     });
   });
 
@@ -63,10 +66,10 @@ describe('Critical User Journeys', () => {
         })
       };
       
-      mockDb.transaction = jest.fn((callback) => callback(mockTx));
+      mockDb.transaction = jest.fn((callback: (tx: any) => void) => callback(mockTx));
 
       // Execute transaction
-      mockDb.transaction((tx) => {
+      mockDb.transaction((tx: any) => {
         tx.executeSql(
           'INSERT OR REPLACE INTO articles (id, title, url) VALUES (?, ?, ?)',
           [1, 'Test Article', 'https://test.com/article'],
@@ -84,14 +87,14 @@ describe('Critical User Journeys', () => {
       const mockDb = mockSQLite.openDatabase();
       const mockError = new Error('Database error');
       
-      mockDb.transaction = jest.fn((callback, errorCallback) => {
+      mockDb.transaction = jest.fn((callback: (tx: any) => void, errorCallback?: (error: any) => void) => {
         if (errorCallback) errorCallback(mockError);
       });
 
       let errorCaught = false;
       mockDb.transaction(
         () => {},
-        (error) => {
+        (error: any) => {
           errorCaught = true;
           expect(error.message).toBe('Database error');
         }
@@ -110,7 +113,7 @@ describe('Critical User Journeys', () => {
       };
 
       // Mock storage behavior
-      mockAsyncStorage.setItem.mockResolvedValue(true);
+      mockAsyncStorage.setItem.mockResolvedValue(undefined);
       mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(settings));
 
       // Store settings
@@ -120,7 +123,7 @@ describe('Critical User Journeys', () => {
       const storedSettings = await mockAsyncStorage.getItem('app_settings');
       
       expect(storedSettings).not.toBeNull();
-      const parsedSettings = JSON.parse(storedSettings);
+      const parsedSettings = JSON.parse(storedSettings!);
       expect(parsedSettings.syncInterval).toBe(30);
       expect(parsedSettings.theme).toBe('dark');
       expect(parsedSettings.notificationsEnabled).toBe(true);
@@ -158,14 +161,14 @@ describe('Critical User Journeys', () => {
         })
       };
       
-      mockDb.transaction = jest.fn((callback) => callback(mockTx));
+      mockDb.transaction = jest.fn((callback: (tx: any) => void) => callback(mockTx));
 
       // Execute search
-      mockDb.transaction((tx) => {
+      mockDb.transaction((tx: any) => {
         tx.executeSql(
           'SELECT * FROM articles WHERE title LIKE ? OR content LIKE ?',
           [`%${searchQuery}%`, `%${searchQuery}%`],
-          (tx, results) => {
+          (tx: any, results: any) => {
             expect(results.rows.length).toBe(1);
             expect(results.rows.item(0).title).toBe('React Native Tutorial');
           }
@@ -185,7 +188,7 @@ describe('Critical User Journeys', () => {
         type: 'wifi'
       };
 
-      mockAsyncStorage.setItem.mockResolvedValue(true);
+      mockAsyncStorage.setItem.mockResolvedValue(undefined);
       mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockConnectivity));
 
       // Store connectivity state
@@ -195,7 +198,7 @@ describe('Critical User Journeys', () => {
       const storedState = await mockAsyncStorage.getItem('connectivity_state');
       
       expect(storedState).not.toBeNull();
-      const parsedState = JSON.parse(storedState);
+      const parsedState = JSON.parse(storedState!);
       expect(parsedState.isConnected).toBe(true);
       expect(parsedState.type).toBe('wifi');
     });

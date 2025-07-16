@@ -8,7 +8,6 @@ import AuthStorageService from '../../src/services/AuthStorageService';
 import {
   AuthToken,
   StorageErrorCode,
-  TokenValidationResult,
 } from '../../src/types/auth';
 
 // Mock react-native-keychain
@@ -66,14 +65,12 @@ describe('AuthStorageService', () => {
     token: validToken,
     expiresAt: new Date(Date.now() + 86400000).toISOString(), // 24 hours from now
     issuedAt: new Date().toISOString(),
-    serverUrl: 'https://readeck.example.com',
   };
 
   const expiredTokenData: AuthToken = {
     token: 'expired-bearer-token',
     expiresAt: new Date(Date.now() - 86400000).toISOString(), // 24 hours ago
     issuedAt: new Date(Date.now() - 172800000).toISOString(), // 48 hours ago
-    serverUrl: 'https://readeck.example.com',
   };
 
   beforeEach(() => {
@@ -197,10 +194,11 @@ describe('AuthStorageService', () => {
     it('should parse JWT tokens for expiration', async () => {
       // Arrange
       // Create a mock JWT token with expiration
-      const mockJWT =
-        'header.' +
-        btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })) +
-        '.signature';
+      const mockJWT = [
+        'header',
+        btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })),
+        'signature'
+      ].join('.');
       mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({
         service: 'mobdeck_auth_tokens',
         storage: 'InternetPassword',

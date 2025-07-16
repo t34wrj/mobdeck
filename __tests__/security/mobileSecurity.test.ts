@@ -34,7 +34,7 @@ describe('Mobile Security Tests', () => {
       const mockToken = 'test-token-123';
       const mockUsername = 'test-user';
       
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue(true);
+      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue(undefined);
       
       await Keychain.setInternetCredentials('mobdeck', mockUsername, mockToken);
       
@@ -195,7 +195,7 @@ describe('Mobile Security Tests', () => {
       };
       
       // Store sensitive data in keychain
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue(true);
+      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue(undefined);
       
       await Keychain.setInternetCredentials('mobdeck', 'user', sensitiveData.token);
       

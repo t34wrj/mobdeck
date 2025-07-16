@@ -1,5 +1,4 @@
-import React from 'react';
-import { Alert, Linking } from 'react-native';
+import { Alert } from 'react-native';
 import SetupScreen from '../../../src/screens/auth/SetupScreen';
 import { authStorageService } from '../../../src/services/AuthStorageService';
 
