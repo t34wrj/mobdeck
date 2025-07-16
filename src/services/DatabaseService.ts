@@ -43,6 +43,16 @@ interface DatabaseTransaction {
   executeSql: (sql: string, params?: any[], success?: any, error?: any) => void;
 }
 
+interface SQLiteResultSet {
+  insertId?: number;
+  rowsAffected: number;
+  rows: {
+    length: number;
+    item: (index: number) => any;
+    _array?: any[];
+  };
+}
+
 interface DatabaseError extends Error {
   code: DatabaseErrorCode;
   details?: any;
@@ -548,7 +558,7 @@ class DatabaseService implements DatabaseServiceInterface {
       const sql = 'SELECT * FROM articles WHERE id = ? AND deleted_at IS NULL';
       const result = await this.executeSql(sql, [id]);
 
-      if (result.rows.length === 0) {
+      if (!result || !result.rows || result.rows.length === 0) {
         return {
           success: false,
           error: 'Article not found',
@@ -648,6 +658,14 @@ class DatabaseService implements DatabaseServiceInterface {
       // Get total count with optimized query
       const countSql = `SELECT COUNT(*) as count FROM articles ${whereClause}`;
       const countResult = await this.executeSql(countSql, countParams);
+      
+      if (!countResult || !countResult.rows || countResult.rows.length === 0) {
+        throw this.createDatabaseError(
+          DatabaseErrorCode.QUERY_FAILED,
+          'Failed to get article count'
+        );
+      }
+      
       const totalCount = countResult.rows.item(0).count;
 
       // Get paginated results with optimized query that uses covering indexes
@@ -670,8 +688,10 @@ class DatabaseService implements DatabaseServiceInterface {
       const result = await this.executeSql(sql, [...params, limit, offset]);
       const items = [];
 
-      for (let i = 0; i < result.rows.length; i++) {
-        items.push(result.rows.item(i) as DBArticle);
+      if (result && result.rows) {
+        for (let i = 0; i < result.rows.length; i++) {
+          items.push(result.rows.item(i) as DBArticle);
+        }
       }
 
       return {
@@ -713,8 +733,10 @@ class DatabaseService implements DatabaseServiceInterface {
         const result = await this.executeSql(sql, [query, limit, offset]);
         const items = [];
 
-        for (let i = 0; i < result.rows.length; i++) {
-          items.push(result.rows.item(i) as DBArticle);
+        if (result && result.rows) {
+          for (let i = 0; i < result.rows.length; i++) {
+            items.push(result.rows.item(i) as DBArticle);
+          }
         }
 
         // Get total count for search
@@ -761,8 +783,10 @@ class DatabaseService implements DatabaseServiceInterface {
         ]);
         const items = [];
 
-        for (let i = 0; i < result.rows.length; i++) {
-          items.push(result.rows.item(i) as DBArticle);
+        if (result && result.rows) {
+          for (let i = 0; i < result.rows.length; i++) {
+            items.push(result.rows.item(i) as DBArticle);
+          }
         }
 
         // Get total count for fallback search
@@ -829,7 +853,7 @@ class DatabaseService implements DatabaseServiceInterface {
       const sql = 'SELECT * FROM labels WHERE id = ?';
       const result = await this.executeSql(sql, [id]);
 
-      if (result.rows.length === 0) {
+      if (!result || !result.rows || result.rows.length === 0) {
         return {
           success: false,
           error: 'Label not found',
@@ -931,8 +955,10 @@ class DatabaseService implements DatabaseServiceInterface {
       const result = await this.executeSql(sql, [...params, limit, offset]);
       const items = [];
 
-      for (let i = 0; i < result.rows.length; i++) {
-        items.push(result.rows.item(i) as DBLabel);
+      if (result && result.rows) {
+        for (let i = 0; i < result.rows.length; i++) {
+          items.push(result.rows.item(i) as DBLabel);
+        }
       }
 
       return {
@@ -1019,8 +1045,10 @@ class DatabaseService implements DatabaseServiceInterface {
       const result = await this.executeSql(sql, [articleId]);
       const labels = [];
 
-      for (let i = 0; i < result.rows.length; i++) {
-        labels.push(result.rows.item(i) as DBLabel);
+      if (result && result.rows) {
+        for (let i = 0; i < result.rows.length; i++) {
+          labels.push(result.rows.item(i) as DBLabel);
+        }
       }
 
       return {
@@ -1053,8 +1081,10 @@ class DatabaseService implements DatabaseServiceInterface {
       const result = await this.executeSql(sql, [labelId]);
       const articles = [];
 
-      for (let i = 0; i < result.rows.length; i++) {
-        articles.push(result.rows.item(i) as DBArticle);
+      if (result && result.rows) {
+        for (let i = 0; i < result.rows.length; i++) {
+          articles.push(result.rows.item(i) as DBArticle);
+        }
       }
 
       return {
@@ -1189,8 +1219,10 @@ class DatabaseService implements DatabaseServiceInterface {
       const result = await this.executeSql(sql, [...params, limit, offset]);
       const items = [];
 
-      for (let i = 0; i < result.rows.length; i++) {
-        items.push(result.rows.item(i) as DBSyncMetadata);
+      if (result && result.rows) {
+        for (let i = 0; i < result.rows.length; i++) {
+          items.push(result.rows.item(i) as DBSyncMetadata);
+        }
       }
 
       return {
@@ -1446,7 +1478,10 @@ class DatabaseService implements DatabaseServiceInterface {
       // Table exists, get the current version
       const sql = 'SELECT MAX(version) as version FROM schema_version';
       const result = await this.executeSql(sql);
-      return result.rows.item(0).version || 0;
+      if (result && result.rows && result.rows.length > 0) {
+        return result.rows.item(0).version || 0;
+      }
+      return 0;
     } catch (error) {
       console.error('[DatabaseService] Failed to get current version:', error);
       return 0;
@@ -1582,7 +1617,7 @@ class DatabaseService implements DatabaseServiceInterface {
   private async executeSql(
     sql: string,
     params: any[] = []
-  ): Promise<DatabaseResult> {
+  ): Promise<SQLiteResultSet> {
     if (!this.db) {
       throw this.createDatabaseError(
         DatabaseErrorCode.CONNECTION_FAILED,
@@ -1594,10 +1629,10 @@ class DatabaseService implements DatabaseServiceInterface {
       // When promises are enabled, executeSql returns an array where the first element is the result
       const results = await this.db.executeSql(sql, params);
       if (Array.isArray(results) && results.length > 0) {
-        return results[0] as DatabaseResult;
+        return results[0] as SQLiteResultSet;
       }
       // Fallback for non-array results
-      return results as DatabaseResult;
+      return results as SQLiteResultSet;
     } catch (error) {
       throw this.createDatabaseError(
         DatabaseErrorCode.QUERY_FAILED,

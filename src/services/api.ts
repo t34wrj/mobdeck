@@ -17,6 +17,7 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
 
   try {
     console.log('[API] Attempting to connect to:', cleanUrl);
+    console.log('[API] URL Protocol:', cleanUrl.startsWith('https://') ? 'HTTPS' : cleanUrl.startsWith('http://') ? 'HTTP' : 'Unknown');
     console.log(
       '[API] Using token:',
       apiToken ? '[TOKEN_PRESENT]' : '[NO_TOKEN]'
@@ -27,8 +28,10 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
       headers: {
         Authorization: `Bearer ${apiToken}`,
         'Content-Type': 'application/json',
+        'User-Agent': 'Mobdeck-Mobile/1.0',
       },
-      timeout: 10000, // 10 second timeout
+      timeout: 15000, // Increased timeout to 15 seconds for slow networks
+      validateStatus: (status) => status < 500, // Don't throw on 4xx errors, handle them explicitly
     });
 
     console.log('[API] Connection successful! Status:', response.status);
@@ -61,6 +64,7 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
         statusText: error.response?.statusText,
         hasResponse: !!error.response,
         hasRequest: !!error.request,
+        isHTTPS: cleanUrl.startsWith('https://'),
         // Note: Response data and headers not logged to prevent sensitive information disclosure
       });
 
@@ -70,13 +74,17 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
         throw new Error(
           'Access denied. Please check your API token permissions.'
         );
+      } else if (error.response?.status === 404) {
+        throw new Error(
+          `API endpoint not found at ${cleanUrl}/api/profile. Please verify your Readeck server URL.`
+        );
       } else if (error.code === 'ECONNREFUSED') {
         throw new Error(
           `Cannot connect to server at ${cleanUrl}. Is the server running?`
         );
       } else if (error.code === 'ENOTFOUND') {
         throw new Error(
-          `Server not found at ${cleanUrl}. Please check the URL.`
+          `Server not found at ${cleanUrl}. Please check the URL and your network connection.`
         );
       } else if (error.code === 'ECONNABORTED') {
         throw new Error(
@@ -87,8 +95,29 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
           `Server error (${error.response.status}). Please try again later.`
         );
       } else if (error.code === 'ERR_NETWORK') {
+        // More specific error message for HTTPS issues
+        const isHTTPS = cleanUrl.startsWith('https://');
+        if (isHTTPS) {
+          throw new Error(
+            'HTTPS connection failed. This may be due to:\n' +
+            '• Self-signed certificate (not trusted by Android)\n' +
+            '• Certificate chain issues\n' +
+            '• Network connectivity problems\n\n' +
+            'Try using HTTP instead, or ensure your server has a valid SSL certificate.'
+          );
+        } else {
+          throw new Error(
+            'Network error. Please check your internet connection and server URL.'
+          );
+        }
+      } else if (error.code === 'ERR_FR_SCHEME_REJECTED') {
         throw new Error(
-          'Network error. Please check your internet connection and server URL.'
+          'URL scheme not supported. Please use http:// or https:// in your server URL.'
+        );
+      } else if (error.code === 'ERR_CERT_AUTHORITY_INVALID' || error.code === 'ERR_CERT_COMMON_NAME_INVALID') {
+        throw new Error(
+          'SSL certificate error. Your server certificate is not trusted by Android. ' +
+          'Please use a valid SSL certificate or try HTTP instead.'
         );
       }
     }

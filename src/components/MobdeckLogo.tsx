@@ -1,41 +1,26 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
-import { theme } from './theme';
+import { View, StyleSheet, Image } from 'react-native';
 
 interface MobdeckLogoProps {
   size?: number;
-  color?: string;
 }
 
 const MobdeckLogo: React.FC<MobdeckLogoProps> = ({
   size = 24,
-  color = theme.colors.secondary[500], // Use theme color instead of hardcoded value
 }) => {
   return (
     <View style={[styles.container, { width: size, height: size }]}>
-      <View
+      <Image
+        source={require('../../assets/icons/square/web/icon-192.png')}
         style={[
           styles.logo,
           {
             width: size,
             height: size,
-            borderRadius: size / 2,
-            backgroundColor: color,
           },
         ]}
-      >
-        <Text
-          style={[
-            styles.logoText,
-            {
-              fontSize: size * 0.4,
-              color: theme.colors.neutral[50],
-            },
-          ]}
-        >
-          M
-        </Text>
-      </View>
+        resizeMode="contain"
+      />
     </View>
   );
 };
@@ -46,12 +31,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logoText: {
-    fontWeight: 'bold',
-    textAlign: 'center',
+    borderRadius: 8,
   },
 });
 

@@ -34,7 +34,7 @@ describe('Mobile Security Tests', () => {
       const mockToken = 'test-token-123';
       const mockUsername = 'test-user';
       
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue(undefined);
+      (Keychain.setInternetCredentials as any).mockResolvedValue(undefined);
       
       await Keychain.setInternetCredentials('mobdeck', mockUsername, mockToken);
       
@@ -51,7 +51,7 @@ describe('Mobile Security Tests', () => {
         password: 'test-token-123',
       };
       
-      (Keychain.getInternetCredentials as jest.Mock).mockResolvedValue(mockCredentials);
+      (Keychain.getInternetCredentials as any).mockResolvedValue(mockCredentials);
       
       const result = await Keychain.getInternetCredentials('mobdeck');
       
@@ -60,7 +60,7 @@ describe('Mobile Security Tests', () => {
     });
 
     test('should handle keychain errors gracefully', async () => {
-      (Keychain.getInternetCredentials as jest.Mock).mockRejectedValue(
+      (Keychain.getInternetCredentials as any).mockRejectedValue(
         new Error('Keychain access denied')
       );
       
@@ -70,7 +70,7 @@ describe('Mobile Security Tests', () => {
     });
 
     test('should support biometric authentication', async () => {
-      (Keychain.getSupportedBiometryType as jest.Mock).mockResolvedValue('TouchID');
+      (Keychain.getSupportedBiometryType as any).mockResolvedValue('TouchID');
       
       const biometryType = await Keychain.getSupportedBiometryType();
       
@@ -164,7 +164,7 @@ describe('Mobile Security Tests', () => {
     });
 
     test('should prevent sensitive data in console logs', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
       
       const sensitiveData = {
         token: 'secret-token-123',
@@ -195,7 +195,7 @@ describe('Mobile Security Tests', () => {
       };
       
       // Store sensitive data in keychain
-      (Keychain.setInternetCredentials as jest.Mock).mockResolvedValue(undefined);
+      (Keychain.setInternetCredentials as any).mockResolvedValue(undefined);
       
       await Keychain.setInternetCredentials('mobdeck', 'user', sensitiveData.token);
       
@@ -206,7 +206,7 @@ describe('Mobile Security Tests', () => {
       );
       
       // Only store non-sensitive data in AsyncStorage
-      (AsyncStorage.setItem as jest.Mock).mockResolvedValue(true);
+      (AsyncStorage.setItem as any).mockResolvedValue(true);
       
       await AsyncStorage.setItem('app-settings', '{"theme": "dark"}');
       
@@ -217,7 +217,7 @@ describe('Mobile Security Tests', () => {
     });
 
     test('should clear sensitive data on app backgrounding', async () => {
-      (AsyncStorage.removeItem as jest.Mock).mockResolvedValue(true);
+      (AsyncStorage.removeItem as any).mockResolvedValue(true);
       
       await clearSensitiveData();
       

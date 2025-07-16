@@ -1,6 +1,6 @@
 {
   "name": "mobdeck-mobile-app",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": true,
   "engines": {
     "node": ">=22.17.0",
@@ -25,7 +25,8 @@
     "version:patch": "node scripts/bump-version.js patch",
     "version:minor": "node scripts/bump-version.js minor",
     "version:major": "node scripts/bump-version.js major",
-    "version:check": "node -p \"require('./package.json').version\""
+    "version:check": "node -p \"require('./package.json').version\"",
+    "version:validate": "node scripts/check-version.js"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",

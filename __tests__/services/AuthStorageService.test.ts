@@ -65,12 +65,14 @@ describe('AuthStorageService', () => {
     token: validToken,
     expiresAt: new Date(Date.now() + 86400000).toISOString(), // 24 hours from now
     issuedAt: new Date().toISOString(),
+    serverUrl: 'https://example.com',
   };
 
   const expiredTokenData: AuthToken = {
     token: 'expired-bearer-token',
     expiresAt: new Date(Date.now() - 86400000).toISOString(), // 24 hours ago
     issuedAt: new Date(Date.now() - 172800000).toISOString(), // 48 hours ago
+    serverUrl: 'https://example.com',
   };
 
   beforeEach(() => {
@@ -229,7 +231,7 @@ describe('AuthStorageService', () => {
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
         storage: 'InternetPassword',
-      } as Keychain.SharedWebCredentials);
+      } as any);
 
       // Act
       const result = await authStorageService.retrieveToken();
@@ -264,7 +266,7 @@ describe('AuthStorageService', () => {
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
         storage: 'InternetPassword',
-      } as Keychain.SharedWebCredentials);
+      } as any);
       mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(
         undefined
       );
@@ -299,7 +301,7 @@ describe('AuthStorageService', () => {
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
         storage: 'InternetPassword',
-      } as Keychain.SharedWebCredentials);
+      } as any);
       mockKeychainModule.resetInternetCredentials.mockResolvedValueOnce(
         undefined
       );
@@ -402,7 +404,7 @@ describe('AuthStorageService', () => {
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
         storage: 'InternetPassword',
-      } as Keychain.SharedWebCredentials);
+      } as any);
 
       // Act
       const result = await authStorageService.isTokenStored();
@@ -453,7 +455,7 @@ describe('AuthStorageService', () => {
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
         storage: 'InternetPassword',
-      } as Keychain.SharedWebCredentials);
+      } as any);
 
       // Act
       const result = await authStorageService.validateStoredToken();
@@ -473,7 +475,7 @@ describe('AuthStorageService', () => {
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
         storage: 'InternetPassword',
-      } as Keychain.SharedWebCredentials);
+      } as any);
 
       // Act
       const result = await authStorageService.validateStoredToken();
@@ -508,7 +510,7 @@ describe('AuthStorageService', () => {
         server: 'mobdeck_auth_tokens',
         service: 'mobdeck_auth_tokens',
         storage: 'InternetPassword',
-      } as Keychain.SharedWebCredentials);
+      } as any);
 
       // Act
       const result = await authStorageService.validateStoredToken();
@@ -769,7 +771,7 @@ describe('AuthStorageService', () => {
           server: 'mobdeck_auth_tokens',
           service: 'mobdeck_auth_tokens',
           storage: 'InternetPassword',
-        } as Keychain.SharedWebCredentials);
+        } as any);
 
         // Act
         const result = await authStorageService.retrieveAuthData();
@@ -793,7 +795,7 @@ describe('AuthStorageService', () => {
           server: 'mobdeck_auth_tokens',
           service: 'mobdeck_auth_tokens',
           storage: 'InternetPassword',
-        } as Keychain.SharedWebCredentials);
+        } as any);
 
         // Act
         const result = await authStorageService.retrieveAuthData();
@@ -815,7 +817,7 @@ describe('AuthStorageService', () => {
           server: 'mobdeck_auth_tokens',
           service: 'mobdeck_auth_tokens',
           storage: 'InternetPassword',
-        } as Keychain.SharedWebCredentials);
+        } as any);
 
         // Act
         const result = await authStorageService.retrieveAuthData();
@@ -829,7 +831,7 @@ describe('AuthStorageService', () => {
       it('should enable biometric authentication when available', async () => {
         // Arrange
         mockKeychainModule.getSupportedBiometryType.mockResolvedValueOnce(
-          'FaceID'
+          'FaceID' as any
         );
 
         // Act
@@ -893,7 +895,7 @@ describe('AuthStorageService', () => {
       it('should return current security configuration', async () => {
         // Arrange
         mockKeychainModule.getSupportedBiometryType.mockResolvedValueOnce(
-          'TouchID'
+          'TouchID' as any
         );
 
         // Act

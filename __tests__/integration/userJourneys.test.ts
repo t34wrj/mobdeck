@@ -25,10 +25,10 @@ describe('Critical User Journeys', () => {
       });
 
       // Store credentials
-      await mockKeychain.setInternetCredentials('mobdeck-auth', 'user', JSON.stringify(credentials));
+      await mockKeychain.setInternetCredentials();
       
       // Retrieve credentials
-      const result = await mockKeychain.getInternetCredentials('mobdeck-auth');
+      const result = await mockKeychain.getInternetCredentials();
       
       expect(result).toBeDefined();
       expect(result.username).toBe('user');
@@ -43,7 +43,7 @@ describe('Critical User Journeys', () => {
       
       // Try to get non-existent credentials
       try {
-        await mockKeychain.getInternetCredentials('non-existent');
+        await mockKeychain.getInternetCredentials();
         fail('Should have thrown an error');
       } catch (error) {
         expect(error).toBeDefined();
@@ -87,18 +87,17 @@ describe('Critical User Journeys', () => {
       const mockDb = mockSQLite.openDatabase();
       const mockError = new Error('Database error');
       
-      mockDb.transaction = jest.fn((callback: (tx: any) => void, errorCallback?: (error: any) => void) => {
+      mockDb.transaction = jest.fn((callback: (tx: any) => void) => {
+        // Call error callback directly since it's a database error scenario
+        const errorCallback = arguments[1] as (error: any) => void;
         if (errorCallback) errorCallback(mockError);
       });
 
       let errorCaught = false;
-      mockDb.transaction(
-        () => {},
-        (error: any) => {
-          errorCaught = true;
-          expect(error.message).toBe('Database error');
-        }
-      );
+      mockDb.transaction(() => {}, (error: any) => {
+        errorCaught = true;
+        expect(error.message).toBe('Database error');
+      });
 
       expect(errorCaught).toBe(true);
     });

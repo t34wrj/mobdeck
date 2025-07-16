@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <!-- Default configuration for all connections -->
-    <base-config cleartextTrafficPermitted="false">
+    <!-- Note: Allowing cleartext traffic for self-hosted Readeck servers that may use HTTP -->
+    <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <!-- Trust system CA certificates -->
             <certificates src="system" />
