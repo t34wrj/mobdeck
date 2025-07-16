@@ -13,6 +13,7 @@ import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import { theme } from '../components/theme';
 import { useShareIntent } from '../hooks/useShareIntent';
 import { ShareService } from '../services/ShareService';
+import DatabaseService from '../services/DatabaseService';
 import {
   fetchArticles,
   loadLocalArticles,
@@ -50,7 +51,7 @@ const AppNavigator: React.FC = () => {
       console.log('AppNavigator: Share effect triggered', {
         isAuthenticated,
         hasSharedData: !!sharedData,
-        sharedDataText: `${sharedData?.text?.substring(0, 100)}...`, // Show first 100 chars
+        sharedDataText: sharedData?.text ? `${sharedData.text.substring(0, 100)}...` : null, // Show first 100 chars
       });
     }
 
