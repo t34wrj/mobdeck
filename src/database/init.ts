@@ -86,7 +86,7 @@ export class DatabaseManager {
             currentVersion = versionResult.rows.item(0).version || 0;
           }
         }
-      } catch (error) {
+      } catch {
         // Table doesn't exist yet, start with version 0
         console.log('Schema version table does not exist, starting with version 0');
         currentVersion = 0;
@@ -109,9 +109,9 @@ export class DatabaseManager {
         for (const statement of statements) {
           try {
             await this.db.executeSql(statement);
-          } catch (error) {
+          } catch (err) {
             // Log but don't fail on expected errors (like table already exists)
-            console.warn('SQL statement warning:', statement, error);
+            console.warn('SQL statement warning:', statement, err);
           }
         }
 

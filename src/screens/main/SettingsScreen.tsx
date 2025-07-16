@@ -23,7 +23,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     authLoading,
     syncConfig,
     stats,
-    formatDate,
     formatLastSync,
     formatDataTransfer,
   } = useSettingsData();
@@ -31,8 +30,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const {
     customSyncInterval,
     setCustomSyncInterval,
-    showAdvancedSync,
-    setShowAdvancedSync,
     handleBackgroundSyncToggle,
     handleWifiOnlyToggle,
     handleDownloadImagesToggle,
