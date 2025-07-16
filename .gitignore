@@ -30,12 +30,13 @@ ios/*.xcodeproj/xcuserdata/
 ios/Podfile.lock
 
 # Android signing and keystore files
+# Allow debug keystore for CI/CD builds
 *.keystore
+!android/app/debug.keystore
 *.jks
 mobdeck-release-key.keystore
 android/app/mobdeck-release-key.keystore
 android/app/release.keystore
-android/app/debug.keystore
 
 # iOS specific
 ios/Podfile.lock
