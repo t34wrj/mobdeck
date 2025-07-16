@@ -1474,7 +1474,7 @@ class DatabaseService implements DatabaseServiceInterface {
 
           // Record migration completion
           await ctx.executeSql(
-            'INSERT INTO schema_version (version, applied_at, description) VALUES (?, ?, ?)',
+            'INSERT OR IGNORE INTO schema_version (version, applied_at, description) VALUES (?, ?, ?)',
             [migration.version, this.createTimestamp(), migration.description]
           );
         }
