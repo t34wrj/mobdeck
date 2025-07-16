@@ -242,7 +242,7 @@ export const SyncSettings: React.FC = () => {
 
         {isSyncing && (
           <Button variant='secondary' onPress={handlePauseSync} fullWidth>
-            <Text>Pause Sync</Text>
+            Pause Sync
           </Button>
         )}
 
@@ -253,14 +253,14 @@ export const SyncSettings: React.FC = () => {
               onPress={handleResumeSync}
               style={styles.resumeButton}
             >
-              <Text>Resume</Text>
+              Resume
             </Button>
             <Button
               variant='outline'
               onPress={handleCancelSync}
               style={styles.cancelButton}
             >
-              <Text>Cancel</Text>
+              Cancel
             </Button>
           </View>
         )}
@@ -282,7 +282,7 @@ export const SyncSettings: React.FC = () => {
           onPress={handleClearError}
           style={styles.clearErrorButton}
         >
-          <Text>Dismiss</Text>
+          Dismiss
         </Button>
       </View>
     );
