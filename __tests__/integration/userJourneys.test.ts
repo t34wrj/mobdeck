@@ -87,9 +87,8 @@ describe('Critical User Journeys', () => {
       const mockDb = mockSQLite.openDatabase();
       const mockError = new Error('Database error');
       
-      mockDb.transaction = jest.fn((callback: (tx: any) => void) => {
+      mockDb.transaction = jest.fn((callback: (tx: any) => void, errorCallback?: (error: any) => void) => {
         // Call error callback directly since it's a database error scenario
-        const errorCallback = arguments[1] as (error: any) => void;
         if (errorCallback) errorCallback(mockError);
       });
 
