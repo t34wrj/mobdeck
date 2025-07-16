@@ -25,6 +25,7 @@ import {
   syncArticles,
   fetchArticles,
 } from '../../store/slices/articlesSlice';
+import { startSync } from '../../store/slices/syncSlice';
 import { selectFilteredArticles } from '../../store/selectors/articlesSelectors';
 import { selectIsUserAuthenticated } from '../../store/selectors/authSelectors';
 import { Article } from '../../types';
@@ -472,8 +473,16 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
               variant='outline'
               size='sm'
               onPress={() => {
-                // Always load from local to include offline-saved articles
-                dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
+                // First try to sync with server, then load local articles
+                dispatch(startSync({ source: 'user' }))
+                  .unwrap()
+                  .then(() => {
+                    dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
+                  })
+                  .catch(() => {
+                    // If sync fails, still try to load local articles
+                    dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
+                  });
               }}
               style={styles.retryButton}
             >

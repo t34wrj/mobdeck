@@ -666,10 +666,17 @@ class DatabaseService implements DatabaseServiceInterface {
       const countResult = await this.executeSql(countSql, countParams);
 
       if (!countResult || !countResult.rows || countResult.rows.length === 0) {
-        throw this.createDatabaseError(
-          DatabaseErrorCode.QUERY_FAILED,
-          'Failed to get article count'
-        );
+        console.warn('[DatabaseService] Empty count result, returning 0 articles');
+        return {
+          success: true,
+          data: {
+            items: [],
+            totalCount: 0,
+            hasMore: false,
+            limit: filters?.limit || 50,
+            offset: filters?.offset || 0,
+          },
+        };
       }
 
       const totalCount = countResult.rows.item(0).count;

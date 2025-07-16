@@ -36,7 +36,7 @@ export interface LocaleInfo {
 export const getDeviceLocale = (): string => {
   try {
     // Primary: Use Android I18nManager locale
-    if (Platform.OS === 'android' && NativeModules.I18nManager) {
+    if (Platform.OS === 'android' && NativeModules?.I18nManager?.localeIdentifier) {
       const locale = NativeModules.I18nManager.localeIdentifier;
       if (locale) {
         return locale.replace('_', '-'); // Convert en_US to en-US format
@@ -219,15 +219,25 @@ export const formatRelativeDate = (
  * Gets locale information including the preferred date format
  */
 export const getLocaleInfo = (): LocaleInfo => {
-  const currentLocale = getDeviceLocale();
-  const [language, country] = currentLocale.split('-');
+  try {
+    const currentLocale = getDeviceLocale();
+    const [language, country] = currentLocale.split('-');
 
-  return {
-    locale: currentLocale,
-    language,
-    country,
-    dateFormat: getDateFormatPattern(currentLocale),
-  };
+    return {
+      locale: currentLocale,
+      language,
+      country,
+      dateFormat: getDateFormatPattern(currentLocale),
+    };
+  } catch (error) {
+    console.warn('Failed to get locale info:', error);
+    return {
+      locale: 'en-US',
+      language: 'en',
+      country: 'US',
+      dateFormat: DateFormatPattern.US,
+    };
+  }
 };
 
 /**
