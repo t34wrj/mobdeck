@@ -3,7 +3,12 @@
  * Simplified E2E tests for essential mobile app workflows
  */
 
-import { mockAsyncStorage, mockKeychain, mockSQLite, mockNavigation } from '../mocks/strategicMocks';
+import {
+  mockAsyncStorage,
+  mockKeychain,
+  mockSQLite,
+  mockNavigation,
+} from '../mocks/strategicMocks';
 
 describe('Critical E2E Flows', () => {
   beforeEach(() => {
@@ -14,22 +19,22 @@ describe('Critical E2E Flows', () => {
     it('should complete full auth setup to app usage flow', async () => {
       const mockCredentials = {
         serverUrl: 'https://readeck.test.com',
-        apiToken: 'valid-token-123'
+        apiToken: 'valid-token-123',
       };
 
       // Mock credential storage and retrieval
       mockKeychain.setInternetCredentials.mockResolvedValue(undefined);
       mockKeychain.getInternetCredentials.mockResolvedValue({
         username: 'user',
-        password: JSON.stringify(mockCredentials)
+        password: JSON.stringify(mockCredentials),
       });
 
       // Step 1: Store credentials during setup
       await mockKeychain.setInternetCredentials();
-      
+
       // Step 2: Retrieve credentials during app startup
       const storedCredentials = await mockKeychain.getInternetCredentials();
-      
+
       expect(storedCredentials).toBeDefined();
       expect(storedCredentials.username).toBe('user');
       const parsedCredentials = JSON.parse(storedCredentials.password);
@@ -43,13 +48,16 @@ describe('Critical E2E Flows', () => {
 
     it('should handle auth failure and redirect to setup', async () => {
       // Mock missing credentials
-      mockKeychain.getInternetCredentials.mockResolvedValue({ username: '', password: '' });
-      
+      mockKeychain.getInternetCredentials.mockResolvedValue({
+        username: '',
+        password: '',
+      });
+
       // No credentials stored - should redirect to setup
       const result = await mockKeychain.getInternetCredentials();
-      
+
       expect(result).toEqual({ username: '', password: '' });
-      
+
       // Navigate to setup screen
       mockNavigation.navigate('Setup');
       expect(mockNavigation.navigate).toHaveBeenCalledWith('Setup');
@@ -62,7 +70,7 @@ describe('Critical E2E Flows', () => {
         id: 1,
         title: 'React Native Tutorial',
         url: 'https://test.com/article',
-        content: 'Learn React Native development'
+        content: 'Learn React Native development',
       };
 
       // Mock async storage
@@ -70,22 +78,30 @@ describe('Critical E2E Flows', () => {
       mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockArticle));
 
       // Step 1: Add article via share intent
-      await mockAsyncStorage.setItem('shared_article', JSON.stringify(mockArticle));
-      
+      await mockAsyncStorage.setItem(
+        'shared_article',
+        JSON.stringify(mockArticle)
+      );
+
       // Step 2: Store article in local database
       const _mockDb = mockSQLite.openDatabase();
       const mockTx = {
-        executeSql: jest.fn()
+        executeSql: jest.fn(),
       };
-      _mockDb.transaction = jest.fn((callback) => callback(mockTx));
-      
+      _mockDb.transaction = jest.fn(callback => callback(mockTx));
+
       _mockDb.transaction((tx: any) => {
         tx.executeSql(
           'INSERT INTO articles (id, title, url, content) VALUES (?, ?, ?, ?)',
-          [mockArticle.id, mockArticle.title, mockArticle.url, mockArticle.content]
+          [
+            mockArticle.id,
+            mockArticle.title,
+            mockArticle.url,
+            mockArticle.content,
+          ]
         );
       });
-      
+
       // Step 3: Search for the article
       const searchResults = [mockArticle];
       mockTx.executeSql = jest.fn((sql, params, callback) => {
@@ -93,12 +109,12 @@ describe('Critical E2E Flows', () => {
           callback(mockTx, {
             rows: {
               length: 1,
-              item: (index: number) => searchResults[index]
-            }
+              item: (index: number) => searchResults[index],
+            },
           });
         }
       });
-      
+
       _mockDb.transaction((tx: any) => {
         tx.executeSql(
           'SELECT * FROM articles WHERE title LIKE ?',
@@ -112,7 +128,9 @@ describe('Critical E2E Flows', () => {
 
       // Step 4: Navigate to article view
       mockNavigation.navigate('Article', { id: 1 });
-      expect(mockNavigation.navigate).toHaveBeenCalledWith('Article', { id: 1 });
+      expect(mockNavigation.navigate).toHaveBeenCalledWith('Article', {
+        id: 1,
+      });
     });
   });
 
@@ -122,11 +140,13 @@ describe('Critical E2E Flows', () => {
       mockAsyncStorage.setItem.mockResolvedValue(undefined);
       mockAsyncStorage.getItem.mockImplementation((key: string) => {
         if (key === 'connectivity') {
-          return Promise.resolve(JSON.stringify({
-            isConnected: true,
-            isInternetReachable: true,
-            type: 'wifi'
-          }));
+          return Promise.resolve(
+            JSON.stringify({
+              isConnected: true,
+              isInternetReachable: true,
+              type: 'wifi',
+            })
+          );
         }
         if (key === 'last_sync') {
           return Promise.resolve(new Date().toISOString());
@@ -138,23 +158,26 @@ describe('Critical E2E Flows', () => {
       const connectivityState = {
         isConnected: true,
         isInternetReachable: true,
-        type: 'wifi'
+        type: 'wifi',
       };
-      await mockAsyncStorage.setItem('connectivity', JSON.stringify(connectivityState));
-      
+      await mockAsyncStorage.setItem(
+        'connectivity',
+        JSON.stringify(connectivityState)
+      );
+
       // Step 2: Fetch remote articles
       const remoteArticles = [
         { id: 1, title: 'Remote Article 1', synced: false },
-        { id: 2, title: 'Remote Article 2', synced: false }
+        { id: 2, title: 'Remote Article 2', synced: false },
       ];
-      
+
       // Step 3: Store articles locally
       const _mockDb = mockSQLite.openDatabase();
       const mockTx = {
-        executeSql: jest.fn()
+        executeSql: jest.fn(),
       };
-      _mockDb.transaction = jest.fn((callback) => callback(mockTx));
-      
+      _mockDb.transaction = jest.fn(callback => callback(mockTx));
+
       _mockDb.transaction((tx: any) => {
         remoteArticles.forEach(article => {
           tx.executeSql(
@@ -163,10 +186,10 @@ describe('Critical E2E Flows', () => {
           );
         });
       });
-      
+
       // Step 4: Update sync status
       await mockAsyncStorage.setItem('last_sync', new Date().toISOString());
-      
+
       // Step 5: Verify sync completed
       const lastSync = await mockAsyncStorage.getItem('last_sync');
       expect(lastSync).toBeDefined();
@@ -178,24 +201,34 @@ describe('Critical E2E Flows', () => {
     it('should handle offline article access and reading', async () => {
       // Mock offline state
       mockAsyncStorage.setItem.mockResolvedValue(undefined);
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify({
-        isConnected: false,
-        isInternetReachable: false,
-        type: 'none'
-      }));
+      mockAsyncStorage.getItem.mockResolvedValue(
+        JSON.stringify({
+          isConnected: false,
+          isInternetReachable: false,
+          type: 'none',
+        })
+      );
 
       // Simulate offline state
-      await mockAsyncStorage.setItem('connectivity', JSON.stringify({
-        isConnected: false,
-        isInternetReachable: false,
-        type: 'none'
-      }));
-      
+      await mockAsyncStorage.setItem(
+        'connectivity',
+        JSON.stringify({
+          isConnected: false,
+          isInternetReachable: false,
+          type: 'none',
+        })
+      );
+
       // Retrieve cached articles
       const cachedArticles = [
-        { id: 1, title: 'Cached Article', content: 'Offline content', cached: true }
+        {
+          id: 1,
+          title: 'Cached Article',
+          content: 'Offline content',
+          cached: true,
+        },
       ];
-      
+
       const _mockDb = mockSQLite.openDatabase();
       const mockTx = {
         executeSql: jest.fn((sql, params, callback) => {
@@ -203,13 +236,13 @@ describe('Critical E2E Flows', () => {
             callback(mockTx, {
               rows: {
                 length: 1,
-                item: (index: number) => cachedArticles[index]
-              }
+                item: (index: number) => cachedArticles[index],
+              },
             });
           }
-        })
+        }),
       };
-      
+
       // Load article for offline reading
       mockTx.executeSql(
         'SELECT * FROM articles WHERE cached = 1',
@@ -219,10 +252,13 @@ describe('Critical E2E Flows', () => {
           expect(results.rows.item(0).title).toBe('Cached Article');
         }
       );
-      
+
       // Navigate to offline reading view
       mockNavigation.navigate('Article', { id: 1, offline: true });
-      expect(mockNavigation.navigate).toHaveBeenCalledWith('Article', { id: 1, offline: true });
+      expect(mockNavigation.navigate).toHaveBeenCalledWith('Article', {
+        id: 1,
+        offline: true,
+      });
     });
   });
 
@@ -232,24 +268,29 @@ describe('Critical E2E Flows', () => {
         syncInterval: 30,
         theme: 'dark',
         notificationsEnabled: true,
-        wifiOnly: true
+        wifiOnly: true,
       };
 
       // Mock async storage
       mockAsyncStorage.setItem.mockResolvedValue(undefined);
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(updatedSettings));
-      
-      await mockAsyncStorage.setItem('app_settings', JSON.stringify(updatedSettings));
-      
+      mockAsyncStorage.getItem.mockResolvedValue(
+        JSON.stringify(updatedSettings)
+      );
+
+      await mockAsyncStorage.setItem(
+        'app_settings',
+        JSON.stringify(updatedSettings)
+      );
+
       // Retrieve and verify settings
       const storedSettings = await mockAsyncStorage.getItem('app_settings');
       expect(storedSettings).not.toBeNull();
-      
+
       const parsedSettings = JSON.parse(storedSettings as string);
       expect(parsedSettings.syncInterval).toBe(30);
       expect(parsedSettings.theme).toBe('dark');
       expect(parsedSettings.wifiOnly).toBe(true);
-      
+
       // Navigate back
       mockNavigation.goBack();
       expect(mockNavigation.goBack).toHaveBeenCalled();
@@ -261,19 +302,19 @@ describe('Critical E2E Flows', () => {
       const offlineState = {
         isConnected: false,
         lastError: 'Network request failed',
-        fallbackMode: true
+        fallbackMode: true,
       };
 
       // Mock async storage
       mockAsyncStorage.setItem.mockResolvedValue(undefined);
       mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(offlineState));
-      
+
       await mockAsyncStorage.setItem('app_state', JSON.stringify(offlineState));
-      
+
       // Display offline notification
       const appState = await mockAsyncStorage.getItem('app_state');
       expect(appState).not.toBeNull();
-      
+
       const parsedState = JSON.parse(appState as string);
       expect(parsedState.fallbackMode).toBe(true);
       expect(parsedState.lastError).toBe('Network request failed');

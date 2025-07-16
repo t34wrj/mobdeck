@@ -79,7 +79,7 @@ export class DatabaseManager {
         const versionResults = await this.db.executeSql(
           'SELECT version FROM schema_version ORDER BY version DESC LIMIT 1'
         );
-        
+
         if (Array.isArray(versionResults) && versionResults.length > 0) {
           const versionResult = versionResults[0];
           if (versionResult.rows && versionResult.rows.length > 0) {
@@ -88,7 +88,9 @@ export class DatabaseManager {
         }
       } catch {
         // Table doesn't exist yet, start with version 0
-        console.log('Schema version table does not exist, starting with version 0');
+        console.log(
+          'Schema version table does not exist, starting with version 0'
+        );
         currentVersion = 0;
       }
 
@@ -211,9 +213,7 @@ export class DatabaseManager {
   }
 
   // Utility methods for common database operations
-  async transaction<T>(
-    operation: (tx: any) => Promise<T>
-  ): Promise<T> {
+  async transaction<T>(operation: (tx: any) => Promise<T>): Promise<T> {
     const db = this.getDatabase();
 
     return new Promise((resolve, reject) => {

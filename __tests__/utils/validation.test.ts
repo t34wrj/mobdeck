@@ -21,7 +21,10 @@ describe('Essential Input Validation', () => {
       ];
 
       validUrls.forEach(url => {
-        const result = validateUrl(url, { allowHttp: true, allowLocalhost: true });
+        const result = validateUrl(url, {
+          allowHttp: true,
+          allowLocalhost: true,
+        });
         expect(result.isValid).toBe(true);
       });
     });
@@ -42,7 +45,11 @@ describe('Essential Input Validation', () => {
 
   describe('Search Query Validation', () => {
     it('should validate basic search queries', () => {
-      const validQueries = ['react native', 'mobile development', 'API integration'];
+      const validQueries = [
+        'react native',
+        'mobile development',
+        'API integration',
+      ];
 
       validQueries.forEach(query => {
         const result = validateSearchQuery(query);
@@ -75,7 +82,11 @@ describe('Essential Input Validation', () => {
     });
 
     it('should reject invalid characters', () => {
-      const invalidNames = ['<script>alert(1)</script>', 'name@domain.com', 'name$$$'];
+      const invalidNames = [
+        '<script>alert(1)</script>',
+        'name@domain.com',
+        'name$$$',
+      ];
 
       invalidNames.forEach(name => {
         const result = validateLabelName(name);

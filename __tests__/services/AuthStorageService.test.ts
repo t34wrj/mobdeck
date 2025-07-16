@@ -5,10 +5,7 @@
 
 import * as Keychain from 'react-native-keychain';
 import AuthStorageService from '../../src/services/AuthStorageService';
-import {
-  AuthToken,
-  StorageErrorCode,
-} from '../../src/types/auth';
+import { AuthToken, StorageErrorCode } from '../../src/types/auth';
 
 // Mock react-native-keychain
 jest.mock('react-native-keychain', () => ({
@@ -199,7 +196,7 @@ describe('AuthStorageService', () => {
       const mockJWT = [
         'header',
         btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 })),
-        'signature'
+        'signature',
       ].join('.');
       mockKeychainModule.setInternetCredentials.mockResolvedValueOnce({
         service: 'mobdeck_auth_tokens',

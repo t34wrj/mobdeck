@@ -33,11 +33,11 @@ describe('Mobile Security Tests', () => {
     test('should store tokens securely using keychain', async () => {
       const mockToken = 'test-token-123';
       const mockUsername = 'test-user';
-      
+
       (Keychain.setInternetCredentials as any).mockResolvedValue(undefined);
-      
+
       await Keychain.setInternetCredentials('mobdeck', mockUsername, mockToken);
-      
+
       expect(Keychain.setInternetCredentials).toHaveBeenCalledWith(
         'mobdeck',
         mockUsername,
@@ -50,11 +50,13 @@ describe('Mobile Security Tests', () => {
         username: 'test-user',
         password: 'test-token-123',
       };
-      
-      (Keychain.getInternetCredentials as any).mockResolvedValue(mockCredentials);
-      
+
+      (Keychain.getInternetCredentials as any).mockResolvedValue(
+        mockCredentials
+      );
+
       const result = await Keychain.getInternetCredentials('mobdeck');
-      
+
       expect(result).toEqual(mockCredentials);
       expect(Keychain.getInternetCredentials).toHaveBeenCalledWith('mobdeck');
     });
@@ -63,7 +65,7 @@ describe('Mobile Security Tests', () => {
       (Keychain.getInternetCredentials as any).mockRejectedValue(
         new Error('Keychain access denied')
       );
-      
+
       await expect(Keychain.getInternetCredentials('mobdeck')).rejects.toThrow(
         'Keychain access denied'
       );
@@ -71,9 +73,9 @@ describe('Mobile Security Tests', () => {
 
     test('should support biometric authentication', async () => {
       (Keychain.getSupportedBiometryType as any).mockResolvedValue('TouchID');
-      
+
       const biometryType = await Keychain.getSupportedBiometryType();
-      
+
       expect(biometryType).toBe('TouchID');
       expect(Keychain.getSupportedBiometryType).toHaveBeenCalled();
     });
@@ -86,18 +88,18 @@ describe('Mobile Security Tests', () => {
         'http://localhost:3000',
         'https://readeck.example.com:8080',
       ];
-      
+
       const invalidUrls = [
         'javascript:alert(1)',
         'file:///etc/passwd',
         'ftp://malicious.com',
         'data:text/html,<script>alert(1)</script>',
       ];
-      
+
       validUrls.forEach(url => {
         expect(isValidApiUrl(url)).toBe(true);
       });
-      
+
       invalidUrls.forEach(url => {
         expect(isValidApiUrl(url)).toBe(false);
       });
@@ -109,7 +111,7 @@ describe('Mobile Security Tests', () => {
         'api-key-123456789',
         'token_abcdef123456',
       ];
-      
+
       const invalidTokens = [
         '',
         null,
@@ -118,11 +120,11 @@ describe('Mobile Security Tests', () => {
         'token with spaces',
         'token\nwith\nnewlines',
       ];
-      
+
       validTokens.forEach(token => {
         expect(isValidToken(token)).toBe(true);
       });
-      
+
       invalidTokens.forEach(token => {
         expect(isValidToken(token)).toBe(false);
       });
@@ -135,7 +137,7 @@ describe('Mobile Security Tests', () => {
         '<img src=x onerror=alert(1)>',
         '"><script>alert(1)</script>',
       ];
-      
+
       dangerousInputs.forEach(input => {
         const sanitized = sanitizeInput(input);
         expect(sanitized).not.toContain('<script>');
@@ -153,7 +155,7 @@ describe('Mobile Security Tests', () => {
         'Database error: password=mypassword',
         'Network error: Authorization: Bearer xyz789',
       ];
-      
+
       sensitiveErrors.forEach(error => {
         const sanitized = sanitizeErrorMessage(error);
         expect(sanitized).not.toContain('Bearer abc123');
@@ -164,24 +166,26 @@ describe('Mobile Security Tests', () => {
     });
 
     test('should prevent sensitive data in console logs', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-      
+      const consoleSpy = jest
+        .spyOn(console, 'log')
+        .mockImplementation(() => {});
+
       const sensitiveData = {
         token: 'secret-token-123',
         password: 'user-password',
         apiKey: 'api-key-456',
       };
-      
+
       // This should not log sensitive data
       safeLog('User data:', sensitiveData);
-      
+
       expect(consoleSpy).not.toHaveBeenCalledWith(
         expect.stringContaining('secret-token-123')
       );
       expect(consoleSpy).not.toHaveBeenCalledWith(
         expect.stringContaining('user-password')
       );
-      
+
       consoleSpy.mockRestore();
     });
   });
@@ -193,23 +197,27 @@ describe('Mobile Security Tests', () => {
         token: 'secret-token',
         password: 'user-password',
       };
-      
+
       // Store sensitive data in keychain
       (Keychain.setInternetCredentials as any).mockResolvedValue(undefined);
-      
-      await Keychain.setInternetCredentials('mobdeck', 'user', sensitiveData.token);
-      
+
+      await Keychain.setInternetCredentials(
+        'mobdeck',
+        'user',
+        sensitiveData.token
+      );
+
       expect(Keychain.setInternetCredentials).toHaveBeenCalledWith(
         'mobdeck',
         'user',
         sensitiveData.token
       );
-      
+
       // Only store non-sensitive data in AsyncStorage
       (AsyncStorage.setItem as any).mockResolvedValue(true);
-      
+
       await AsyncStorage.setItem('app-settings', '{"theme": "dark"}');
-      
+
       expect(AsyncStorage.setItem).toHaveBeenCalledWith(
         'app-settings',
         '{"theme": "dark"}'
@@ -218,9 +226,9 @@ describe('Mobile Security Tests', () => {
 
     test('should clear sensitive data on app backgrounding', async () => {
       (AsyncStorage.removeItem as any).mockResolvedValue(true);
-      
+
       await clearSensitiveData();
-      
+
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('temp-data');
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('cache-data');
     });
@@ -238,15 +246,25 @@ function isValidApiUrl(url: string): boolean {
 }
 
 function isValidToken(token: any): boolean {
-  if (token === null || token === undefined || typeof token !== 'string' || token.length === 0) {
+  if (
+    token === null ||
+    token === undefined ||
+    typeof token !== 'string' ||
+    token.length === 0
+  ) {
     return false;
   }
-  
+
   // Allow Bearer tokens with spaces
   if (token.startsWith('Bearer ')) {
-    return !token.includes('<') && !token.includes('>') && !token.includes('\n') && !token.includes('\r');
+    return (
+      !token.includes('<') &&
+      !token.includes('>') &&
+      !token.includes('\n') &&
+      !token.includes('\r')
+    );
   }
-  
+
   // For non-Bearer tokens, disallow spaces
   return (
     !token.includes('<') &&
@@ -270,7 +288,10 @@ function sanitizeErrorMessage(error: string): string {
     .replace(/Bearer\s+[\w-]+/g, 'Bearer [REDACTED]')
     .replace(/token=[\w-]+/g, 'token=[REDACTED]')
     .replace(/password=[\w-]+/g, 'password=[REDACTED]')
-    .replace(/Authorization:\s*Bearer\s+[\w-]+/g, 'Authorization: Bearer [REDACTED]');
+    .replace(
+      /Authorization:\s*Bearer\s+[\w-]+/g,
+      'Authorization: Bearer [REDACTED]'
+    );
 }
 
 function safeLog(message: string, data?: any): void {

@@ -459,7 +459,8 @@ class DatabaseService implements DatabaseServiceInterface {
                     tx.executeSql(
                       sql,
                       params || [],
-                      (_: any, result: any) => resolveQuery(result as DatabaseResult),
+                      (_: any, result: any) =>
+                        resolveQuery(result as DatabaseResult),
                       (_: any, error: any) => {
                         rejectQuery(error);
                         return false;
@@ -663,14 +664,14 @@ class DatabaseService implements DatabaseServiceInterface {
       // Get total count with optimized query
       const countSql = `SELECT COUNT(*) as count FROM articles ${whereClause}`;
       const countResult = await this.executeSql(countSql, countParams);
-      
+
       if (!countResult || !countResult.rows || countResult.rows.length === 0) {
         throw this.createDatabaseError(
           DatabaseErrorCode.QUERY_FAILED,
           'Failed to get article count'
         );
       }
-      
+
       const totalCount = countResult.rows.item(0).count;
 
       // Get paginated results with optimized query that uses covering indexes
@@ -1474,12 +1475,12 @@ class DatabaseService implements DatabaseServiceInterface {
       // First check if schema_version table exists
       const tableCheckSql = `SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'`;
       const tableResult = await this.executeSql(tableCheckSql);
-      
+
       if (tableResult.rows.length === 0) {
         // Table doesn't exist, so this is a fresh database
         return 0;
       }
-      
+
       // Table exists, get the current version
       const sql = 'SELECT MAX(version) as version FROM schema_version';
       const result = await this.executeSql(sql);

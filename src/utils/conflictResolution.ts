@@ -69,8 +69,15 @@ export function resolveConflict<T>(
     case 'merge':
     default:
       // For articles, use the existing article conflict resolution
-      if (localData && typeof localData === 'object' && 'updatedAt' in localData) {
-        return resolveArticleConflict(localData as any, remoteData as any) as ConflictResult<T>;
+      if (
+        localData &&
+        typeof localData === 'object' &&
+        'updatedAt' in localData
+      ) {
+        return resolveArticleConflict(
+          localData as any,
+          remoteData as any
+        ) as ConflictResult<T>;
       }
       // Default to remote for other types
       return {

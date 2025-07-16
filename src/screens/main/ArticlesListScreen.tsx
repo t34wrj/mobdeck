@@ -416,9 +416,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <MobdeckLogo
-            size={24}
-          />
+          <MobdeckLogo size={24} />
           <Text style={styles.headerTitle}>Mobdeck</Text>
         </View>
         <TouchableOpacity

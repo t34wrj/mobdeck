@@ -27,10 +27,7 @@ jest.mock('react-native-sqlite-storage', () => {
   };
 });
 
-import {
-  DBArticle,
-  DBLabel,
-} from '../../src/types/database';
+import { DBArticle, DBLabel } from '../../src/types/database';
 
 // Mock console methods to avoid noise in tests
 const originalConsole = console;
@@ -729,7 +726,8 @@ describe('DatabaseService', () => {
                 if (error) error(mockTx, sqlError);
                 return;
               } else {
-                if (success) success(mockTx, { rows: { length: 0 }, rowsAffected: 1 });
+                if (success)
+                  success(mockTx, { rows: { length: 0 }, rowsAffected: 1 });
               }
             }),
           };
@@ -882,18 +880,20 @@ describe('DatabaseService', () => {
         ]);
 
         // Mock transaction to immediately call error callback
-        mockDb.transaction.mockImplementation((callback: any, errorCallback: any) => {
-          try {
-            const mockTx = {
-              executeSql: jest.fn().mockImplementation(() => {
-                throw new Error('Migration failed');
-              }),
-            };
-            callback(mockTx);
-          } catch (err) {
-            if (errorCallback) errorCallback(err);
+        mockDb.transaction.mockImplementation(
+          (callback: any, errorCallback: any) => {
+            try {
+              const mockTx = {
+                executeSql: jest.fn().mockImplementation(() => {
+                  throw new Error('Migration failed');
+                }),
+              };
+              callback(mockTx);
+            } catch (err) {
+              if (errorCallback) errorCallback(err);
+            }
           }
-        });
+        );
 
         const failingMigration = {
           version: 2,

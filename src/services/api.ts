@@ -17,7 +17,14 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
 
   try {
     console.log('[API] Attempting to connect to:', cleanUrl);
-    console.log('[API] URL Protocol:', cleanUrl.startsWith('https://') ? 'HTTPS' : cleanUrl.startsWith('http://') ? 'HTTP' : 'Unknown');
+    console.log(
+      '[API] URL Protocol:',
+      cleanUrl.startsWith('https://')
+        ? 'HTTPS'
+        : cleanUrl.startsWith('http://')
+          ? 'HTTP'
+          : 'Unknown'
+    );
     console.log(
       '[API] Using token:',
       apiToken ? '[TOKEN_PRESENT]' : '[NO_TOKEN]'
@@ -31,7 +38,7 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
         'User-Agent': 'Mobdeck-Mobile/1.0',
       },
       timeout: 15000, // Increased timeout to 15 seconds for slow networks
-      validateStatus: (status) => status < 500, // Don't throw on 4xx errors, handle them explicitly
+      validateStatus: status => status < 500, // Don't throw on 4xx errors, handle them explicitly
     });
 
     console.log('[API] Connection successful! Status:', response.status);
@@ -100,10 +107,10 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
         if (isHTTPS) {
           throw new Error(
             'HTTPS connection failed. This may be due to:\n' +
-            '• Self-signed certificate (not trusted by Android)\n' +
-            '• Certificate chain issues\n' +
-            '• Network connectivity problems\n\n' +
-            'Try using HTTP instead, or ensure your server has a valid SSL certificate.'
+              '• Self-signed certificate (not trusted by Android)\n' +
+              '• Certificate chain issues\n' +
+              '• Network connectivity problems\n\n' +
+              'Try using HTTP instead, or ensure your server has a valid SSL certificate.'
           );
         } else {
           throw new Error(
@@ -114,10 +121,13 @@ export const validateApiToken = async (serverUrl: string, apiToken: string) => {
         throw new Error(
           'URL scheme not supported. Please use http:// or https:// in your server URL.'
         );
-      } else if (error.code === 'ERR_CERT_AUTHORITY_INVALID' || error.code === 'ERR_CERT_COMMON_NAME_INVALID') {
+      } else if (
+        error.code === 'ERR_CERT_AUTHORITY_INVALID' ||
+        error.code === 'ERR_CERT_COMMON_NAME_INVALID'
+      ) {
         throw new Error(
           'SSL certificate error. Your server certificate is not trusted by Android. ' +
-          'Please use a valid SSL certificate or try HTTP instead.'
+            'Please use a valid SSL certificate or try HTTP instead.'
         );
       }
     }

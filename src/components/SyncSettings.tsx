@@ -67,7 +67,8 @@ export const SyncSettings: React.FC = () => {
       console.error('[SyncSettings] Manual sync failed:', err);
       Alert.alert(
         'Sync Error',
-        (err instanceof Error ? err.message : String(err)) || 'Failed to start sync. Please try again.'
+        (err instanceof Error ? err.message : String(err)) ||
+          'Failed to start sync. Please try again.'
       );
     } finally {
       setManualSyncLoading(false);
@@ -89,7 +90,11 @@ export const SyncSettings: React.FC = () => {
       await (dispatch as any)(resumeSyncOperation()).unwrap();
     } catch (err) {
       console.error('[SyncSettings] Failed to resume sync:', err);
-      Alert.alert('Error', (err instanceof Error ? err.message : String(err)) || 'Failed to resume sync');
+      Alert.alert(
+        'Error',
+        (err instanceof Error ? err.message : String(err)) ||
+          'Failed to resume sync'
+      );
     }
   }, [dispatch]);
 

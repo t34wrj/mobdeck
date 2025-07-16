@@ -47,19 +47,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         showsVerticalScrollIndicator={false}
       >
         {/* Account Information */}
-        <SettingsSection title="Account">
+        <SettingsSection title='Account'>
+          <SettingsRow label='User' value={user?.username || 'Not logged in'} />
           <SettingsRow
-            label="User"
-            value={user?.username || 'Not logged in'}
-          />
-          <SettingsRow
-            label="Server"
+            label='Server'
             value={user?.serverUrl || 'Not configured'}
           />
-          <SettingsRow label="Logout">
+          <SettingsRow label='Logout'>
             <Button
-              variant="outline"
-              size="sm"
+              variant='outline'
+              size='sm'
               onPress={handleLogout}
               disabled={authLoading}
             >
@@ -72,9 +69,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         <SyncSettings />
 
         {/* Sync Configuration */}
-        <SettingsSection title="Sync Configuration">
+        <SettingsSection title='Sync Configuration'>
           <SettingsRow
-            label="Sync Interval (minutes)"
+            label='Sync Interval (minutes)'
             value={`${syncConfig.syncInterval} minutes`}
           >
             <View style={styles.inputContainer}>
@@ -83,44 +80,44 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 value={customSyncInterval}
                 onChangeText={setCustomSyncInterval}
                 onBlur={handleSyncIntervalChange}
-                keyboardType="numeric"
-                placeholder="15"
+                keyboardType='numeric'
+                placeholder='15'
               />
             </View>
           </SettingsRow>
 
-          <SettingsRow label="Background Sync">
+          <SettingsRow label='Background Sync'>
             <Switch
               value={syncConfig.backgroundSyncEnabled}
               onValueChange={handleBackgroundSyncToggle}
             />
           </SettingsRow>
 
-          <SettingsRow label="WiFi Only">
+          <SettingsRow label='WiFi Only'>
             <Switch
               value={syncConfig.syncOnWifiOnly}
               onValueChange={handleWifiOnlyToggle}
             />
           </SettingsRow>
 
-          <SettingsRow label="Download Images">
+          <SettingsRow label='Download Images'>
             <Switch
               value={syncConfig.downloadImages}
               onValueChange={handleDownloadImagesToggle}
             />
           </SettingsRow>
 
-          <SettingsRow label="Full Text Sync">
+          <SettingsRow label='Full Text Sync'>
             <Switch
               value={syncConfig.fullTextSync}
               onValueChange={handleFullTextSyncToggle}
             />
           </SettingsRow>
 
-          <SettingsRow label="Reset Settings">
+          <SettingsRow label='Reset Settings'>
             <Button
-              variant="outline"
-              size="sm"
+              variant='outline'
+              size='sm'
               onPress={handleResetSyncSettings}
             >
               <Text>Reset</Text>
@@ -129,29 +126,23 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </SettingsSection>
 
         {/* Sync Statistics */}
-        <SettingsSection title="Sync Statistics">
+        <SettingsSection title='Sync Statistics'>
           <SettingsRow
-            label="Total Syncs"
+            label='Total Syncs'
             value={stats.totalSyncs.toString()}
           />
           <SettingsRow
-            label="Successful Syncs"
+            label='Successful Syncs'
             value={stats.successfulSyncs.toString()}
           />
           <SettingsRow
-            label="Failed Syncs"
+            label='Failed Syncs'
             value={stats.failedSyncs.toString()}
           />
+          <SettingsRow label='Last Sync' value={formatLastSync()} />
+          <SettingsRow label='Data Transferred' value={formatDataTransfer()} />
           <SettingsRow
-            label="Last Sync"
-            value={formatLastSync()}
-          />
-          <SettingsRow
-            label="Data Transferred"
-            value={formatDataTransfer()}
-          />
-          <SettingsRow
-            label="Articles Synced"
+            label='Articles Synced'
             value={`${stats.articlesSynced} total`}
           />
         </SettingsSection>

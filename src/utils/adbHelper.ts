@@ -227,7 +227,9 @@ export class AdbHelper {
 
       console.log('App launched successfully');
     } catch (error) {
-      throw new Error(`Failed to launch app: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to launch app: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 

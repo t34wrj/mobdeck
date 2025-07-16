@@ -600,7 +600,8 @@ const articlesSlice = createSlice({
         state.loading.fetch = false;
         state.error.fetch = null;
 
-        const { items, page, totalPages, totalItems, pagination } = action.payload;
+        const { items, page, totalPages, totalItems, pagination } =
+          action.payload;
 
         // Update pagination
         state.pagination = {
@@ -826,7 +827,7 @@ export const selectAllArticles = (state: RootState) => state.articles.articles;
 export const selectArticleById = (state: RootState, id: string) =>
   state.articles.articles.find(article => article.id === id);
 export const selectArticleIds = (state: RootState) =>
-  state.articles.articles.map((article) => article.id);
+  state.articles.articles.map(article => article.id);
 export const selectTotalArticles = (state: RootState) =>
   state.articles.articles.length;
 

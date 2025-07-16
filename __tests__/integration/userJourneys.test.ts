@@ -3,7 +3,11 @@
  * Simplified integration tests for core mobile app functionality
  */
 
-import { mockAsyncStorage, mockKeychain, mockSQLite } from '../mocks/strategicMocks';
+import {
+  mockAsyncStorage,
+  mockKeychain,
+  mockSQLite,
+} from '../mocks/strategicMocks';
 
 describe('Critical User Journeys', () => {
   beforeEach(() => {
@@ -14,22 +18,22 @@ describe('Critical User Journeys', () => {
     it('should store and retrieve credentials securely', async () => {
       const credentials = {
         serverUrl: 'https://test.com',
-        apiToken: 'test-token'
+        apiToken: 'test-token',
       };
 
       // Mock credential storage
       mockKeychain.setInternetCredentials.mockResolvedValue(undefined);
       mockKeychain.getInternetCredentials.mockResolvedValue({
         username: 'user',
-        password: JSON.stringify(credentials)
+        password: JSON.stringify(credentials),
       });
 
       // Store credentials
       await mockKeychain.setInternetCredentials();
-      
+
       // Retrieve credentials
       const result = await mockKeychain.getInternetCredentials();
-      
+
       expect(result).toBeDefined();
       expect(result.username).toBe('user');
       const storedCredentials = JSON.parse(result.password);
@@ -39,8 +43,10 @@ describe('Critical User Journeys', () => {
 
     it('should handle missing credentials gracefully', async () => {
       // Mock missing credentials
-      mockKeychain.getInternetCredentials.mockRejectedValue(new Error('Credentials not found'));
-      
+      mockKeychain.getInternetCredentials.mockRejectedValue(
+        new Error('Credentials not found')
+      );
+
       // Try to get non-existent credentials
       try {
         await mockKeychain.getInternetCredentials();
@@ -55,7 +61,7 @@ describe('Critical User Journeys', () => {
     it('should store and retrieve articles from local database', async () => {
       const mockArticles = [
         { id: 1, title: 'Test Article', url: 'https://test.com/article' },
-        { id: 2, title: 'Another Article', url: 'https://test.com/article2' }
+        { id: 2, title: 'Another Article', url: 'https://test.com/article2' },
       ];
 
       // Mock SQLite database operations
@@ -63,10 +69,12 @@ describe('Critical User Journeys', () => {
       const mockTx = {
         executeSql: jest.fn((sql, params, success) => {
           if (success) success(mockTx, { rows: { _array: mockArticles } });
-        })
+        }),
       };
-      
-      mockDb.transaction = jest.fn((callback: (tx: any) => void) => callback(mockTx));
+
+      mockDb.transaction = jest.fn((callback: (tx: any) => void) =>
+        callback(mockTx)
+      );
 
       // Execute transaction
       mockDb.transaction((tx: any) => {
@@ -86,17 +94,22 @@ describe('Critical User Journeys', () => {
     it('should handle database errors gracefully', async () => {
       const mockDb = mockSQLite.openDatabase();
       const mockError = new Error('Database error');
-      
-      mockDb.transaction = jest.fn((callback: (tx: any) => void, errorCallback?: (error: any) => void) => {
-        // Call error callback directly since it's a database error scenario
-        if (errorCallback) errorCallback(mockError);
-      });
+
+      mockDb.transaction = jest.fn(
+        (callback: (tx: any) => void, errorCallback?: (error: any) => void) => {
+          // Call error callback directly since it's a database error scenario
+          if (errorCallback) errorCallback(mockError);
+        }
+      );
 
       let errorCaught = false;
-      mockDb.transaction(() => {}, (error: any) => {
-        errorCaught = true;
-        expect(error.message).toBe('Database error');
-      });
+      mockDb.transaction(
+        () => {},
+        (error: any) => {
+          errorCaught = true;
+          expect(error.message).toBe('Database error');
+        }
+      );
 
       expect(errorCaught).toBe(true);
     });
@@ -107,7 +120,7 @@ describe('Critical User Journeys', () => {
       const settings = {
         syncInterval: 30,
         theme: 'dark',
-        notificationsEnabled: true
+        notificationsEnabled: true,
       };
 
       // Mock storage behavior
@@ -116,10 +129,10 @@ describe('Critical User Journeys', () => {
 
       // Store settings
       await mockAsyncStorage.setItem('app_settings', JSON.stringify(settings));
-      
+
       // Retrieve settings
       const storedSettings = await mockAsyncStorage.getItem('app_settings');
-      
+
       expect(storedSettings).not.toBeNull();
       const parsedSettings = JSON.parse(storedSettings as string);
       expect(parsedSettings.syncInterval).toBe(30);
@@ -129,9 +142,9 @@ describe('Critical User Journeys', () => {
 
     it('should handle missing settings gracefully', async () => {
       mockAsyncStorage.getItem.mockResolvedValue(null);
-      
+
       const result = await mockAsyncStorage.getItem('non-existent-setting');
-      
+
       expect(result).toBeNull();
     });
   });
@@ -140,7 +153,11 @@ describe('Critical User Journeys', () => {
     it('should search articles by title and content', async () => {
       const searchQuery = 'react native';
       const mockResults = [
-        { id: 1, title: 'React Native Tutorial', content: 'Learn React Native development' }
+        {
+          id: 1,
+          title: 'React Native Tutorial',
+          content: 'Learn React Native development',
+        },
       ];
 
       // Mock search operation
@@ -152,14 +169,16 @@ describe('Critical User Journeys', () => {
               rows: {
                 length: 1,
                 item: (index: number) => mockResults[index],
-                _array: mockResults
-              }
+                _array: mockResults,
+              },
             });
           }
-        })
+        }),
       };
-      
-      mockDb.transaction = jest.fn((callback: (tx: any) => void) => callback(mockTx));
+
+      mockDb.transaction = jest.fn((callback: (tx: any) => void) =>
+        callback(mockTx)
+      );
 
       // Execute search
       mockDb.transaction((tx: any) => {
@@ -183,18 +202,23 @@ describe('Critical User Journeys', () => {
       const mockConnectivity = {
         isConnected: true,
         isInternetReachable: true,
-        type: 'wifi'
+        type: 'wifi',
       };
 
       mockAsyncStorage.setItem.mockResolvedValue(undefined);
-      mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockConnectivity));
+      mockAsyncStorage.getItem.mockResolvedValue(
+        JSON.stringify(mockConnectivity)
+      );
 
       // Store connectivity state
-      await mockAsyncStorage.setItem('connectivity_state', JSON.stringify(mockConnectivity));
-      
+      await mockAsyncStorage.setItem(
+        'connectivity_state',
+        JSON.stringify(mockConnectivity)
+      );
+
       // Retrieve connectivity state
       const storedState = await mockAsyncStorage.getItem('connectivity_state');
-      
+
       expect(storedState).not.toBeNull();
       const parsedState = JSON.parse(storedState as string);
       expect(parsedState.isConnected).toBe(true);

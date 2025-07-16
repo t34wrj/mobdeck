@@ -77,7 +77,8 @@ export const loginUser = createAsyncThunk<
     //   },
     // });
 
-    const errorMessage = error instanceof Error ? error.message : 'Login failed';
+    const errorMessage =
+      error instanceof Error ? error.message : 'Login failed';
     logger.error('Login failed', { error: errorMessage });
     return rejectWithValue(errorMessage);
   }

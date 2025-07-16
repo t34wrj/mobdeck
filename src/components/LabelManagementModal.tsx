@@ -71,7 +71,8 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
     } catch (error) {
       console.error('Failed to load labels:', error);
       const errorMessage =
-        (error instanceof Error ? error.message : String(error)) || 'Failed to load labels. Please try again.';
+        (error instanceof Error ? error.message : String(error)) ||
+        'Failed to load labels. Please try again.';
       Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     } finally {
       setLoading(false);
@@ -130,11 +131,15 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       setNewLabelName('');
       setCreateMode(false);
 
-      Alert.alert('Success', `Label "${label?.name || newLabelName}" created successfully!`);
+      Alert.alert(
+        'Success',
+        `Label "${label?.name || newLabelName}" created successfully!`
+      );
     } catch (error) {
       console.error('Failed to create label:', error);
       const errorMessage =
-        (error instanceof Error ? error.message : String(error)) || 'Failed to create label. Please try again.';
+        (error instanceof Error ? error.message : String(error)) ||
+        'Failed to create label. Please try again.';
       Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     } finally {
       setLoading(false);
@@ -176,7 +181,8 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
     } catch (error) {
       console.error('Failed to update labels:', error);
       const errorMessage =
-        (error instanceof Error ? error.message : String(error)) || 'Failed to update labels. Please try again.';
+        (error instanceof Error ? error.message : String(error)) ||
+        'Failed to update labels. Please try again.';
       Alert.alert('Error', errorMessage, [{ text: 'OK' }]);
     } finally {
       setSaving(false);

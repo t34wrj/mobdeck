@@ -5,9 +5,7 @@ interface MobdeckLogoProps {
   size?: number;
 }
 
-const MobdeckLogo: React.FC<MobdeckLogoProps> = ({
-  size = 24,
-}) => {
+const MobdeckLogo: React.FC<MobdeckLogoProps> = ({ size = 24 }) => {
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Image
@@ -19,7 +17,7 @@ const MobdeckLogo: React.FC<MobdeckLogoProps> = ({
             height: size,
           },
         ]}
-        resizeMode="contain"
+        resizeMode='contain'
       />
     </View>
   );

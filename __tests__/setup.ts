@@ -1,13 +1,13 @@
 import 'react-native-gesture-handler/jestSetup';
-import { 
-  mockAsyncStorage, 
-  mockKeychain, 
-  mockSQLite, 
-  mockNetInfo, 
-  mockNavigation, 
-  mockRoute, 
+import {
+  mockAsyncStorage,
+  mockKeychain,
+  mockSQLite,
+  mockNetInfo,
+  mockNavigation,
+  mockRoute,
   mockBackgroundActions,
-  resetAllMocks as _resetAllMocks 
+  resetAllMocks as _resetAllMocks,
 } from './mocks/strategicMocks';
 
 // Strategic External Dependency Mocking
@@ -90,7 +90,8 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => mockNavigation,
   useRoute: () => mockRoute,
   useFocusEffect: jest.fn(),
-  NavigationContainer: ({ children }: { children: React.ReactNode }) => children,
+  NavigationContainer: ({ children }: { children: React.ReactNode }) =>
+    children,
 }));
 
 // Mock SQLite Storage (External Dependency)
@@ -169,7 +170,9 @@ jest.mock('../src/services/ReadeckApiService', () => {
   };
 
   // Mock class constructor that returns an object with the same methods
-  const MockArticlesApiService = jest.fn().mockImplementation(() => mockMethods);
+  const MockArticlesApiService = jest
+    .fn()
+    .mockImplementation(() => mockMethods);
 
   return {
     articlesApiService: mockMethods,

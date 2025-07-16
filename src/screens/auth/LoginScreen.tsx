@@ -312,11 +312,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
         {loading || isValidating ? (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size='large' color={theme.colors.primary[500]} />
-            <Text
-              variant='body'
-              color='neutral.600'
-              style={styles.loadingText}
-            >
+            <Text variant='body' color='neutral.600' style={styles.loadingText}>
               Validating connection...
             </Text>
           </View>

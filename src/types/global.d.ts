@@ -2,7 +2,7 @@
 
 declare global {
   var __DEV__: boolean | undefined;
-  
+
   namespace NodeJS {
     interface Global {
       __DEV__: boolean | undefined;
@@ -12,7 +12,10 @@ declare global {
 
 // React Native global types
 interface _Date {
-  toLocaleDateString: (locale?: string, options?: Intl.DateTimeFormatOptions) => string;
+  toLocaleDateString: (
+    locale?: string,
+    options?: Intl.DateTimeFormatOptions
+  ) => string;
 }
 
 // React Native SQLite Storage types

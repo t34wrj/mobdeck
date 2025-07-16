@@ -99,7 +99,8 @@ export const selectConflictCount = createSelector(
 
 export const selectUnresolvedConflicts = createSelector(
   [selectSyncConflicts],
-  (conflicts: any[]) => conflicts.filter((conflict: any) => !conflict.resolvedAt)
+  (conflicts: any[]) =>
+    conflicts.filter((conflict: any) => !conflict.resolvedAt)
 );
 
 export const selectConflictsByType = createSelector(

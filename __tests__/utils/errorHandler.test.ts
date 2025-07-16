@@ -44,27 +44,39 @@ describe('ErrorHandler', () => {
 
   describe('classifyError', () => {
     it('should classify network errors', () => {
-      expect(classifyError('Network connection failed')).toBe(ErrorType.NETWORK);
+      expect(classifyError('Network connection failed')).toBe(
+        ErrorType.NETWORK
+      );
       expect(classifyError('Fetch request failed')).toBe(ErrorType.NETWORK);
-      expect(classifyError(new Error('network timeout'))).toBe(ErrorType.NETWORK);
+      expect(classifyError(new Error('network timeout'))).toBe(
+        ErrorType.NETWORK
+      );
     });
 
     it('should classify authentication errors', () => {
       expect(classifyError('Unauthorized access')).toBe(ErrorType.AUTH);
       expect(classifyError('Authentication failed')).toBe(ErrorType.AUTH);
-      expect(classifyError(new Error('auth token expired'))).toBe(ErrorType.AUTH);
+      expect(classifyError(new Error('auth token expired'))).toBe(
+        ErrorType.AUTH
+      );
     });
 
     it('should classify validation errors', () => {
       expect(classifyError('Validation failed')).toBe(ErrorType.VALIDATION);
       expect(classifyError('Invalid input data')).toBe(ErrorType.VALIDATION);
-      expect(classifyError(new Error('invalid email format'))).toBe(ErrorType.VALIDATION);
+      expect(classifyError(new Error('invalid email format'))).toBe(
+        ErrorType.VALIDATION
+      );
     });
 
     it('should classify storage errors', () => {
       expect(classifyError('Storage operation failed')).toBe(ErrorType.STORAGE);
-      expect(classifyError('Database connection error')).toBe(ErrorType.STORAGE);
-      expect(classifyError(new Error('storage quota exceeded'))).toBe(ErrorType.STORAGE);
+      expect(classifyError('Database connection error')).toBe(
+        ErrorType.STORAGE
+      );
+      expect(classifyError(new Error('storage quota exceeded'))).toBe(
+        ErrorType.STORAGE
+      );
     });
 
     it('should classify sync errors', () => {
@@ -74,7 +86,9 @@ describe('ErrorHandler', () => {
 
     it('should classify unknown errors', () => {
       expect(classifyError('Random error message')).toBe(ErrorType.UNKNOWN);
-      expect(classifyError(new Error('unexpected error'))).toBe(ErrorType.UNKNOWN);
+      expect(classifyError(new Error('unexpected error'))).toBe(
+        ErrorType.UNKNOWN
+      );
       expect(classifyError(null)).toBe(ErrorType.UNKNOWN);
     });
   });
@@ -86,7 +100,9 @@ describe('ErrorHandler', () => {
 
       expect(result.type).toBe(ErrorType.NETWORK);
       expect(result.message).toBe('Network connection failed');
-      expect(result.userMessage).toBe('Network connection failed. Please check your internet connection and try again.');
+      expect(result.userMessage).toBe(
+        'Network connection failed. Please check your internet connection and try again.'
+      );
       expect(result.retryable).toBe(true);
     });
 
@@ -95,7 +111,9 @@ describe('ErrorHandler', () => {
 
       expect(result.type).toBe(ErrorType.AUTH);
       expect(result.message).toBe('Authentication failed');
-      expect(result.userMessage).toBe('Authentication failed. Please check your credentials and try again.');
+      expect(result.userMessage).toBe(
+        'Authentication failed. Please check your credentials and try again.'
+      );
       expect(result.retryable).toBe(false);
     });
 
@@ -133,7 +151,9 @@ describe('ErrorHandler', () => {
 
       expect(result.type).toBe(ErrorType.UNKNOWN);
       expect(result.message).toBe('Test error');
-      expect(result.userMessage).toBe('Something went wrong. Please try again.');
+      expect(result.userMessage).toBe(
+        'Something went wrong. Please try again.'
+      );
       expect(result.retryable).toBe(false);
     });
 
@@ -189,17 +209,23 @@ describe('ErrorHandler', () => {
   describe('user messages', () => {
     it('should provide appropriate user message for network errors', () => {
       const result = createAppError('Network timeout');
-      expect(result.userMessage).toBe('Network connection failed. Please check your internet connection and try again.');
+      expect(result.userMessage).toBe(
+        'Network connection failed. Please check your internet connection and try again.'
+      );
     });
 
     it('should provide appropriate user message for auth errors', () => {
       const result = createAppError('Unauthorized');
-      expect(result.userMessage).toBe('Authentication failed. Please check your credentials and try again.');
+      expect(result.userMessage).toBe(
+        'Authentication failed. Please check your credentials and try again.'
+      );
     });
 
     it('should provide appropriate user message for validation errors', () => {
       const result = createAppError('Invalid input');
-      expect(result.userMessage).toBe('Invalid input. Please check your data and try again.');
+      expect(result.userMessage).toBe(
+        'Invalid input. Please check your data and try again.'
+      );
     });
 
     it('should provide appropriate user message for storage errors', () => {
@@ -214,7 +240,9 @@ describe('ErrorHandler', () => {
 
     it('should provide generic user message for unknown errors', () => {
       const result = createAppError('Unknown error');
-      expect(result.userMessage).toBe('Something went wrong. Please try again.');
+      expect(result.userMessage).toBe(
+        'Something went wrong. Please try again.'
+      );
     });
   });
 
@@ -247,7 +275,7 @@ describe('ErrorHandler', () => {
       const error = {
         message: 'Complex network error',
         code: 'NETWORK_TIMEOUT',
-        details: { timeout: 5000 }
+        details: { timeout: 5000 },
       };
       const result = handleError(error);
       expect(result.message).toBe('Complex network error');

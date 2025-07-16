@@ -5,10 +5,7 @@
 
 import * as Keychain from 'react-native-keychain';
 import { errorHandler, ErrorCategory } from '../utils/errorHandler';
-import {
-  validateToken,
-  hashData,
-} from '../utils/security';
+import { validateToken, hashData } from '../utils/security';
 import {
   IAuthStorageService,
   AuthToken,
@@ -221,7 +218,10 @@ class AuthStorageService implements IAuthStorageService {
    */
   deleteToken = async (): Promise<boolean> => {
     try {
-      await Keychain.resetInternetCredentials(this.SERVICE_NAME, this.keychainOptions);
+      await Keychain.resetInternetCredentials(
+        this.SERVICE_NAME,
+        this.keychainOptions
+      );
 
       // resetInternetCredentials returns boolean or void
       // Both void and true are considered success

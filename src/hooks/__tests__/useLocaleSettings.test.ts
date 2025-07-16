@@ -4,7 +4,11 @@
  */
 
 import { renderHook, act } from '@testing-library/react-native';
-import { AppState, NativeModules as _NativeModules, DeviceEventEmitter } from 'react-native';
+import {
+  AppState,
+  NativeModules as _NativeModules,
+  DeviceEventEmitter,
+} from 'react-native';
 import {
   useLocaleSettings,
   useLocaleDateFormatter,

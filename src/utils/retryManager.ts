@@ -115,9 +115,11 @@ export class RetryManager {
 
   private defaultShouldRetry(error: any): boolean {
     // Retry on network errors, timeouts, and server errors
-    if (error?.code === 'NETWORK_ERROR' || 
-        error?.code === 'TIMEOUT_ERROR' ||
-        error?.status >= 500) {
+    if (
+      error?.code === 'NETWORK_ERROR' ||
+      error?.code === 'TIMEOUT_ERROR' ||
+      error?.status >= 500
+    ) {
       return true;
     }
     return false;

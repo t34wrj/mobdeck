@@ -33,16 +33,16 @@ function getPackageVersion() {
 function checkVersionCode() {
   const commitCount = getGitCommitCount();
   const packageVersion = getPackageVersion();
-  
+
   console.log('=== Mobdeck Version Check ===');
   console.log(`Package version: ${packageVersion}`);
   console.log(`Git commit count: ${commitCount}`);
-  
+
   if (commitCount === null) {
     console.error('❌ Cannot determine version code - git command failed');
     process.exit(1);
   }
-  
+
   // Check if version code is reasonable for established app
   const MIN_VERSION_CODE = 100;
   if (commitCount < MIN_VERSION_CODE) {
@@ -55,19 +55,26 @@ function checkVersionCode() {
     console.error('- In GitHub Actions, use "fetch-depth: 0" in checkout');
     process.exit(1);
   }
-  
+
   console.log(`✅ Version code is valid: ${commitCount}`);
-  
+
   // Additional checks
   if (process.env.CI) {
     console.log('Running in CI environment - additional checks:');
-    
+
     // Check if we're in a shallow clone
     try {
-      execSync('git rev-parse --is-shallow-repository', { encoding: 'utf8' }).trim();
-      const isShallow = execSync('git rev-parse --is-shallow-repository', { encoding: 'utf8' }).trim() === 'true';
+      execSync('git rev-parse --is-shallow-repository', {
+        encoding: 'utf8',
+      }).trim();
+      const isShallow =
+        execSync('git rev-parse --is-shallow-repository', {
+          encoding: 'utf8',
+        }).trim() === 'true';
       if (isShallow) {
-        console.error('❌ Repository is shallow - this will cause version code issues');
+        console.error(
+          '❌ Repository is shallow - this will cause version code issues'
+        );
         process.exit(1);
       } else {
         console.log('✅ Repository has full history');
@@ -76,11 +83,11 @@ function checkVersionCode() {
       console.warn('⚠️  Could not check if repository is shallow');
     }
   }
-  
+
   console.log('=== Version Check Complete ===');
   return {
     packageVersion,
-    versionCode: commitCount
+    versionCode: commitCount,
   };
 }
 

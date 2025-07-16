@@ -124,7 +124,7 @@ jest.mock('../../src/utils/connectivityManager', () => ({
 
 jest.mock('../../src/utils/errorHandler', () => ({
   errorHandler: {
-    handleError: jest.fn().mockImplementation((error) => ({
+    handleError: jest.fn().mockImplementation(error => ({
       message: error.message || 'Unknown error',
       code: 'TEST_ERROR',
       category: 'TEST',
@@ -142,7 +142,9 @@ jest.mock('../../src/store/slices/syncSlice', () => ({
   syncSuccess: jest.fn().mockReturnValue({ type: 'sync/syncSuccess' }),
   syncError: jest.fn().mockReturnValue({ type: 'sync/syncError' }),
   updateSyncStats: jest.fn().mockReturnValue({ type: 'sync/updateSyncStats' }),
-  updateNetworkStatus: jest.fn().mockReturnValue({ type: 'sync/updateNetworkStatus' }),
+  updateNetworkStatus: jest
+    .fn()
+    .mockReturnValue({ type: 'sync/updateNetworkStatus' }),
   addConflict: jest.fn().mockReturnValue({ type: 'sync/addConflict' }),
   resolveConflict: jest.fn().mockReturnValue({ type: 'sync/resolveConflict' }),
 }));
@@ -207,7 +209,7 @@ describe('SyncService', () => {
   describe('Full Sync Operation', () => {
     it('should perform full sync successfully', async () => {
       const result = await syncService.startFullSync();
-      
+
       expect(result).toHaveProperty('success');
       expect(result).toHaveProperty('syncedCount');
       expect(result).toHaveProperty('conflictCount');
@@ -220,25 +222,33 @@ describe('SyncService', () => {
     it('should handle sync errors gracefully', async () => {
       // Mock connectivity check to simulate unreachable server
       const mockConnectivity = require('../../src/utils/connectivityManager');
-      
+
       // Mock connectivity to be offline to force sync failure
-      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValueOnce('OFFLINE');
+      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValueOnce(
+        'OFFLINE'
+      );
 
       // This should throw an error when server is unreachable
-      await expect(syncService.startFullSync()).rejects.toThrow('Server is unreachable');
+      await expect(syncService.startFullSync()).rejects.toThrow(
+        'Server is unreachable'
+      );
     });
 
     it('should prevent concurrent syncs', async () => {
       // Mock connectivity for the first sync
       const mockConnectivity = require('../../src/utils/connectivityManager');
-      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValue('ONLINE');
-      
+      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValue(
+        'ONLINE'
+      );
+
       // Manually set the service to running state
       (syncService as any).isRunning = true;
-      
+
       // Try to start second sync while running
-      await expect(syncService.startFullSync()).rejects.toThrow('Sync already in progress');
-      
+      await expect(syncService.startFullSync()).rejects.toThrow(
+        'Sync already in progress'
+      );
+
       // Reset running state
       (syncService as any).isRunning = false;
     });
@@ -246,15 +256,17 @@ describe('SyncService', () => {
     it('should allow forced sync even when running', async () => {
       // Mock connectivity
       const mockConnectivity = require('../../src/utils/connectivityManager');
-      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValue('ONLINE');
-      
+      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValue(
+        'ONLINE'
+      );
+
       // Start first sync (don't await)
       const syncPromise1 = syncService.startFullSync();
-      
+
       // Force a second sync
       const result = await syncService.startFullSync(true);
       expect(result).toHaveProperty('success');
-      
+
       // Wait for first sync to complete
       await syncPromise1;
     });
@@ -263,7 +275,7 @@ describe('SyncService', () => {
   describe('Sync Up Operation', () => {
     it('should sync local changes to remote', async () => {
       const result = await syncService.syncUp();
-      
+
       expect(result).toHaveProperty('success');
       expect(result).toHaveProperty('syncedCount');
       expect(result.phase).toBe(SyncPhase.UPLOADING_CHANGES);
@@ -273,7 +285,7 @@ describe('SyncService', () => {
   describe('Sync Down Operation', () => {
     it('should sync remote changes to local', async () => {
       const result = await syncService.syncDown();
-      
+
       expect(result).toHaveProperty('success');
       expect(result).toHaveProperty('syncedCount');
       expect(result.phase).toBe(SyncPhase.DOWNLOADING_UPDATES);
@@ -295,7 +307,9 @@ describe('SyncService', () => {
   describe('Error Handling', () => {
     it('should handle network connectivity issues', async () => {
       const mockConnectivity = require('../../src/utils/connectivityManager');
-      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValueOnce('OFFLINE');
+      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValueOnce(
+        'OFFLINE'
+      );
 
       await expect(syncService.startFullSync()).rejects.toThrow(
         'Server is unreachable. Please check your connection.'

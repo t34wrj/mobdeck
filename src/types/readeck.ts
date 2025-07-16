@@ -105,10 +105,19 @@ export enum ReadeckErrorCode {
 
 export interface IReadeckApiService {
   testConnection(): Promise<ReadeckApiResponse<any>>;
-  login(credentials: ReadeckLoginRequest): Promise<ReadeckApiResponse<ReadeckLoginResponse>>;
-  getArticles(filters?: ArticleFilters): Promise<ReadeckApiResponse<ReadeckArticleList>>;
-  createArticle(request: CreateArticleRequest): Promise<ReadeckApiResponse<ReadeckArticle>>;
-  updateArticle(id: string, request: UpdateArticleRequest): Promise<ReadeckApiResponse<ReadeckArticle>>;
+  login(
+    credentials: ReadeckLoginRequest
+  ): Promise<ReadeckApiResponse<ReadeckLoginResponse>>;
+  getArticles(
+    filters?: ArticleFilters
+  ): Promise<ReadeckApiResponse<ReadeckArticleList>>;
+  createArticle(
+    request: CreateArticleRequest
+  ): Promise<ReadeckApiResponse<ReadeckArticle>>;
+  updateArticle(
+    id: string,
+    request: UpdateArticleRequest
+  ): Promise<ReadeckApiResponse<ReadeckArticle>>;
   deleteArticle(id: string): Promise<ReadeckApiResponse<void>>;
 }
 

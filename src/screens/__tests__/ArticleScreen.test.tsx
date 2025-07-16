@@ -44,7 +44,8 @@ describe('ArticleScreen', () => {
       new Promise(() => {})
     );
 
-    const { UNSAFE_getByType } = render( // eslint-disable-line camelcase
+    const { UNSAFE_getByType } = render(
+      // eslint-disable-line camelcase
       <ArticleScreen
         navigation={mockNavigation as any}
         route={createMockRoute('123')}
@@ -151,7 +152,8 @@ describe('ArticleScreen', () => {
       data: mockArticle,
     });
 
-    const { UNSAFE_getByType } = render( // eslint-disable-line camelcase
+    const { UNSAFE_getByType } = render(
+      // eslint-disable-line camelcase
       <ArticleScreen
         navigation={mockNavigation as any}
         route={createMockRoute('123')}

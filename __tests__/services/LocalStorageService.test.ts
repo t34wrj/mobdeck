@@ -12,9 +12,11 @@ jest.mock('../../src/services/DatabaseService', () => ({
     initialize: jest.fn().mockResolvedValue(undefined),
     isConnected: jest.fn().mockReturnValue(true),
     close: jest.fn().mockResolvedValue(undefined),
-    createArticle: jest.fn().mockResolvedValue({ success: true, data: 'test-id' }),
-    getArticle: jest.fn().mockResolvedValue({ 
-      success: true, 
+    createArticle: jest
+      .fn()
+      .mockResolvedValue({ success: true, data: 'test-id' }),
+    getArticle: jest.fn().mockResolvedValue({
+      success: true,
       data: {
         id: 'test-id',
         title: 'Test Article',
@@ -22,19 +24,19 @@ jest.mock('../../src/services/DatabaseService', () => ({
         content: 'Test content',
         created_at: Date.now() / 1000,
         updated_at: Date.now() / 1000,
-      }
+      },
     }),
     updateArticle: jest.fn().mockResolvedValue({ success: true }),
     deleteArticle: jest.fn().mockResolvedValue({ success: true }),
-    getArticles: jest.fn().mockResolvedValue({ 
-      success: true, 
+    getArticles: jest.fn().mockResolvedValue({
+      success: true,
       data: {
         items: [],
         totalCount: 0,
         limit: 20,
         offset: 0,
         hasMore: false,
-      }
+      },
     }),
     clearAllData: jest.fn().mockResolvedValue({ success: true }),
   },
@@ -121,7 +123,10 @@ describe('LocalStorageService', () => {
 
     it('should update article and cache', async () => {
       const updates = { title: 'Updated Title' };
-      const result = await localStorageService.updateArticle('test-id', updates);
+      const result = await localStorageService.updateArticle(
+        'test-id',
+        updates
+      );
       expect(result.success).toBe(true);
     });
 
@@ -239,7 +244,8 @@ describe('LocalStorageService', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      const result = await localStorageService.createArticleFromAppFormat(article);
+      const result =
+        await localStorageService.createArticleFromAppFormat(article);
       expect(result).toBe('test-id'); // Mocked return value
     });
 
@@ -253,7 +259,10 @@ describe('LocalStorageService', () => {
         updatedAt: new Date().toISOString(),
       };
 
-      const result = await localStorageService.updateArticleFromAppFormat('test-id', article);
+      const result = await localStorageService.updateArticleFromAppFormat(
+        'test-id',
+        article
+      );
       expect(result).toBe(true);
     });
   });

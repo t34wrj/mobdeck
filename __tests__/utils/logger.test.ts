@@ -35,10 +35,9 @@ describe('Simple Logger', () => {
     it('should log debug messages in development mode', () => {
       logger.debug('Debug message', { test: 'data' });
 
-      expect(mockConsole.debug).toHaveBeenCalledWith(
-        '[DEBUG] Debug message',
-        { test: 'data' }
-      );
+      expect(mockConsole.debug).toHaveBeenCalledWith('[DEBUG] Debug message', {
+        test: 'data',
+      });
     });
 
     it('should log debug messages without data', () => {
@@ -55,10 +54,9 @@ describe('Simple Logger', () => {
     it('should log info messages in development mode', () => {
       logger.info('Info message', { test: 'data' });
 
-      expect(mockConsole.info).toHaveBeenCalledWith(
-        '[INFO] Info message',
-        { test: 'data' }
-      );
+      expect(mockConsole.info).toHaveBeenCalledWith('[INFO] Info message', {
+        test: 'data',
+      });
     });
 
     it('should log info messages without data', () => {
@@ -75,10 +73,9 @@ describe('Simple Logger', () => {
     it('should log warn messages always (regardless of dev mode)', () => {
       logger.warn('Warning message', { test: 'data' });
 
-      expect(mockConsole.warn).toHaveBeenCalledWith(
-        '[WARN] Warning message',
-        { test: 'data' }
-      );
+      expect(mockConsole.warn).toHaveBeenCalledWith('[WARN] Warning message', {
+        test: 'data',
+      });
     });
 
     it('should log warn messages without data', () => {
@@ -95,10 +92,9 @@ describe('Simple Logger', () => {
     it('should log error messages always (regardless of dev mode)', () => {
       logger.error('Error message', { error: 'details' });
 
-      expect(mockConsole.error).toHaveBeenCalledWith(
-        '[ERROR] Error message',
-        { error: 'details' }
-      );
+      expect(mockConsole.error).toHaveBeenCalledWith('[ERROR] Error message', {
+        error: 'details',
+      });
     });
 
     it('should log error messages without data', () => {
