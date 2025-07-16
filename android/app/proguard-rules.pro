@@ -180,9 +180,9 @@
 # Obfuscate package names (except critical ones)
 -repackageclasses 'o'
 
-# Enable aggressive shrinking and optimization for smaller APK
-# -dontshrink
-# -dontoptimize
+# Temporarily disable aggressive optimization to preserve React Native modules
+-dontshrink
+-dontoptimize
 
 # ===========================
 # Debugging Prevention

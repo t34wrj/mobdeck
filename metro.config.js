@@ -10,18 +10,20 @@ const config = {
   },
   transformer: {
     minifierConfig: {
-      // Enable aggressive minification for smaller bundles
+      // Conservative minification to preserve module structure
       mangle: {
         keep_fnames: true, // Keep function names for better debugging
+        keep_classnames: true, // Keep class names to preserve module structure
       },
       output: {
         comments: false, // Remove comments from bundle
         ascii_only: true, // Ensure ASCII-only output
       },
       compress: {
-        drop_console: true, // Remove console.log statements in production
+        drop_console: false, // Keep console.log statements to preserve module structure
         drop_debugger: true, // Remove debugger statements
-        pure_funcs: ['console.log', 'console.info', 'console.debug'], // Remove specific console methods
+        dead_code: false, // Disable dead code elimination that's breaking modules
+        unused: false, // Don't remove "unused" code that may be dynamically imported
       },
     },
   },
