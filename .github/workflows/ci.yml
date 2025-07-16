@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
   workflow_call:
+    inputs:
+      build_release:
+        description: 'Build release APK'
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   test:
@@ -94,7 +100,7 @@ jobs:
         continue-on-error: false
 
       - name: Build Android release APK (for release workflow)
-        if: github.event_name == 'workflow_call' && startsWith(github.ref, 'refs/tags/v')
+        if: inputs.build_release == true
         run: |
           cd android
           ./gradlew assembleRelease --no-daemon --stacktrace
@@ -114,7 +120,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload release APK (for release workflow)
-        if: github.event_name == 'workflow_call' && startsWith(github.ref, 'refs/tags/v')
+        if: inputs.build_release == true
         uses: actions/upload-artifact@v4
         with:
           name: release-apk

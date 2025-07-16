@@ -54,7 +54,7 @@ describe('ArticleCard', () => {
       const { getByText } = render(<ArticleCard {...defaultProps} />);
 
       expect(getByText(mockArticle.title)).toBeTruthy();
-      expect(getByText(mockArticle.summary!)).toBeTruthy();
+      expect(getByText(mockArticle.summary ?? '')).toBeTruthy();
       expect(getByText('5 min read')).toBeTruthy();
     });
 

@@ -300,7 +300,7 @@ describe('syncSelectors', () => {
     it('should calculate next sync time', () => {
       const result = syncSelectors.selectNextSyncTime(mockState);
       expect(result).toBeTruthy();
-      expect(new Date(result!).getTime()).toBeGreaterThan(
+      expect(new Date(result as string).getTime()).toBeGreaterThan(
         new Date('2023-12-01T10:00:00Z').getTime()
       );
     });

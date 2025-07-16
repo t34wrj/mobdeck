@@ -245,7 +245,7 @@ describe('Critical E2E Flows', () => {
       const storedSettings = await mockAsyncStorage.getItem('app_settings');
       expect(storedSettings).not.toBeNull();
       
-      const parsedSettings = JSON.parse(storedSettings!);
+      const parsedSettings = JSON.parse(storedSettings as string);
       expect(parsedSettings.syncInterval).toBe(30);
       expect(parsedSettings.theme).toBe('dark');
       expect(parsedSettings.wifiOnly).toBe(true);
@@ -274,7 +274,7 @@ describe('Critical E2E Flows', () => {
       const appState = await mockAsyncStorage.getItem('app_state');
       expect(appState).not.toBeNull();
       
-      const parsedState = JSON.parse(appState!);
+      const parsedState = JSON.parse(appState as string);
       expect(parsedState.fallbackMode).toBe(true);
       expect(parsedState.lastError).toBe('Network request failed');
     });

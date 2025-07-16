@@ -123,7 +123,7 @@ describe('Critical User Journeys', () => {
       const storedSettings = await mockAsyncStorage.getItem('app_settings');
       
       expect(storedSettings).not.toBeNull();
-      const parsedSettings = JSON.parse(storedSettings!);
+      const parsedSettings = JSON.parse(storedSettings as string);
       expect(parsedSettings.syncInterval).toBe(30);
       expect(parsedSettings.theme).toBe('dark');
       expect(parsedSettings.notificationsEnabled).toBe(true);
@@ -198,7 +198,7 @@ describe('Critical User Journeys', () => {
       const storedState = await mockAsyncStorage.getItem('connectivity_state');
       
       expect(storedState).not.toBeNull();
-      const parsedState = JSON.parse(storedState!);
+      const parsedState = JSON.parse(storedState as string);
       expect(parsedState.isConnected).toBe(true);
       expect(parsedState.type).toBe('wifi');
     });
