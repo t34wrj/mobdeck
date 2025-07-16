@@ -2,6 +2,28 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+import groovy.json.JsonSlurper
+
+def getVersionFromPackageJson() {
+    def packageJsonFile = file("../../package.json")
+    def packageJson = new JsonSlurper().parseText(packageJsonFile.text)
+    return packageJson.version
+}
+
+def getVersionCodeFromGit() {
+    try {
+        def stdout = new ByteArrayOutputStream()
+        exec {
+            commandLine 'git', 'rev-list', '--count', 'HEAD'
+            standardOutput = stdout
+        }
+        return stdout.toString().trim().toInteger()
+    } catch (Exception e) {
+        // Fallback to timestamp-based version code if git is not available
+        return ((System.currentTimeMillis() / 1000) - 1640995200).toInteger() // Epoch offset for smaller numbers
+    }
+}
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -95,8 +117,8 @@ android {
         applicationId = "com.mobdeck"
         minSdkVersion = rootProject.ext.minSdkVersion
         targetSdkVersion = rootProject.ext.targetSdkVersion
-        versionCode = 3
-        versionName = "0.1.2"
+        versionCode = getVersionCodeFromGit()
+        versionName = getVersionFromPackageJson()
         multiDexEnabled = true
         vectorDrawables {
             useSupportLibrary = true
