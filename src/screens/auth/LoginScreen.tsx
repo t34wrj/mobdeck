@@ -12,6 +12,7 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import { theme } from '../../components/theme';
 import MobdeckLogo from '../../components/MobdeckLogo';
+import { SimpleButton as Button, SimpleText as Text } from '../../components';
 import { AuthScreenProps } from '../../navigation/types';
 import { AppDispatch, RootState } from '../../store';
 import { clearError } from '../../store/slices/authSlice';
