@@ -13,14 +13,27 @@ def getVersionFromPackageJson() {
 def getVersionCodeFromGit() {
     try {
         def stdout = new ByteArrayOutputStream()
-        exec {
+        def stderr = new ByteArrayOutputStream()
+        def result = exec {
             commandLine 'git', 'rev-list', '--count', 'HEAD'
             standardOutput = stdout
+            errorOutput = stderr
+            ignoreExitValue = true
         }
-        return stdout.toString().trim().toInteger()
+        
+        def output = stdout.toString().trim()
+        println "Git command exit code: ${result.exitValue}"
+        println "Git command output: '${output}'"
+        
+        if (result.exitValue == 0 && output.isNumber() && output.toInteger() > 0) {
+            return output.toInteger()
+        } else {
+            println "Git command failed or returned invalid output, using fallback"
+            return ((System.currentTimeMillis() / 1000) - 1640995200).toInteger()
+        }
     } catch (Exception e) {
-        // Fallback to timestamp-based version code if git is not available
-        return ((System.currentTimeMillis() / 1000) - 1640995200).toInteger() // Epoch offset for smaller numbers
+        println "Exception in getVersionCodeFromGit: ${e.message}"
+        return ((System.currentTimeMillis() / 1000) - 1640995200).toInteger()
     }
 }
 
