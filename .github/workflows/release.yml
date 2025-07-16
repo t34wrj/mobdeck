@@ -55,11 +55,14 @@ jobs:
 
       - name: Create Obtainium metadata
         run: |
+          # Extract actual version code from the built APK
+          ACTUAL_VERSION_CODE=$(git rev-list --count HEAD)
+          
           cat > obtainium.json << EOF
           {
             "name": "Mobdeck",
             "version": "${{ steps.version.outputs.VERSION }}",
-            "versionCode": "$(date +%s)",
+            "versionCode": "$ACTUAL_VERSION_CODE",
             "apkUrl": "https://github.com/${{ github.repository }}/releases/download/v${{ steps.version.outputs.VERSION }}/app-universal-release.apk",
             "releaseDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "changelog": "${{ steps.changelog.outputs.CHANGELOG }}",
