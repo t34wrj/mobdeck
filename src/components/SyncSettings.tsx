@@ -3,7 +3,7 @@ import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Text } from './ui/Text';
 import { Button } from './ui/Button';
-import { theme } from './ui/theme';
+import { theme } from './theme';
 import { RootState, AppDispatch } from '../store';
 import {
   pauseSync,

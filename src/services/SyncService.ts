@@ -306,6 +306,12 @@ class SyncService implements SimpleSyncServiceInterface {
       );
 
       syncResult.phase = SyncPhase.FINALIZING;
+      
+      // Set success to false if there were any errors
+      if (syncResult.errorCount > 0) {
+        syncResult.success = false;
+      }
+      
       return syncResult;
     } catch (error) {
       syncResult.success = false;

@@ -9,7 +9,7 @@ import {
   ScrollView as RNScrollView,
 } from 'react-native';
 import { Text } from './ui/Text';
-import { theme } from './ui/theme';
+import { theme } from './theme';
 
 export interface ArticleContentProps {
   content: string;

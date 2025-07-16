@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { Text, StyleSheet, Animated } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
-import { theme } from './ui/theme';
+import { theme } from './theme';
 import {
   connectivityManager,
   ConnectivityStatus,

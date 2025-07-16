@@ -1,11 +1,11 @@
-import { theme } from '../../../src/components/ui';
+import { theme } from '../../../src/components';
 
 describe('Design System Foundation', () => {
   describe('Component Imports', () => {
     it('can import Text and Button components', () => {
-      const { Text, Button } = require('../../../src/components/ui');
-      expect(Text).toBeDefined();
-      expect(Button).toBeDefined();
+      const { SimpleText, SimpleButton } = require('../../../src/components');
+      expect(SimpleText).toBeDefined();
+      expect(SimpleButton).toBeDefined();
     });
   });
 

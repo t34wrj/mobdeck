@@ -218,6 +218,7 @@ describe('SyncService', () => {
       );
 
       const result = await syncService.startFullSync();
+      console.log('Test result:', result);
       expect(result.success).toBe(false);
       expect(result.errorCount).toBeGreaterThan(0);
     });

@@ -9,7 +9,11 @@ import { validateUrl, extractUrlFromText } from '../../utils/urlValidation';
 import { SharedData } from '../../types';
 
 // Mock dependencies
-jest.mock('../ReadeckApiService');
+jest.mock('../ReadeckApiService', () => ({
+  readeckApiService: {
+    createArticleWithMetadata: jest.fn(),
+  },
+}));
 jest.mock('../../utils/urlValidation');
 // Mock the ShareModule while preserving other react-native mocks
 jest.mock('react-native', () => ({
@@ -29,8 +33,8 @@ jest.mock('react-native', () => ({
 }));
 
 // Type the mocked modules
-const mockArticlesApiService = articlesApiService as jest.Mocked<
-  typeof articlesApiService
+const mockReadeckApiService = readeckApiService as jest.Mocked<
+  typeof readeckApiService
 >;
 const mockValidateUrl = validateUrl as jest.MockedFunction<typeof validateUrl>;
 const mockExtractUrlFromText = extractUrlFromText as jest.MockedFunction<
@@ -98,7 +102,7 @@ describe('ShareHandlerService', () => {
         errors: [],
         warnings: [],
       });
-      mockArticlesApiService.createArticle.mockResolvedValue(mockArticle);
+      mockReadeckApiService.createArticleWithMetadata.mockResolvedValue(mockArticle);
     });
 
     it('should successfully process shared data with valid URL', async () => {
@@ -111,7 +115,7 @@ describe('ShareHandlerService', () => {
         'https://example.com/article',
         expect.any(Object)
       );
-      expect(mockArticlesApiService.createArticle).toHaveBeenCalledWith({
+      expect(mockReadeckApiService.createArticleWithMetadata).toHaveBeenCalledWith({
         url: 'https://example.com/article',
         title: 'Interesting Article',
       });
@@ -181,7 +185,7 @@ describe('ShareHandlerService', () => {
         message: 'Network error',
         statusCode: 500,
       };
-      mockArticlesApiService.createArticle
+      mockReadeckApiService.createArticleWithMetadata
         .mockRejectedValueOnce(networkError)
         .mockRejectedValueOnce(networkError)
         .mockResolvedValue(mockArticle);
@@ -189,7 +193,7 @@ describe('ShareHandlerService', () => {
       const result = await service.processSharedData();
 
       expect(result.success).toBe(true);
-      expect(mockArticlesApiService.createArticle).toHaveBeenCalledTimes(3);
+      expect(mockReadeckApiService.createArticleWithMetadata).toHaveBeenCalledTimes(3);
     });
 
     it('should handle non-retryable errors', async () => {
@@ -197,13 +201,13 @@ describe('ShareHandlerService', () => {
         message: 'Article with this URL already exists as duplicate',
         statusCode: 409,
       };
-      mockArticlesApiService.createArticle.mockRejectedValue(apiError);
+      mockReadeckApiService.createArticleWithMetadata.mockRejectedValue(apiError);
 
       const result = await service.processSharedData();
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ShareErrorCode.DUPLICATE_ARTICLE);
-      expect(mockArticlesApiService.createArticle).toHaveBeenCalledTimes(1);
+      expect(mockReadeckApiService.createArticleWithMetadata).toHaveBeenCalledTimes(1);
     });
 
     it('should handle quota exceeded errors', async () => {
@@ -211,7 +215,7 @@ describe('ShareHandlerService', () => {
         message: 'Quota exceeded',
         statusCode: 429,
       };
-      mockArticlesApiService.createArticle.mockRejectedValue(apiError);
+      mockReadeckApiService.createArticleWithMetadata.mockRejectedValue(apiError);
 
       const result = await service.processSharedData();
 
@@ -254,7 +258,7 @@ describe('ShareHandlerService', () => {
         errors: [],
         warnings: [],
       });
-      mockArticlesApiService.createArticle.mockResolvedValue(mockArticle);
+      mockReadeckApiService.createArticleWithMetadata.mockResolvedValue(mockArticle);
     });
 
     it('should process URL directly with custom title', async () => {
@@ -265,7 +269,7 @@ describe('ShareHandlerService', () => {
 
       expect(result.success).toBe(true);
       expect(result.article).toEqual(mockArticle);
-      expect(mockArticlesApiService.createArticle).toHaveBeenCalledWith({
+      expect(mockReadeckApiService.createArticleWithMetadata).toHaveBeenCalledWith({
         url: 'https://example.com/article',
         title: 'Custom Title',
       });
@@ -275,7 +279,7 @@ describe('ShareHandlerService', () => {
       const result = await service.processUrl('https://example.com/article');
 
       expect(result.success).toBe(true);
-      expect(mockArticlesApiService.createArticle).toHaveBeenCalledWith({
+      expect(mockReadeckApiService.createArticleWithMetadata).toHaveBeenCalledWith({
         url: 'https://example.com/article',
         title: 'Article from example.com',
       });
@@ -379,7 +383,7 @@ describe('ShareHandlerService', () => {
     it('should retry network errors with exponential backoff', async () => {
       const networkError = { code: 'NETWORK_ERROR', message: 'Network error' };
 
-      mockArticlesApiService.createArticle
+      mockReadeckApiService.createArticleWithMetadata
         .mockRejectedValueOnce(networkError)
         .mockRejectedValueOnce(networkError)
         .mockResolvedValue({
@@ -410,12 +414,12 @@ describe('ShareHandlerService', () => {
       const result = await service.processSharedData();
 
       expect(result.success).toBe(true);
-      expect(mockArticlesApiService.createArticle).toHaveBeenCalledTimes(3);
+      expect(mockReadeckApiService.createArticleWithMetadata).toHaveBeenCalledTimes(3);
     });
 
     it('should give up after max retries', async () => {
       const networkError = { code: 'NETWORK_ERROR', message: 'Network error' };
-      mockArticlesApiService.createArticle.mockRejectedValue(networkError);
+      mockReadeckApiService.createArticleWithMetadata.mockRejectedValue(networkError);
 
       NativeModules.ShareModule.getSharedData.mockResolvedValue({
         text: 'https://example.com/article',
@@ -433,7 +437,7 @@ describe('ShareHandlerService', () => {
 
       expect(result.success).toBe(false);
       expect(result.error?.code).toBe(ShareErrorCode.NETWORK_ERROR);
-      expect(mockArticlesApiService.createArticle).toHaveBeenCalledTimes(3); // Default retry attempts
+      expect(mockReadeckApiService.createArticleWithMetadata).toHaveBeenCalledTimes(3); // Default retry attempts
     });
   });
 
@@ -451,7 +455,7 @@ describe('ShareHandlerService', () => {
         warnings: ['Using HTTP instead of HTTPS may be insecure'],
       });
 
-      mockArticlesApiService.createArticle.mockResolvedValue({
+      mockReadeckApiService.createArticleWithMetadata.mockResolvedValue({
         id: '123',
         title: 'Test Article',
         url: 'http://example.com/article',

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Text } from './ui/Text';
 import { Button } from './ui/Button';
-import { theme } from './ui/theme';
+import { theme } from './theme';
 import { readeckApiService } from '../services/ReadeckApiService';
 import { Label } from '../types/labels';
 

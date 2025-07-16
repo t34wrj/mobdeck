@@ -43,6 +43,19 @@ jest.mock('../../src/utils/logger', () => ({
   },
 }));
 
+// Mock errorHandler
+jest.mock('../../src/utils/errorHandler', () => ({
+  errorHandler: {
+    handleError: jest.fn(),
+    createError: jest.fn(),
+  },
+  ErrorCategory: {
+    STORAGE: 'storage',
+    NETWORK: 'network',
+    VALIDATION: 'validation',
+  },
+}));
+
 describe('AuthStorageService', () => {
   let authStorageService: AuthStorageService;
   const mockKeychainModule = Keychain as jest.Mocked<typeof Keychain>;
