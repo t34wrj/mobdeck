@@ -7,7 +7,6 @@ import * as Keychain from 'react-native-keychain';
 import { errorHandler, ErrorCategory } from '../utils/errorHandler';
 import {
   validateToken,
-  generateSecureRandom,
   hashData,
 } from '../utils/security';
 import {

@@ -1,12 +1,13 @@
 import { useCallback, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { useAppDispatch, RootState } from '../store';
 import { Alert } from 'react-native';
-import { RootState } from '../store';
+// RootState and useAppDispatch imported above
 import { updateSyncConfig, resetSyncConfig } from '../store/slices/syncSlice';
 import { logoutUser } from '../store/slices/authSlice';
 
 export const useSettingsHandlers = () => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const { config: syncConfig } = useSelector((state: RootState) => state.sync);
 
   const [customSyncInterval, setCustomSyncInterval] = useState(

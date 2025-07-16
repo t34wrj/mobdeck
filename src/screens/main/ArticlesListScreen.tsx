@@ -9,14 +9,15 @@ import {
   TouchableOpacity,
   Text,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { useAppDispatch, RootState } from '../../store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SimpleText, SimpleButton } from '../../components';
 import { ArticleCard } from '../../components/ArticleCard';
 import MobdeckLogo from '../../components/MobdeckLogo';
 import { theme } from '../../components/theme';
 import { MainScreenProps } from '../../navigation/types';
-import { RootState } from '../../store';
+// RootState imported with useAppDispatch above
 import {
   loadLocalArticles,
   setFilters,
@@ -36,7 +37,7 @@ type ArticlesListScreenProps = MainScreenProps<'ArticlesList'>;
 export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   navigation,
 }) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const insets = useSafeAreaInsets();
 
   const { loading, error, pagination, filters, sync } = useSelector(
@@ -344,10 +345,10 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
 
     return (
       <View style={styles.emptyContainer}>
-        <SimpleText variant='h4' style={styles.emptyTitle}>
+        <SimpleText variant='h3' style={styles.emptyTitle}>
           {title}
         </SimpleText>
-        <SimpleText variant='body1' style={styles.emptyMessage}>
+        <SimpleText variant='body' style={styles.emptyMessage}>
           {message}
         </SimpleText>
         {showClearButton && (
@@ -394,7 +395,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
               onPress={() => handleFilterPress(item.key)}
             >
               <SimpleText
-                variant='body2'
+                variant='body'
                 style={[
                   styles.filterChipText,
                   item.active && styles.filterChipTextActive,
@@ -417,7 +418,6 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
         <View style={styles.headerLeft}>
           <MobdeckLogo
             size={24}
-            color={theme.colors.accent[500]} // Tiffany Blue for contrast on green
           />
           <Text style={styles.headerTitle}>Mobdeck</Text>
         </View>
@@ -454,7 +454,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       {/* Error State */}
       {error.fetch && (
         <View style={styles.errorContainer}>
-          <SimpleText variant='body1' style={styles.errorText}>
+          <SimpleText variant='body' style={styles.errorText}>
             {error.fetch}
           </SimpleText>
           <View style={styles.errorButtonsContainer}>

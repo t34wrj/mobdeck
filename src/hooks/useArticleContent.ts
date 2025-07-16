@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useAppDispatch } from '../store';
 import { Alert } from 'react-native';
 import { Article } from '../types';
 import {
@@ -12,7 +12,7 @@ export const useArticleContent = (
   article: Article | undefined,
   articleId: string
 ) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [refreshing, setRefreshing] = useState(false);
   const [contentFetched, setContentFetched] = useState(false);
 

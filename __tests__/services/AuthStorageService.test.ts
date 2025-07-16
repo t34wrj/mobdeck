@@ -277,7 +277,8 @@ describe('AuthStorageService', () => {
       // Assert
       expect(result).toBeNull();
       expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith(
-        'mobdeck_auth_tokens'
+        'mobdeck_auth_tokens',
+        expect.any(Object)
       );
       const { logger } = jest.requireMock('../../src/utils/logger');
       expect(logger.error).toHaveBeenCalledWith(
@@ -312,7 +313,8 @@ describe('AuthStorageService', () => {
       // Assert
       expect(result).toBeNull();
       expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith(
-        'mobdeck_auth_tokens'
+        'mobdeck_auth_tokens',
+        expect.any(Object)
       );
       const { logger } = jest.requireMock('../../src/utils/logger');
       expect(logger.error).toHaveBeenCalledWith('Invalid auth data structure');
@@ -353,7 +355,8 @@ describe('AuthStorageService', () => {
       // Assert
       expect(result).toBe(true);
       expect(mockKeychainModule.resetInternetCredentials).toHaveBeenCalledWith(
-        'mobdeck_auth_tokens'
+        'mobdeck_auth_tokens',
+        expect.any(Object)
       );
       // Logger output varies, just verify success
       expect(result).toBe(true);

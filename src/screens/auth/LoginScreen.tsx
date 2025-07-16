@@ -9,12 +9,13 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { useAppDispatch, RootState } from '../../store';
 import { theme } from '../../components/theme';
 import MobdeckLogo from '../../components/MobdeckLogo';
 import { SimpleButton as Button, SimpleText as Text } from '../../components';
 import { AuthScreenProps } from '../../navigation/types';
-import { AppDispatch, RootState } from '../../store';
+// RootState imported with useAppDispatch above
 import { clearError } from '../../store/slices/authSlice';
 import { localStorageService } from '../../services/LocalStorageService';
 import { validateApiToken } from '../../services/api';
@@ -22,7 +23,7 @@ import { readeckApiService } from '../../services/ReadeckApiService';
 import { startSyncOperation } from '../../store/thunks/syncThunks';
 
 const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const { loading, error } = useSelector((state: RootState) => state.auth);
 
   const [serverUrl, setServerUrl] = useState('');
@@ -187,18 +188,18 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
         <View style={styles.headerContainer}>
           <View style={styles.titleContainer}>
             <MobdeckLogo size={48} />
-            <Text variant='h1' align='center' style={styles.title}>
+            <Text variant='h1' style={[styles.title, styles.centerText]}>
               Mobdeck
             </Text>
           </View>
-          <Text variant='body1' align='center' color='neutral.600'>
+          <Text variant='body' style={styles.centerText} color='neutral.600'>
             Connect to your Readeck server
           </Text>
         </View>
 
         <View style={styles.formContainer}>
           <View style={styles.inputGroup}>
-            <Text variant='body2' weight='medium' style={styles.label}>
+            <Text variant='body' weight='500' style={styles.label}>
               Server URL
             </Text>
             <TextInput
@@ -230,7 +231,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text variant='body2' weight='medium' style={styles.label}>
+            <Text variant='body' weight='500' style={styles.label}>
               API Token
             </Text>
             <TextInput
@@ -263,7 +264,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
 
           {error ? (
             <View style={styles.errorContainer}>
-              <Text variant='body2' color='error.600' align='center'>
+              <Text variant='body' color='error.600' style={styles.centerText}>
                 {error}
               </Text>
             </View>
@@ -312,7 +313,7 @@ const LoginScreen: React.FC<AuthScreenProps<'Login'>> = ({ navigation }) => {
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size='large' color={theme.colors.primary[500]} />
             <Text
-              variant='body2'
+              variant='body'
               color='neutral.600'
               style={styles.loadingText}
             >
@@ -413,6 +414,9 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: theme.spacing[3],
+  },
+  centerText: {
+    textAlign: 'center',
   },
 });
 

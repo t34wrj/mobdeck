@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '../store';
+import { useAppDispatch } from '../store';
 import { localStorageService } from '../services/LocalStorageService';
 import {
   initializeSyncService,
@@ -15,7 +14,7 @@ interface InitializationState {
 }
 
 export const useAppInitialization = () => {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const networkStatus = useNetworkStatus();
   const [state, setState] = useState<InitializationState>({
     isInitialized: false,

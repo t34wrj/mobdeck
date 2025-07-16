@@ -72,7 +72,7 @@ function checkVersionCode() {
       } else {
         console.log('✅ Repository has full history');
       }
-    } catch (error) {
+    } catch {
       console.warn('⚠️  Could not check if repository is shallow');
     }
   }

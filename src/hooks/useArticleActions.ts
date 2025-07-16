@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useAppDispatch } from '../store';
 import { Alert, Share } from 'react-native';
 import { Article } from '../types';
 import {
@@ -13,7 +13,7 @@ export const useArticleActions = (
   articleId: string,
   navigation: any
 ) => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [showActions, setShowActions] = useState(false);
   const [showLabelModal, setShowLabelModal] = useState(false);
 

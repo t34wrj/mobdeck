@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { useAppDispatch, RootState } from '../store';
 import { SimpleText as Text } from '../components';
 import {
   fetchArticles,
@@ -11,7 +12,7 @@ import { startSyncOperation } from '../store/thunks/syncThunks';
 import ArticleCard from '../components/ArticleCard';
 import SearchBar from '../components/SearchBar';
 import { MainScreenProps } from '../navigation/types';
-import { RootState, AppDispatch } from '../store';
+// RootState and AppDispatch are imported above
 import { theme } from '../components/theme';
 import { Article } from '../types';
 
@@ -19,7 +20,7 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
   navigation: _navigation,
   route: _route,
 }) => {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const articles = useSelector(selectAllArticles);
   const { loading, error } = useSelector((state: RootState) => ({
     loading: state.articles.loading.fetch,

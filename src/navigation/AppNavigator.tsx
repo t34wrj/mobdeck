@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { useAppDispatch } from '../store';
 import {
   selectIsUserAuthenticated,
   selectAuthLoading,
@@ -16,12 +17,12 @@ import {
   fetchArticles,
   loadLocalArticles,
 } from '../store/slices/articlesSlice';
-import { AppDispatch } from '../store';
+// AppDispatch imported via useAppDispatch above
 import NetInfo from '@react-native-community/netinfo';
 import { ConnectivityIndicator } from '../components/ConnectivityIndicator';
 
 const AppNavigator: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const isAuthenticated = useSelector(selectIsUserAuthenticated);
   const authLoading = useSelector(selectAuthLoading);
   const { sharedData, clearSharedData } = useShareIntent();

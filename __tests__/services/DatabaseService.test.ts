@@ -1068,12 +1068,12 @@ describe('DatabaseUtils', () => {
 
       const label = DatabaseUtils.convertDBLabelToLabel(dbLabel);
 
-      expect(label.id).toBe(1);
+      expect(label.id).toBe('1');
       expect(label.name).toBe('Test Label');
       expect(label.color).toBe('#FF0000');
-      expect(label.createdAt).toBeInstanceOf(Date);
-      expect(label.updatedAt).toBeInstanceOf(Date);
-      expect(label.syncedAt).toBeInstanceOf(Date);
+      expect(label.createdAt).toBe('2022-01-01T00:00:00.000Z');
+      expect(label.updatedAt).toBe('2022-01-01T00:01:40.000Z');
+      expect(label.syncedAt).toBe('2022-01-01T00:03:20.000Z');
     });
 
     it('should convert Label to DBLabel', () => {

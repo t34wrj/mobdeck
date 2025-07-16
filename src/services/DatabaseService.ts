@@ -1772,10 +1772,10 @@ export const DatabaseUtilityFunctions: DatabaseUtils = {
       is_favorite: article.isFavorite ? 1 : 0,
       is_read: article.isRead ? 1 : 0,
       is_modified: article.isModified ? 1 : 0,
-      created_at: typeof article.createdAt === 'string' 
+      created_at: article.createdAt
         ? Math.floor(new Date(article.createdAt).getTime() / 1000)
         : Math.floor(Date.now() / 1000),
-      updated_at: typeof article.updatedAt === 'string'
+      updated_at: article.updatedAt
         ? Math.floor(new Date(article.updatedAt).getTime() / 1000)
         : Math.floor(Date.now() / 1000),
       synced_at: article.syncedAt
@@ -1806,10 +1806,10 @@ export const DatabaseUtilityFunctions: DatabaseUtils = {
       id: parseInt(label.id),
       name: label.name,
       color: label.color || null,
-      created_at: typeof label.createdAt === 'string'
+      created_at: label.createdAt
         ? Math.floor(new Date(label.createdAt).getTime() / 1000)
         : Math.floor(Date.now() / 1000),
-      updated_at: typeof label.updatedAt === 'string'
+      updated_at: label.updatedAt
         ? Math.floor(new Date(label.updatedAt).getTime() / 1000)
         : Math.floor(Date.now() / 1000),
       synced_at: label.syncedAt

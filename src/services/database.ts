@@ -1,18 +1,18 @@
 import SQLite from 'react-native-sqlite-storage';
 
 const databaseName = 'Readeck.db';
-const databaseVersion = '1.0';
-const databaseDisplayName = 'Readeck Database';
-const databaseSize = 200000;
+const _databaseVersion = '1.0';
+const _databaseDisplayName = 'Readeck Database';
+const _databaseSize = 200000;
 
 let db: SQLite.SQLiteDatabase;
 
 const initDatabase = () => {
   db = SQLite.openDatabase(
-    databaseName,
-    databaseVersion,
-    databaseDisplayName,
-    databaseSize,
+    {
+      name: databaseName,
+      location: 'default',
+    },
     () => {
       console.log('Database opened successfully');
       createTables();
@@ -24,14 +24,14 @@ const initDatabase = () => {
 };
 
 const createTables = () => {
-  db.transaction(tx => {
+  db.transaction((tx: any) => {
     tx.executeSql(
       'CREATE TABLE IF NOT EXISTS articles (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, summary TEXT, content TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
       [],
       () => {
         console.log('Articles table created successfully');
       },
-      error => {
+      (error: any) => {
         console.error('Error creating articles table: ', error);
       }
     );
@@ -39,14 +39,14 @@ const createTables = () => {
 };
 
 const insertArticle = (title: string, summary: string, content: string) => {
-  db.transaction(tx => {
+  db.transaction((tx: any) => {
     tx.executeSql(
       'INSERT INTO articles (title, summary, content) VALUES (?, ?, ?)',
       [title, summary, content],
       () => {
         console.log('Article inserted successfully');
       },
-      error => {
+      (error: any) => {
         console.error('Error inserting article: ', error);
       }
     );
@@ -54,18 +54,18 @@ const insertArticle = (title: string, summary: string, content: string) => {
 };
 
 const getArticles = (callback: (articles: any[]) => void) => {
-  db.transaction(tx => {
+  db.transaction((tx: any) => {
     tx.executeSql(
       'SELECT * FROM articles',
       [],
-      (_tx, results) => {
+      (_tx: any, results: any) => {
         const articles: any[] = [];
         for (let i = 0; i < results.rows.length; i++) {
           articles.push(results.rows.item(i));
         }
         callback(articles);
       },
-      error => {
+      (error: any) => {
         console.error('Error fetching articles: ', error);
       }
     );

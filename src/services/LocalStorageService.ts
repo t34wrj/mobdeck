@@ -16,12 +16,14 @@
 import DatabaseService, { DatabaseUtilityFunctions } from './DatabaseService';
 import { cacheService } from './CacheService';
 import { authStorageService } from './AuthStorageService';
-import { Article } from '../types';
+import { Article, PaginatedResult } from '../types';
 import {
   DBArticle,
   DBLabel,
   ArticleFilters,
   LabelFilters,
+  DatabaseOperationResult,
+  DatabaseStats,
 } from '../types/database';
 import { AuthenticatedUser, TokenValidationResult } from '../types/auth';
 
@@ -357,5 +359,4 @@ export const localStorageService = LocalStorageService.getInstance();
 // Export class for testing
 export default LocalStorageService;
 
-// Export types
-export type { LocalStorageServiceInterface };
+// Export types - LocalStorageServiceInterface is already exported above

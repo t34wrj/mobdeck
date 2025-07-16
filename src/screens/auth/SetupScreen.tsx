@@ -136,7 +136,7 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
             Setup Instructions
           </Text>
         </View>
-        <Text variant='body2' color='neutral.600' align='center'>
+        <Text variant='body' color='neutral.600' style={styles.centerText}>
           Follow these steps to get your API token from Readeck
         </Text>
       </View>
@@ -146,16 +146,16 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
           <View key={step.id} style={styles.step}>
             <View style={styles.stepHeader}>
               <View style={styles.stepNumber}>
-                <Text variant='body2' color='neutral.50' weight='bold'>
+                <Text variant='body' color='neutral.50' weight='bold'>
                   {step.id}
                 </Text>
               </View>
-              <Text variant='h6' style={styles.stepTitle}>
+              <Text variant='h3' style={styles.stepTitle}>
                 {step.title}
               </Text>
             </View>
             <Text
-              variant='body2'
+              variant='body'
               color='neutral.700'
               style={styles.stepDescription}
             >
@@ -166,12 +166,12 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
       </View>
 
       <View style={styles.testContainer}>
-        <Text variant='h5' style={styles.sectionTitle}>
+        <Text variant='h3' style={styles.sectionTitle}>
           Test Your Connection
         </Text>
 
         <View style={styles.inputGroup}>
-          <Text variant='body2' weight='medium' style={styles.label}>
+          <Text variant='body' weight='500' style={styles.label}>
             Server URL
           </Text>
           <TextInput
@@ -188,7 +188,7 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text variant='body2' weight='medium' style={styles.label}>
+          <Text variant='body' weight='500' style={styles.label}>
             API Token
           </Text>
           <TextInput
@@ -213,9 +213,9 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
             ]}
           >
             <Text
-              variant='body2'
+              variant='body'
               color={testResult.success ? 'success.700' : 'error.700'}
-              weight='medium'
+              weight='500'
             >
               {testResult.message}
             </Text>
@@ -251,8 +251,7 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
         <Text
           variant='caption'
           color='neutral.500'
-          align='center'
-          style={styles.hint}
+          style={[styles.hint, styles.centerText]}
         >
           Your token is stored securely on your device
         </Text>
@@ -370,6 +369,9 @@ const styles = StyleSheet.create({
   },
   hint: {
     marginTop: theme.spacing[2],
+  },
+  centerText: {
+    textAlign: 'center',
   },
 });
 
