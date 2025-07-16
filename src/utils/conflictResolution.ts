@@ -49,3 +49,33 @@ export function mergeNonConflictingFields<T extends Record<string, any>>(
 
   return merged;
 }
+
+export function resolveConflict<T>(
+  localData: T,
+  remoteData: T,
+  strategy: 'local' | 'remote' | 'merge' = 'remote'
+): ConflictResult<T> {
+  switch (strategy) {
+    case 'local':
+      return {
+        resolved: localData,
+        strategy: 'local',
+      };
+    case 'remote':
+      return {
+        resolved: remoteData,
+        strategy: 'remote',
+      };
+    case 'merge':
+    default:
+      // For articles, use the existing article conflict resolution
+      if (localData && typeof localData === 'object' && 'updatedAt' in localData) {
+        return resolveArticleConflict(localData as any, remoteData as any) as ConflictResult<T>;
+      }
+      // Default to remote for other types
+      return {
+        resolved: remoteData,
+        strategy: 'remote',
+      };
+  }
+}

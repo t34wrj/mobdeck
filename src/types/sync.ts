@@ -48,6 +48,10 @@ export enum NetworkType {
 export enum SyncPhase {
   IDLE = 'idle',
   INITIALIZING = 'initializing',
+  CHECKING_CONNECTION = 'checking_connection',
+  UPLOADING_CHANGES = 'uploading_changes',
+  DOWNLOADING_UPDATES = 'downloading_updates',
+  FETCHING_REMOTE_DATA = 'fetching_remote_data',
   SYNC_UP = 'sync_up',
   SYNC_DOWN = 'sync_down',
   RESOLVING_CONFLICTS = 'resolving_conflicts',
@@ -65,6 +69,8 @@ export enum ConflictType {
 
 export enum ConflictResolutionStrategy {
   LAST_WRITE_WINS = 'last_write_wins',
+  LOCAL_WINS = 'local_wins',
+  REMOTE_WINS = 'remote_wins',
   MANUAL = 'manual',
 }
 
@@ -123,6 +129,7 @@ export interface StartSyncPayload {
   syncOptions?: Partial<SyncConfiguration>;
   fullSync?: boolean;
   force?: boolean;
+  forceSync?: boolean;
 }
 
 export interface SyncProgressPayload {
@@ -139,12 +146,15 @@ export interface SyncSuccessPayload {
   itemsProcessed: number;
   itemsSynced?: number;
   conflicts?: number;
+  conflictsDetected?: number;
 }
 
 export interface SyncErrorPayload {
   error: string;
   phase?: SyncPhase;
   itemsProcessed?: number;
+  errorCode?: string;
+  isRetryable?: boolean;
 }
 
 export interface AddConflictPayload {
@@ -157,6 +167,7 @@ export interface AddConflictPayload {
 export interface ResolveConflictPayload {
   conflictId: string;
   resolution: any;
+  resolvedVersion?: any;
 }
 
 export interface UpdateSyncConfigPayload {
@@ -166,4 +177,16 @@ export interface UpdateSyncConfigPayload {
 export interface NetworkStatusPayload {
   isOnline: boolean;
   networkType: NetworkType | null;
+}
+
+export enum ConnectivityStatus {
+  CONNECTED = 'connected',
+  DISCONNECTED = 'disconnected',
+  CHECKING = 'checking',
+  UNKNOWN = 'unknown',
+}
+
+export interface StartSyncParams {
+  fullSync?: boolean;
+  force?: boolean;
 }

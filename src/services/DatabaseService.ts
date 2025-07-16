@@ -24,6 +24,11 @@ import {
 } from '../types/database';
 import { Article, Label } from '../types';
 
+// Utility function to safely extract error message
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 // Define missing types locally
 interface DatabaseServiceInterface {
   initialize(): Promise<void>;
@@ -125,7 +130,7 @@ const errorHandler = {
   handleError: (error: any, context?: any) => {
     console.error('Database error:', error, context);
     return {
-      message: error.message || 'Database operation failed',
+      message: getErrorMessage(error) || 'Database operation failed',
       userMessage: 'Unable to save data locally. Please try again.',
     };
   },
@@ -445,7 +450,7 @@ class DatabaseService implements DatabaseServiceInterface {
 
     return new Promise((resolve, reject) => {
       this.db.transaction(
-        async tx => {
+        async (tx: any) => {
           try {
             const context: TransactionContext = {
               executeSql: (sql: string, params?: any[]) => {
@@ -454,8 +459,8 @@ class DatabaseService implements DatabaseServiceInterface {
                     tx.executeSql(
                       sql,
                       params || [],
-                      (_, result) => resolveQuery(result as DatabaseResult),
-                      (_, error) => {
+                      (_: any, result: any) => resolveQuery(result as DatabaseResult),
+                      (_: any, error: any) => {
                         rejectQuery(error);
                         return false;
                       }
@@ -481,7 +486,7 @@ class DatabaseService implements DatabaseServiceInterface {
             );
           }
         },
-        error => {
+        (error: any) => {
           console.error('[DatabaseService] Transaction failed:', error);
           reject(
             this.createDatabaseError(
@@ -613,7 +618,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to update article: ${error.message}`,
+        error: `Failed to update article: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -643,7 +648,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to delete article: ${error.message}`,
+        error: `Failed to delete article: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -707,7 +712,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get articles: ${error.message}`,
+        error: `Failed to get articles: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -816,7 +821,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to search articles: ${error.message}`,
+        error: `Failed to search articles: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -843,7 +848,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to create label: ${error.message}`,
+        error: `Failed to create label: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -867,7 +872,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get label: ${error.message}`,
+        error: `Failed to get label: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -900,7 +905,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to update label: ${error.message}`,
+        error: `Failed to update label: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -917,7 +922,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to delete label: ${error.message}`,
+        error: `Failed to delete label: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -974,7 +979,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get labels: ${error.message}`,
+        error: `Failed to get labels: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1003,7 +1008,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to add label to article: ${error.message}`,
+        error: `Failed to add label to article: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1024,7 +1029,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to remove label from article: ${error.message}`,
+        error: `Failed to remove label from article: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1058,7 +1063,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get article labels: ${error.message}`,
+        error: `Failed to get article labels: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1094,7 +1099,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get label articles: ${error.message}`,
+        error: `Failed to get label articles: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1137,7 +1142,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to create sync metadata: ${error.message}`,
+        error: `Failed to create sync metadata: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1170,7 +1175,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to update sync metadata: ${error.message}`,
+        error: `Failed to update sync metadata: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1238,7 +1243,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get sync metadata: ${error.message}`,
+        error: `Failed to get sync metadata: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1257,7 +1262,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to delete sync metadata: ${error.message}`,
+        error: `Failed to delete sync metadata: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1412,7 +1417,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to get stats: ${error.message}`,
+        error: `Failed to get stats: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1438,7 +1443,7 @@ class DatabaseService implements DatabaseServiceInterface {
       console.error('[DatabaseService] Failed to clear all data:', error);
       return {
         success: false,
-        error: `Failed to clear all data: ${error.message}`,
+        error: `Failed to clear all data: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1450,7 +1455,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to vacuum database: ${error.message}`,
+        error: `Failed to vacuum database: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1529,7 +1534,7 @@ class DatabaseService implements DatabaseServiceInterface {
     } catch (error) {
       return {
         success: false,
-        error: `Migration failed: ${error.message}`,
+        error: `Migration failed: ${getErrorMessage(error)}`,
       };
     }
   }
@@ -1577,7 +1582,7 @@ class DatabaseService implements DatabaseServiceInterface {
               query,
               [],
               () => {}, // Success callback
-              (_, error) => {
+              (_: any, error: any) => {
                 console.error('Migration query failed:', query, error);
                 return false; // Don't halt transaction for index creation failures
               }
@@ -1757,18 +1762,22 @@ export const DatabaseUtilityFunctions: DatabaseUtils = {
     return {
       id: article.id,
       title: article.title,
-      summary: article.summary,
-      content: article.content,
+      summary: article.summary || null,
+      content: article.content || null,
       url: article.url,
-      image_url: article.imageUrl,
-      read_time: article.readTime,
-      source_url: article.sourceUrl,
+      image_url: article.imageUrl || null,
+      read_time: article.readTime || null,
+      source_url: article.sourceUrl || null,
       is_archived: article.isArchived ? 1 : 0,
       is_favorite: article.isFavorite ? 1 : 0,
       is_read: article.isRead ? 1 : 0,
       is_modified: article.isModified ? 1 : 0,
-      created_at: Math.floor(new Date(article.createdAt).getTime() / 1000),
-      updated_at: Math.floor(new Date(article.updatedAt).getTime() / 1000),
+      created_at: typeof article.createdAt === 'string' 
+        ? Math.floor(new Date(article.createdAt).getTime() / 1000)
+        : Math.floor(Date.now() / 1000),
+      updated_at: typeof article.updatedAt === 'string'
+        ? Math.floor(new Date(article.updatedAt).getTime() / 1000)
+        : Math.floor(Date.now() / 1000),
       synced_at: article.syncedAt
         ? Math.floor(new Date(article.syncedAt).getTime() / 1000)
         : null,
@@ -1780,22 +1789,31 @@ export const DatabaseUtilityFunctions: DatabaseUtils = {
 
   convertDBLabelToLabel(dbLabel: DBLabel): Label {
     return {
-      ...dbLabel,
-      createdAt: new Date(dbLabel.created_at * 1000),
-      updatedAt: new Date(dbLabel.updated_at * 1000),
+      id: String(dbLabel.id),
+      name: dbLabel.name,
+      color: dbLabel.color || undefined,
+      articleCount: 0, // Would need to be calculated separately
+      createdAt: new Date(dbLabel.created_at * 1000).toISOString(),
+      updatedAt: new Date(dbLabel.updated_at * 1000).toISOString(),
       syncedAt: dbLabel.synced_at
-        ? new Date(dbLabel.synced_at * 1000)
+        ? new Date(dbLabel.synced_at * 1000).toISOString()
         : undefined,
     };
   },
 
   convertLabelToDBLabel(label: Label): DBLabel {
     return {
-      ...label,
-      created_at: Math.floor(label.createdAt.getTime() / 1000),
-      updated_at: Math.floor(label.updatedAt.getTime() / 1000),
+      id: parseInt(label.id),
+      name: label.name,
+      color: label.color || null,
+      created_at: typeof label.createdAt === 'string'
+        ? Math.floor(new Date(label.createdAt).getTime() / 1000)
+        : Math.floor(Date.now() / 1000),
+      updated_at: typeof label.updatedAt === 'string'
+        ? Math.floor(new Date(label.updatedAt).getTime() / 1000)
+        : Math.floor(Date.now() / 1000),
       synced_at: label.syncedAt
-        ? Math.floor(label.syncedAt.getTime() / 1000)
+        ? Math.floor(new Date(label.syncedAt).getTime() / 1000)
         : null,
     };
   },

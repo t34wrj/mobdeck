@@ -1253,18 +1253,7 @@ class ReadeckApiService implements IReadeckApiService {
     const response = await this.getArticle(id);
     const article = this.convertReadeckArticleToArticle(response.data);
 
-    // If article has a contentUrl but no content, fetch the content
-    if (article.contentUrl && !article.content) {
-      try {
-        const htmlContent = await this.getArticleContent(article.contentUrl);
-        article.content = htmlContent;
-      } catch (error) {
-        console.error(
-          '[ReadeckApiService] Failed to fetch article content:',
-          error
-        );
-      }
-    }
+    // Note: Article content should be included in the API response
 
     // Cache the article
     cacheService.setArticle(id, article);
@@ -1337,7 +1326,6 @@ class ReadeckApiService implements IReadeckApiService {
         readeckArticle.updated || new Date().toISOString()
       ),
       syncedAt: new Date().toISOString(),
-      contentUrl: ensureString(readeckArticle.resources?.article?.src),
     };
   }
 
@@ -1379,7 +1367,6 @@ class ReadeckApiService implements IReadeckApiService {
     const filters: ArticleFilters = {
       limit: params.limit || 20,
       offset: ((params.page || 1) - 1) * (params.limit || 20),
-      sort: ['-created'],
     };
 
     if (params.searchQuery) {
@@ -1394,9 +1381,7 @@ class ReadeckApiService implements IReadeckApiService {
         filters.is_marked = params.filters.isFavorite;
       }
       if (params.filters.isRead !== undefined) {
-        filters.read_status = params.filters.isRead
-          ? ['read']
-          : ['unread', 'reading'];
+        filters.read_status = params.filters.isRead;
       }
       if (params.filters.tags && params.filters.tags.length > 0) {
         filters.labels = params.filters.tags.join(',');

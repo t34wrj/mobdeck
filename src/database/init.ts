@@ -2,7 +2,7 @@ import SQLite from 'react-native-sqlite-storage';
 import { ErrorCode, AppError } from '../types';
 
 // Enable debugging in development
-if (__DEV__) {
+if (typeof globalThis !== 'undefined' && globalThis.__DEV__) {
   SQLite.DEBUG(true);
 }
 
@@ -43,11 +43,11 @@ export class DatabaseManager {
       console.log('Database initialized successfully');
     } catch (error) {
       console.error('Database initialization failed:', error);
-      throw new AppError({
-        code: ErrorCode.DATABASE_ERROR,
-        message: 'Failed to initialize database',
-        details: error,
-      });
+      throw new AppError(
+        ErrorCode.DATABASE_ERROR,
+        'Failed to initialize database',
+        error
+      );
     }
   }
 
@@ -61,10 +61,10 @@ export class DatabaseManager {
 
   getDatabase(): SQLite.SQLiteDatabase {
     if (!this.db) {
-      throw new AppError({
-        code: ErrorCode.DATABASE_ERROR,
-        message: 'Database not initialized. Call initialize() first.',
-      });
+      throw new AppError(
+        ErrorCode.DATABASE_ERROR,
+        'Database not initialized. Call initialize() first.'
+      );
     }
     return this.db;
   }
@@ -121,11 +121,11 @@ export class DatabaseManager {
       }
     } catch (error) {
       console.error('Migration failed:', error);
-      throw new AppError({
-        code: ErrorCode.DATABASE_ERROR,
-        message: 'Database migration failed',
-        details: error,
-      });
+      throw new AppError(
+        ErrorCode.DATABASE_ERROR,
+        'Database migration failed',
+        error
+      );
     }
   }
 
@@ -212,13 +212,13 @@ export class DatabaseManager {
 
   // Utility methods for common database operations
   async transaction<T>(
-    operation: (tx: SQLite.Transaction) => Promise<T>
+    operation: (tx: any) => Promise<T>
   ): Promise<T> {
     const db = this.getDatabase();
 
     return new Promise((resolve, reject) => {
       db.transaction(
-        async tx => {
+        async (tx: any) => {
           try {
             const result = await operation(tx);
             resolve(result);
@@ -226,14 +226,14 @@ export class DatabaseManager {
             reject(error);
           }
         },
-        error => {
+        (error: any) => {
           console.error('Transaction failed:', error);
           reject(
-            new AppError({
-              code: ErrorCode.DATABASE_ERROR,
-              message: 'Database transaction failed',
-              details: error,
-            })
+            new AppError(
+              ErrorCode.DATABASE_ERROR,
+              'Database transaction failed',
+              error
+            )
           );
         }
       );

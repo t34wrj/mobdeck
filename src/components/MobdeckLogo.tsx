@@ -11,7 +11,7 @@ const MobdeckLogo: React.FC<MobdeckLogoProps> = ({
   return (
     <View style={[styles.container, { width: size, height: size }]}>
       <Image
-        source={require('../../assets/icons/square/web/icon-192.png')}
+        source={require('../assets/images/mobdeck-logo.png')}
         style={[
           styles.logo,
           {

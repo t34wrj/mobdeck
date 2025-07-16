@@ -40,6 +40,7 @@ export interface Article {
   updatedAt: string;
   syncedAt?: string | null;
   isModified?: boolean;
+  deletedAt?: string;
 }
 
 export interface User {
@@ -57,6 +58,7 @@ export interface Label {
   articleCount: number;
   createdAt: string;
   updatedAt: string;
+  syncedAt?: string;
 }
 
 export interface AuthCredentials {

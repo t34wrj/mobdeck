@@ -72,10 +72,15 @@ export async function checkNetworkStatus(): Promise<NetworkStatus> {
   return status;
 }
 
+export function isOnline(): boolean {
+  return currentStatus.isConnected;
+}
+
 // Default connectivity manager instance
 export const connectivityManager = {
   getCurrentNetworkStatus,
   addNetworkListener,
   removeNetworkListener,
   checkNetworkStatus,
+  isOnline,
 };

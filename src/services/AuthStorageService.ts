@@ -28,6 +28,8 @@ interface AuthStorageData extends AuthToken {
     email: string;
     lastLoginAt: string;
   };
+  checksum?: string;
+  version?: string;
 }
 import { logger } from '../utils/logger';
 
@@ -52,7 +54,6 @@ class AuthStorageService implements IAuthStorageService {
     service: this.SERVICE_NAME,
     touchID: false, // Will be configurable later
     showModal: false,
-    authenticatePrompt: 'Authenticate to access your Readeck account',
   };
 
   /**
@@ -100,13 +101,13 @@ class AuthStorageService implements IAuthStorageService {
         issuedAt: new Date().toISOString(),
         serverUrl: user?.serverUrl || '',
         version: this.TOKEN_VERSION,
-        checksum: hashData(trimmedToken, generateSecureRandom(16)),
+        checksum: hashData(trimmedToken),
         user: user
           ? {
               id: user.id,
               username: user.username,
               email: user.email,
-              lastLoginAt: user.lastLoginAt,
+              lastLoginAt: user.lastLoginAt || new Date().toISOString(),
             }
           : undefined,
       };
@@ -221,7 +222,7 @@ class AuthStorageService implements IAuthStorageService {
    */
   deleteToken = async (): Promise<boolean> => {
     try {
-      await Keychain.resetInternetCredentials(this.SERVICE_NAME);
+      await Keychain.resetInternetCredentials(this.SERVICE_NAME, this.keychainOptions);
 
       // resetInternetCredentials returns boolean or void
       // Both void and true are considered success

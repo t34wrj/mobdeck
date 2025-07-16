@@ -87,9 +87,12 @@ export function handleError(error: unknown): AppError {
   const appError = createAppError(error);
 
   // Simple logging for development
-  if (__DEV__) {
+  if (typeof globalThis !== 'undefined' && globalThis.__DEV__) {
     console.error('App Error:', appError);
   }
 
   return appError;
 }
+
+export { handleError as errorHandler };
+export { ErrorType as ErrorCategory };

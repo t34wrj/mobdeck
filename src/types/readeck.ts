@@ -3,12 +3,16 @@ export interface ReadeckApiConfig {
   baseUrl: string;
   timeout: number;
   retryAttempts: number;
+  retryDelay: number;
 }
 
 export interface ReadeckApiResponse<T> {
   data: T;
   status: number;
   timestamp: string;
+  headers?: Record<string, string>;
+  items?: T[];
+  message?: string;
 }
 
 export interface ReadeckArticle {
@@ -90,4 +94,71 @@ export enum ReadeckErrorCode {
   NOT_FOUND = 'NOT_FOUND',
   SERVER_ERROR = 'SERVER_ERROR',
   TIMEOUT = 'TIMEOUT',
+  TIMEOUT_ERROR = 'TIMEOUT_ERROR',
+  SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
+  CONNECTION_ERROR = 'CONNECTION_ERROR',
+  RATE_LIMITED = 'RATE_LIMITED',
+  AUTHENTICATION_ERROR = 'AUTHENTICATION_ERROR',
+  AUTHORIZATION_ERROR = 'AUTHORIZATION_ERROR',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+}
+
+export interface IReadeckApiService {
+  testConnection(): Promise<ReadeckApiResponse<any>>;
+  login(credentials: ReadeckLoginRequest): Promise<ReadeckApiResponse<ReadeckLoginResponse>>;
+  getArticles(filters?: ArticleFilters): Promise<ReadeckApiResponse<ReadeckArticleList>>;
+  createArticle(request: CreateArticleRequest): Promise<ReadeckApiResponse<ReadeckArticle>>;
+  updateArticle(id: string, request: UpdateArticleRequest): Promise<ReadeckApiResponse<ReadeckArticle>>;
+  deleteArticle(id: string): Promise<ReadeckApiResponse<void>>;
+}
+
+export interface ReadeckApiError {
+  code: ReadeckErrorCode;
+  message: string;
+  details?: any;
+}
+
+export interface ReadeckUserProfile {
+  id: string;
+  username: string;
+  email: string;
+  created: string;
+  updated: string;
+}
+
+export interface ReadeckSystemInfo {
+  version: string;
+  name: string;
+}
+
+export interface ReadeckSyncResponse {
+  success: boolean;
+  message?: string;
+}
+
+export interface SyncRequest {
+  articles?: ReadeckArticle[];
+}
+
+export interface RequestConfig {
+  timeout?: number;
+  retryAttempts?: number;
+  headers?: Record<string, string>;
+}
+
+export interface NetworkState {
+  isOnline: boolean;
+  type: string;
+}
+
+export interface RetryConfig {
+  maxAttempts: number;
+  delay: number;
+  backoff: number;
+}
+
+export interface ApiRequestOptions {
+  timeout?: number;
+  retryAttempts?: number;
+  headers?: Record<string, string>;
 }

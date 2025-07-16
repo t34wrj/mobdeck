@@ -44,6 +44,8 @@ export interface ArticleFilters {
   offset?: number;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
+  sort?: string;
+  read_status?: boolean;
 }
 
 export interface DatabaseResult<T = any> {
@@ -77,4 +79,19 @@ export interface DatabaseStats {
   pendingSyncItems: number;
   databaseSize: number;
   lastSyncAt: number | null;
+  articles_count: number;
+  labels_count: number;
+  pending_sync_count: number;
+  failed_sync_count: number;
+  last_sync_time: string | null;
+  articlesCount: number;
+  labelsCount: number;
+  pendingSyncCount: number;
+  dbSize?: number;
+}
+
+export interface LabelFilters {
+  name?: string;
+  limit?: number;
+  offset?: number;
 }

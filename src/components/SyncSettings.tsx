@@ -53,7 +53,7 @@ export const SyncSettings: React.FC = () => {
 
       __DEV__ &&
         console.log('[SyncSettings] Dispatching startSyncOperation...');
-      await dispatch(
+      await (dispatch as any)(
         startSyncOperation({
           syncOptions: {
             fullTextSync: true,
@@ -67,7 +67,7 @@ export const SyncSettings: React.FC = () => {
       console.error('[SyncSettings] Manual sync failed:', err);
       Alert.alert(
         'Sync Error',
-        err?.message || 'Failed to start sync. Please try again.'
+        (err instanceof Error ? err.message : String(err)) || 'Failed to start sync. Please try again.'
       );
     } finally {
       setManualSyncLoading(false);
@@ -76,7 +76,7 @@ export const SyncSettings: React.FC = () => {
 
   const handlePauseSync = useCallback(async () => {
     try {
-      await dispatch(pauseSyncOperation()).unwrap();
+      await (dispatch as any)(pauseSyncOperation()).unwrap();
       dispatch(pauseSync());
     } catch (err) {
       console.error('[SyncSettings] Failed to pause sync:', err);
@@ -86,10 +86,10 @@ export const SyncSettings: React.FC = () => {
 
   const handleResumeSync = useCallback(async () => {
     try {
-      await dispatch(resumeSyncOperation()).unwrap();
+      await (dispatch as any)(resumeSyncOperation()).unwrap();
     } catch (err) {
       console.error('[SyncSettings] Failed to resume sync:', err);
-      Alert.alert('Error', err?.message || 'Failed to resume sync');
+      Alert.alert('Error', (err instanceof Error ? err.message : String(err)) || 'Failed to resume sync');
     }
   }, [dispatch]);
 
@@ -99,7 +99,7 @@ export const SyncSettings: React.FC = () => {
 
   const handleCancelSync = useCallback(async () => {
     try {
-      await dispatch(cancelSyncOperation()).unwrap();
+      await (dispatch as any)(cancelSyncOperation()).unwrap();
       dispatch(cancelSync());
     } catch (err) {
       console.error('[SyncSettings] Failed to cancel sync:', err);
