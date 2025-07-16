@@ -11,6 +11,8 @@ jest.mock('react-native-keychain', () => ({
   resetInternetCredentials: jest.fn(() => Promise.resolve(true)),
 }));
 
+jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => 'Icon');
+
 jest.mock('../../../src/services/AuthStorageService', () => ({
   authStorageService: {
     storeToken: jest.fn(),

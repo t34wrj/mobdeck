@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { theme } from '../../components/theme';
 import { SimpleButton as Button, SimpleText as Text } from '../../components';
+import MobdeckLogo from '../../components/MobdeckLogo';
 import { AuthScreenProps } from '../../navigation/types';
 import { authStorageService } from '../../services/AuthStorageService';
 
@@ -129,9 +130,12 @@ const SetupScreen: React.FC<AuthScreenProps<'Setup'>> = ({ navigation }) => {
       keyboardShouldPersistTaps='handled'
     >
       <View style={styles.header}>
-        <Text variant='h3' style={styles.title}>
-          Setup Instructions
-        </Text>
+        <View style={styles.titleContainer}>
+          <MobdeckLogo size={48} />
+          <Text variant='h3' style={styles.title}>
+            Setup Instructions
+          </Text>
+        </View>
         <Text variant='body2' color='neutral.600' align='center'>
           Follow these steps to get your API token from Readeck
         </Text>
@@ -270,9 +274,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: theme.spacing[8],
   },
-  title: {
-    color: theme.colors.neutral[900],
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: theme.spacing[2],
+  },
+  title: {
+    color: theme.colors.primary[500],
+    marginLeft: theme.spacing[3],
   },
   stepsContainer: {
     marginBottom: theme.spacing[8],

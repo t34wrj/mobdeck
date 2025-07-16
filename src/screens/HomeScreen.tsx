@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { SimpleText as Text } from '../components';
 import {
   fetchArticles,
   selectAllArticles,
