@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { Text } from './ui/Text';
-import { Button } from './ui/Button';
+import { SimpleText as Text } from './SimpleText';
+import { SimpleButton as Button } from './SimpleButton';
 import { theme } from './theme';
 import { RootState, AppDispatch } from '../store';
 import {
@@ -191,10 +191,10 @@ export const SyncSettings: React.FC = () => {
     return (
       <View style={styles.progressContainer}>
         <View style={styles.progressHeader}>
-          <Text variant='body2' style={styles.progressText}>
+          <Text variant='body' style={styles.progressText}>
             {progress.phase.replace('_', ' ').toLowerCase()}
           </Text>
-          <Text variant='body2' style={styles.progressText}>
+          <Text variant='body' style={styles.progressText}>
             {progressPercentage}%
           </Text>
         </View>
@@ -268,7 +268,7 @@ export const SyncSettings: React.FC = () => {
 
     return (
       <View style={styles.errorContainer}>
-        <Text variant='body2' style={styles.errorText}>
+        <Text variant='body' style={styles.errorText}>
           {error}
         </Text>
         <Button
@@ -289,7 +289,7 @@ export const SyncSettings: React.FC = () => {
       <View style={styles.statusContainer}>
         <View style={styles.statusRow}>
           <View style={styles.statusInfo}>
-            <Text variant='body1' style={styles.statusLabel}>
+            <Text variant='body' style={styles.statusLabel}>
               Sync Status
             </Text>
             <View style={styles.statusIndicator}>
@@ -301,7 +301,7 @@ export const SyncSettings: React.FC = () => {
                 />
               )}
               <Text
-                variant='body2'
+                variant='body'
                 style={[styles.statusText, { color: getSyncStatusColor() }]}
               >
                 {getSyncStatusText()}
@@ -312,11 +312,11 @@ export const SyncSettings: React.FC = () => {
 
         <View style={styles.statusRow}>
           <View style={styles.statusInfo}>
-            <Text variant='body1' style={styles.statusLabel}>
+            <Text variant='body' style={styles.statusLabel}>
               Network
             </Text>
             <Text
-              variant='body2'
+              variant='body'
               style={[styles.statusText, { color: getNetworkStatusColor() }]}
             >
               {getNetworkStatusText()}
@@ -326,10 +326,10 @@ export const SyncSettings: React.FC = () => {
 
         <View style={styles.statusRow}>
           <View style={styles.statusInfo}>
-            <Text variant='body1' style={styles.statusLabel}>
+            <Text variant='body' style={styles.statusLabel}>
               Last Sync
             </Text>
-            <Text variant='body2' style={styles.statusText}>
+            <Text variant='body' style={styles.statusText}>
               {formatLastSyncTime()}
             </Text>
           </View>

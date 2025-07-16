@@ -10,8 +10,8 @@ import {
   ActivityIndicator,
   StatusBar,
 } from 'react-native';
-import { Text } from './ui/Text';
-import { Button } from './ui/Button';
+import { SimpleText as Text } from './SimpleText';
+import { SimpleButton as Button } from './SimpleButton';
 import { theme } from './theme';
 import { readeckApiService } from '../services/ReadeckApiService';
 import { Label } from '../types/labels';
@@ -202,7 +202,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
           />
           <View style={styles.labelContent}>
             <Text
-              variant='body2'
+              variant='body'
               style={[styles.labelName, isSelected && styles.selectedLabelName]}
             >
               {label.name}
@@ -223,7 +223,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
   // Render color selector
   const renderColorSelector = () => (
     <View style={styles.colorSelectorContainer}>
-      <Text variant='body2' style={styles.colorSelectorLabel}>
+      <Text variant='body' style={styles.colorSelectorLabel}>
         Color:
       </Text>
       <ScrollView
@@ -261,11 +261,11 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text variant='body1' style={styles.closeButtonText}>
+            <Text variant='body' style={styles.closeButtonText}>
               Cancel
             </Text>
           </TouchableOpacity>
-          <Text variant='h6' style={styles.headerTitle}>
+          <Text variant='h3' style={styles.headerTitle}>
             Manage Labels
           </Text>
           <Button
@@ -285,7 +285,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
             Article:
           </Text>
           <Text
-            variant='body2'
+            variant='body'
             numberOfLines={2}
             ellipsizeMode='tail'
             style={styles.articleTitle}
@@ -308,7 +308,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
         {/* Create New Label Section */}
         {createMode ? (
           <View style={styles.createLabelSection}>
-            <Text variant='h6' style={styles.createLabelTitle}>
+            <Text variant='h3' style={styles.createLabelTitle}>
               Create New Label
             </Text>
             <TextInput
@@ -364,13 +364,13 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
                 size='large'
                 color={theme.colors.primary[500]}
               />
-              <Text variant='body1' style={styles.loadingText}>
+              <Text variant='body' style={styles.loadingText}>
                 Loading labels...
               </Text>
             </View>
           ) : availableLabels.length === 0 ? (
             <View style={styles.emptyContainer}>
-              <Text variant='body1' style={styles.emptyText}>
+              <Text variant='body' style={styles.emptyText}>
                 {searchQuery ? 'No labels found' : 'No labels available'}
               </Text>
               <Text variant='caption' style={styles.emptySubtext}>

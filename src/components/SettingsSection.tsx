@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../ui/Text';
-import { theme } from '../ui/theme';
+import { SimpleText as Text } from './SimpleText';
+import { theme } from './theme';
 
 interface SettingsSectionProps {
   title: string;
@@ -13,7 +13,7 @@ export const SettingsSection: React.FC<SettingsSectionProps> = ({
   children,
 }) => (
   <View style={styles.section}>
-    <Text variant='h5' style={styles.sectionTitle}>
+    <Text variant='h3' style={styles.sectionTitle}>
       {title}
     </Text>
     <View style={styles.sectionContent}>{children}</View>

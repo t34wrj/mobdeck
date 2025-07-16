@@ -6,8 +6,8 @@ import {
   Linking,
   Alert,
 } from 'react-native';
-import { Text } from '../ui/Text';
-import { theme } from '../ui/theme';
+import { SimpleText as Text } from './SimpleText';
+import { theme } from './theme';
 import { Article } from '../../types';
 
 interface ArticleHeaderProps {
@@ -37,7 +37,7 @@ export const ArticleHeader: React.FC<ArticleHeaderProps> = ({
 
   return (
     <View style={styles.header}>
-      <Text variant='h4' style={styles.title}>
+      <Text variant='h2' style={styles.title}>
         {article.title}
       </Text>
 

@@ -8,7 +8,7 @@ import {
   Modal,
   ScrollView as RNScrollView,
 } from 'react-native';
-import { Text } from './ui/Text';
+import { SimpleText as Text } from './SimpleText';
 import { theme } from './theme';
 
 export interface ArticleContentProps {
@@ -110,7 +110,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
             return (
               <Text
                 key={index}
-                variant='h6'
+                variant='h3'
                 style={[
                   styles.heading,
                   {
@@ -128,7 +128,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
           return (
             <Text
               key={index}
-              variant='body1'
+              variant='body'
               style={[styles.paragraph, contentStyles]}
             >
               {paragraph}
@@ -194,10 +194,10 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
         {/* Summary */}
         {summary && (
           <View style={styles.summaryContainer}>
-            <Text variant='h6' style={styles.summaryTitle}>
+            <Text variant='h3' style={styles.summaryTitle}>
               Summary
             </Text>
-            <Text variant='body1' style={[styles.summary, contentStyles]}>
+            <Text variant='body' style={[styles.summary, contentStyles]}>
               {summary}
             </Text>
           </View>
@@ -208,7 +208,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
           {parsedContent ? (
             parsedContent
           ) : (
-            <Text variant='body1' style={[styles.noContent, contentStyles]}>
+            <Text variant='body' style={[styles.noContent, contentStyles]}>
               No content available for this article.{'\n\n'}Pull down to refresh
               to try loading the content from the server.
             </Text>

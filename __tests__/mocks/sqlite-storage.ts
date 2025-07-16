@@ -144,7 +144,7 @@ const createMockDatabase = (): MockSQLiteDatabase => ({
       if (error) error(err);
     }
   }),
-  close: jest.fn((success, error) => {
+  close: jest.fn((success, _error) => {
     if (success) success();
   }),
   executeSql: jest.fn((sql, params = [], success, error) => {
