@@ -4,6 +4,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Text,
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
@@ -130,9 +131,9 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
               </SimpleText>
 
               {!!article.readTime && (
-                <SimpleText variant='caption' style={styles.separator}>
+                <Text style={styles.separator}>
                   •
-                </SimpleText>
+                </Text>
               )}
               {!!article.readTime && (
                 <SimpleText variant='caption' style={styles.readTime}>
@@ -141,9 +142,9 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
               )}
 
               {sourceHostname ? (
-                <SimpleText variant='caption' style={styles.separator}>
+                <Text style={styles.separator}>
                   •
-                </SimpleText>
+                </Text>
               ) : null}
               {sourceHostname ? (
                 <SimpleText
@@ -167,9 +168,9 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
                   </View>
                 ))}
                 {article.tags.length > 3 && (
-                  <SimpleText variant='caption' style={styles.moreTagsText}>
+                  <Text style={styles.moreTagsText}>
                     +{article.tags.length - 3}
-                  </SimpleText>
+                  </Text>
                 )}
               </View>
             )}
@@ -181,25 +182,25 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
                 style={styles.favoriteIndicator}
                 testID='favorite-indicator'
               >
-                <SimpleText variant='caption' style={styles.favoriteIcon}>
+                <Text style={styles.favoriteIcon}>
                   ♥
-                </SimpleText>
+                </Text>
               </View>
             )}
 
             {article.isArchived && (
               <View style={styles.archivedIndicator} testID='archive-indicator'>
-                <SimpleText variant='caption' style={styles.archivedIcon}>
+                <Text style={styles.archivedIcon}>
                   📦
-                </SimpleText>
+                </Text>
               </View>
             )}
 
             {article.isRead && (
               <View style={styles.readIndicator}>
-                <SimpleText variant='caption' style={styles.readIcon}>
+                <Text style={styles.readIcon}>
                   ✓
-                </SimpleText>
+                </Text>
               </View>
             )}
           </View>
@@ -217,9 +218,9 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
                 }
                 accessibilityRole='button'
               >
-                <SimpleText variant='caption' style={styles.actionButtonText}>
+                <Text style={styles.actionButtonText}>
                   {article.isFavorite ? '♥' : '♡'}
-                </SimpleText>
+                </Text>
               </TouchableOpacity>
             )}
 
@@ -233,9 +234,9 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
                 }
                 accessibilityRole='button'
               >
-                <SimpleText variant='caption' style={styles.actionButtonText}>
+                <Text style={styles.actionButtonText}>
                   {article.isArchived ? '📤' : '📦'}
-                </SimpleText>
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -330,6 +331,7 @@ const styles = StyleSheet.create({
   separator: {
     color: theme.colors.neutral[400],
     marginHorizontal: theme.spacing[1],
+    fontSize: 14,
   },
   readTime: {
     color: theme.colors.neutral[500],
@@ -358,6 +360,7 @@ const styles = StyleSheet.create({
   moreTagsText: {
     color: theme.colors.neutral[500],
     marginLeft: theme.spacing[1],
+    fontSize: 14,
   },
   statusIndicators: {
     alignItems: 'center',

@@ -7,12 +7,12 @@ import {
   Platform,
   Dimensions,
   StatusBar,
+  Text,
 } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { store } from './store';
 import AppNavigator from './navigation/AppNavigator';
 import { useAppInitialization } from './hooks/useAppInitialization';
-import { SimpleText } from './components/SimpleText';
 import { theme } from './components/theme';
 
 // Debug functions for testing through React Native debugger
@@ -53,7 +53,7 @@ const AppContent: React.FC = () => {
     return (
       <View style={styles.container}>
         <ActivityIndicator size='large' color={theme.colors.primary[500]} />
-        <Text variant='body1' style={styles.loadingText}>
+        <Text style={styles.loadingText}>
           Initializing app...
         </Text>
       </View>
@@ -63,10 +63,10 @@ const AppContent: React.FC = () => {
   if (error) {
     return (
       <View style={styles.container}>
-        <Text variant='h5' style={styles.errorText}>
+        <Text style={styles.errorText}>
           Initialization Error
         </Text>
-        <Text variant='body1' style={styles.errorMessage}>
+        <Text style={styles.errorMessage}>
           {error}
         </Text>
       </View>

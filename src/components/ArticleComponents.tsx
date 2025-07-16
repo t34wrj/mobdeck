@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { SimpleText } from './SimpleText';
 import { SimpleButton } from './SimpleButton';
 import { Article } from '../types';
+import { theme } from './theme';
 
 interface ArticleHeaderProps {
   article: Article;
@@ -14,14 +15,14 @@ export const ArticleHeader: React.FC<ArticleHeaderProps> = ({ article, onToggleA
     <SimpleText variant="h2" style={styles.title}>
       {article.title}
     </SimpleText>
-    <SimpleText variant="caption" style={styles.meta}>
+    <Text style={styles.meta}>
       {article.source} • {article.publishedAt}
-    </SimpleText>
+    </Text>
     {onToggleActions && (
       <TouchableOpacity onPress={onToggleActions} style={styles.actionsButton}>
-        <SimpleText variant="caption" color="#FE5D26">
+        <Text style={styles.actionsText}>
           Actions
-        </SimpleText>
+        </Text>
       </TouchableOpacity>
     )}
   </View>
@@ -93,8 +94,8 @@ export const ArticleActions: React.FC<ArticleActionsProps> = ({
         variant="outline"
         size="sm"
         onPress={onDelete}
-        style={[styles.actionButton, { borderColor: '#ef4444' }]}
-        textStyle={{ color: '#ef4444' }}
+        style={[styles.actionButton, styles.deleteButton]}
+        textStyle={styles.deleteButtonText}
         loading={loading}
       />
     </View>
@@ -121,9 +122,9 @@ interface ArticleLoadingStateProps {}
 
 export const ArticleLoadingState: React.FC<ArticleLoadingStateProps> = () => (
   <View style={styles.loadingContainer}>
-    <SimpleText variant="body" style={styles.loadingText}>
+    <Text style={styles.loadingText}>
       Loading article...
-    </SimpleText>
+    </Text>
   </View>
 );
 
@@ -149,64 +150,76 @@ export const ArticleErrorState: React.FC<ArticleErrorStateProps> = ({ title, mes
 
 const styles = StyleSheet.create({
   header: {
-    padding: 16,
-    backgroundColor: '#ffffff',
+    padding: theme.spacing[4],
+    backgroundColor: theme.colors.neutral[50],
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    borderBottomColor: theme.colors.neutral[200],
   },
   title: {
-    marginBottom: 8,
-    color: '#1f2937',
+    marginBottom: theme.spacing[2],
+    color: theme.colors.neutral[800],
   },
   meta: {
-    color: '#6b7280',
-    marginBottom: 8,
+    color: theme.colors.neutral[600],
+    marginBottom: theme.spacing[2],
+    fontSize: theme.typography.fontSize.sm,
   },
   actionsButton: {
-    paddingVertical: 4,
+    paddingVertical: theme.spacing[1],
     alignSelf: 'flex-start',
   },
+  actionsText: {
+    color: theme.colors.primary[500],
+    fontSize: theme.typography.fontSize.sm,
+  },
   actions: {
-    padding: 16,
-    backgroundColor: '#f9fafb',
+    padding: theme.spacing[4],
+    backgroundColor: theme.colors.neutral[50],
     borderTopWidth: 1,
-    borderTopColor: '#e5e7eb',
+    borderTopColor: theme.colors.neutral[200],
   },
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: theme.spacing[2],
   },
   actionButton: {
     flexBasis: '48%',
-    marginBottom: 8,
+    marginBottom: theme.spacing[2],
+  },
+  deleteButton: {
+    borderColor: theme.colors.error[500],
+  },
+  deleteButtonText: {
+    color: theme.colors.error[500],
   },
   errorContainer: {
-    padding: 16,
-    backgroundColor: '#fef2f2',
+    padding: theme.spacing[4],
+    backgroundColor: theme.colors.error[50],
     borderWidth: 1,
-    borderColor: '#fecaca',
-    borderRadius: 8,
+    borderColor: theme.colors.error[200],
+    borderRadius: theme.borderRadius.base,
     alignItems: 'center',
   },
   errorText: {
-    color: '#dc2626',
+    color: theme.colors.error[600],
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: theme.spacing[3],
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: theme.spacing[4],
   },
   loadingText: {
-    color: '#6b7280',
+    color: theme.colors.neutral[600],
+    fontSize: theme.typography.fontSize.base,
   },
   errorTitle: {
-    color: '#dc2626',
-    marginBottom: 8,
+    color: theme.colors.error[600],
+    marginBottom: theme.spacing[2],
     textAlign: 'center',
   },
 });

@@ -50,7 +50,6 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
 
   // Get sync state from Redux
   const syncConfig = useAppSelector(state => state.sync.config);
-  const syncStatus = useAppSelector(state => state.sync.status);
   const lastSyncRedux = useAppSelector(state => state.sync.lastSyncTime);
 
   // Local state for sync timing
@@ -82,7 +81,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
     return () => {
       subscription.remove();
     };
-  }, [handleAppStateChange]);
+  }, [handleAppStateChange, updateSyncStatus]);
 
   // Update sync status periodically when app is active
   useEffect(() => {
@@ -93,7 +92,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
       return () => clearInterval(interval);
     }
     return undefined;
-  }, [appState]);
+  }, [appState, updateSyncStatus]);
 
   /**
    * Handle app state changes - trigger sync when coming back to foreground
@@ -125,13 +124,13 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
 
       setAppState(nextAppState);
     },
-    [appState, triggerManualSync]
+    [appState, triggerManualSync, updateSyncStatus]
   );
 
   /**
    * Update sync status from sync service
    */
-  const updateSyncStatus = async () => {
+  const updateSyncStatus = useCallback(async () => {
     try {
       // Only update sync status if user is authenticated
       const state = store.getState();
@@ -139,7 +138,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
         return;
       }
 
-      const stats = await syncService.getSyncStats();
+      await syncService.getSyncStats();
       setLastSyncTime(state.sync.lastSyncTime);
       
       // Calculate next sync time based on interval (for display purposes)
@@ -154,7 +153,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
     } catch (error) {
       console.error('[useBackgroundSync] Failed to get status:', error);
     }
-  };
+  }, [syncConfig.backgroundSyncEnabled, syncConfig.syncInterval]);
 
   /**
    * Enable/disable sync (note: no longer true background sync)
@@ -177,7 +176,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
         throw error;
       }
     },
-    [dispatch]
+    [dispatch, updateSyncStatus]
   );
 
   /**
@@ -199,7 +198,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
         throw error;
       }
     },
-    [dispatch]
+    [dispatch, updateSyncStatus]
   );
 
   /**
@@ -231,7 +230,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
         throw error;
       }
     },
-    [dispatch]
+    [dispatch, updateSyncStatus]
   );
 
   /**
@@ -249,7 +248,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
       );
       throw error;
     }
-  }, []);
+  }, [updateSyncStatus]);
 
   /**
    * Get sync history (simplified - just return basic stats)

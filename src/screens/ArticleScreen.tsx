@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { View, Image, StyleSheet, ActivityIndicator, Text } from 'react-native';
-import { SimpleText } from '../components';
 import { readeckApiService } from '../services/ReadeckApiService';
 import { MainScreenProps } from '../navigation/types';
 import { colors } from '../components/theme';
