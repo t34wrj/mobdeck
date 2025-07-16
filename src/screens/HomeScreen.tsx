@@ -9,7 +9,6 @@ import {
 import { startSyncOperation } from '../store/thunks/syncThunks';
 import ArticleCard from '../components/ArticleCard';
 import SearchBar from '../components/SearchBar';
-import { SimpleText } from "../components";
 import { MainScreenProps } from '../navigation/types';
 import { RootState, AppDispatch } from '../store';
 import { theme } from "../components/theme";

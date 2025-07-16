@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TextInput,
   TouchableOpacity,
+  Text,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -355,7 +356,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
             onPress={handleClearSearch}
             style={styles.clearButton}
           >
-            Clear Search
+            <Text>Clear Search</Text>
           </SimpleButton>
         )}
       </View>
@@ -369,9 +370,9 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size='small' color={theme.colors.primary[500]} />
-        <SimpleText variant='caption' style={styles.loadingText}>
+        <Text style={styles.loadingText}>
           Loading more articles...
-        </SimpleText>
+        </Text>
       </View>
     );
   }, [loading.fetch, pagination.page]);
@@ -420,15 +421,15 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
             size={24}
             color={theme.colors.accent[500]} // Tiffany Blue for contrast on green
           />
-          <SimpleText variant='h3' style={styles.headerTitle}>
+          <Text style={styles.headerTitle}>
             Mobdeck
-          </SimpleText>
+          </Text>
         </View>
         <TouchableOpacity
           style={styles.settingsButton}
           onPress={() => navigation.navigate('Settings')}
         >
-          <SimpleText style={styles.settingsIcon}>⚙️</SimpleText>
+          <Text style={styles.settingsIcon}>⚙️</Text>
         </TouchableOpacity>
       </View>
 
@@ -446,7 +447,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
             style={styles.clearSearchButton}
             onPress={handleClearSearch}
           >
-            <SimpleText style={styles.clearSearchIcon}>✕</SimpleText>
+            <Text style={styles.clearSearchIcon}>✕</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -470,7 +471,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
                 onPress={() => navigation.navigate('Settings')}
                 style={styles.settingsButton}
               >
-                Settings
+                <Text>Settings</Text>
               </SimpleButton>
             ) : null}
             <SimpleButton
@@ -482,7 +483,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
               }}
               style={styles.retryButton}
             >
-              Retry
+              <Text>Retry</Text>
             </SimpleButton>
           </View>
         </View>
@@ -517,9 +518,9 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       {loading.fetch && articles.length === 0 && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size='large' color={theme.colors.primary[500]} />
-          <SimpleText variant='body1' style={styles.loadingText}>
+          <Text style={styles.loadingText}>
             Loading articles...
-          </SimpleText>
+          </Text>
         </View>
       )}
     </View>

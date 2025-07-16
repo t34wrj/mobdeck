@@ -17,7 +17,6 @@ import {
   loadLocalArticles,
 } from '../store/slices/articlesSlice';
 import { AppDispatch } from '../store';
-import { localStorageService } from '../services/LocalStorageService';
 import NetInfo from '@react-native-community/netinfo';
 import { ConnectivityIndicator } from '../components/ConnectivityIndicator';
 
