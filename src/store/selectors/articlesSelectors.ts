@@ -1,9 +1,9 @@
 import { RootState } from '../index';
 import { Article } from '../../types';
-import {
-  selectAllArticles,
-  selectArticleById,
-} from '../slices/articlesSlice';
+// import {
+//   selectAllArticles,
+//   selectArticleById,
+// } from '../slices/articlesSlice'; // Currently unused
 
 // Base selectors for articles state
 export const selectArticlesState = (state: RootState) => state.articles;

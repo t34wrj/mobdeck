@@ -890,7 +890,7 @@ class SyncService implements SimpleSyncServiceInterface {
             `[SyncService] Creating article from shared URL: ${sharedUrl.url}`
           );
 
-          const article = await readeckApiService.createArticleWithMetadata({
+          await readeckApiService.createArticleWithMetadata({
             url: sharedUrl.url,
             title: sharedUrl.title,
           });

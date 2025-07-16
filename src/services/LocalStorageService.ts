@@ -20,7 +20,6 @@ import {
   Article,
 } from '../types';
 import {
-  DatabaseResult,
   DBArticle,
   DBLabel,
   ArticleFilters,

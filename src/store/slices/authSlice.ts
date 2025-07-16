@@ -208,9 +208,6 @@ export const initializeAuth = createAsyncThunk<
       await localStorageService.deleteToken();
       return null;
     }
-
-    logger.debug('No stored auth data found');
-    return null;
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Auth initialization failed';
