@@ -1,5 +1,8 @@
 import { theme } from '../../../src/components';
 
+// Mock react-native-vector-icons to avoid native module issues
+jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => 'Icon');
+
 describe('Design System Foundation', () => {
   describe('Component Imports', () => {
     it('can import Text and Button components', () => {
