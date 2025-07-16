@@ -58,7 +58,7 @@ Obtainium provides automatic updates directly from GitHub releases:
 
 - **Minimum**: Android 7.0+ (API level 24)
 - **Target**: Android 15 (API level 35)
-- **Recommended**: Android 13+ (API level 33) for optimal performance
+- **Recommended**: Android 10+ (API level 29) for optimal performance
 - **RAM**: 2GB minimum, 3GB+ recommended for optimal performance
 - **Storage**: 100MB for app installation, 500MB+ recommended for offline article cache
 - **CPU**: ARMv7 or ARM64 architecture
@@ -453,7 +453,7 @@ Set sync interval in minutes (e.g., 15, 60, 1440)
 - ✅ Ensure sufficient storage space (500MB+ recommended)
 - ✅ Disable Play Protect temporarily if it blocks installation
 - ✅ Try downloading APK again if corrupted
-- ✅ Check Android version compatibility (Android 10+ required)
+- ✅ Check Android version compatibility (Android 7.0+ required)
 
 **Obtainium Not Detecting Updates:**
 

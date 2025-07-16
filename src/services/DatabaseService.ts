@@ -1434,6 +1434,16 @@ class DatabaseService implements DatabaseServiceInterface {
   // Migration Operations
   public async getCurrentVersion(): Promise<number> {
     try {
+      // First check if schema_version table exists
+      const tableCheckSql = `SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'`;
+      const tableResult = await this.executeSql(tableCheckSql);
+      
+      if (tableResult.rows.length === 0) {
+        // Table doesn't exist, so this is a fresh database
+        return 0;
+      }
+      
+      // Table exists, get the current version
       const sql = 'SELECT MAX(version) as version FROM schema_version';
       const result = await this.executeSql(sql);
       return result.rows.item(0).version || 0;
@@ -1581,8 +1591,13 @@ class DatabaseService implements DatabaseServiceInterface {
     }
 
     try {
-      const [result] = await this.db.executeSql(sql, params);
-      return result as DatabaseResult;
+      // When promises are enabled, executeSql returns an array where the first element is the result
+      const results = await this.db.executeSql(sql, params);
+      if (Array.isArray(results) && results.length > 0) {
+        return results[0] as DatabaseResult;
+      }
+      // Fallback for non-array results
+      return results as DatabaseResult;
     } catch (error) {
       throw this.createDatabaseError(
         DatabaseErrorCode.QUERY_FAILED,

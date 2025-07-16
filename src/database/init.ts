@@ -74,11 +74,23 @@ export class DatabaseManager {
 
     try {
       // Check current schema version
-      const versionResult = await this.db.executeSql(
-        'SELECT version FROM schema_version ORDER BY version DESC LIMIT 1'
-      );
-
-      const currentVersion = versionResult[0]?.rows?.item(0)?.version || 0;
+      let currentVersion = 0;
+      try {
+        const versionResults = await this.db.executeSql(
+          'SELECT version FROM schema_version ORDER BY version DESC LIMIT 1'
+        );
+        
+        if (Array.isArray(versionResults) && versionResults.length > 0) {
+          const versionResult = versionResults[0];
+          if (versionResult.rows && versionResult.rows.length > 0) {
+            currentVersion = versionResult.rows.item(0).version || 0;
+          }
+        }
+      } catch (error) {
+        // Table doesn't exist yet, start with version 0
+        console.log('Schema version table does not exist, starting with version 0');
+        currentVersion = 0;
+      }
 
       if (currentVersion < this.DB_VERSION) {
         console.log(
@@ -231,8 +243,11 @@ export class DatabaseManager {
   async executeSql(sql: string, params: any[] = []): Promise<SQLite.ResultSet> {
     try {
       const db = this.getDatabase();
-      const [result] = await db.executeSql(sql, params);
-      return result;
+      const results = await db.executeSql(sql, params);
+      if (Array.isArray(results) && results.length > 0) {
+        return results[0];
+      }
+      throw new Error('No results returned from SQL execution');
     } catch (error) {
       console.error('SQL execution failed:', sql, params, error);
       throw new AppError({
