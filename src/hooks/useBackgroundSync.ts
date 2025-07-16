@@ -108,17 +108,26 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
       if (appState.match(/inactive|background/) && nextAppState === 'active') {
         // App has come to foreground, trigger sync if enabled
         updateSyncStatus();
-        
+
         // Trigger sync if enabled and enough time has passed
         const state = store.getState();
-        if (state.sync.config.backgroundSyncEnabled && state.auth.isAuthenticated) {
+        if (
+          state.sync.config.backgroundSyncEnabled &&
+          state.auth.isAuthenticated
+        ) {
           const lastSync = state.sync.lastSyncTime;
           const syncInterval = state.sync.config.syncInterval * 60 * 1000; // Convert to milliseconds
-          
-          if (!lastSync || Date.now() - new Date(lastSync).getTime() > syncInterval) {
+
+          if (
+            !lastSync ||
+            Date.now() - new Date(lastSync).getTime() > syncInterval
+          ) {
             console.log('[useBackgroundSync] Triggering foreground sync');
             triggerManualSync().catch(error => {
-              console.error('[useBackgroundSync] Foreground sync failed:', error);
+              console.error(
+                '[useBackgroundSync] Foreground sync failed:',
+                error
+              );
             });
           }
         }
@@ -142,7 +151,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
 
       await syncService.getSyncStats();
       setLastSyncTime(state.sync.lastSyncTime);
-      
+
       // Calculate next sync time based on interval (for display purposes)
       if (state.sync.lastSyncTime && syncConfig.backgroundSyncEnabled) {
         const lastSync = new Date(state.sync.lastSyncTime);
@@ -168,8 +177,10 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
           updateSyncConfig({ config: { backgroundSyncEnabled: enabled } })
         );
         await updateSyncStatus();
-        
-        console.log(`[useBackgroundSync] Sync ${enabled ? 'enabled' : 'disabled'} (app lifecycle only)`);
+
+        console.log(
+          `[useBackgroundSync] Sync ${enabled ? 'enabled' : 'disabled'} (app lifecycle only)`
+        );
       } catch (error) {
         console.error(
           '[useBackgroundSync] Failed to set enabled state:',
@@ -190,8 +201,10 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
         syncService.updateConfiguration({ syncInterval: interval });
         dispatch(updateSyncConfig({ config: { syncInterval: interval } }));
         await updateSyncStatus();
-        
-        console.log(`[useBackgroundSync] Sync interval set to ${interval} minutes`);
+
+        console.log(
+          `[useBackgroundSync] Sync interval set to ${interval} minutes`
+        );
       } catch (error) {
         console.error(
           '[useBackgroundSync] Failed to set sync interval:',
@@ -222,7 +235,7 @@ export function useBackgroundSync(): BackgroundSyncHookReturn {
           })
         );
         await updateSyncStatus();
-        
+
         console.log(`[useBackgroundSync] WiFi-only set to ${wifiOnly}`);
       } catch (error) {
         console.error(

@@ -69,7 +69,7 @@ export function validateUrl(
     let parsedUrl: URL;
     try {
       parsedUrl = new URL(normalizedUrl);
-    } catch (parseError) {
+    } catch {
       result.errors.push('Invalid URL format');
       return result;
     }

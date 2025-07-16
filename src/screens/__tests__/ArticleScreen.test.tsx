@@ -40,9 +40,11 @@ describe('ArticleScreen', () => {
   });
 
   it('should render loading state initially', () => {
-    (readeckApiService.getArticle as jest.Mock).mockReturnValue(new Promise(() => {}));
+    (readeckApiService.getArticle as jest.Mock).mockReturnValue(
+      new Promise(() => {})
+    );
 
-    const { UNSAFE_getByType } = render(
+    const { UNSAFE_getByType } = render( // eslint-disable-line camelcase
       <ArticleScreen
         navigation={mockNavigation as any}
         route={createMockRoute('123')}
@@ -62,7 +64,9 @@ describe('ArticleScreen', () => {
       publishedAt: '2024-01-01',
     };
 
-    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: mockArticle });
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({
+      data: mockArticle,
+    });
 
     const { getByText } = render(
       <ArticleScreen
@@ -96,7 +100,9 @@ describe('ArticleScreen', () => {
   });
 
   it('should render error state when article is null', async () => {
-    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: null });
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({
+      data: null,
+    });
 
     const { getByText } = render(
       <ArticleScreen
@@ -117,7 +123,9 @@ describe('ArticleScreen', () => {
       content: 'Another content',
     };
 
-    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: mockArticle });
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({
+      data: mockArticle,
+    });
 
     render(
       <ArticleScreen
@@ -139,9 +147,11 @@ describe('ArticleScreen', () => {
       image: 'https://example.com/article-image.jpg',
     };
 
-    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: mockArticle });
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({
+      data: mockArticle,
+    });
 
-    const { UNSAFE_getByType } = render(
+    const { UNSAFE_getByType } = render( // eslint-disable-line camelcase
       <ArticleScreen
         navigation={mockNavigation as any}
         route={createMockRoute('123')}
@@ -164,7 +174,9 @@ describe('ArticleScreen', () => {
       image: null,
     };
 
-    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: mockArticle });
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({
+      data: mockArticle,
+    });
 
     const renderResult = render(
       <ArticleScreen
@@ -210,7 +222,9 @@ describe('ArticleScreen', () => {
       publishedAt: '2024-01-15',
     };
 
-    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({ data: mockArticle });
+    (readeckApiService.getArticle as jest.Mock).mockResolvedValue({
+      data: mockArticle,
+    });
 
     const { getByText } = render(
       <ArticleScreen

@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { theme } from "../../components/theme";
+import { theme } from '../../components/theme';
 import MobdeckLogo from '../../components/MobdeckLogo';
 import { AuthScreenProps } from '../../navigation/types';
 import { AppDispatch, RootState } from '../../store';

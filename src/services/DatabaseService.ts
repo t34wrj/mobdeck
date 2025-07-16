@@ -385,7 +385,7 @@ class DatabaseService implements DatabaseServiceInterface {
       }
 
       console.log('[DatabaseService] FTS5 initialized successfully');
-    } catch (error) {
+    } catch {
       // FTS5 is optional - log as debug instead of warning to reduce noise
       console.log(
         '[DatabaseService] FTS5 not available, continuing without full-text search features'

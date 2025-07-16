@@ -1,11 +1,11 @@
 /**
  * LocalStorageService - Consolidated local data management
- * 
+ *
  * Combines functionality from:
  * - DatabaseService
  * - CacheService
  * - AuthStorageService
- * 
+ *
  * Features:
  * - SQLite database operations
  * - In-memory caching with LRU eviction
@@ -16,19 +16,14 @@
 import DatabaseService, { DatabaseUtilityFunctions } from './DatabaseService';
 import { cacheService } from './CacheService';
 import { authStorageService } from './AuthStorageService';
-import {
-  Article,
-} from '../types';
+import { Article } from '../types';
 import {
   DBArticle,
   DBLabel,
   ArticleFilters,
   LabelFilters,
 } from '../types/database';
-import {
-  AuthenticatedUser,
-  TokenValidationResult,
-} from '../types/auth';
+import { AuthenticatedUser, TokenValidationResult } from '../types/auth';
 
 export interface LocalStorageServiceInterface {
   // Database operations
@@ -37,12 +32,25 @@ export interface LocalStorageServiceInterface {
   close(): Promise<void>;
 
   // Article operations
-  createArticle(article: Omit<DBArticle, 'created_at' | 'updated_at'>): Promise<DatabaseOperationResult<string>>;
+  createArticle(
+    article: Omit<DBArticle, 'created_at' | 'updated_at'>
+  ): Promise<DatabaseOperationResult<string>>;
   getArticle(id: string): Promise<DatabaseOperationResult<DBArticle>>;
-  updateArticle(id: string, updates: Partial<DBArticle>): Promise<DatabaseOperationResult>;
-  deleteArticle(id: string, softDelete?: boolean): Promise<DatabaseOperationResult>;
-  getArticles(filters?: ArticleFilters): Promise<DatabaseOperationResult<PaginatedResult<DBArticle>>>;
-  searchArticles(query: string, filters?: ArticleFilters): Promise<DatabaseOperationResult<PaginatedResult<DBArticle>>>;
+  updateArticle(
+    id: string,
+    updates: Partial<DBArticle>
+  ): Promise<DatabaseOperationResult>;
+  deleteArticle(
+    id: string,
+    softDelete?: boolean
+  ): Promise<DatabaseOperationResult>;
+  getArticles(
+    filters?: ArticleFilters
+  ): Promise<DatabaseOperationResult<PaginatedResult<DBArticle>>>;
+  searchArticles(
+    query: string,
+    filters?: ArticleFilters
+  ): Promise<DatabaseOperationResult<PaginatedResult<DBArticle>>>;
 
   // Article operations with caching
   getCachedArticle(id: string): Article | null;
@@ -50,11 +58,18 @@ export interface LocalStorageServiceInterface {
   deleteCachedArticle(id: string): boolean;
 
   // Label operations
-  createLabel(label: Omit<DBLabel, 'id' | 'created_at' | 'updated_at'>): Promise<DatabaseOperationResult<number>>;
+  createLabel(
+    label: Omit<DBLabel, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<DatabaseOperationResult<number>>;
   getLabel(id: number): Promise<DatabaseOperationResult<DBLabel>>;
-  updateLabel(id: number, updates: Partial<DBLabel>): Promise<DatabaseOperationResult>;
+  updateLabel(
+    id: number,
+    updates: Partial<DBLabel>
+  ): Promise<DatabaseOperationResult>;
   deleteLabel(id: number): Promise<DatabaseOperationResult>;
-  getLabels(filters?: LabelFilters): Promise<DatabaseOperationResult<PaginatedResult<DBLabel>>>;
+  getLabels(
+    filters?: LabelFilters
+  ): Promise<DatabaseOperationResult<PaginatedResult<DBLabel>>>;
 
   // Authentication operations
   storeToken(token: string, user?: AuthenticatedUser): Promise<boolean>;
@@ -103,16 +118,17 @@ class LocalStorageService implements LocalStorageServiceInterface {
     article: Omit<DBArticle, 'created_at' | 'updated_at'>
   ): Promise<DatabaseOperationResult<string>> {
     const result = await DatabaseService.createArticle(article);
-    
+
     if (result.success && result.data) {
       // Convert to Article format and cache
       const dbArticle = await DatabaseService.getArticle(result.data);
       if (dbArticle.success && dbArticle.data) {
-        const articleForCache = DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle.data);
+        const articleForCache =
+          DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle.data);
         this.setCachedArticle(result.data, articleForCache);
       }
     }
-    
+
     return result;
   }
 
@@ -125,16 +141,17 @@ class LocalStorageService implements LocalStorageServiceInterface {
     updates: Partial<DBArticle>
   ): Promise<DatabaseOperationResult> {
     const result = await DatabaseService.updateArticle(id, updates);
-    
+
     if (result.success) {
       // Update cache
       const dbArticle = await DatabaseService.getArticle(id);
       if (dbArticle.success && dbArticle.data) {
-        const articleForCache = DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle.data);
+        const articleForCache =
+          DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle.data);
         this.setCachedArticle(id, articleForCache);
       }
     }
-    
+
     return result;
   }
 
@@ -143,12 +160,12 @@ class LocalStorageService implements LocalStorageServiceInterface {
     softDelete: boolean = true
   ): Promise<DatabaseOperationResult> {
     const result = await DatabaseService.deleteArticle(id, softDelete);
-    
+
     if (result.success) {
       // Remove from cache
       this.deleteCachedArticle(id);
     }
-    
+
     return result;
   }
 
@@ -234,14 +251,14 @@ class LocalStorageService implements LocalStorageServiceInterface {
 
   async clearAllData(): Promise<DatabaseOperationResult> {
     const result = await DatabaseService.clearAllData();
-    
+
     if (result.success) {
       // Clear cache as well
       this.clearCache();
       // Clear authentication data
       await this.deleteToken();
     }
-    
+
     return result;
   }
 
@@ -264,14 +281,14 @@ class LocalStorageService implements LocalStorageServiceInterface {
     updates: { id: string; updates: Partial<DBArticle> }[]
   ): Promise<DatabaseOperationResult> {
     const result = await DatabaseService.updateArticlesBatch(updates);
-    
+
     if (result.success) {
       // Clear cache for updated articles to force refresh
       updates.forEach(({ id }) => {
         this.deleteCachedArticle(id);
       });
     }
-    
+
     return result;
   }
 
@@ -286,7 +303,9 @@ class LocalStorageService implements LocalStorageServiceInterface {
     // Get from database
     const result = await this.getArticle(id);
     if (result.success && result.data) {
-      const article = DatabaseUtilityFunctions.convertDBArticleToArticle(result.data);
+      const article = DatabaseUtilityFunctions.convertDBArticleToArticle(
+        result.data
+      );
       // Cache for future use
       this.setCachedArticle(id, article);
       return article;
@@ -296,7 +315,8 @@ class LocalStorageService implements LocalStorageServiceInterface {
   }
 
   async createArticleFromAppFormat(article: Article): Promise<string | null> {
-    const dbArticle = DatabaseUtilityFunctions.convertArticleToDBArticle(article);
+    const dbArticle =
+      DatabaseUtilityFunctions.convertArticleToDBArticle(article);
     const result = await this.createArticle(dbArticle);
     return result.success ? result.data || null : null;
   }
@@ -305,7 +325,9 @@ class LocalStorageService implements LocalStorageServiceInterface {
     id: string,
     article: Partial<Article>
   ): Promise<boolean> {
-    const dbUpdates = DatabaseUtilityFunctions.convertArticleToDBArticle(article as Article);
+    const dbUpdates = DatabaseUtilityFunctions.convertArticleToDBArticle(
+      article as Article
+    );
     const result = await this.updateArticle(id, dbUpdates);
     return result.success;
   }

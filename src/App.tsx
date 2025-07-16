@@ -53,9 +53,7 @@ const AppContent: React.FC = () => {
     return (
       <View style={styles.container}>
         <ActivityIndicator size='large' color={theme.colors.primary[500]} />
-        <Text style={styles.loadingText}>
-          Initializing app...
-        </Text>
+        <Text style={styles.loadingText}>Initializing app...</Text>
       </View>
     );
   }
@@ -63,12 +61,8 @@ const AppContent: React.FC = () => {
   if (error) {
     return (
       <View style={styles.container}>
-        <Text style={styles.errorText}>
-          Initialization Error
-        </Text>
-        <Text style={styles.errorMessage}>
-          {error}
-        </Text>
+        <Text style={styles.errorText}>Initialization Error</Text>
+        <Text style={styles.errorMessage}>{error}</Text>
       </View>
     );
   }

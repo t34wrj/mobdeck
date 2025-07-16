@@ -7,8 +7,18 @@ export { default as MobdeckLogo } from './MobdeckLogo';
 export { ConnectivityIndicator } from './ConnectivityIndicator';
 
 // Consolidated component groups
-export { SettingsSection, SettingsRow, SyncStatsSection } from './SettingsComponents';
-export { ArticleHeader, ArticleActions, ArticleErrorStates, ArticleLoadingState, ArticleErrorState } from './ArticleComponents';
+export {
+  SettingsSection,
+  SettingsRow,
+  SyncStatsSection,
+} from './SettingsComponents';
+export {
+  ArticleHeader,
+  ArticleActions,
+  ArticleErrorStates,
+  ArticleLoadingState,
+  ArticleErrorState,
+} from './ArticleComponents';
 
 // Theme
 export { theme } from './theme';

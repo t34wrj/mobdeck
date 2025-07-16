@@ -78,7 +78,7 @@ module.exports = [
       'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'off',
       'no-debugger': 'error',
       'no-unused-vars': 'off', // Use TypeScript version
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'prefer-const': 'error',
       'no-var': 'error',
 

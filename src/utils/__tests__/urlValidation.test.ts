@@ -89,7 +89,7 @@ describe('URL Validation Utilities', () => {
     });
 
     it('should reject URLs that are too long', () => {
-      const longUrl = 'https://example.com/' + 'a'.repeat(3000);
+      const longUrl = `https://example.com/${'a'.repeat(3000)}`;
       const result = validateUrl(longUrl);
 
       expect(result.isValid).toBe(false);
@@ -408,7 +408,7 @@ describe('URL Validation Utilities', () => {
     });
 
     it('should handle very long domain names', () => {
-      const longDomain = 'a'.repeat(250) + '.com';
+      const longDomain = `${'a'.repeat(250)}.com`;
       const result = validateUrl(`https://${longDomain}`);
       expect(result.isValid).toBe(false);
     });

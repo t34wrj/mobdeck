@@ -3,10 +3,7 @@ import { useDispatch, TypedUseSelectorHook, useSelector } from 'react-redux';
 import articlesReducer from './slices/articlesSlice';
 import authReducer from './slices/authSlice';
 import syncReducer from './slices/syncSlice';
-import {
-  loggerMiddleware,
-  errorHandlerMiddleware,
-} from './middleware';
+import { loggerMiddleware, errorHandlerMiddleware } from './middleware';
 
 // Root reducer configuration
 const rootReducer = {

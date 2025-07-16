@@ -9,7 +9,7 @@ import { initializeAuth } from '../store/slices/authSlice';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
 import { View, ActivityIndicator, StyleSheet, Alert } from 'react-native';
-import { theme } from "../components/theme";
+import { theme } from '../components/theme';
 import { useShareIntent } from '../hooks/useShareIntent';
 import { ShareService } from '../services/ShareService';
 import {

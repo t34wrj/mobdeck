@@ -145,14 +145,14 @@ export class AdbHelper {
       if (stdout.trim().length > 0) {
         return true;
       }
-    } catch (error) {
+    } catch {
       // Fallback to older ps command
       try {
         const { stdout } = await execAsync(
           `adb -s ${this.currentDevice.id} shell "ps | grep ${this.packageName}"`
         );
         return stdout.trim().length > 0;
-      } catch (fallbackError) {
+      } catch {
         // Final fallback using dumpsys
         try {
           const { stdout } = await execAsync(
@@ -187,7 +187,7 @@ export class AdbHelper {
       } catch (stopError) {
         console.warn(
           'Could not stop existing app instance:',
-          stopError.message
+          stopError instanceof Error ? stopError.message : 'Unknown error'
         );
       }
 
@@ -227,7 +227,7 @@ export class AdbHelper {
 
       console.log('App launched successfully');
     } catch (error) {
-      throw new Error(`Failed to launch app: ${error.message}`);
+      throw new Error(`Failed to launch app: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -245,7 +245,7 @@ export class AdbHelper {
       );
     } catch (error) {
       console.warn(
-        `Could not force-stop app (emulator limitation): ${error.message}`
+        `Could not force-stop app (emulator limitation): ${error instanceof Error ? error.message : 'Unknown error'}`
       );
       // Try alternative method
       try {
@@ -254,7 +254,7 @@ export class AdbHelper {
         );
       } catch (alternativeError) {
         console.warn(
-          `Alternative app kill method also failed: ${alternativeError.message}`
+          `Alternative app kill method also failed: ${alternativeError instanceof Error ? alternativeError.message : 'Unknown error'}`
         );
       }
     }
@@ -275,10 +275,10 @@ export class AdbHelper {
           await execAsync(
             `adb -s ${this.currentDevice.id} shell svc data disable`
           );
-        } catch (error) {
+        } catch (_error) {
           console.warn(
             'Could not disable mobile data (emulator limitation):',
-            error.message
+            _error instanceof Error ? _error.message : 'Unknown error'
           );
         }
 
@@ -286,10 +286,10 @@ export class AdbHelper {
           await execAsync(
             `adb -s ${this.currentDevice.id} shell svc wifi disable`
           );
-        } catch (error) {
+        } catch (_error) {
           console.warn(
             'Could not disable wifi (emulator limitation):',
-            error.message
+            _error instanceof Error ? _error.message : 'Unknown error'
           );
         }
 
@@ -302,10 +302,10 @@ export class AdbHelper {
           await execAsync(
             `adb -s ${this.currentDevice.id} shell svc data enable`
           );
-        } catch (error) {
+        } catch (_error) {
           console.warn(
             'Could not enable mobile data (emulator limitation):',
-            error.message
+            _error instanceof Error ? _error.message : 'Unknown error'
           );
         }
 
@@ -313,10 +313,10 @@ export class AdbHelper {
           await execAsync(
             `adb -s ${this.currentDevice.id} shell svc wifi enable`
           );
-        } catch (error) {
+        } catch (_error) {
           console.warn(
             'Could not enable wifi (emulator limitation):',
-            error.message
+            _error instanceof Error ? _error.message : 'Unknown error'
           );
         }
 
@@ -326,10 +326,10 @@ export class AdbHelper {
           `Network conditions set: ${condition.type} - ${condition.downloadSpeed}kbps down, ${condition.uploadSpeed}kbps up, ${condition.latency}ms latency`
         );
       }
-    } catch (error) {
+    } catch (_error) {
       // Don't throw error for network condition setting - just log it
       console.warn(
-        `Network condition setting partially failed: ${error.message}`
+        `Network condition setting partially failed: ${_error instanceof Error ? _error.message : String(_error)}`
       );
       console.log(
         `Network conditions simulated: ${condition.type} - ${condition.downloadSpeed}kbps down, ${condition.uploadSpeed}kbps up, ${condition.latency}ms latency`
@@ -431,7 +431,7 @@ export class AdbHelper {
         );
         const latencyMatch = pingOutput.match(/time=(\d+\.?\d*)/);
         networkLatency = latencyMatch ? parseFloat(latencyMatch[1]) : 0;
-      } catch (error) {
+      } catch {
         // Network might be offline or unreachable
         networkLatency = -1;
       }

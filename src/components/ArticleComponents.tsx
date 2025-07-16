@@ -10,9 +10,12 @@ interface ArticleHeaderProps {
   onToggleActions?: () => void;
 }
 
-export const ArticleHeader: React.FC<ArticleHeaderProps> = ({ article, onToggleActions }) => (
+export const ArticleHeader: React.FC<ArticleHeaderProps> = ({
+  article,
+  onToggleActions,
+}) => (
   <View style={styles.header}>
-    <SimpleText variant="h2" style={styles.title}>
+    <SimpleText variant='h2' style={styles.title}>
       {article.title}
     </SimpleText>
     <Text style={styles.meta}>
@@ -20,9 +23,7 @@ export const ArticleHeader: React.FC<ArticleHeaderProps> = ({ article, onToggleA
     </Text>
     {onToggleActions && (
       <TouchableOpacity onPress={onToggleActions} style={styles.actionsButton}>
-        <Text style={styles.actionsText}>
-          Actions
-        </Text>
+        <Text style={styles.actionsText}>Actions</Text>
       </TouchableOpacity>
     )}
   </View>
@@ -53,46 +54,46 @@ export const ArticleActions: React.FC<ArticleActionsProps> = ({
     <View style={styles.actionsGrid}>
       <SimpleButton
         title={article.isFavorite ? 'Unfavorite' : 'Favorite'}
-        variant="outline"
-        size="sm"
+        variant='outline'
+        size='sm'
         onPress={onToggleFavorite}
         style={styles.actionButton}
         loading={loading}
       />
       <SimpleButton
         title={article.isArchived ? 'Unarchive' : 'Archive'}
-        variant="outline"
-        size="sm"
+        variant='outline'
+        size='sm'
         onPress={onToggleArchive}
         style={styles.actionButton}
         loading={loading}
       />
       <SimpleButton
         title={article.isRead ? 'Mark Unread' : 'Mark Read'}
-        variant="outline"
-        size="sm"
+        variant='outline'
+        size='sm'
         onPress={onToggleRead}
         style={styles.actionButton}
         loading={loading}
       />
       <SimpleButton
-        title="Manage Labels"
-        variant="outline"
-        size="sm"
+        title='Manage Labels'
+        variant='outline'
+        size='sm'
         onPress={onManageLabels}
         style={styles.actionButton}
       />
       <SimpleButton
-        title="Share"
-        variant="outline"
-        size="sm"
+        title='Share'
+        variant='outline'
+        size='sm'
         onPress={onShare}
         style={styles.actionButton}
       />
       <SimpleButton
-        title="Delete"
-        variant="outline"
-        size="sm"
+        title='Delete'
+        variant='outline'
+        size='sm'
         onPress={onDelete}
         style={[styles.actionButton, styles.deleteButton]}
         textStyle={styles.deleteButtonText}
@@ -107,13 +108,21 @@ interface ArticleErrorStatesProps {
   onRetry?: () => void;
 }
 
-export const ArticleErrorStates: React.FC<ArticleErrorStatesProps> = ({ error, onRetry }) => (
+export const ArticleErrorStates: React.FC<ArticleErrorStatesProps> = ({
+  error,
+  onRetry,
+}) => (
   <View style={styles.errorContainer}>
-    <SimpleText variant="body" style={styles.errorText}>
+    <SimpleText variant='body' style={styles.errorText}>
       {error}
     </SimpleText>
     {onRetry && (
-      <SimpleButton title="Retry" variant="primary" size="sm" onPress={onRetry} />
+      <SimpleButton
+        title='Retry'
+        variant='primary'
+        size='sm'
+        onPress={onRetry}
+      />
     )}
   </View>
 );
@@ -122,9 +131,7 @@ interface ArticleLoadingStateProps {}
 
 export const ArticleLoadingState: React.FC<ArticleLoadingStateProps> = () => (
   <View style={styles.loadingContainer}>
-    <Text style={styles.loadingText}>
-      Loading article...
-    </Text>
+    <Text style={styles.loadingText}>Loading article...</Text>
   </View>
 );
 
@@ -134,16 +141,25 @@ interface ArticleErrorStateProps {
   onGoBack?: () => void;
 }
 
-export const ArticleErrorState: React.FC<ArticleErrorStateProps> = ({ title, message, onGoBack }) => (
+export const ArticleErrorState: React.FC<ArticleErrorStateProps> = ({
+  title,
+  message,
+  onGoBack,
+}) => (
   <View style={styles.errorContainer}>
-    <SimpleText variant="h3" style={styles.errorTitle}>
+    <SimpleText variant='h3' style={styles.errorTitle}>
       {title}
     </SimpleText>
-    <SimpleText variant="body" style={styles.errorText}>
+    <SimpleText variant='body' style={styles.errorText}>
       {message}
     </SimpleText>
     {onGoBack && (
-      <SimpleButton title="Go Back" variant="primary" size="sm" onPress={onGoBack} />
+      <SimpleButton
+        title='Go Back'
+        variant='primary'
+        size='sm'
+        onPress={onGoBack}
+      />
     )}
   </View>
 );

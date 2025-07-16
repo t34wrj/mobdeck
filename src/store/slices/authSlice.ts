@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { localStorageService } from '../../services/LocalStorageService';
-import { errorHandler, ErrorCategory } from '../../utils/errorHandler';
+// import { handleError, ErrorType } from '../../utils/errorHandler'; // TODO: Use this for error handling
 import { logger } from '../../utils/logger';
 import {
   AuthState,
@@ -68,16 +68,18 @@ export const loginUser = createAsyncThunk<
     logger.info('Login successful', { userId: user.id });
     return { user, token: loginResponse.token };
   } catch (error) {
-    const handledError = errorHandler.handleError(error, {
-      category: ErrorCategory.AUTHENTICATION,
-      context: {
-        actionType: 'login',
-        serverUrl: credentials.serverUrl,
-      },
-    });
+    // TODO: Implement proper error handling with errorHandler
+    // const handledError = errorHandler.handleError(error, {
+    //   category: ErrorCategory.AUTHENTICATION,
+    //   context: {
+    //     actionType: 'login',
+    //     serverUrl: credentials.serverUrl,
+    //   },
+    // });
 
-    logger.error('Login failed', { error: handledError });
-    return rejectWithValue(handledError.userMessage);
+    const errorMessage = error instanceof Error ? error.message : 'Login failed';
+    logger.error('Login failed', { error: errorMessage });
+    return rejectWithValue(errorMessage);
   }
 });
 
@@ -140,69 +142,68 @@ export const initializeAuth = createAsyncThunk<
     if (!isTokenStored) {
       return null;
     }
-    
+
     const token = await localStorageService.retrieveToken();
     if (!token) {
       return null;
     }
-    
+
     const validation = await localStorageService.validateStoredToken();
-    const authData = { token, isValid: validation.isValid, isExpired: validation.isExpired };
+    const authData = {
+      token,
+      isValid: validation.isValid,
+      isExpired: validation.isExpired,
+    };
 
     if (authData && authData.token && authData.isValid && !authData.isExpired) {
-        // Create user data - simplified since we don't store full user data
-        const user: AuthenticatedUser = {
-          id: 'readeck-user',
-          username: 'Readeck User',
-          email: 'user@readeck.local',
-          serverUrl: '', // This will need to be set separately
-          lastLoginAt: new Date().toISOString(),
-          tokenExpiresAt: validation.expiresAt || new Date(Date.now() + 86400000).toISOString(), // 24h default
-        };
+      // Create user data - simplified since we don't store full user data
+      const user: AuthenticatedUser = {
+        id: 'readeck-user',
+        username: 'Readeck User',
+        email: 'user@readeck.local',
+        serverUrl: '', // This will need to be set separately
+        lastLoginAt: new Date().toISOString(),
+        tokenExpiresAt:
+          validation.expiresAt || new Date(Date.now() + 86400000).toISOString(), // 24h default
+      };
 
-        // Configure the ReadeckApiService with the restored server URL
-        if (user.serverUrl) {
-          try {
-            const { readeckApiService } = await import(
-              '../../services/ReadeckApiService'
-            );
-            const cleanUrl = user.serverUrl.trim().replace(/\/$/, '');
-            const apiUrl = cleanUrl.includes('/api')
-              ? cleanUrl
-              : `${cleanUrl}/api`;
+      // Configure the ReadeckApiService with the restored server URL
+      if (user.serverUrl) {
+        try {
+          const { readeckApiService } = await import(
+            '../../services/ReadeckApiService'
+          );
+          const cleanUrl = user.serverUrl.trim().replace(/\/$/, '');
+          const apiUrl = cleanUrl.includes('/api')
+            ? cleanUrl
+            : `${cleanUrl}/api`;
 
-            console.log(
-              '[AuthSlice] Configuring API service on auth restore:',
-              {
-                originalUrl: user.serverUrl,
-                cleanUrl,
-                apiUrl,
-              }
-            );
+          console.log('[AuthSlice] Configuring API service on auth restore:', {
+            originalUrl: user.serverUrl,
+            cleanUrl,
+            apiUrl,
+          });
 
-            readeckApiService.updateConfig({
-              baseUrl: apiUrl,
-            });
+          readeckApiService.updateConfig({
+            baseUrl: apiUrl,
+          });
 
-            logger.info('API service configured for restored session', {
-              serverUrl: user.serverUrl,
-              apiUrl,
-            });
-          } catch (error) {
-            console.error(
-              '[AuthSlice] Failed to configure API service:',
-              error
-            );
-          }
-        } else {
-          console.warn('[AuthSlice] No server URL found in restored auth data');
+          logger.info('API service configured for restored session', {
+            serverUrl: user.serverUrl,
+            apiUrl,
+          });
+        } catch (error) {
+          console.error('[AuthSlice] Failed to configure API service:', error);
         }
+      } else {
+        console.warn('[AuthSlice] No server URL found in restored auth data');
+      }
 
-        logger.info('Auth initialized successfully', {
-          userId: user.id,
-          serverUrl: user.serverUrl,
-        });
-        return { user, token: authData.token };
+      logger.info('Auth initialized successfully', {
+        userId: user.id,
+        serverUrl: user.serverUrl,
+      });
+      return { user, token: authData.token };
     } else {
       logger.info('Stored token is invalid or expired, clearing auth data');
       await localStorageService.deleteToken();

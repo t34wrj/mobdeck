@@ -1,5 +1,12 @@
 import React from 'react';
-import { TouchableOpacity, TouchableOpacityProps, Text, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
+import {
+  TouchableOpacity,
+  TouchableOpacityProps,
+  Text,
+  ActivityIndicator,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
 
 interface SimpleButtonProps extends TouchableOpacityProps {
   title?: string;
@@ -97,9 +104,17 @@ export const SimpleButton: React.FC<SimpleButtonProps> = ({
       {...props}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === 'primary' || variant === 'secondary' ? '#ffffff' : '#FE5D26'} />
+        <ActivityIndicator
+          size='small'
+          color={
+            variant === 'primary' || variant === 'secondary'
+              ? '#ffffff'
+              : '#FE5D26'
+          }
+        />
       ) : (
-        children || (title && <Text style={[getTextStyle(), textStyle]}>{title}</Text>)
+        children ||
+        (title && <Text style={[getTextStyle(), textStyle]}>{title}</Text>)
       )}
     </TouchableOpacity>
   );

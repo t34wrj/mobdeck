@@ -40,7 +40,7 @@ export const useNetworkStatus = (): NetworkStatus => {
           isOnline,
           isConnected: networkState?.isConnected ?? false,
         });
-      } catch (error) {
+      } catch {
         // Gracefully handle errors by using offline state
         setNetworkStatus({
           isOnline: false,

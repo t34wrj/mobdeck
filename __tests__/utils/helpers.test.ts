@@ -17,8 +17,8 @@ describe('Helper Functions', () => {
         .spyOn(Date.prototype, 'toLocaleDateString')
         .mockImplementation(function (
           this: Date,
-          locale?: string,
-          options?: Intl.DateTimeFormatOptions
+          _locale?: string,
+          _options?: Intl.DateTimeFormatOptions
         ) {
           // Return consistent format for testing
           const year = this.getFullYear();

@@ -7,7 +7,7 @@ import {
   mockNavigation, 
   mockRoute, 
   mockBackgroundActions,
-  resetAllMocks 
+  resetAllMocks as _resetAllMocks 
 } from './mocks/strategicMocks';
 
 // Strategic External Dependency Mocking

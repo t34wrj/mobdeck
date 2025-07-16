@@ -194,7 +194,7 @@ class AuthStorageService implements IAuthStorageService {
             await this.deleteToken(); // Clean up invalid data
             return null;
           }
-        } catch (parseError) {
+        } catch {
           logger.error('Failed to parse stored auth data', {
             error: 'Parse error occurred - corrupted auth data detected',
           });
@@ -386,7 +386,7 @@ class AuthStorageService implements IAuthStorageService {
           return new Date(payload.exp * 1000).toISOString();
         }
       }
-    } catch (error) {
+    } catch {
       // Not a JWT or parsing failed, use default expiration
     }
 

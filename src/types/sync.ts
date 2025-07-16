@@ -51,6 +51,7 @@ export enum SyncPhase {
   SYNC_UP = 'sync_up',
   SYNC_DOWN = 'sync_down',
   RESOLVING_CONFLICTS = 'resolving_conflicts',
+  FINALIZING = 'finalizing',
   COMPLETED = 'completed',
   ERROR = 'error',
 }
@@ -82,8 +83,8 @@ export interface SyncProgress {
   phase: SyncPhase;
   totalItems: number;
   processedItems: number;
-  currentItem: string;
-  estimatedTimeRemaining: number;
+  currentItem: string | null;
+  estimatedTimeRemaining: number | null;
 }
 
 export interface SyncConflict {
@@ -101,8 +102,8 @@ export interface SyncStats {
   totalSyncs: number;
   successfulSyncs: number;
   failedSyncs: number;
-  lastSyncDuration: number;
-  averageSyncDuration: number;
+  lastSyncDuration: number | null;
+  averageSyncDuration: number | null;
   itemsSynced: {
     articlesCreated: number;
     articlesUpdated: number;
@@ -115,4 +116,54 @@ export interface SyncStats {
     requestCount: number;
     cacheHits: number;
   };
+}
+
+// Sync action payload types
+export interface StartSyncPayload {
+  syncOptions?: Partial<SyncConfiguration>;
+  fullSync?: boolean;
+  force?: boolean;
+}
+
+export interface SyncProgressPayload {
+  phase?: SyncPhase;
+  totalItems?: number;
+  processedItems?: number;
+  currentItem?: string;
+  estimatedTimeRemaining?: number;
+}
+
+export interface SyncSuccessPayload {
+  syncTime: string;
+  syncDuration: number;
+  itemsProcessed: number;
+  itemsSynced?: number;
+  conflicts?: number;
+}
+
+export interface SyncErrorPayload {
+  error: string;
+  phase?: SyncPhase;
+  itemsProcessed?: number;
+}
+
+export interface AddConflictPayload {
+  articleId: string;
+  type: ConflictType;
+  localVersion: any;
+  remoteVersion: any;
+}
+
+export interface ResolveConflictPayload {
+  conflictId: string;
+  resolution: any;
+}
+
+export interface UpdateSyncConfigPayload {
+  config: Partial<SyncConfiguration>;
+}
+
+export interface NetworkStatusPayload {
+  isOnline: boolean;
+  networkType: NetworkType | null;
 }

@@ -159,9 +159,7 @@ export const LabelManagementModal: React.FC<LabelManagementModalProps> = ({
       });
 
       labelsToRemove.forEach(labelId => {
-        promises.push(
-          readeckApiService.removeLabel({ labelId, articleId })
-        );
+        promises.push(readeckApiService.removeLabel({ labelId, articleId }));
       });
 
       await Promise.all(promises);

@@ -36,10 +36,11 @@ export const useArticleContent = (
           );
 
           try {
-            const createdArticle = await readeckApiService.createArticleWithMetadata({
-              title: article.title,
-              url: article.url,
-            });
+            const createdArticle =
+              await readeckApiService.createArticleWithMetadata({
+                title: article.title,
+                url: article.url,
+              });
 
             const serverArticle = await readeckApiService.getArticleWithContent(
               createdArticle.id
@@ -106,13 +107,18 @@ export const useArticleContent = (
       let updatedArticle;
 
       if (article.id.startsWith('local_')) {
-        const createdArticle = await readeckApiService.createArticleWithMetadata({
-          title: article.title,
-          url: article.url,
-        });
-        updatedArticle = await readeckApiService.getArticleWithContent(createdArticle.id);
+        const createdArticle =
+          await readeckApiService.createArticleWithMetadata({
+            title: article.title,
+            url: article.url,
+          });
+        updatedArticle = await readeckApiService.getArticleWithContent(
+          createdArticle.id
+        );
       } else {
-        updatedArticle = await readeckApiService.getArticleWithContent(article.id);
+        updatedArticle = await readeckApiService.getArticleWithContent(
+          article.id
+        );
       }
 
       const updateData = {

@@ -1,8 +1,4 @@
-import {
-  createSlice,
-  createAsyncThunk,
-  PayloadAction,
-} from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { Article, PaginatedResponse } from '../../types';
 import { RootState } from '../index';
 import { readeckApiService } from '../../services/ReadeckApiService';
@@ -229,7 +225,10 @@ export const updateArticle = createAsyncThunk<
         syncedAt: null, // Clear synced timestamp since it's now modified
       };
 
-      await localStorageService.updateArticleFromAppFormat(article.id, updatedArticleForDB);
+      await localStorageService.updateArticleFromAppFormat(
+        article.id,
+        updatedArticleForDB
+      );
       console.log(
         '[ArticlesSlice] Article updated in database and marked for sync:',
         article.id
@@ -259,7 +258,9 @@ export const updateArticleLocalWithDB = createAsyncThunk<
   async (params, { rejectWithValue, getState }) => {
     try {
       const state = getState() as RootState;
-      const existingArticle = state.articles.articles.find(article => article.id === params.id);
+      const existingArticle = state.articles.articles.find(
+        article => article.id === params.id
+      );
 
       if (!existingArticle) {
         throw new Error('Article not found');
@@ -275,7 +276,10 @@ export const updateArticleLocalWithDB = createAsyncThunk<
       };
 
       // Persist to database
-      await localStorageService.updateArticleFromAppFormat(params.id, updatedArticle);
+      await localStorageService.updateArticleFromAppFormat(
+        params.id,
+        updatedArticle
+      );
       console.log(
         '[ArticlesSlice] Article updated locally in database and marked for sync:',
         params.id
@@ -298,7 +302,7 @@ export const deleteArticle = createAsyncThunk<
   { rejectValue: string }
 >('articles/deleteArticle', async (params, { rejectWithValue }) => {
   try {
-    await readeckApiService.deleteArticle(params.id, params.permanent);
+    await readeckApiService.deleteArticle(params.id);
     return params.id;
   } catch (error) {
     const errorMessage =
@@ -334,7 +338,7 @@ export const loadLocalArticles = createAsyncThunk<
       );
 
       // Convert database articles to Article format
-      const articles = result.data.items.map(dbArticle => ({
+      const articles = result.data.items.map((dbArticle: any) => ({
         id: dbArticle.id,
         title: dbArticle.title,
         url: dbArticle.url,
@@ -361,6 +365,9 @@ export const loadLocalArticles = createAsyncThunk<
 
       return {
         items: articles,
+        page: currentPage,
+        totalPages,
+        totalItems: result.data.totalCount,
         pagination: {
           page: currentPage,
           limit: result.data.limit,
@@ -391,7 +398,7 @@ export const syncArticles = createAsyncThunk<
     // Use simplified sync service instead
     const { syncService } = await import('../../services/SyncService');
     const syncResult = await syncService.startFullSync(params.fullSync);
-    
+
     // Convert sync result to expected format
     const result = {
       syncedCount: syncResult.syncedCount,
@@ -409,6 +416,7 @@ export const syncArticles = createAsyncThunk<
       syncSuccess({
         syncTime: new Date().toISOString(),
         syncDuration,
+        itemsProcessed: result.syncedCount,
         itemsSynced: result.syncedCount,
         conflicts: result.conflictCount,
       })
@@ -497,7 +505,9 @@ const articlesSlice = createSlice({
       action: PayloadAction<{ id: string; updates: Partial<Article> }>
     ) => {
       const { id, updates } = action.payload;
-      const articleIndex = state.articles.findIndex(article => article.id === id);
+      const articleIndex = state.articles.findIndex(
+        article => article.id === id
+      );
       if (articleIndex !== -1) {
         state.articles[articleIndex] = {
           ...state.articles[articleIndex],
@@ -564,13 +574,15 @@ const articlesSlice = createSlice({
 
         // Handle pagination: replace for page 1, append for subsequent pages
         if (page === 1) {
-          state.articles = items.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          state.articles = items.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
         } else {
           const newArticles = [...state.articles, ...items];
-          state.articles = newArticles.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          state.articles = newArticles.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
         }
       })
@@ -588,26 +600,28 @@ const articlesSlice = createSlice({
         state.loading.fetch = false;
         state.error.fetch = null;
 
-        const { items, pagination } = action.payload;
+        const { items, page, totalPages, totalItems, pagination } = action.payload;
 
         // Update pagination
         state.pagination = {
-          page: pagination.page,
-          totalPages: pagination.pages,
-          totalItems: pagination.total,
+          page,
+          totalPages,
+          totalItems,
           limit: pagination.limit,
           hasMore: pagination.hasNextPage,
         };
 
         // Handle pagination: replace for page 1, append for subsequent pages
-        if (pagination.page === 1) {
-          state.articles = items.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        if (page === 1) {
+          state.articles = items.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
         } else {
           const newArticles = [...state.articles, ...items];
-          state.articles = newArticles.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          state.articles = newArticles.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
         }
       })
@@ -641,8 +655,10 @@ const articlesSlice = createSlice({
         state.loading.update = false;
         state.error.update = null;
 
-        const articleIndex = state.articles.findIndex(article => article.id === action.payload.id);
-        
+        const articleIndex = state.articles.findIndex(
+          article => article.id === action.payload.id
+        );
+
         if (articleIndex !== -1) {
           const existingArticle = state.articles[articleIndex];
           // Create a smart merge that preserves important fields like content
@@ -668,7 +684,7 @@ const articlesSlice = createSlice({
                 typeof value === 'string' &&
                 value.trim().length > 0
               ) {
-                mergedChanges[key] = value;
+                (mergedChanges as any)[key] = value;
               }
               // Otherwise keep existing content
             }
@@ -677,7 +693,7 @@ const articlesSlice = createSlice({
               alwaysUpdateFields.includes(key) ||
               (value !== '' && value !== null && value !== undefined)
             ) {
-              mergedChanges[key] = value;
+              (mergedChanges as any)[key] = value;
             }
           });
 
@@ -705,7 +721,9 @@ const articlesSlice = createSlice({
       .addCase(updateArticleLocalWithDB.fulfilled, (state, action) => {
         state.loading.update = false;
         state.error.update = null;
-        const articleIndex = state.articles.findIndex(article => article.id === action.payload.id);
+        const articleIndex = state.articles.findIndex(
+          article => article.id === action.payload.id
+        );
         if (articleIndex !== -1) {
           state.articles[articleIndex] = action.payload;
         }
@@ -728,7 +746,9 @@ const articlesSlice = createSlice({
       .addCase(deleteArticle.fulfilled, (state, action) => {
         state.loading.delete = false;
         state.error.delete = null;
-        state.articles = state.articles.filter(article => article.id !== action.payload);
+        state.articles = state.articles.filter(
+          article => article.id !== action.payload
+        );
         state.pagination.totalItems = Math.max(
           0,
           state.pagination.totalItems - 1
@@ -771,7 +791,9 @@ const articlesSlice = createSlice({
         // Add or update synced articles in the store
         if (articles && articles.length > 0) {
           articles.forEach(syncedArticle => {
-            const existingIndex = state.articles.findIndex(article => article.id === syncedArticle.id);
+            const existingIndex = state.articles.findIndex(
+              article => article.id === syncedArticle.id
+            );
             if (existingIndex !== -1) {
               state.articles[existingIndex] = syncedArticle;
             } else {
@@ -779,8 +801,9 @@ const articlesSlice = createSlice({
             }
           });
           // Re-sort after sync
-          state.articles.sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          state.articles.sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           );
         }
 
@@ -800,11 +823,11 @@ const articlesSlice = createSlice({
 
 // Export simple selectors for articles
 export const selectAllArticles = (state: RootState) => state.articles.articles;
-export const selectArticleById = (state: RootState, id: string) => 
+export const selectArticleById = (state: RootState, id: string) =>
   state.articles.articles.find(article => article.id === id);
-export const selectArticleIds = (state: RootState) => 
-  state.articles.articles.map(article => article.id);
-export const selectTotalArticles = (state: RootState) => 
+export const selectArticleIds = (state: RootState) =>
+  state.articles.articles.map((article) => article.id);
+export const selectTotalArticles = (state: RootState) =>
   state.articles.articles.length;
 
 // Export action creators

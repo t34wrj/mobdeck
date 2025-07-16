@@ -27,7 +27,7 @@ export const useArticleActions = (
           updates: { isFavorite: !article.isFavorite },
         })
       ).unwrap();
-    } catch (favoriteErr) {
+    } catch {
       Alert.alert(
         'Error',
         'Failed to update favorite status. Please try again.',
@@ -46,7 +46,7 @@ export const useArticleActions = (
           updates: { isArchived: !article.isArchived },
         })
       ).unwrap();
-    } catch (archiveErr) {
+    } catch {
       Alert.alert(
         'Error',
         'Failed to update archive status. Please try again.',
@@ -65,7 +65,7 @@ export const useArticleActions = (
           updates: { isRead: !article.isRead },
         })
       ).unwrap();
-    } catch (readErr) {
+    } catch {
       Alert.alert('Error', 'Failed to update read status. Please try again.', [
         { text: 'OK' },
       ]);
@@ -81,7 +81,7 @@ export const useArticleActions = (
         url: article.url,
         title: article.title,
       });
-    } catch (shareErr) {
+    } catch {
       Alert.alert('Error', 'Failed to share article. Please try again.', [
         { text: 'OK' },
       ]);
@@ -103,7 +103,7 @@ export const useArticleActions = (
             try {
               await dispatch(deleteArticle({ id: articleId })).unwrap();
               navigation.goBack();
-            } catch (deleteErr) {
+            } catch {
               Alert.alert(
                 'Error',
                 'Failed to delete article. Please try again.',

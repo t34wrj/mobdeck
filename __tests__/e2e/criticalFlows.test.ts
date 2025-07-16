@@ -73,13 +73,13 @@ describe('Critical E2E Flows', () => {
       await mockAsyncStorage.setItem('shared_article', JSON.stringify(mockArticle));
       
       // Step 2: Store article in local database
-      const mockDb = mockSQLite.openDatabase();
+      const _mockDb = mockSQLite.openDatabase();
       const mockTx = {
         executeSql: jest.fn()
       };
-      mockDb.transaction = jest.fn((callback) => callback(mockTx));
+      _mockDb.transaction = jest.fn((callback) => callback(mockTx));
       
-      mockDb.transaction((tx: any) => {
+      _mockDb.transaction((tx: any) => {
         tx.executeSql(
           'INSERT INTO articles (id, title, url, content) VALUES (?, ?, ?, ?)',
           [mockArticle.id, mockArticle.title, mockArticle.url, mockArticle.content]
@@ -99,11 +99,11 @@ describe('Critical E2E Flows', () => {
         }
       });
       
-      mockDb.transaction((tx: any) => {
+      _mockDb.transaction((tx: any) => {
         tx.executeSql(
           'SELECT * FROM articles WHERE title LIKE ?',
           ['%React%'],
-          (tx: any, results: any) => {
+          (txResult: any, results: any) => {
             expect(results.rows.length).toBe(1);
             expect(results.rows.item(0).title).toBe('React Native Tutorial');
           }
@@ -149,13 +149,13 @@ describe('Critical E2E Flows', () => {
       ];
       
       // Step 3: Store articles locally
-      const mockDb = mockSQLite.openDatabase();
+      const _mockDb = mockSQLite.openDatabase();
       const mockTx = {
         executeSql: jest.fn()
       };
-      mockDb.transaction = jest.fn((callback) => callback(mockTx));
+      _mockDb.transaction = jest.fn((callback) => callback(mockTx));
       
-      mockDb.transaction((tx: any) => {
+      _mockDb.transaction((tx: any) => {
         remoteArticles.forEach(article => {
           tx.executeSql(
             'INSERT OR REPLACE INTO articles (id, title, synced) VALUES (?, ?, ?)',
@@ -170,7 +170,7 @@ describe('Critical E2E Flows', () => {
       // Step 5: Verify sync completed
       const lastSync = await mockAsyncStorage.getItem('last_sync');
       expect(lastSync).toBeDefined();
-      expect(mockDb.transaction).toHaveBeenCalled();
+      expect(_mockDb.transaction).toHaveBeenCalled();
     });
   });
 
@@ -196,7 +196,7 @@ describe('Critical E2E Flows', () => {
         { id: 1, title: 'Cached Article', content: 'Offline content', cached: true }
       ];
       
-      const mockDb = mockSQLite.openDatabase();
+      const _mockDb = mockSQLite.openDatabase();
       const mockTx = {
         executeSql: jest.fn((sql, params, callback) => {
           if (callback) {

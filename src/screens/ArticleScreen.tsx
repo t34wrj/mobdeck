@@ -53,9 +53,7 @@ const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
       {article.publishedAt && (
         <Text style={styles.publishDate}>Published: {article.publishedAt}</Text>
       )}
-      {article.summary && (
-        <Text style={styles.summary}>{article.summary}</Text>
-      )}
+      {article.summary && <Text style={styles.summary}>{article.summary}</Text>}
       <Text style={styles.content}>{article.content}</Text>
     </View>
   );

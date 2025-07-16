@@ -3,7 +3,7 @@
  */
 
 import { renderHook } from '@testing-library/react-native';
-import { useAppTheme, AppTheme } from '../useAppTheme';
+import { useAppTheme, AppTheme as _AppTheme } from '../useAppTheme';
 
 describe('useAppTheme', () => {
   it('should return the default theme object', () => {

@@ -331,7 +331,7 @@ const syncSlice = createSlice({
       })
       .addCase('sync/startOperation/rejected', (state, action) => {
         state.status = SyncStatus.ERROR;
-        state.error = action.error.message || 'Sync failed';
+        state.error = (action as any).error?.message || 'Sync failed';
         state.stats.failedSyncs += 1;
       })
       // Pause sync operation
@@ -348,7 +348,7 @@ const syncSlice = createSlice({
       })
       .addCase('sync/resumeOperation/rejected', (state, action) => {
         state.status = SyncStatus.ERROR;
-        state.error = action.error.message || 'Resume sync failed';
+        state.error = (action as any).error?.message || 'Resume sync failed';
       })
       // Cancel sync operation
       .addCase('sync/cancelOperation/fulfilled', state => {

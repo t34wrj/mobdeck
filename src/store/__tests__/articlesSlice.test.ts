@@ -162,7 +162,7 @@ describe('Articles Slice', () => {
         ...initialState,
         articles: [mockArticle],
       };
-      
+
       const storeWithData = configureStore({
         reducer: { articles: articlesReducer },
         preloadedState: { articles: stateWithArticle },

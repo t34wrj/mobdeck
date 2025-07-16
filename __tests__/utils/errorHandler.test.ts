@@ -4,7 +4,7 @@
 
 import {
   ErrorType,
-  AppError,
+  AppError as _AppError,
   getErrorMessage,
   classifyError,
   createAppError,

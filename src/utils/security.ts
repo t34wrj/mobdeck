@@ -14,24 +14,24 @@ export function validateUrl(url: string): ValidationResult {
     return {
       isValid: false,
       sanitized: null,
-      error: 'URL must be a non-empty string'
+      error: 'URL must be a non-empty string',
     };
   }
 
   const trimmed = url.trim();
-  
+
   // Basic URL format check
   try {
     new URL(trimmed);
     return {
       isValid: true,
-      sanitized: trimmed
+      sanitized: trimmed,
     };
   } catch {
     return {
       isValid: false,
       sanitized: null,
-      error: 'Invalid URL format'
+      error: 'Invalid URL format',
     };
   }
 }
@@ -41,23 +41,23 @@ export function validateToken(token: string): ValidationResult {
     return {
       isValid: false,
       sanitized: null,
-      error: 'Token must be a non-empty string'
+      error: 'Token must be a non-empty string',
     };
   }
 
   const trimmed = token.trim();
-  
+
   if (trimmed.length < 10) {
     return {
       isValid: false,
       sanitized: null,
-      error: 'Token too short'
+      error: 'Token too short',
     };
   }
 
   return {
     isValid: true,
-    sanitized: trimmed
+    sanitized: trimmed,
   };
 }
 
@@ -65,7 +65,7 @@ export function sanitizeInput(input: string): string {
   if (!input || typeof input !== 'string') {
     return '';
   }
-  
+
   return input.trim();
 }
 
@@ -101,11 +101,16 @@ export function maskSensitiveData(data: string): string {
   if (data.length <= 4) {
     return '*'.repeat(data.length);
   }
-  return data.substring(0, 2) + '*'.repeat(data.length - 4) + data.substring(data.length - 2);
+  return (
+    data.substring(0, 2) +
+    '*'.repeat(data.length - 4) +
+    data.substring(data.length - 2)
+  );
 }
 
 export function generateSecureRandom(length: number = 16): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -118,7 +123,7 @@ export function hashData(data: string): string {
   let hash = 0;
   for (let i = 0; i < data.length; i++) {
     const char = data.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
   return hash.toString(16);
@@ -129,7 +134,7 @@ export function validatePassword(password: string): ValidationResult {
     return {
       isValid: false,
       sanitized: null,
-      error: 'Password must be a non-empty string'
+      error: 'Password must be a non-empty string',
     };
   }
 
@@ -137,13 +142,13 @@ export function validatePassword(password: string): ValidationResult {
     return {
       isValid: false,
       sanitized: null,
-      error: 'Password must be at least 8 characters long'
+      error: 'Password must be at least 8 characters long',
     };
   }
 
   return {
     isValid: true,
-    sanitized: password
+    sanitized: password,
   };
 }
 
@@ -165,25 +170,28 @@ export function getEnhancedSecurityHeaders(): Record<string, string> {
 
 export class RateLimiter {
   private requests: Map<string, number[]> = new Map();
-  
-  constructor(private maxRequests: number = 100, private windowMs: number = 60000) {}
-  
+
+  constructor(
+    private maxRequests: number = 100,
+    private windowMs: number = 60000
+  ) {}
+
   isAllowed(key: string): boolean {
     const now = Date.now();
     const requests = this.requests.get(key) || [];
-    
+
     // Remove old requests outside the window
     const validRequests = requests.filter(time => now - time < this.windowMs);
-    
+
     if (validRequests.length >= this.maxRequests) {
       return false;
     }
-    
+
     validRequests.push(now);
     this.requests.set(key, validRequests);
     return true;
   }
-  
+
   reset(key: string): void {
     this.requests.delete(key);
   }

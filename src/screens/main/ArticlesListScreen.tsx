@@ -11,10 +11,10 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { SimpleText, SimpleButton } from "../../components";
+import { SimpleText, SimpleButton } from '../../components';
 import { ArticleCard } from '../../components/ArticleCard';
 import MobdeckLogo from '../../components/MobdeckLogo';
-import { theme } from "../../components/theme";
+import { theme } from '../../components/theme';
 import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
 import {
@@ -370,9 +370,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size='small' color={theme.colors.primary[500]} />
-        <Text style={styles.loadingText}>
-          Loading more articles...
-        </Text>
+        <Text style={styles.loadingText}>Loading more articles...</Text>
       </View>
     );
   }, [loading.fetch, pagination.page]);
@@ -421,9 +419,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
             size={24}
             color={theme.colors.accent[500]} // Tiffany Blue for contrast on green
           />
-          <Text style={styles.headerTitle}>
-            Mobdeck
-          </Text>
+          <Text style={styles.headerTitle}>Mobdeck</Text>
         </View>
         <TouchableOpacity
           style={styles.settingsButton}
@@ -518,9 +514,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       {loading.fetch && articles.length === 0 && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size='large' color={theme.colors.primary[500]} />
-          <Text style={styles.loadingText}>
-            Loading articles...
-          </Text>
+          <Text style={styles.loadingText}>Loading articles...</Text>
         </View>
       )}
     </View>

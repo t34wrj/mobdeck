@@ -168,7 +168,7 @@ describe('Critical User Journeys', () => {
         tx.executeSql(
           'SELECT * FROM articles WHERE title LIKE ? OR content LIKE ?',
           [`%${searchQuery}%`, `%${searchQuery}%`],
-          (tx: any, results: any) => {
+          (txResult: any, results: any) => {
             expect(results.rows.length).toBe(1);
             expect(results.rows.item(0).title).toBe('React Native Tutorial');
           }

@@ -30,8 +30,6 @@ jest.mock('react-native-sqlite-storage', () => {
 import {
   DBArticle,
   DBLabel,
-  DatabaseOperationResult,
-  DatabaseErrorCode,
 } from '../../src/types/database';
 
 // Mock console methods to avoid noise in tests
@@ -70,7 +68,7 @@ describe('DatabaseService', () => {
       ]),
       transaction: jest.fn((callback, errorCallback, successCallback) => {
         const mockTx = {
-          executeSql: jest.fn((sql, params, success, error) => {
+          executeSql: jest.fn((sql, params, success, _error) => {
             if (success) {
               success(mockTx, {
                 rows: { length: 0 },
@@ -104,7 +102,7 @@ describe('DatabaseService', () => {
       if (dbService && dbService.isConnected()) {
         await dbService.close();
       }
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors
     }
   });
@@ -652,7 +650,7 @@ describe('DatabaseService', () => {
           {
             rows: {
               length: 1,
-              item: jest.fn().mockReturnValue({ last_sync: 1640995200 }),
+              item: jest.fn().mockReturnValue({ last_sync: 1640995200 }), // eslint-disable-line camelcase
             },
           },
         ]); // last sync
@@ -725,7 +723,7 @@ describe('DatabaseService', () => {
       mockDb.transaction.mockImplementation(
         (callback: any, errorCallback: any) => {
           const mockTx = {
-            executeSql: jest.fn((sql, params, success, error) => {
+            executeSql: jest.fn((sql, params, success, _error) => {
               if (sql.includes('FAIL')) {
                 const sqlError = new Error('SQL Error');
                 if (error) error(mockTx, sqlError);

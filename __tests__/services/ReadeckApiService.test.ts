@@ -3,14 +3,11 @@
  * Tests configuration, network state management, and basic API methods
  */
 
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios from 'axios';
 import {
   ReadeckApiConfig,
   ReadeckLoginRequest,
-  ReadeckLoginResponse,
-  ReadeckUser,
   ArticleFilters,
-  ReadeckArticleList,
   CreateArticleRequest,
 } from '../../src/types/readeck';
 
@@ -100,78 +97,62 @@ class TestableReadeckApiService {
   }
 
   async login(credentials: ReadeckLoginRequest): Promise<any> {
-    try {
-      const response = await this.client.request({
-        method: 'POST',
-        url: '/auth/login',
-        data: credentials,
-      });
+    const response = await this.client.request({
+      method: 'POST',
+      url: '/auth/login',
+      data: credentials,
+    });
 
-      return {
-        data: response.data,
-        status: response.status,
-        headers: response.headers || {},
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      throw error;
-    }
+    return {
+      data: response.data,
+      status: response.status,
+      headers: response.headers || {},
+      timestamp: new Date().toISOString(),
+    };
   }
 
   async validateToken(): Promise<any> {
-    try {
-      const response = await this.client.request({
-        method: 'GET',
-        url: '/auth/me',
-      });
+    const response = await this.client.request({
+      method: 'GET',
+      url: '/auth/me',
+    });
 
-      return {
-        data: response.data,
-        status: response.status,
-        headers: response.headers || {},
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      throw error;
-    }
+    return {
+      data: response.data,
+      status: response.status,
+      headers: response.headers || {},
+      timestamp: new Date().toISOString(),
+    };
   }
 
   async getArticles(filters?: ArticleFilters): Promise<any> {
-    try {
-      const response = await this.client.request({
-        method: 'GET',
-        url: '/articles',
-        params: filters,
-      });
+    const response = await this.client.request({
+      method: 'GET',
+      url: '/articles',
+      params: filters,
+    });
 
-      return {
-        data: response.data,
-        status: response.status,
-        headers: response.headers || {},
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      throw error;
-    }
+    return {
+      data: response.data,
+      status: response.status,
+      headers: response.headers || {},
+      timestamp: new Date().toISOString(),
+    };
   }
 
   async createArticle(article: CreateArticleRequest): Promise<any> {
-    try {
-      const response = await this.client.request({
-        method: 'POST',
-        url: '/articles',
-        data: article,
-      });
+    const response = await this.client.request({
+      method: 'POST',
+      url: '/articles',
+      data: article,
+    });
 
-      return {
-        data: response.data,
-        status: response.status,
-        headers: response.headers || {},
-        timestamp: new Date().toISOString(),
-      };
-    } catch (error) {
-      throw error;
-    }
+    return {
+      data: response.data,
+      status: response.status,
+      headers: response.headers || {},
+      timestamp: new Date().toISOString(),
+    };
   }
 }
 
@@ -302,15 +283,15 @@ describe('ReadeckApiService Core Functionality', () => {
             created_at: '2023-01-01T00:00:00Z',
             updated_at: '2023-01-01T00:00:00Z',
           },
-          expires_at: '2023-12-31T23:59:59Z',
+          expires_at: '2023-12-31T23:59:59Z', // eslint-disable-line camelcase
         },
         status: 200,
         headers: {},
       };
 
       // Get the mock client and set up the request mock
-      const mockClient = (service as any).client;
-      mockClient.request.mockResolvedValue(mockResponse);
+      const testClient = (service as any).client;
+      testClient.request.mockResolvedValue(mockResponse);
 
       const credentials: ReadeckLoginRequest = {
         username: 'testuser',
@@ -319,7 +300,7 @@ describe('ReadeckApiService Core Functionality', () => {
 
       const result = await service.login(credentials);
 
-      expect(mockClient.request).toHaveBeenCalledWith({
+      expect(testClient.request).toHaveBeenCalledWith({
         method: 'POST',
         url: '/auth/login',
         data: credentials,
@@ -347,12 +328,12 @@ describe('ReadeckApiService Core Functionality', () => {
         headers: {},
       };
 
-      const mockClient = (service as any).client;
-      mockClient.request.mockResolvedValue(mockResponse);
+      const testClient = (service as any).client;
+      testClient.request.mockResolvedValue(mockResponse);
 
       const result = await service.validateToken();
 
-      expect(mockClient.request).toHaveBeenCalledWith({
+      expect(testClient.request).toHaveBeenCalledWith({
         method: 'GET',
         url: '/auth/me',
       });
@@ -387,7 +368,7 @@ describe('ReadeckApiService Core Functionality', () => {
           page: 1,
           per_page: 20,
           total_count: 1,
-          total_pages: 1,
+          total_pages: 1, // eslint-disable-line camelcase
         },
       };
 
@@ -397,8 +378,8 @@ describe('ReadeckApiService Core Functionality', () => {
         headers: {},
       };
 
-      const mockClient = (service as any).client;
-      mockClient.request.mockResolvedValue(mockResponse);
+      const testClient = (service as any).client;
+      testClient.request.mockResolvedValue(mockResponse);
 
       const filters: ArticleFilters = {
         limit: 10,
@@ -409,7 +390,7 @@ describe('ReadeckApiService Core Functionality', () => {
 
       const result = await service.getArticles(filters);
 
-      expect(mockClient.request).toHaveBeenCalledWith({
+      expect(testClient.request).toHaveBeenCalledWith({
         method: 'GET',
         url: '/articles',
         params: filters,
@@ -443,8 +424,8 @@ describe('ReadeckApiService Core Functionality', () => {
         headers: {},
       };
 
-      const mockClient = (service as any).client;
-      mockClient.request.mockResolvedValue(mockResponse);
+      const testClient = (service as any).client;
+      testClient.request.mockResolvedValue(mockResponse);
 
       const createRequest: CreateArticleRequest = {
         url: 'https://example.com/new',
@@ -454,7 +435,7 @@ describe('ReadeckApiService Core Functionality', () => {
 
       const result = await service.createArticle(createRequest);
 
-      expect(mockClient.request).toHaveBeenCalledWith({
+      expect(testClient.request).toHaveBeenCalledWith({
         method: 'POST',
         url: '/articles',
         data: createRequest,
@@ -555,8 +536,8 @@ describe('ReadeckApiService Core Functionality', () => {
   describe('Request/Response Processing', () => {
     it('should handle large request payloads', async () => {
       const largeContent = 'A'.repeat(1024 * 1024); // 1MB content
-      const mockClient = (service as any).client;
-      mockClient.request.mockResolvedValue({
+      const testClient = (service as any).client;
+      testClient.request.mockResolvedValue({
         data: { id: 'large-article', content: largeContent },
         status: 201,
       });
@@ -570,8 +551,8 @@ describe('ReadeckApiService Core Functionality', () => {
     });
 
     it('should handle empty response bodies', async () => {
-      const mockClient = (service as any).client;
-      mockClient.request.mockResolvedValue({
+      const testClient = (service as any).client;
+      testClient.request.mockResolvedValue({
         data: '',
         status: 204,
       });
@@ -582,8 +563,8 @@ describe('ReadeckApiService Core Functionality', () => {
     });
 
     it('should handle non-JSON response types', async () => {
-      const mockClient = (service as any).client;
-      mockClient.request.mockResolvedValue({
+      const testClient = (service as any).client;
+      testClient.request.mockResolvedValue({
         data: '<html><body>Error</body></html>',
         status: 500,
         headers: { 'content-type': 'text/html' },
@@ -596,9 +577,9 @@ describe('ReadeckApiService Core Functionality', () => {
 
   describe('Concurrent Request Handling', () => {
     it('should handle multiple simultaneous requests', async () => {
-      const mockClient = (service as any).client;
+      const testClient = (service as any).client;
       let callCount = 0;
-      mockClient.request.mockImplementation(() => {
+      testClient.request.mockImplementation(() => {
         callCount++;
         return Promise.resolve({
           data: { id: `response-${callCount}` },
@@ -612,7 +593,7 @@ describe('ReadeckApiService Core Functionality', () => {
       const results = await Promise.all(promises);
 
       expect(results).toHaveLength(10);
-      expect(mockClient.request).toHaveBeenCalledTimes(10);
+      expect(testClient.request).toHaveBeenCalledTimes(10);
       results.forEach((result, index) => {
         expect(result.data.id).toBe(`response-${index + 1}`);
       });
@@ -658,7 +639,7 @@ describe('ReadeckApiService Core Functionality', () => {
 
   describe('Memory and Performance', () => {
     it('should handle streaming large responses', async () => {
-      const mockClient = (service as any).client;
+      const testClient = (service as any).client;
       const largeResponse = {
         articles: Array(1000)
           .fill(null)
@@ -669,7 +650,7 @@ describe('ReadeckApiService Core Functionality', () => {
           })),
       };
 
-      mockClient.request.mockResolvedValue({
+      testClient.request.mockResolvedValue({
         data: largeResponse,
         status: 200,
       });
@@ -679,8 +660,8 @@ describe('ReadeckApiService Core Functionality', () => {
     });
 
     it('should handle rapid sequential requests', async () => {
-      const mockClient = (service as any).client;
-      mockClient.request.mockResolvedValue({
+      const testClient = (service as any).client;
+      testClient.request.mockResolvedValue({
         data: { success: true },
         status: 200,
       });
@@ -698,8 +679,8 @@ describe('ReadeckApiService Core Functionality', () => {
 
   describe('Security Edge Cases', () => {
     it('should handle malformed authentication responses', async () => {
-      const mockClient = (service as any).client;
-      mockClient.request.mockResolvedValue({
+      const testClient = (service as any).client;
+      testClient.request.mockResolvedValue({
         data: { malformed: 'response' },
         status: 200,
       });
@@ -713,8 +694,8 @@ describe('ReadeckApiService Core Functionality', () => {
     });
 
     it('should handle unexpected response formats', async () => {
-      const mockClient = (service as any).client;
-      mockClient.request.mockResolvedValue({
+      const testClient = (service as any).client;
+      testClient.request.mockResolvedValue({
         data: [1, 2, 3], // Array instead of object
         status: 200,
       });

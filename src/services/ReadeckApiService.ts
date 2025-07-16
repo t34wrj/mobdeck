@@ -388,7 +388,7 @@ class ReadeckApiService implements IReadeckApiService {
         // Note: In React Native, certificate pinning is handled at the native level
         // This method serves as a validation point for future native integration
       }
-    } catch (error) {
+    } catch {
       logger.warn('Failed to validate certificate pins for URL', {
         url: maskSensitiveData(url),
       });
@@ -1124,21 +1124,19 @@ class ReadeckApiService implements IReadeckApiService {
   /**
    * Fetch articles with filtering and pagination
    */
-  async fetchArticlesWithFilters(
-    params: {
-      page?: number;
-      limit?: number;
-      searchQuery?: string;
-      filters?: {
-        isArchived?: boolean;
-        isFavorite?: boolean;
-        isRead?: boolean;
-        tags?: string[];
-      };
-      forceRefresh?: boolean;
-      fetchFullContent?: boolean;
-    }
-  ): Promise<PaginatedResponse<Article>> {
+  async fetchArticlesWithFilters(params: {
+    page?: number;
+    limit?: number;
+    searchQuery?: string;
+    filters?: {
+      isArchived?: boolean;
+      isFavorite?: boolean;
+      isRead?: boolean;
+      tags?: string[];
+    };
+    forceRefresh?: boolean;
+    fetchFullContent?: boolean;
+  }): Promise<PaginatedResponse<Article>> {
     // Check connectivity first
     if (!connectivityManager.isOnline()) {
       throw {
@@ -1161,7 +1159,7 @@ class ReadeckApiService implements IReadeckApiService {
         };
 
         if (Array.isArray(response.data)) {
-          articles = response.data.map(readeckArticle => 
+          articles = response.data.map(readeckArticle =>
             this.convertReadeckArticleToArticle(readeckArticle)
           );
           pagination = {
@@ -1169,7 +1167,10 @@ class ReadeckApiService implements IReadeckApiService {
             totalPages: 1,
             totalItems: articles.length,
           };
-        } else if (response.data.articles && Array.isArray(response.data.articles)) {
+        } else if (
+          response.data.articles &&
+          Array.isArray(response.data.articles)
+        ) {
           articles = response.data.articles.map(readeckArticle =>
             this.convertReadeckArticleToArticle(readeckArticle)
           );
@@ -1177,7 +1178,8 @@ class ReadeckApiService implements IReadeckApiService {
             pagination = {
               page: response.data.pagination.page || 1,
               totalPages: response.data.pagination.total_pages || 1,
-              totalItems: response.data.pagination.total_count || articles.length,
+              totalItems:
+                response.data.pagination.total_count || articles.length,
             };
           }
         }
@@ -1204,15 +1206,13 @@ class ReadeckApiService implements IReadeckApiService {
   /**
    * Create article with enhanced parameters
    */
-  async createArticleWithMetadata(
-    params: {
-      title: string;
-      url: string;
-      summary?: string;
-      content?: string;
-      tags?: string[];
-    }
-  ): Promise<Article> {
+  async createArticleWithMetadata(params: {
+    title: string;
+    url: string;
+    summary?: string;
+    content?: string;
+    tags?: string[];
+  }): Promise<Article> {
     const createRequest: CreateArticleRequest = {
       url: params.url,
       title: params.title,
@@ -1226,19 +1226,17 @@ class ReadeckApiService implements IReadeckApiService {
   /**
    * Update article with enhanced parameters
    */
-  async updateArticleWithMetadata(
-    params: {
-      id: string;
-      updates: Partial<Omit<Article, 'id' | 'createdAt' | 'updatedAt'>>;
-    }
-  ): Promise<Article> {
+  async updateArticleWithMetadata(params: {
+    id: string;
+    updates: Partial<Omit<Article, 'id' | 'createdAt' | 'updatedAt'>>;
+  }): Promise<Article> {
     const updateRequest = this.convertArticleToUpdateRequest(params.updates);
     const response = await this.updateArticle(params.id, updateRequest);
     const article = this.convertReadeckArticleToArticle(response.data);
-    
+
     // Update cache
     cacheService.setArticle(params.id, article);
-    
+
     return article;
   }
 
@@ -1261,7 +1259,10 @@ class ReadeckApiService implements IReadeckApiService {
         const htmlContent = await this.getArticleContent(article.contentUrl);
         article.content = htmlContent;
       } catch (error) {
-        console.error('[ReadeckApiService] Failed to fetch article content:', error);
+        console.error(
+          '[ReadeckApiService] Failed to fetch article content:',
+          error
+        );
       }
     }
 
@@ -1273,7 +1274,9 @@ class ReadeckApiService implements IReadeckApiService {
   /**
    * Convert ReadeckArticle to Article format
    */
-  private convertReadeckArticleToArticle(readeckArticle: ReadeckArticle | any): Article {
+  private convertReadeckArticleToArticle(
+    readeckArticle: ReadeckArticle | any
+  ): Article {
     const ensureString = (value: any): string => {
       if (value === null || value === undefined) return '';
       return String(value);
@@ -1362,19 +1365,17 @@ class ReadeckApiService implements IReadeckApiService {
   /**
    * Convert filter parameters to ArticleFilters format
    */
-  private convertFiltersToReadeckFilters(
-    params: {
-      page?: number;
-      limit?: number;
-      searchQuery?: string;
-      filters?: {
-        isArchived?: boolean;
-        isFavorite?: boolean;
-        isRead?: boolean;
-        tags?: string[];
-      };
-    }
-  ): ArticleFilters {
+  private convertFiltersToReadeckFilters(params: {
+    page?: number;
+    limit?: number;
+    searchQuery?: string;
+    filters?: {
+      isArchived?: boolean;
+      isFavorite?: boolean;
+      isRead?: boolean;
+      tags?: string[];
+    };
+  }): ArticleFilters {
     const filters: ArticleFilters = {
       limit: params.limit || 20,
       offset: ((params.page || 1) - 1) * (params.limit || 20),

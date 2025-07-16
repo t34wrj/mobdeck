@@ -130,22 +130,14 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
                 {formattedDate}
               </SimpleText>
 
-              {!!article.readTime && (
-                <Text style={styles.separator}>
-                  •
-                </Text>
-              )}
+              {!!article.readTime && <Text style={styles.separator}>•</Text>}
               {!!article.readTime && (
                 <SimpleText variant='caption' style={styles.readTime}>
                   {formattedReadTime}
                 </SimpleText>
               )}
 
-              {sourceHostname ? (
-                <Text style={styles.separator}>
-                  •
-                </Text>
-              ) : null}
+              {sourceHostname ? <Text style={styles.separator}>•</Text> : null}
               {sourceHostname ? (
                 <SimpleText
                   variant='caption'
@@ -182,25 +174,19 @@ export const ArticleCard: React.FC<ArticleCardProps> = memo(
                 style={styles.favoriteIndicator}
                 testID='favorite-indicator'
               >
-                <Text style={styles.favoriteIcon}>
-                  ♥
-                </Text>
+                <Text style={styles.favoriteIcon}>♥</Text>
               </View>
             )}
 
             {article.isArchived && (
               <View style={styles.archivedIndicator} testID='archive-indicator'>
-                <Text style={styles.archivedIcon}>
-                  📦
-                </Text>
+                <Text style={styles.archivedIcon}>📦</Text>
               </View>
             )}
 
             {article.isRead && (
               <View style={styles.readIndicator}>
-                <Text style={styles.readIcon}>
-                  ✓
-                </Text>
+                <Text style={styles.readIcon}>✓</Text>
               </View>
             )}
           </View>

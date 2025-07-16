@@ -18,7 +18,7 @@ export type NetworkListener = (status: NetworkStatus) => void;
 let currentStatus: NetworkStatus = {
   isConnected: false,
   isWifi: false,
-  isCellular: false
+  isCellular: false,
 };
 
 let listeners: NetworkListener[] = [];
@@ -30,7 +30,7 @@ export function getCurrentNetworkStatus(): NetworkStatus {
 
 export function addNetworkListener(listener: NetworkListener): void {
   listeners.push(listener);
-  
+
   if (!unsubscribe) {
     startMonitoring();
   }
@@ -38,7 +38,7 @@ export function addNetworkListener(listener: NetworkListener): void {
 
 export function removeNetworkListener(listener: NetworkListener): void {
   listeners = listeners.filter(l => l !== listener);
-  
+
   if (listeners.length === 0 && unsubscribe) {
     unsubscribe();
     unsubscribe = null;
@@ -53,9 +53,9 @@ function handleNetworkChange(state: NetInfoState): void {
   const newStatus: NetworkStatus = {
     isConnected: state.isConnected ?? false,
     isWifi: state.type === 'wifi',
-    isCellular: state.type === 'cellular'
+    isCellular: state.type === 'cellular',
   };
-  
+
   currentStatus = newStatus;
   listeners.forEach(listener => listener(newStatus));
 }
@@ -65,9 +65,9 @@ export async function checkNetworkStatus(): Promise<NetworkStatus> {
   const status: NetworkStatus = {
     isConnected: state.isConnected ?? false,
     isWifi: state.type === 'wifi',
-    isCellular: state.type === 'cellular'
+    isCellular: state.type === 'cellular',
   };
-  
+
   currentStatus = status;
   return status;
 }

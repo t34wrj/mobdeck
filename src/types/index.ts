@@ -10,6 +10,14 @@ export interface PaginatedResponse<T> {
   page: number;
   totalPages: number;
   totalItems: number;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 // Core Entity Types
@@ -30,7 +38,7 @@ export interface Article {
   tags?: string[];
   createdAt: string;
   updatedAt: string;
-  syncedAt?: string;
+  syncedAt?: string | null;
   isModified?: boolean;
 }
 
@@ -39,6 +47,7 @@ export interface User {
   username: string;
   email: string;
   serverUrl: string;
+  tokenExpiresAt?: string;
 }
 
 export interface Label {
@@ -197,7 +206,7 @@ export interface ArticleFilters {
 }
 
 // Error Types
-export interface AppError {
+export interface AppErrorInterface {
   code: string;
   message: string;
   details?: any;
@@ -243,10 +252,7 @@ export type {
   AuthenticatedUser,
 } from './auth';
 
-export {
-  AuthErrorCode,
-  StorageErrorCode,
-} from './auth';
+export { AuthErrorCode, StorageErrorCode } from './auth';
 
 // Re-export all sync types
 export type {
@@ -254,6 +260,14 @@ export type {
   SyncProgress,
   SyncConflict,
   SyncStats,
+  StartSyncPayload,
+  SyncProgressPayload,
+  SyncSuccessPayload,
+  SyncErrorPayload,
+  AddConflictPayload,
+  ResolveConflictPayload,
+  UpdateSyncConfigPayload,
+  NetworkStatusPayload,
 } from './sync';
 
 export {

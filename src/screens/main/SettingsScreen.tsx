@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { theme } from "../../components/theme";
+import { theme } from '../../components/theme';
 import { MainScreenProps } from '../../navigation/types';
 import { useSettingsHandlers } from '../../hooks/useSettingsHandlers';
 import { useSettingsData } from '../../hooks/useSettingsData';
@@ -14,27 +14,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const {
-    user,
-    authLoading,
-    syncConfig,
-    stats,
-    formatDate,
-    formatLastSync,
-    formatDataTransfer,
+    user: _user,
+    authLoading: _authLoading,
+    syncConfig: _syncConfig,
+    stats: _stats,
+    formatDate: _formatDate,
+    formatLastSync: _formatLastSync,
+    formatDataTransfer: _formatDataTransfer,
   } = useSettingsData();
 
   const {
-    customSyncInterval,
-    setCustomSyncInterval,
-    showAdvancedSync,
-    setShowAdvancedSync,
-    handleBackgroundSyncToggle,
-    handleWifiOnlyToggle,
-    handleDownloadImagesToggle,
-    handleFullTextSyncToggle,
-    handleSyncIntervalChange,
-    handleResetSyncSettings,
-    handleLogout,
+    customSyncInterval: _customSyncInterval,
+    setCustomSyncInterval: _setCustomSyncInterval,
+    showAdvancedSync: _showAdvancedSync,
+    setShowAdvancedSync: _setShowAdvancedSync,
+    handleBackgroundSyncToggle: _handleBackgroundSyncToggle,
+    handleWifiOnlyToggle: _handleWifiOnlyToggle,
+    handleDownloadImagesToggle: _handleDownloadImagesToggle,
+    handleFullTextSyncToggle: _handleFullTextSyncToggle,
+    handleSyncIntervalChange: _handleSyncIntervalChange,
+    handleResetSyncSettings: _handleResetSyncSettings,
+    handleLogout: _handleLogout,
   } = useSettingsHandlers();
 
   return (
@@ -44,7 +44,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-{/* TODO: Restore settings sections - temporarily removed for build fix */}
+        {/* TODO: Restore settings sections - temporarily removed for build fix */}
 
         <AppInfoSection />
       </ScrollView>

@@ -11,7 +11,7 @@ import ArticleCard from '../components/ArticleCard';
 import SearchBar from '../components/SearchBar';
 import { MainScreenProps } from '../navigation/types';
 import { RootState, AppDispatch } from '../store';
-import { theme } from "../components/theme";
+import { theme } from '../components/theme';
 import { Article } from '../types';
 
 const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({

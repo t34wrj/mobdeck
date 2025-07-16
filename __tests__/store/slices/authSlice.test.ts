@@ -89,7 +89,7 @@ describe('authSlice', () => {
   describe('clearError', () => {
     it('should clear error state', () => {
       // Simulate an error state by attempting a failed login
-      const mockError = 'Authentication failed';
+      const _mockError = 'Authentication failed';
 
       // We'll test error clearing after setting up error state through async action
       store.dispatch(clearError());

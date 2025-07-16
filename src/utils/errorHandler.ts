@@ -30,7 +30,7 @@ export function getErrorMessage(error: unknown): string {
 
 export function classifyError(error: unknown): ErrorType {
   const message = getErrorMessage(error).toLowerCase();
-  
+
   if (message.includes('network') || message.includes('fetch')) {
     return ErrorType.NETWORK;
   }
@@ -46,19 +46,19 @@ export function classifyError(error: unknown): ErrorType {
   if (message.includes('sync')) {
     return ErrorType.SYNC;
   }
-  
+
   return ErrorType.UNKNOWN;
 }
 
 export function createAppError(error: unknown): AppError {
   const type = classifyError(error);
   const message = getErrorMessage(error);
-  
+
   return {
     type,
     message,
     userMessage: getUserFriendlyMessage(type),
-    retryable: isRetryable(type)
+    retryable: isRetryable(type),
   };
 }
 
@@ -85,11 +85,11 @@ function isRetryable(type: ErrorType): boolean {
 
 export function handleError(error: unknown): AppError {
   const appError = createAppError(error);
-  
+
   // Simple logging for development
   if (__DEV__) {
     console.error('App Error:', appError);
   }
-  
+
   return appError;
 }

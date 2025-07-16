@@ -2,6 +2,7 @@
 export interface AuthToken {
   token: string;
   expiresAt: string;
+  issuedAt: string;
   serverUrl: string;
 }
 
@@ -17,6 +18,7 @@ export interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  lastTokenRefresh?: string;
 }
 
 export interface User {
@@ -24,6 +26,7 @@ export interface User {
   username: string;
   email: string;
   serverUrl: string;
+  tokenExpiresAt?: string;
 }
 
 export interface LoginResponse {

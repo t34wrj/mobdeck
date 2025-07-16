@@ -346,7 +346,10 @@ class ShareHandlerService {
   /**
    * Create article with retry logic
    */
-  private async createArticleWithRetry(params: { url: string; title?: string }): Promise<{
+  private async createArticleWithRetry(params: {
+    url: string;
+    title?: string;
+  }): Promise<{
     success: boolean;
     article?: Article;
     error?: ShareHandlerError;
@@ -366,7 +369,8 @@ class ShareHandlerService {
           );
         }
 
-        const article = await readeckApiService.createArticleWithMetadata(params);
+        const article =
+          await readeckApiService.createArticleWithMetadata(params);
 
         if (__DEV__) {
           console.log(

@@ -14,7 +14,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useBackgroundSync, SYNC_INTERVALS } from '../hooks/useBackgroundSync';
-import { theme } from "./theme";
+import { theme } from './theme';
 
 interface SyncIntervalOption {
   label: string;
@@ -67,7 +67,7 @@ export default function BackgroundSyncSettings() {
   const handleToggleEnabled = async (enabled: boolean) => {
     try {
       await setEnabled(enabled);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update background sync setting');
     }
   };
@@ -75,7 +75,7 @@ export default function BackgroundSyncSettings() {
   const handleSyncIntervalChange = async (interval: number) => {
     try {
       await setSyncInterval(interval);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update sync interval');
     }
   };
@@ -83,7 +83,7 @@ export default function BackgroundSyncSettings() {
   const handleToggleWifiOnly = async (wifiOnly: boolean) => {
     try {
       await setWifiOnly(wifiOnly);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to update WiFi-only setting');
     }
   };
@@ -94,7 +94,7 @@ export default function BackgroundSyncSettings() {
       Alert.alert('Success', 'Manual sync started');
       // Reload history after sync
       setTimeout(loadSyncHistory, 2000);
-    } catch (error) {
+    } catch {
       Alert.alert('Error', 'Failed to start manual sync');
     }
   };

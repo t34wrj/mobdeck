@@ -16,17 +16,19 @@ export function resolveArticleConflict(
 ): ConflictResult<Article> {
   // Simple timestamp-based resolution
   const localTime = new Date(localArticle.updatedAt || localArticle.createdAt);
-  const remoteTime = new Date(remoteArticle.updatedAt || remoteArticle.createdAt);
-  
+  const remoteTime = new Date(
+    remoteArticle.updatedAt || remoteArticle.createdAt
+  );
+
   if (localTime > remoteTime) {
     return {
       resolved: localArticle,
-      strategy: 'local'
+      strategy: 'local',
     };
   } else {
     return {
       resolved: remoteArticle,
-      strategy: 'remote'
+      strategy: 'remote',
     };
   }
 }
@@ -37,13 +39,13 @@ export function mergeNonConflictingFields<T extends Record<string, any>>(
   conflictFields: (keyof T)[]
 ): T {
   const merged = { ...remote };
-  
+
   // Keep local values for non-conflicting fields that have been modified locally
   Object.keys(local).forEach(key => {
     if (!conflictFields.includes(key) && local[key] !== remote[key]) {
       (merged as any)[key] = local[key];
     }
   });
-  
+
   return merged;
 }

@@ -1,11 +1,11 @@
 /**
  * SyncService - Simplified bidirectional synchronization service
- * 
+ *
  * Consolidated from:
  * - Original SyncService
  * - BackgroundSyncService (without background complexity)
  * - BackgroundTaskManager (without background complexity)
- * 
+ *
  * Features:
  * - Simple two-way sync between local and remote
  * - Network-aware sync with retry logic
@@ -115,7 +115,9 @@ class SyncService implements SimpleSyncServiceInterface {
       // Process any pending sync operations
       await this.processPendingSyncOperations();
 
-      console.log('[SyncService] Simplified sync service initialized successfully');
+      console.log(
+        '[SyncService] Simplified sync service initialized successfully'
+      );
     } catch (error) {
       console.error('[SyncService] Failed to initialize:', error);
       throw error;
@@ -306,12 +308,12 @@ class SyncService implements SimpleSyncServiceInterface {
       );
 
       syncResult.phase = SyncPhase.FINALIZING;
-      
+
       // Set success to false if there were any errors
       if (syncResult.errorCount > 0) {
         syncResult.success = false;
       }
-      
+
       return syncResult;
     } catch (error) {
       syncResult.success = false;
@@ -360,7 +362,10 @@ class SyncService implements SimpleSyncServiceInterface {
       );
 
       // Process articles in batches
-      const batches = this.createBatches(modifiedArticles, this.config.batchSize);
+      const batches = this.createBatches(
+        modifiedArticles,
+        this.config.batchSize
+      );
 
       for (let i = 0; i < batches.length; i++) {
         const batch = batches[i];
@@ -431,7 +436,8 @@ class SyncService implements SimpleSyncServiceInterface {
       );
 
       // Fetch articles from remote
-      const remoteArticles = await this.fetchRemoteArticlesSince(lastSyncTimestamp);
+      const remoteArticles =
+        await this.fetchRemoteArticlesSince(lastSyncTimestamp);
       console.log(
         `[SyncService] Found ${remoteArticles.length} remote articles to sync`
       );
@@ -516,10 +522,13 @@ class SyncService implements SimpleSyncServiceInterface {
 
     for (const dbArticle of articles) {
       try {
-        const article = DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle);
+        const article =
+          DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle);
 
         // Check if article exists on server
-        const existsOnServer = await this.checkArticleExistsOnServer(article.id);
+        const existsOnServer = await this.checkArticleExistsOnServer(
+          article.id
+        );
 
         if (existsOnServer) {
           // Update existing article
@@ -543,14 +552,17 @@ class SyncService implements SimpleSyncServiceInterface {
           result.syncedCount++;
         } else {
           // Create new article on server
-          console.log(`[SyncService] Creating article on server: ${article.title}`);
-          const serverArticle = await readeckApiService.createArticleWithMetadata({
-            title: article.title,
-            url: article.url,
-            summary: article.summary,
-            content: article.content,
-            tags: article.tags || [],
-          });
+          console.log(
+            `[SyncService] Creating article on server: ${article.title}`
+          );
+          const serverArticle =
+            await readeckApiService.createArticleWithMetadata({
+              title: article.title,
+              url: article.url,
+              summary: article.summary,
+              content: article.content,
+              tags: article.tags || [],
+            });
 
           // Update local article with server ID if it was a local article
           if (article.id.startsWith('local_')) {
@@ -594,7 +606,9 @@ class SyncService implements SimpleSyncServiceInterface {
       await localStorageService.initialize();
 
       // Check if article exists locally
-      const localArticle = await localStorageService.getArticleAsAppFormat(remoteArticle.id);
+      const localArticle = await localStorageService.getArticleAsAppFormat(
+        remoteArticle.id
+      );
 
       if (!localArticle) {
         // Article doesn't exist locally, create it
@@ -669,7 +683,9 @@ class SyncService implements SimpleSyncServiceInterface {
     localArticle: Article,
     remoteArticle: Article
   ): Promise<boolean> {
-    console.log(`[SyncService] Conflict detected for article: ${localArticle.id}`);
+    console.log(
+      `[SyncService] Conflict detected for article: ${localArticle.id}`
+    );
 
     // Add conflict to Redux state
     store.dispatch(
@@ -840,7 +856,10 @@ class SyncService implements SimpleSyncServiceInterface {
       );
 
       try {
-        await this.handleConflict(conflict.localVersion, conflict.remoteVersion);
+        await this.handleConflict(
+          conflict.localVersion,
+          conflict.remoteVersion
+        );
       } catch (error) {
         console.error(
           `[SyncService] Failed to resolve conflict for article: ${conflict.articleId}`,
@@ -863,11 +882,13 @@ class SyncService implements SimpleSyncServiceInterface {
     );
   }
 
-  private async checkArticleExistsOnServer(articleId: string): Promise<boolean> {
+  private async checkArticleExistsOnServer(
+    articleId: string
+  ): Promise<boolean> {
     try {
       await readeckApiService.getArticleWithContent(articleId);
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -915,7 +936,10 @@ class SyncService implements SimpleSyncServiceInterface {
         }
       }
     } catch (error) {
-      console.error('[SyncService] Error processing pending shared URLs:', error);
+      console.error(
+        '[SyncService] Error processing pending shared URLs:',
+        error
+      );
     }
   }
 
