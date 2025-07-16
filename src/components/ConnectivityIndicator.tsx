@@ -5,14 +5,14 @@ import { useSelector } from 'react-redux';
 import { theme } from './theme';
 import {
   connectivityManager,
-  ConnectivityStatus,
+  NetworkStatus,
 } from '../utils/connectivityManager';
 import { selectIsUserAuthenticated } from '../store/selectors/authSelectors';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export const ConnectivityIndicator: React.FC = () => {
-  const [status, setStatus] = useState<ConnectivityStatus>(
-    connectivityManager.getStatus()
+  const [status, setStatus] = useState<NetworkStatus>(
+    connectivityManager.getCurrentNetworkStatus()
   );
   const [visible, setVisible] = useState(false);
   const animatedValue = useMemo(() => new Animated.Value(0), []);
@@ -20,16 +20,11 @@ export const ConnectivityIndicator: React.FC = () => {
   const isUserAuthenticated = useSelector(selectIsUserAuthenticated);
 
   useEffect(() => {
-    const handleStatusChange = (newStatus: ConnectivityStatus) => {
+    const handleStatusChange = (newStatus: NetworkStatus) => {
       setStatus(newStatus);
 
-      // Only show indicator when offline or server unreachable AND user is authenticated
-      // Don't show server unreachable before user has configured a server
-      const shouldShow =
-        newStatus !== ConnectivityStatus.ONLINE &&
-        (newStatus === ConnectivityStatus.OFFLINE ||
-          (newStatus === ConnectivityStatus.SERVER_UNREACHABLE &&
-            isUserAuthenticated));
+      // Only show indicator when offline
+      const shouldShow = !newStatus.isConnected;
       setVisible(shouldShow);
 
       // Animate in/out
@@ -41,13 +36,13 @@ export const ConnectivityIndicator: React.FC = () => {
     };
 
     // Set initial state
-    handleStatusChange(connectivityManager.getStatus());
+    handleStatusChange(connectivityManager.getCurrentNetworkStatus());
 
     // Listen for changes
-    connectivityManager.on('statusChanged', handleStatusChange);
+    connectivityManager.addNetworkListener(handleStatusChange);
 
     return () => {
-      connectivityManager.off('statusChanged', handleStatusChange);
+      connectivityManager.removeNetworkListener(handleStatusChange);
     };
   }, [animatedValue, isUserAuthenticated]);
 
@@ -56,28 +51,14 @@ export const ConnectivityIndicator: React.FC = () => {
   }
 
   const getStatusConfig = () => {
-    switch (status) {
-      case ConnectivityStatus.OFFLINE:
-        return {
-          icon: 'wifi-off',
-          text: 'No Internet Connection',
-          backgroundColor: theme.colors.error[500],
-        };
-      case ConnectivityStatus.SERVER_UNREACHABLE:
-        return {
-          icon: 'server-network-off',
-          text: 'Server Unreachable',
-          backgroundColor: theme.colors.warning[500],
-        };
-      case ConnectivityStatus.CHECKING:
-        return {
-          icon: 'sync',
-          text: 'Checking Connection...',
-          backgroundColor: theme.colors.primary[500],
-        };
-      default:
-        return null;
+    if (!status.isConnected) {
+      return {
+        icon: 'wifi-off',
+        text: 'No Internet Connection',
+        backgroundColor: theme.colors.error[500],
+      };
     }
+    return null;
   };
 
   const config = getStatusConfig();

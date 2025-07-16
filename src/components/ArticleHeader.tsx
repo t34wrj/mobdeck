@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { SimpleText as Text } from './SimpleText';
 import { theme } from './theme';
-import { Article } from '../../types';
+import { Article } from '../types';
 
 interface ArticleHeaderProps {
   article: Article;

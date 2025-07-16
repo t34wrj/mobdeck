@@ -29,6 +29,7 @@ export enum SyncStatus {
   SYNCING = 'syncing',
   SUCCESS = 'success',
   ERROR = 'error',
+  PAUSED = 'paused',
 }
 
 export interface SyncConfig {
@@ -41,6 +42,7 @@ export enum NetworkType {
   WIFI = 'wifi',
   CELLULAR = 'cellular',
   NONE = 'none',
+  UNKNOWN = 'unknown',
 }
 
 export enum SyncPhase {

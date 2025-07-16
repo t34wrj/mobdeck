@@ -22,6 +22,8 @@ export interface Article {
   imageUrl?: string;
   readTime?: number;
   sourceUrl?: string;
+  source?: string;
+  publishedAt?: string;
   isArchived: boolean;
   isFavorite: boolean;
   isRead: boolean;
@@ -57,6 +59,7 @@ export interface AuthCredentials {
 export interface AuthToken {
   token: string;
   expiresAt: string;
+  issuedAt?: string;
 }
 
 // Redux State Types

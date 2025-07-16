@@ -12,8 +12,8 @@ export const mockAsyncStorage = {
   clear: jest.fn(() => Promise.resolve(undefined)),
   getAllKeys: jest.fn(() => Promise.resolve([])),
   multiGet: jest.fn((_keys: string[]) => Promise.resolve([])),
-  multiSet: jest.fn((keyValuePairs: [string, string][]) => Promise.resolve(undefined)),
-  multiRemove: jest.fn((keys: string[]) => Promise.resolve(undefined)),
+  multiSet: jest.fn((_keyValuePairs: [string, string][]) => Promise.resolve(undefined)),
+  multiRemove: jest.fn((_keys: string[]) => Promise.resolve(undefined)),
 };
 
 export const mockKeychain = {

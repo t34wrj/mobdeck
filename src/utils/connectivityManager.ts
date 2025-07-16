@@ -11,6 +11,8 @@ export interface NetworkStatus {
   isCellular: boolean;
 }
 
+export type ConnectivityStatus = NetworkStatus;
+
 export type NetworkListener = (status: NetworkStatus) => void;
 
 let currentStatus: NetworkStatus = {
@@ -69,3 +71,11 @@ export async function checkNetworkStatus(): Promise<NetworkStatus> {
   currentStatus = status;
   return status;
 }
+
+// Default connectivity manager instance
+export const connectivityManager = {
+  getCurrentNetworkStatus,
+  addNetworkListener,
+  removeNetworkListener,
+  checkNetworkStatus,
+};

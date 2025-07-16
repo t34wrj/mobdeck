@@ -62,7 +62,7 @@ export const initializeSyncService = createAsyncThunk(
     });
 
     // Store unsubscribe function for cleanup
-    (window as any).__netInfoUnsubscribe = unsubscribe;
+    (global as any).__netInfoUnsubscribe = unsubscribe;
 
     console.log('[SyncThunks] Sync service initialized successfully');
     return true;
@@ -97,7 +97,7 @@ export const startSyncOperation = createAsyncThunk<
 
   // Update sync configuration if options provided
   if (params.syncOptions) {
-    syncService.updateConfig(params.syncOptions);
+    syncService.updateConfiguration(params.syncOptions);
   }
 
   // Start the actual sync

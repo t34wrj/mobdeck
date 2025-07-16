@@ -32,10 +32,12 @@ interface BackgroundSyncHookReturn {
 // Sync interval constants for use in UI
 export const SYNC_INTERVALS = {
   DISABLED: 0,
+  MANUAL: -1,
   FIVE_MINUTES: 5,
   FIFTEEN_MINUTES: 15,
   THIRTY_MINUTES: 30,
   ONE_HOUR: 60,
+  TWO_HOURS: 120,
   SIX_HOURS: 360,
   TWELVE_HOURS: 720,
   DAILY: 1440,

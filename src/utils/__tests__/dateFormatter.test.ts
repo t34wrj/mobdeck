@@ -203,6 +203,7 @@ describe('dateFormatter', () => {
       const mockDate = new Date('2025-07-10T15:00:00.000Z');
       (global as any).Date = class extends Date {
         constructor(...args: any[]) {
+          super();
           if (args.length === 0) {
             return mockDate;
           }

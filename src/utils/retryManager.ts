@@ -22,7 +22,7 @@ export async function withRetry<T>(
   options: RetryOptions = {}
 ): Promise<T> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
-  let lastError: Error;
+  let lastError: Error = new Error('Unknown error');
   
   for (let attempt = 0; attempt <= opts.maxRetries; attempt++) {
     try {
@@ -43,7 +43,7 @@ export async function withRetry<T>(
     }
   }
   
-  throw lastError || new Error('Unknown error');
+  throw lastError;
 }
 
 export function isRetryableError(error: unknown): boolean {
