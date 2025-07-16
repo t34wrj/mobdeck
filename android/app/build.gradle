@@ -198,8 +198,8 @@ android {
     splits {
         abi {
             reset()
-            enable enableSeparateBuildPerCPUArchitecture
-            universalApk true  // Also generate a universal APK
+            enable = enableSeparateBuildPerCPUArchitecture
+            universalApk = true  // Also generate a universal APK
             include "armeabi-v7a", "arm64-v8a", "x86", "x86_64"
         }
     }

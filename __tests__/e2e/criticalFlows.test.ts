@@ -18,17 +18,17 @@ describe('Critical E2E Flows', () => {
       };
 
       // Mock credential storage and retrieval
-      mockKeychain.setInternetCredentials.mockResolvedValue(true);
+      mockKeychain.setInternetCredentials.mockResolvedValue(undefined);
       mockKeychain.getInternetCredentials.mockResolvedValue({
         username: 'user',
         password: JSON.stringify(mockCredentials)
       });
 
       // Step 1: Store credentials during setup
-      await mockKeychain.setInternetCredentials('mobdeck-auth', 'user', JSON.stringify(mockCredentials));
+      await mockKeychain.setInternetCredentials();
       
       // Step 2: Retrieve credentials during app startup
-      const storedCredentials = await mockKeychain.getInternetCredentials('mobdeck-auth');
+      const storedCredentials = await mockKeychain.getInternetCredentials();
       
       expect(storedCredentials).toBeDefined();
       expect(storedCredentials.username).toBe('user');
@@ -43,12 +43,12 @@ describe('Critical E2E Flows', () => {
 
     it('should handle auth failure and redirect to setup', async () => {
       // Mock missing credentials
-      mockKeychain.getInternetCredentials.mockResolvedValue(false);
+      mockKeychain.getInternetCredentials.mockResolvedValue({ username: '', password: '' });
       
       // No credentials stored - should redirect to setup
-      const result = await mockKeychain.getInternetCredentials('mobdeck-auth');
+      const result = await mockKeychain.getInternetCredentials();
       
-      expect(result).toBe(false);
+      expect(result).toEqual({ username: '', password: '' });
       
       // Navigate to setup screen
       mockNavigation.navigate('Setup');
@@ -66,7 +66,7 @@ describe('Critical E2E Flows', () => {
       };
 
       // Mock async storage
-      mockAsyncStorage.setItem.mockResolvedValue(true);
+      mockAsyncStorage.setItem.mockResolvedValue(undefined);
       mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockArticle));
 
       // Step 1: Add article via share intent
@@ -79,7 +79,7 @@ describe('Critical E2E Flows', () => {
       };
       mockDb.transaction = jest.fn((callback) => callback(mockTx));
       
-      mockDb.transaction((tx) => {
+      mockDb.transaction((tx: any) => {
         tx.executeSql(
           'INSERT INTO articles (id, title, url, content) VALUES (?, ?, ?, ?)',
           [mockArticle.id, mockArticle.title, mockArticle.url, mockArticle.content]
@@ -99,11 +99,11 @@ describe('Critical E2E Flows', () => {
         }
       });
       
-      mockDb.transaction((tx) => {
+      mockDb.transaction((tx: any) => {
         tx.executeSql(
           'SELECT * FROM articles WHERE title LIKE ?',
           ['%React%'],
-          (tx, results) => {
+          (tx: any, results: any) => {
             expect(results.rows.length).toBe(1);
             expect(results.rows.item(0).title).toBe('React Native Tutorial');
           }
@@ -119,8 +119,8 @@ describe('Critical E2E Flows', () => {
   describe('Complete Sync Workflow', () => {
     it('should handle full sync: check connection, fetch, store, update UI', async () => {
       // Mock async storage
-      mockAsyncStorage.setItem.mockResolvedValue(true);
-      mockAsyncStorage.getItem.mockImplementation((key) => {
+      mockAsyncStorage.setItem.mockResolvedValue(undefined);
+      mockAsyncStorage.getItem.mockImplementation((key: string) => {
         if (key === 'connectivity') {
           return Promise.resolve(JSON.stringify({
             isConnected: true,
@@ -155,7 +155,7 @@ describe('Critical E2E Flows', () => {
       };
       mockDb.transaction = jest.fn((callback) => callback(mockTx));
       
-      mockDb.transaction((tx) => {
+      mockDb.transaction((tx: any) => {
         remoteArticles.forEach(article => {
           tx.executeSql(
             'INSERT OR REPLACE INTO articles (id, title, synced) VALUES (?, ?, ?)',
@@ -177,7 +177,7 @@ describe('Critical E2E Flows', () => {
   describe('Complete Offline Reading Flow', () => {
     it('should handle offline article access and reading', async () => {
       // Mock offline state
-      mockAsyncStorage.setItem.mockResolvedValue(true);
+      mockAsyncStorage.setItem.mockResolvedValue(undefined);
       mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify({
         isConnected: false,
         isInternetReachable: false,
@@ -214,7 +214,7 @@ describe('Critical E2E Flows', () => {
       mockTx.executeSql(
         'SELECT * FROM articles WHERE cached = 1',
         [],
-        (tx, results) => {
+        (tx: any, results: any) => {
           expect(results.rows.length).toBe(1);
           expect(results.rows.item(0).title).toBe('Cached Article');
         }
@@ -236,7 +236,7 @@ describe('Critical E2E Flows', () => {
       };
 
       // Mock async storage
-      mockAsyncStorage.setItem.mockResolvedValue(true);
+      mockAsyncStorage.setItem.mockResolvedValue(undefined);
       mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(updatedSettings));
       
       await mockAsyncStorage.setItem('app_settings', JSON.stringify(updatedSettings));
@@ -245,7 +245,7 @@ describe('Critical E2E Flows', () => {
       const storedSettings = await mockAsyncStorage.getItem('app_settings');
       expect(storedSettings).not.toBeNull();
       
-      const parsedSettings = JSON.parse(storedSettings);
+      const parsedSettings = JSON.parse(storedSettings!);
       expect(parsedSettings.syncInterval).toBe(30);
       expect(parsedSettings.theme).toBe('dark');
       expect(parsedSettings.wifiOnly).toBe(true);
@@ -265,7 +265,7 @@ describe('Critical E2E Flows', () => {
       };
 
       // Mock async storage
-      mockAsyncStorage.setItem.mockResolvedValue(true);
+      mockAsyncStorage.setItem.mockResolvedValue(undefined);
       mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(offlineState));
       
       await mockAsyncStorage.setItem('app_state', JSON.stringify(offlineState));
@@ -274,7 +274,7 @@ describe('Critical E2E Flows', () => {
       const appState = await mockAsyncStorage.getItem('app_state');
       expect(appState).not.toBeNull();
       
-      const parsedState = JSON.parse(appState);
+      const parsedState = JSON.parse(appState!);
       expect(parsedState.fallbackMode).toBe(true);
       expect(parsedState.lastError).toBe('Network request failed');
     });

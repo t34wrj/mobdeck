@@ -6,14 +6,14 @@
 
 // External Dependency Mocks
 export const mockAsyncStorage = {
-  getItem: jest.fn(() => Promise.resolve(null)),
-  setItem: jest.fn(() => Promise.resolve()),
-  removeItem: jest.fn(() => Promise.resolve()),
-  clear: jest.fn(() => Promise.resolve()),
+  getItem: jest.fn((key: string) => Promise.resolve(null as string | null)),
+  setItem: jest.fn((key: string, value: string) => Promise.resolve(undefined)),
+  removeItem: jest.fn((key: string) => Promise.resolve(undefined)),
+  clear: jest.fn(() => Promise.resolve(undefined)),
   getAllKeys: jest.fn(() => Promise.resolve([])),
-  multiGet: jest.fn(() => Promise.resolve([])),
-  multiSet: jest.fn(() => Promise.resolve()),
-  multiRemove: jest.fn(() => Promise.resolve()),
+  multiGet: jest.fn((keys: string[]) => Promise.resolve([])),
+  multiSet: jest.fn((keyValuePairs: [string, string][]) => Promise.resolve(undefined)),
+  multiRemove: jest.fn((keys: string[]) => Promise.resolve(undefined)),
 };
 
 export const mockKeychain = {

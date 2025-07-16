@@ -21,6 +21,7 @@ export interface Article {
   url: string;
   imageUrl?: string;
   readTime?: number;
+  sourceUrl?: string;
   isArchived: boolean;
   isFavorite: boolean;
   isRead: boolean;
