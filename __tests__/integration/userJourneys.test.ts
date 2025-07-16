@@ -87,7 +87,7 @@ describe('Critical User Journeys', () => {
         );
       });
 
-      expect(mockDb.transaction).toHaveBeenCalled();
+      expect(mockDb.transaction as jest.Mock).toHaveBeenCalled();
       expect(mockTx.executeSql).toHaveBeenCalled();
     });
 
@@ -96,9 +96,9 @@ describe('Critical User Journeys', () => {
       const mockError = new Error('Database error');
 
       mockDb.transaction = jest.fn(
-        (callback: (tx: any) => void, errorCallback?: (error: any) => void) => {
-          // Call error callback directly since it's a database error scenario
-          if (errorCallback) errorCallback(mockError);
+        (callback: (tx: any) => void) => {
+          // Simulate database error
+          throw mockError;
         }
       );
 

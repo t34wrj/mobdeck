@@ -723,7 +723,7 @@ describe('DatabaseService', () => {
             executeSql: jest.fn((sql, params, success, _error) => {
               if (sql.includes('FAIL')) {
                 const sqlError = new Error('SQL Error');
-                if (error) error(mockTx, sqlError);
+                if (_error) _error(mockTx, sqlError);
                 return;
               } else {
                 if (success)

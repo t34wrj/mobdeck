@@ -98,5 +98,20 @@ declare module 'react-native-sqlite-storage' {
   export default SQLiteStorage;
 }
 
+// Network state interface
+interface NetworkState {
+  isConnected: boolean | null;
+  isInternetReachable: boolean | null;
+  type: string;
+  isWifiEnabled: boolean;
+}
+
+// AuthCredentials type
+interface AuthCredentials {
+  username: string;
+  password: string;
+  serverUrl: string;
+}
+
 // Additional global types can be added here
 export {};
