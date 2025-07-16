@@ -47,6 +47,34 @@ This file provides GitHub Copilot with essential context, guidelines, and prefer
 
 ---
 
+## Automated Release Process
+
+The project uses automated version synchronization to ensure consistent versioning across all platforms:
+
+1. **Version Management**: `package.json` serves as the single source of truth for version numbers
+2. **Android Integration**: `build.gradle` dynamically reads version from `package.json` and auto-increments `versionCode` based on git commit count
+3. **Automated Releases**: Use GitHub Actions workflow "Create Release" to:
+   - Bump version automatically (patch/minor/major)
+   - Run tests and quality checks
+   - Commit version changes
+   - Create git tag
+   - Trigger release workflow
+   - Build and publish APK with correct version
+
+---
+
+## Manual Release Process
+
+1. **Bump Version**: `npm run version:patch` (or minor/major)
+2. **Run Tests**: `npm test`
+3. **Lint Code**: `npm run lint`
+4. **Commit Changes**: Include version bump in commit
+5. **Create Tag**: `git tag v$(npm run version:check)`
+6. **Push**: `git push origin main --tags`
+7. **GitHub Actions**: Will automatically build and release APK
+
+---
+
 ## 4. Data Model (High-Level)
 
 * **Key Entities:** Main data entities the application handles:
