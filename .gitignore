@@ -18,6 +18,7 @@ android/app/build/
 android/build/
 android/.gradle/
 android/gradle/
+!android/gradle/wrapper/gradle-wrapper.jar
 # android/gradlew - Keep tracked for CI/CD
 # android/gradlew.bat - Keep tracked for CI/CD
 android/local.properties
@@ -91,7 +92,7 @@ readeck-config.json
 .watchman-config
 
 # Gradle wrapper
-gradle/wrapper/gradle-wrapper.properties
+# gradle/wrapper/gradle-wrapper.properties - Keep tracked for CI/CD
 
 # Android Studio
 .idea/
@@ -294,6 +295,7 @@ android/.gradle/
 android/build/
 android/app/build/
 android/gradle/
+!android/gradle/wrapper/gradle-wrapper.jar
 # android/gradlew - Keep tracked for CI/CD
 # android/gradlew.bat - Keep tracked for CI/CD
 android/local.properties
