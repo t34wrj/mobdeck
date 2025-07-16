@@ -39,6 +39,15 @@ export interface User {
   serverUrl: string;
 }
 
+export interface Label {
+  id: string;
+  name: string;
+  color?: string;
+  articleCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AuthCredentials {
   serverUrl: string;
   username: string;
@@ -132,6 +141,50 @@ export interface DatabaseArticle
   synced_at?: number;
 }
 
+export interface DBArticle extends DatabaseArticle {}
+
+export interface DBLabel {
+  id: string;
+  name: string;
+  color?: string;
+  article_count: number;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface DBSyncMetadata {
+  id: string;
+  entity_type: string;
+  entity_id: string;
+  last_sync: number;
+  checksum: string;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface DatabaseStats {
+  articles_count: number;
+  labels_count: number;
+  pending_sync_count: number;
+  failed_sync_count: number;
+  last_sync_time: string | null;
+  db_size?: number;
+}
+
+export interface DatabaseOperationResult<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
 export interface ArticleFilters {
   isArchived?: boolean;
   isFavorite?: boolean;
@@ -145,6 +198,18 @@ export interface AppError {
   code: string;
   message: string;
   details?: any;
+}
+
+export class AppError extends Error {
+  code: string;
+  details?: any;
+
+  constructor(code: string, message: string, details?: any) {
+    super(message);
+    this.code = code;
+    this.details = details;
+    this.name = 'AppError';
+  }
 }
 
 export enum ErrorCode {
@@ -167,9 +232,7 @@ export interface ShareModuleInterface {
 }
 
 // Re-export all auth types
-export {
-  AuthErrorCode,
-  StorageErrorCode,
+export type {
   TokenValidationResult,
   StorageError,
   IAuthStorageService,
@@ -177,15 +240,23 @@ export {
   AuthenticatedUser,
 } from './auth';
 
+export {
+  AuthErrorCode,
+  StorageErrorCode,
+} from './auth';
+
 // Re-export all sync types
+export type {
+  SyncConfiguration,
+  SyncProgress,
+  SyncConflict,
+  SyncStats,
+} from './sync';
+
 export {
   SyncStatus,
   SyncPhase,
   ConflictType,
   ConflictResolutionStrategy,
   NetworkType,
-  SyncConfiguration,
-  SyncProgress,
-  SyncConflict,
-  SyncStats,
 } from './sync';

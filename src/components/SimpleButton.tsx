@@ -2,11 +2,13 @@ import React from 'react';
 import { TouchableOpacity, TouchableOpacityProps, Text, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
 
 interface SimpleButtonProps extends TouchableOpacityProps {
-  title: string;
+  title?: string;
   loading?: boolean;
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   textStyle?: TextStyle;
+  fullWidth?: boolean;
+  children?: React.ReactNode;
 }
 
 export const SimpleButton: React.FC<SimpleButtonProps> = ({
@@ -17,6 +19,8 @@ export const SimpleButton: React.FC<SimpleButtonProps> = ({
   style,
   textStyle,
   disabled,
+  fullWidth = false,
+  children,
   ...props
 }) => {
   const isDisabled = disabled || loading;
@@ -30,6 +34,7 @@ export const SimpleButton: React.FC<SimpleButtonProps> = ({
       paddingHorizontal: size === 'sm' ? 12 : size === 'lg' ? 24 : 16,
       paddingVertical: size === 'sm' ? 8 : size === 'lg' ? 16 : 12,
       minHeight: size === 'sm' ? 32 : size === 'lg' ? 48 : 40,
+      width: fullWidth ? '100%' : undefined,
     };
 
     switch (variant) {
@@ -94,7 +99,7 @@ export const SimpleButton: React.FC<SimpleButtonProps> = ({
       {loading ? (
         <ActivityIndicator size="small" color={variant === 'primary' || variant === 'secondary' ? '#ffffff' : '#FE5D26'} />
       ) : (
-        <Text style={[getTextStyle(), textStyle]}>{title}</Text>
+        children || (title && <Text style={[getTextStyle(), textStyle]}>{title}</Text>)
       )}
     </TouchableOpacity>
   );

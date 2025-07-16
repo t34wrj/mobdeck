@@ -2,8 +2,8 @@
 export { SimpleButton } from './SimpleButton';
 export { SimpleText } from './SimpleText';
 export { ArticleCard } from './ArticleCard';
-export { SearchBar } from './SearchBar';
-export { MobdeckLogo } from './MobdeckLogo';
+export { default as SearchBar } from './SearchBar';
+export { default as MobdeckLogo } from './MobdeckLogo';
 export { ConnectivityIndicator } from './ConnectivityIndicator';
 
 // Consolidated component groups

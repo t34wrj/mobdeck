@@ -47,12 +47,12 @@ export const mockNetInfo = {
   })),
 };
 
-export const mockAxios = {
+export const mockAxios: any = {
   get: jest.fn(() => Promise.resolve({ data: [], status: 200 })),
   post: jest.fn(() => Promise.resolve({ data: {}, status: 201 })),
   put: jest.fn(() => Promise.resolve({ data: {}, status: 200 })),
   delete: jest.fn(() => Promise.resolve({ status: 204 })),
-  create: jest.fn(() => mockAxios),
+  create: jest.fn((): any => mockAxios),
   defaults: { headers: { common: {} } },
   interceptors: {
     request: { use: jest.fn(), eject: jest.fn() },
@@ -108,9 +108,9 @@ export const createMockApiResponse = (data: any, status = 200) => ({
 // Reset all mocks
 export const resetAllMocks = () => {
   jest.clearAllMocks();
-  Object.values(mockAsyncStorage).forEach(fn => typeof fn === 'function' && fn.mockClear?.());
-  Object.values(mockKeychain).forEach(fn => typeof fn === 'function' && fn.mockClear?.());
-  Object.values(mockAxios).forEach(fn => typeof fn === 'function' && fn.mockClear?.());
-  mockNavigation.navigate.mockClear();
-  mockNavigation.goBack.mockClear();
+  Object.values(mockAsyncStorage).forEach(fn => typeof fn === 'function' && (fn as jest.Mock).mockClear?.());
+  Object.values(mockKeychain).forEach(fn => typeof fn === 'function' && (fn as jest.Mock).mockClear?.());
+  Object.values(mockAxios).forEach(fn => typeof fn === 'function' && (fn as jest.Mock).mockClear?.());
+  (mockNavigation.navigate as jest.Mock).mockClear();
+  (mockNavigation.goBack as jest.Mock).mockClear();
 };
