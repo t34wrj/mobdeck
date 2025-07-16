@@ -32,7 +32,7 @@ jobs:
         run: npm run format:check || echo "Prettier found formatting issues but continuing build"
 
       - name: Run TypeScript type check (allow warnings)
-        run: echo "TypeScript check temporarily disabled for v0.1.0 release - 301 errors to be resolved in future release"
+        run: npm run type-check || echo "TypeScript check found errors but continuing build"
 
       - name: Run tests
         run: npm test -- --watchAll=false --passWithNoTests
