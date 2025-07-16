@@ -44,7 +44,7 @@ describe('ArticleScreen', () => {
       new Promise(() => {})
     );
 
-    const { UNSAFE_getByType } = render(
+    const { UNSAFE_getByType: _unsafeGetByType } = render(
        
       <ArticleScreen
         navigation={mockNavigation as any}
@@ -152,7 +152,7 @@ describe('ArticleScreen', () => {
       data: mockArticle,
     });
 
-    const { UNSAFE_getByType } = render(
+    const { UNSAFE_getByType: _unsafeGetByType } = render(
        
       <ArticleScreen
         navigation={mockNavigation as any}

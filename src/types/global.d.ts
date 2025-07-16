@@ -99,7 +99,7 @@ declare module 'react-native-sqlite-storage' {
 }
 
 // Network state interface
-interface NetworkState {
+interface _NetworkState {
   isConnected: boolean | null;
   isInternetReachable: boolean | null;
   type: string;
@@ -107,7 +107,7 @@ interface NetworkState {
 }
 
 // AuthCredentials type
-interface AuthCredentials {
+interface _AuthCredentials {
   username: string;
   password: string;
   serverUrl: string;

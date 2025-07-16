@@ -96,7 +96,7 @@ describe('Critical User Journeys', () => {
       const mockError = new Error('Database error');
 
       mockDb.transaction = jest.fn(
-        (callback: (tx: any) => void) => {
+        (_callback: (tx: any) => void) => {
           // Simulate database error
           throw mockError;
         }
