@@ -108,6 +108,16 @@ describe('LocalStorageService', () => {
         title: 'Test Article',
         url: 'https://example.com',
         content: 'Test content',
+        summary: 'Test summary',
+        image_url: null,
+        read_time: 5,
+        is_archived: 0,
+        is_favorite: 0,
+        is_read: 0,
+        source_url: null,
+        synced_at: null,
+        is_modified: 0,
+        deleted_at: null,
       };
 
       const result = await localStorageService.createArticle(articleData);
@@ -157,6 +167,9 @@ describe('LocalStorageService', () => {
         content: 'Test content',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        isArchived: false,
+        isFavorite: false,
+        isRead: false,
       };
 
       expect(() => {
@@ -242,6 +255,9 @@ describe('LocalStorageService', () => {
         content: 'New content',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        isArchived: false,
+        isFavorite: false,
+        isRead: false,
       };
 
       const result =

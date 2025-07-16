@@ -103,13 +103,12 @@ describe('Critical User Journeys', () => {
       );
 
       let errorCaught = false;
-      mockDb.transaction(
-        () => {},
-        (error: any) => {
-          errorCaught = true;
-          expect(error.message).toBe('Database error');
-        }
-      );
+      try {
+        mockDb.transaction(() => {});
+      } catch (error: any) {
+        errorCaught = true;
+        expect(error.message).toBe('Database error');
+      }
 
       expect(errorCaught).toBe(true);
     });
