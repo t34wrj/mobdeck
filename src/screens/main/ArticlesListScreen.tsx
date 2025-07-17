@@ -381,7 +381,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
         )}
       </View>
     );
-  }, [searchQuery, filters, handleClearSearch]);
+  }, [searchQuery, filters, handleClearSearch, isAuthenticated]);
 
   // Render footer with loading indicator for pagination
   const renderFooter = useCallback(() => {
