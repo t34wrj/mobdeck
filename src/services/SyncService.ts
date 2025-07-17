@@ -154,6 +154,32 @@ class SyncService implements SimpleSyncServiceInterface {
       throw new Error('Server is unreachable. Please check your connection.');
     }
 
+    // Check network constraints based on user settings
+    if (this.config.syncOnWifiOnly && !networkStatus.isWifi) {
+      console.log('[SyncService] Sync blocked - WiFi-only mode enabled and not connected to WiFi');
+      store.dispatch(
+        syncError({
+          error: 'Sync is set to WiFi-only mode. Please connect to WiFi or change sync settings.',
+          phase: SyncPhase.CHECKING_CONNECTION,
+          isRetryable: true,
+        })
+      );
+      throw new Error('Sync is set to WiFi-only mode. Please connect to WiFi or change sync settings.');
+    }
+
+    // Check if cellular sync is disabled but we're on cellular
+    if (!this.config.syncOnCellular && networkStatus.isCellular) {
+      console.log('[SyncService] Sync blocked - cellular sync disabled and connected to cellular');
+      store.dispatch(
+        syncError({
+          error: 'Sync on cellular is disabled. Please connect to WiFi or change sync settings.',
+          phase: SyncPhase.CHECKING_CONNECTION,
+          isRetryable: true,
+        })
+      );
+      throw new Error('Sync on cellular is disabled. Please connect to WiFi or change sync settings.');
+    }
+
     console.log('[SyncService] Starting full sync...');
 
     this.isRunning = true;
@@ -513,7 +539,8 @@ class SyncService implements SimpleSyncServiceInterface {
       );
       return result;
     } catch (error) {
-      const handledError = errorHandler.handleError(error, {
+      const errorMessage = this.serializeError(error);
+      const _handledError = errorHandler.handleError(error, {
         category: ErrorCategory.SYNC_OPERATION,
         context: {
           actionType: 'sync_down',
@@ -521,11 +548,14 @@ class SyncService implements SimpleSyncServiceInterface {
         },
       });
 
+      console.error('[SyncService] Sync down failed:', errorMessage);
+      console.error('[SyncService] Full error object:', error);
+      
       result.success = false;
       result.errorCount++;
       result.errors.push({
         operation: 'sync_down',
-        error: handledError.message,
+        error: errorMessage,
         retryable: this.isRetryableError(error),
       });
       return result;
@@ -893,50 +923,69 @@ class SyncService implements SimpleSyncServiceInterface {
   }
 
   private async fetchRemoteArticlesSince(since: Date): Promise<Article[]> {
-    const response = await readeckApiService.fetchArticlesWithFilters({
-      page: 1,
-      limit: 1000,
-      forceRefresh: true,
-    });
+    let response;
+    try {
+      console.log(`[SyncService] Fetching remote articles since: ${since.toISOString()}`);
+      response = await readeckApiService.fetchArticlesWithFilters({
+        page: 1,
+        limit: 1000,
+        forceRefresh: true,
+      });
+      console.log(`[SyncService] Successfully fetched ${response.items.length} articles from remote`);
+    } catch (error) {
+      const errorMessage = this.serializeError(error);
+      console.error('[SyncService] Failed to fetch remote articles:', errorMessage);
+      console.error('[SyncService] Full error object:', error);
+      throw error;
+    }
 
     // Filter articles modified since the timestamp
     const filteredArticles = response.items.filter(
       article => new Date(article.updatedAt) > since
     );
 
-    // Fetch full content for each article during sync
+    console.log(`[SyncService] Found ${filteredArticles.length} articles to sync (fullTextSync: ${this.config.fullTextSync})`);
+
+    // Fetch full content for each article during sync (if enabled)
     const articlesWithContent: Article[] = [];
     for (const article of filteredArticles) {
       try {
-        console.log(`[SyncService] Fetching full content for article ${article.id}`);
-        const fullArticle = await readeckApiService.getArticleWithContent(article.id);
-        
-        // Verify that content was actually fetched
-        if (fullArticle.content && fullArticle.content.trim().length > 0) {
-          console.log(`[SyncService] Successfully fetched content for article ${article.id} (${fullArticle.content.length} chars)`);
-          articlesWithContent.push(fullArticle);
-        } else if (fullArticle.contentUrl) {
-          // If no content but contentUrl exists, try to fetch content directly
-          console.log(`[SyncService] No content found, trying to fetch from contentUrl for article ${article.id}`);
-          try {
-            const content = await readeckApiService.getArticleContent(fullArticle.contentUrl);
-            articlesWithContent.push({
-              ...fullArticle,
-              content: content
-            });
-            console.log(`[SyncService] Successfully fetched content from contentUrl for article ${article.id} (${content.length} chars)`);
-          } catch (contentError) {
-            console.error(`[SyncService] Failed to fetch content from contentUrl for article ${article.id}:`, contentError);
-            // Store article with contentUrl for later content fetching
+        if (this.config.fullTextSync) {
+          console.log(`[SyncService] Fetching full content for article ${article.id}`);
+          const fullArticle = await readeckApiService.getArticleWithContent(article.id);
+          
+          // Verify that content was actually fetched
+          if (fullArticle.content && fullArticle.content.trim().length > 0) {
+            console.log(`[SyncService] Successfully fetched content for article ${article.id} (${fullArticle.content.length} chars)`);
+            articlesWithContent.push(fullArticle);
+          } else if (fullArticle.contentUrl) {
+            // If no content but contentUrl exists, try to fetch content directly
+            console.log(`[SyncService] No content found, trying to fetch from contentUrl for article ${article.id}`);
+            try {
+              const content = await readeckApiService.getArticleContent(fullArticle.contentUrl);
+              articlesWithContent.push({
+                ...fullArticle,
+                content
+              });
+              console.log(`[SyncService] Successfully fetched content from contentUrl for article ${article.id} (${content.length} chars)`);
+            } catch (contentError) {
+              console.error(`[SyncService] Failed to fetch content from contentUrl for article ${article.id}:`, contentError);
+              // Store article with contentUrl for later content fetching
+              articlesWithContent.push(fullArticle);
+            }
+          } else {
+            console.warn(`[SyncService] No content or contentUrl available for article ${article.id}`);
+            // Store the article without content - user can manually refresh later
             articlesWithContent.push(fullArticle);
           }
         } else {
-          console.warn(`[SyncService] No content or contentUrl available for article ${article.id}`);
-          // Store the article without content - user can manually refresh later
-          articlesWithContent.push(fullArticle);
+          console.log(`[SyncService] Skipping content fetch for article ${article.id} (fullTextSync disabled)`);
+          // Just fetch basic article metadata without content
+          const basicArticle = await readeckApiService.getArticleWithContent(article.id);
+          articlesWithContent.push(basicArticle);
         }
       } catch (error) {
-        console.error(`[SyncService] Failed to fetch content for article ${article.id}:`, error);
+        console.error(`[SyncService] Failed to fetch article ${article.id}:`, error);
         // Store the article without content - user can manually refresh later
         articlesWithContent.push(article);
       }
@@ -1032,6 +1081,34 @@ class SyncService implements SimpleSyncServiceInterface {
     return false;
   }
 
+  private serializeError(error: any): string {
+    try {
+      // If error is already a string, return it
+      if (typeof error === 'string') return error;
+      
+      // If error has a message property, use that
+      if (error?.message) return error.message;
+      
+      // Try to extract meaningful error information
+      if (error?.response?.data?.message) return error.response.data.message;
+      if (error?.response?.statusText) return error.response.statusText;
+      
+      // If it's an object, try to stringify it properly
+      if (typeof error === 'object') {
+        try {
+          return JSON.stringify(error, Object.getOwnPropertyNames(error));
+        } catch (stringifyError) {
+          return `[Error serialization failed: ${stringifyError.message}] Original error: ${error.toString()}`;
+        }
+      }
+      
+      // Fallback to toString
+      return error.toString();
+    } catch (serializationError) {
+      return `[Error serialization failed: ${serializationError.message}]`;
+    }
+  }
+
   async stopSync(): Promise<void> {
     if (this.isRunning && this.abortController) {
       console.log('[SyncService] Stopping sync...');
@@ -1104,7 +1181,7 @@ class SyncService implements SimpleSyncServiceInterface {
           
           if (content && content.trim().length > 0) {
             await localStorageService.updateArticle(dbArticle.id, {
-              content: content,
+              content,
               updated_at: Math.floor(Date.now() / 1000)
             });
             result.updated++;

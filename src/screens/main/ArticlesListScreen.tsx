@@ -46,6 +46,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   const articles = useSelector(selectFilteredArticles);
   const isAuthenticated = useSelector(selectIsUserAuthenticated);
   const { isOnline } = useNetworkStatus();
+  const { config: syncConfig } = useSelector((state: RootState) => state.sync);
 
   const [searchQuery, setSearchQuery] = useState(filters.searchQuery);
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(
@@ -120,8 +121,10 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       // Start background sync to refresh articles from server
       dispatch(startSyncOperation({
         syncOptions: {
-          fullTextSync: false, // Don't fetch full text in background
-          downloadImages: false, // Don't download images in background
+          fullTextSync: false, // Don't fetch full text in background to save data
+          downloadImages: false, // Don't download images in background to save data
+          syncOnWifiOnly: syncConfig.syncOnWifiOnly,
+          syncOnCellular: syncConfig.syncOnCellular,
         },
         forceFull: false,
       })).then(() => {
@@ -145,8 +148,10 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
         const syncResult = await dispatch(
           startSyncOperation({
             syncOptions: {
-              fullTextSync: true,
-              downloadImages: true,
+              fullTextSync: syncConfig.fullTextSync,
+              downloadImages: syncConfig.downloadImages,
+              syncOnWifiOnly: syncConfig.syncOnWifiOnly,
+              syncOnCellular: syncConfig.syncOnCellular,
             },
             forceFull: false,
           })

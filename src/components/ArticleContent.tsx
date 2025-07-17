@@ -17,6 +17,11 @@ export interface ArticleContentProps {
   imageUrl?: string;
   fontSize?: 'small' | 'medium' | 'large';
   fontFamily?: string;
+  isLoading?: boolean;
+  hasError?: boolean;
+  onRetry?: () => void;
+  contentLoading?: boolean;
+  contentError?: boolean;
 }
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -43,6 +48,11 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
     imageUrl,
     fontSize = 'medium',
     fontFamily = theme.typography.fontFamily.regular,
+    isLoading = false,
+    hasError = false,
+    onRetry,
+    contentLoading = false,
+    contentError = false,
   }) => {
     const [imageModalVisible, setImageModalVisible] = useState(false);
     const [imageError, setImageError] = useState(false);
@@ -211,6 +221,11 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
       return null;
     }, [content, parseContent]);
 
+    // Determine the overall loading state
+    const isContentLoading = isLoading || contentLoading;
+    const hasContentError = hasError || contentError;
+    const hasContent = content && content.trim().length > 0;
+
     return (
       <View style={styles.container}>
         {/* Article Image */}
@@ -238,7 +253,30 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
 
         {/* Content */}
         <View style={styles.contentContainer}>
-          {parsedContent ? (
+          {isContentLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text variant='body' style={[styles.loadingText, contentStyles]}>
+                Loading content...
+              </Text>
+            </View>
+          ) : hasContentError ? (
+            <View style={styles.errorContainer}>
+              <Text variant='body' style={[styles.errorText, contentStyles]}>
+                Failed to load content.
+              </Text>
+              {onRetry && (
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={onRetry}
+                  activeOpacity={0.7}
+                >
+                  <Text variant='body' style={styles.retryButtonText}>
+                    Retry
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : hasContent && parsedContent ? (
             parsedContent
           ) : (
             <Text variant='body' style={[styles.noContent, contentStyles]}>
@@ -292,7 +330,12 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
       prevProps.summary === nextProps.summary &&
       prevProps.imageUrl === nextProps.imageUrl &&
       prevProps.fontSize === nextProps.fontSize &&
-      prevProps.fontFamily === nextProps.fontFamily
+      prevProps.fontFamily === nextProps.fontFamily &&
+      prevProps.isLoading === nextProps.isLoading &&
+      prevProps.hasError === nextProps.hasError &&
+      prevProps.onRetry === nextProps.onRetry &&
+      prevProps.contentLoading === nextProps.contentLoading &&
+      prevProps.contentError === nextProps.contentError
     );
   }
 );
@@ -394,6 +437,46 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.neutral[200],
     borderStyle: 'dashed',
+  },
+  loadingContainer: {
+    textAlign: 'center',
+    padding: theme.spacing[8],
+    backgroundColor: theme.colors.neutral[50],
+    borderRadius: theme.borderRadius.lg,
+    marginTop: theme.spacing[4],
+    marginBottom: theme.spacing[6],
+  },
+  loadingText: {
+    textAlign: 'center',
+    color: theme.colors.neutral[600],
+    fontStyle: 'italic',
+  },
+  errorContainer: {
+    textAlign: 'center',
+    padding: theme.spacing[6],
+    backgroundColor: theme.colors.primary[50],
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.primary[200],
+    marginTop: theme.spacing[4],
+    marginBottom: theme.spacing[6],
+  },
+  errorText: {
+    textAlign: 'center',
+    color: theme.colors.primary[700],
+    marginBottom: theme.spacing[4],
+  },
+  retryButton: {
+    backgroundColor: theme.colors.primary[500],
+    paddingHorizontal: theme.spacing[5],
+    paddingVertical: theme.spacing[3],
+    borderRadius: theme.borderRadius.md,
+    alignSelf: 'center',
+  },
+  retryButtonText: {
+    color: theme.colors.neutral[50],
+    fontWeight: theme.typography.fontWeight.medium,
+    textAlign: 'center',
   },
   // Modal styles with enhanced design
   modalContainer: {

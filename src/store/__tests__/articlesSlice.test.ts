@@ -56,6 +56,7 @@ describe('Articles Slice', () => {
         update: false,
         delete: false,
         sync: false,
+        content: false,
       });
       expect(state.error).toEqual({
         fetch: null,
@@ -63,6 +64,7 @@ describe('Articles Slice', () => {
         update: null,
         delete: null,
         sync: null,
+        content: null,
       });
       expect(state.pagination).toEqual({
         page: 1,
@@ -78,6 +80,8 @@ describe('Articles Slice', () => {
         isRead: undefined,
         tags: undefined,
       });
+      expect(state.contentLoading).toEqual({});
+      expect(state.contentErrors).toEqual({});
     });
   });
 

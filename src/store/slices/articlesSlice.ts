@@ -15,6 +15,7 @@ export interface ArticlesState {
     update: boolean;
     delete: boolean;
     sync: boolean;
+    content: boolean;
   };
 
   // Error states
@@ -24,6 +25,7 @@ export interface ArticlesState {
     update: string | null;
     delete: string | null;
     sync: string | null;
+    content: string | null;
   };
 
   // Pagination state
@@ -57,6 +59,10 @@ export interface ArticlesState {
   selectedArticleId: string | null;
   multiSelectMode: boolean;
   selectedArticleIds: string[];
+
+  // Content loading states for individual articles
+  contentLoading: Record<string, boolean>;
+  contentErrors: Record<string, string | null>;
 }
 
 // Initial state
@@ -68,6 +74,7 @@ const initialState: ArticlesState = {
     update: false,
     delete: false,
     sync: false,
+    content: false,
   },
   error: {
     fetch: null,
@@ -75,6 +82,7 @@ const initialState: ArticlesState = {
     update: null,
     delete: null,
     sync: null,
+    content: null,
   },
   pagination: {
     page: 1,
@@ -100,6 +108,8 @@ const initialState: ArticlesState = {
   selectedArticleId: null,
   multiSelectMode: false,
   selectedArticleIds: [],
+  contentLoading: {},
+  contentErrors: {},
 };
 
 // Async thunk interfaces
@@ -133,6 +143,11 @@ interface DeleteArticleParams {
 interface SyncArticlesParams {
   fullSync?: boolean;
   articlesOnly?: boolean;
+}
+
+interface FetchArticleContentParams {
+  articleId: string;
+  forceRefresh?: boolean;
 }
 
 // Async thunk actions
@@ -455,6 +470,36 @@ export const loadLocalArticles = createAsyncThunk<
   }
 });
 
+export const fetchArticleContent = createAsyncThunk<
+  Article,
+  FetchArticleContentParams,
+  { rejectValue: string; state: RootState }
+>('articles/fetchArticleContent', async (params, { rejectWithValue, getState }) => {
+  try {
+    const state = getState();
+    const article = state.articles.articles.find(a => a.id === params.articleId);
+    
+    if (!article) {
+      return rejectWithValue('Article not found');
+    }
+
+    // Check if we already have content and don't need to force refresh
+    if (article.content && article.content.trim() && !params.forceRefresh) {
+      return article;
+    }
+
+    console.log(`[articlesSlice] Fetching content for article ${params.articleId}`);
+    
+    const fullArticle = await readeckApiService.getArticleWithContent(params.articleId);
+    
+    return fullArticle;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch article content';
+    console.error(`[articlesSlice] fetchArticleContent error for ${params.articleId}:`, errorMessage);
+    return rejectWithValue(errorMessage);
+  }
+});
+
 export const syncArticles = createAsyncThunk<
   { syncedCount: number; conflictCount: number; articles: Article[] },
   SyncArticlesParams,
@@ -611,6 +656,32 @@ const articlesSlice = createSlice({
       state.sync.syncError = null;
     },
 
+    // Content loading state management
+    setContentLoading: (state, action: PayloadAction<{ articleId: string; loading: boolean }>) => {
+      const { articleId, loading } = action.payload;
+      state.contentLoading[articleId] = loading;
+      if (loading) {
+        // Clear any existing error when starting to load
+        delete state.contentErrors[articleId];
+      }
+    },
+
+    setContentError: (state, action: PayloadAction<{ articleId: string; error: string | null }>) => {
+      const { articleId, error } = action.payload;
+      if (error) {
+        state.contentErrors[articleId] = error;
+      } else {
+        delete state.contentErrors[articleId];
+      }
+      // Clear loading state when setting error
+      state.contentLoading[articleId] = false;
+    },
+
+    clearContentError: (state, action: PayloadAction<string>) => {
+      const articleId = action.payload;
+      delete state.contentErrors[articleId];
+    },
+
     // Clear all articles data (used during logout)
     clearAll: () => {
       return initialState;
@@ -746,15 +817,18 @@ const articlesSlice = createSlice({
             ];
 
             // For content, only update if the new value has actual content
+            // AND we're not currently loading content for this article
             if (key === 'content') {
+              const isLoadingContent = state.contentLoading[action.payload.id];
               if (
                 value &&
                 typeof value === 'string' &&
-                value.trim().length > 0
+                value.trim().length > 0 &&
+                !isLoadingContent
               ) {
                 (mergedChanges as any)[key] = value;
               }
-              // Otherwise keep existing content
+              // Otherwise keep existing content to prevent clearing during sync
             }
             // For other fields, update if not empty or if it's an always-update field
             else if (
@@ -885,6 +959,41 @@ const articlesSlice = createSlice({
         state.loading.sync = false;
         state.sync.isSyncing = false;
         state.sync.syncError = action.payload || 'Failed to sync articles';
+      })
+
+      // Fetch article content
+      .addCase(fetchArticleContent.pending, (state, action) => {
+        const articleId = action.meta.arg.articleId;
+        state.contentLoading[articleId] = true;
+        delete state.contentErrors[articleId];
+      })
+      .addCase(fetchArticleContent.fulfilled, (state, action) => {
+        const articleId = action.meta.arg.articleId;
+        state.contentLoading[articleId] = false;
+        delete state.contentErrors[articleId];
+
+        // Update the article with the fetched content
+        const articleIndex = state.articles.findIndex(
+          article => article.id === articleId
+        );
+
+        if (articleIndex !== -1) {
+          const existingArticle = state.articles[articleIndex];
+          // Preserve important fields while updating content
+          const updatedArticle = {
+            ...existingArticle,
+            content: action.payload.content || existingArticle.content,
+            summary: action.payload.summary || existingArticle.summary,
+            imageUrl: action.payload.imageUrl || existingArticle.imageUrl,
+            updatedAt: action.payload.updatedAt || new Date().toISOString(),
+          };
+          state.articles[articleIndex] = updatedArticle;
+        }
+      })
+      .addCase(fetchArticleContent.rejected, (state, action) => {
+        const articleId = action.meta.arg.articleId;
+        state.contentLoading[articleId] = false;
+        state.contentErrors[articleId] = action.payload || 'Failed to fetch content';
       });
   },
 });
@@ -897,6 +1006,19 @@ export const selectArticleIds = (state: RootState) =>
   state.articles.articles.map(article => article.id);
 export const selectTotalArticles = (state: RootState) =>
   state.articles.articles.length;
+
+// Content loading selectors
+export const selectContentLoading = (state: RootState, articleId: string) =>
+  state.articles.contentLoading[articleId] || false;
+export const selectContentError = (state: RootState, articleId: string) =>
+  state.articles.contentErrors[articleId] || null;
+export const selectIsContentLoading = (state: RootState) =>
+  Object.values(state.articles.contentLoading).some(loading => loading);
+export const selectArticleContentState = (state: RootState, articleId: string) => ({
+  isLoading: state.articles.contentLoading[articleId] || false,
+  error: state.articles.contentErrors[articleId] || null,
+  article: state.articles.articles.find(article => article.id === articleId),
+});
 
 // Export action creators
 export const {
@@ -913,6 +1035,9 @@ export const {
   markSyncConflict,
   resolveSyncConflict,
   clearSyncError,
+  setContentLoading,
+  setContentError,
+  clearContentError,
   clearAll,
 } = articlesSlice.actions;
 

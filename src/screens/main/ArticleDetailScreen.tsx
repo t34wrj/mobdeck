@@ -33,7 +33,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
 
   const { loading, error } = useSelector((state: RootState) => state.articles);
 
-  const { refreshing, handleRefresh } = useArticleContent(article, articleId);
+  const { refreshing, isLoading, hasError, handleRefresh } = useArticleContent(article, articleId);
 
   const {
     showActions,
@@ -136,6 +136,9 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
             content={article.content}
             summary={article.summary}
             imageUrl={article.imageUrl}
+            isLoading={isLoading}
+            hasError={hasError}
+            onRetry={handleRefresh}
           />
 
           <ArticleActions

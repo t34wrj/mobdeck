@@ -829,54 +829,170 @@ class ReadeckApiService implements IReadeckApiService {
       baseUrlHash: maskSensitiveData(this.config.baseUrl),
     });
 
-    // Handle both absolute URLs and relative paths
-    let requestUrl = contentUrl;
+    let requestUrl: string;
 
-    // If it's a full URL, we need to extract the path relative to our base URL
-    if (contentUrl.startsWith('http://') || contentUrl.startsWith('https://')) {
-      // Remove the base URL portion to get just the path
-      const baseUrlWithoutTrailingSlash = this.config.baseUrl.replace(
-        /\/$/,
-        ''
-      );
+    try {
+      // Validate input URL
+      if (!contentUrl || typeof contentUrl !== 'string') {
+        throw new Error('Invalid content URL provided');
+      }
 
-      if (contentUrl.startsWith(baseUrlWithoutTrailingSlash)) {
-        // Extract the path after the base URL
-        requestUrl = contentUrl.substring(baseUrlWithoutTrailingSlash.length);
-        // Ensure it starts with /
-        if (!requestUrl.startsWith('/')) {
-          requestUrl = `/${requestUrl}`;
-        }
+      // Handle relative paths (already proper API paths)
+      if (!contentUrl.startsWith('http://') && !contentUrl.startsWith('https://')) {
+        requestUrl = contentUrl.startsWith('/') ? contentUrl : `/${contentUrl}`;
+        logger.debug('Using relative path as-is', {
+          pathHash: maskSensitiveData(requestUrl),
+        });
       } else {
-        // If URL doesn't match our base URL, try extracting path after /api/
-        const url = new URL(contentUrl);
-        const apiIndex = url.pathname.indexOf('/api/');
-        if (apiIndex !== -1) {
-          requestUrl = url.pathname.substring(apiIndex + 4); // Skip '/api'
-        } else {
-          requestUrl = url.pathname;
+        // Handle absolute URLs - extract path using native URL API
+        requestUrl = this.extractPathFromAbsoluteUrl(contentUrl);
+        logger.debug('Extracted path from absolute URL', {
+          originalUrl: maskSensitiveData(contentUrl),
+          extractedPath: maskSensitiveData(requestUrl),
+        });
+      }
+
+      logger.debug('Making content request to path', {
+        pathHash: maskSensitiveData(requestUrl),
+      });
+
+      // Use the makeRequest method to ensure proper authentication and error handling
+      const response = await this.makeRequest<string>({
+        method: 'GET',
+        url: requestUrl,
+        headers: {
+          Accept: 'text/html',
+        },
+      });
+
+      logger.debug('Content response received', {
+        contentLength: response.data?.length || 0,
+      });
+
+      return response.data;
+    } catch (error) {
+      logger.error('Failed to fetch article content', {
+        contentUrl: maskSensitiveData(contentUrl),
+        error: error.message,
+        requestUrl: requestUrl ? maskSensitiveData(requestUrl) : 'undefined',
+      });
+
+      // Try fallback URL processing if primary method failed
+      if (contentUrl.startsWith('http://') || contentUrl.startsWith('https://')) {
+        try {
+          const fallbackUrl = this.getFallbackUrl(contentUrl);
+          logger.debug('Attempting fallback URL processing', {
+            fallbackUrl: maskSensitiveData(fallbackUrl),
+          });
+
+          const fallbackResponse = await this.makeRequest<string>({
+            method: 'GET',
+            url: fallbackUrl,
+            headers: {
+              Accept: 'text/html',
+            },
+          });
+
+          logger.debug('Fallback request succeeded', {
+            contentLength: fallbackResponse.data?.length || 0,
+          });
+
+          return fallbackResponse.data;
+        } catch (fallbackError) {
+          logger.error('Fallback URL processing also failed', {
+            contentUrl: maskSensitiveData(contentUrl),
+            fallbackError: fallbackError.message,
+          });
         }
       }
+
+      // Re-throw the original error if all attempts failed
+      throw error;
     }
+  }
 
-    logger.debug('Making content request to path', {
-      pathHash: maskSensitiveData(requestUrl),
-    });
+  /**
+   * Extract API path from absolute URL using native URL API
+   * @private
+   */
+  private extractPathFromAbsoluteUrl(absoluteUrl: string): string {
+    try {
+      const contentUrlObj = new URL(absoluteUrl);
+      const baseUrlObj = new URL(this.config.baseUrl);
 
-    // Use the makeRequest method to ensure proper authentication and error handling
-    const response = await this.makeRequest<string>({
-      method: 'GET',
-      url: requestUrl,
-      headers: {
-        Accept: 'text/html',
-      },
-    });
+      // If the URL is from the same origin, extract the path relative to base URL
+      if (contentUrlObj.origin === baseUrlObj.origin) {
+        const basePath = baseUrlObj.pathname.replace(/\/$/, '');
+        let relativePath = contentUrlObj.pathname;
 
-    logger.debug('Content response received', {
-      contentLength: response.data?.length || 0,
-    });
+        // Remove base path if it's a prefix
+        if (basePath && relativePath.startsWith(basePath)) {
+          relativePath = relativePath.substring(basePath.length);
+        }
 
-    return response.data;
+        // Ensure path starts with /
+        return relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
+      }
+
+      // For cross-origin URLs, try to extract API path
+      const pathname = contentUrlObj.pathname;
+      const apiIndex = pathname.indexOf('/api/');
+      
+      if (apiIndex !== -1) {
+        // Return path after /api/
+        return pathname.substring(apiIndex + 4);
+      }
+
+      // Default to using the full pathname
+      return pathname;
+    } catch (urlError) {
+      logger.warn('Failed to parse URL with native URL API', {
+        url: maskSensitiveData(absoluteUrl),
+        error: urlError.message,
+      });
+      throw new Error(`Invalid URL format: ${urlError.message}`);
+    }
+  }
+
+  /**
+   * Get fallback URL for content fetching
+   * @private
+   */
+  private getFallbackUrl(originalUrl: string): string {
+    try {
+      const urlObj = new URL(originalUrl);
+      
+      // Try different fallback strategies
+      const strategies = [
+        () => urlObj.pathname, // Use full pathname
+        () => urlObj.pathname.replace(/^\/+/, '/'), // Normalize leading slashes
+        () => `/bookmarks${urlObj.pathname}`, // Prepend bookmarks path
+        () => urlObj.pathname.split('/').slice(-2).join('/'), // Last two path segments
+      ];
+
+      for (const strategy of strategies) {
+        try {
+          const fallbackPath = strategy();
+          if (fallbackPath && fallbackPath !== '/') {
+            return fallbackPath.startsWith('/') ? fallbackPath : `/${fallbackPath}`;
+          }
+        } catch (strategyError) {
+          logger.debug('Fallback strategy failed', {
+            strategy: strategy.name || 'anonymous',
+            error: strategyError.message,
+          });
+        }
+      }
+
+      // Last resort: use the pathname as-is
+      return urlObj.pathname || '/';
+    } catch (error) {
+      logger.warn('All fallback strategies failed', {
+        originalUrl: maskSensitiveData(originalUrl),
+        error: error.message,
+      });
+      return '/';
+    }
   }
 
   // User methods
