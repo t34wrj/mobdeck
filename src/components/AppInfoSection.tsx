@@ -2,12 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { theme } from './theme';
 
+const packageJson = require('../../package.json');
+
 export const AppInfoSection: React.FC = () => (
   <View style={styles.container}>
     <Text style={styles.title}>About</Text>
     <View style={styles.row}>
       <Text style={styles.label}>App Version</Text>
-      <Text style={styles.value}>0.1.0</Text>
+      <Text style={styles.value}>{packageJson.version}</Text>
     </View>
     <View style={styles.row}>
       <Text style={styles.label}>Build</Text>

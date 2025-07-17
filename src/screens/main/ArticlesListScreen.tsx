@@ -22,10 +22,8 @@ import {
   loadLocalArticles,
   setFilters,
   setPage,
-  syncArticles,
-  fetchArticles,
 } from '../../store/slices/articlesSlice';
-import { startSync } from '../../store/slices/syncSlice';
+import { startSyncOperation } from '../../store/thunks/syncThunks';
 import { selectFilteredArticles } from '../../store/selectors/articlesSelectors';
 import { selectIsUserAuthenticated } from '../../store/selectors/authSelectors';
 import { Article } from '../../types';
@@ -123,30 +121,24 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
     // Try to sync with server if online and authenticated
     if (isOnline && isAuthenticated) {
       try {
-        console.log('[ArticlesListScreen] Syncing with server...');
-        const syncResult = await dispatch(syncArticles({ fullSync: false }));
-        console.log('[ArticlesListScreen] Sync result:', syncResult);
-
-        // Try to fetch fresh articles from server
-        try {
-          console.log(
-            '[ArticlesListScreen] Fetching fresh articles from server'
-          );
-          const fetchResult = await dispatch(
-            fetchArticles({
-              page: 1,
-              forceRefresh: true,
-              fetchFullContent: false,
-            })
-          );
-          console.log('[ArticlesListScreen] Fetch result:', fetchResult);
-        } catch (fetchError) {
-          console.warn(
-            '[ArticlesListScreen] Fetch failed, continuing with sync:',
-            fetchError
-          );
+        console.log('[ArticlesListScreen] Starting full sync operation...');
+        const syncResult = await dispatch(
+          startSyncOperation({
+            syncOptions: {
+              fullTextSync: true,
+              downloadImages: true,
+            },
+            forceFull: false,
+          })
+        );
+        
+        // Check if sync was successful
+        if (syncResult.meta.requestStatus === 'rejected') {
+          throw new Error(syncResult.error?.message || 'Sync failed');
         }
-
+        
+        console.log('[ArticlesListScreen] Sync completed successfully');
+        
         // Reload local articles after sync to show changes
         dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
       } catch (syncError) {
@@ -472,11 +464,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
             <SimpleButton
               variant='outline'
               size='sm'
-              onPress={() => {
-                // Start sync and immediately load local articles
-                dispatch(startSync({ source: 'user' }));
-                dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
-              }}
+              onPress={handleRefresh}
               style={styles.retryButton}
             >
               <Text>Retry</Text>
