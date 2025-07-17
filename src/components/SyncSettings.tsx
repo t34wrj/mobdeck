@@ -236,7 +236,7 @@ export const SyncSettings: React.FC = () => {
             disabled={!isOnline}
             fullWidth
           >
-            {isOnline ? 'Sync Now' : 'No Connection'}
+            <Text>{isOnline ? 'Sync Now' : 'No Connection'}</Text>
           </Button>
         )}
 

@@ -48,7 +48,7 @@ class AuthStorageService implements IAuthStorageService {
 
   private readonly keychainOptions: KeychainOptions = {
     service: this.SERVICE_NAME,
-    touchID: false, // Will be configurable later
+    touchID: false, // Disabled for simplified access
     showModal: false,
   };
 
@@ -114,7 +114,6 @@ class AuthStorageService implements IAuthStorageService {
         JSON.stringify(tokenData),
         {
           ...this.keychainOptions,
-          accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_CURRENT_SET,
           accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
         }
       );

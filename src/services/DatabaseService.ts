@@ -143,8 +143,17 @@ enum ErrorCategory {
 
 // Enable debugging in development
 if (typeof __DEV__ !== 'undefined' && __DEV__) {
-  SQLite.DEBUG(true);
-  SQLite.enablePromise(true);
+  try {
+    // SQLite.DEBUG may not be available in all versions
+    if (typeof (SQLite as any).DEBUG === 'function') {
+      (SQLite as any).DEBUG(true);
+    }
+    if (typeof (SQLite as any).enablePromise === 'function') {
+      (SQLite as any).enablePromise(true);
+    }
+  } catch (error) {
+    console.warn('[DatabaseService] SQLite debugging setup failed:', error);
+  }
 }
 
 class DatabaseService implements DatabaseServiceInterface {
@@ -152,7 +161,6 @@ class DatabaseService implements DatabaseServiceInterface {
   private db: SQLite.SQLiteDatabase | null = null;
   private isInitialized = false;
   private connectionPool: SQLite.SQLiteDatabase[] = [];
-  private readonly maxConnections = 5;
   private readonly config: DatabaseConfig;
 
   private constructor() {
@@ -186,7 +194,7 @@ class DatabaseService implements DatabaseServiceInterface {
     try {
       console.log('[DatabaseService] Initializing database...');
 
-      this.db = await SQLite.openDatabase({
+      this.db = SQLite.openDatabase({
         name: this.config.name,
         location: this.config.location,
         createFromLocation: undefined,
@@ -1416,6 +1424,20 @@ class DatabaseService implements DatabaseServiceInterface {
         pendingSyncItems: results[5].rows.item(0).count,
         databaseSize: 0, // TODO: Implement database size calculation
         lastSyncAt: results[6].rows.item(0).last_sync,
+        // eslint-disable-next-line camelcase
+        articles_count: results[0].rows.item(0).count,
+        // eslint-disable-next-line camelcase
+        labels_count: results[4].rows.item(0).count,
+        // eslint-disable-next-line camelcase
+        pending_sync_count: results[5].rows.item(0).count,
+        // eslint-disable-next-line camelcase
+        failed_sync_count: 0, // TODO: Implement failed sync count
+        // eslint-disable-next-line camelcase
+        last_sync_time: results[6].rows.item(0).last_sync ? new Date(results[6].rows.item(0).last_sync * 1000).toISOString() : null,
+        articlesCount: results[0].rows.item(0).count,
+        labelsCount: results[4].rows.item(0).count,
+        pendingSyncCount: results[5].rows.item(0).count,
+        dbSize: 0, // TODO: Implement database size calculation
       };
 
       return {
@@ -1483,7 +1505,7 @@ class DatabaseService implements DatabaseServiceInterface {
       const tableCheckSql = `SELECT name FROM sqlite_master WHERE type='table' AND name='schema_version'`;
       const tableResult = await this.executeSql(tableCheckSql);
 
-      if (tableResult.rows.length === 0) {
+      if (!tableResult || !tableResult.rows || tableResult.rows.length === 0) {
         // Table doesn't exist, so this is a fresh database
         return 0;
       }
@@ -1492,7 +1514,8 @@ class DatabaseService implements DatabaseServiceInterface {
       const sql = 'SELECT MAX(version) as version FROM schema_version';
       const result = await this.executeSql(sql);
       if (result && result.rows && result.rows.length > 0) {
-        return result.rows.item(0).version || 0;
+        const versionRow = result.rows.item(0);
+        return versionRow && versionRow.version ? versionRow.version : 0;
       }
       return 0;
     } catch (error) {
