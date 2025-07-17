@@ -76,6 +76,7 @@ export interface LocalStorageServiceInterface {
   // Authentication operations
   storeToken(token: string, user?: AuthenticatedUser): Promise<boolean>;
   retrieveToken(): Promise<string | null>;
+  retrieveAuthData(): Promise<any>;
   deleteToken(): Promise<boolean>;
   isTokenStored(): Promise<boolean>;
   validateStoredToken(): Promise<TokenValidationResult>;
@@ -337,6 +338,31 @@ class LocalStorageService implements LocalStorageServiceInterface {
   // Cache statistics
   getCacheStats() {
     return cacheService.getStats();
+  }
+
+  // Authentication operations
+  async storeToken(token: string, user?: AuthenticatedUser): Promise<boolean> {
+    return authStorageService.storeToken(token, user);
+  }
+
+  async retrieveToken(): Promise<string | null> {
+    return authStorageService.retrieveToken();
+  }
+
+  async retrieveAuthData(): Promise<any> {
+    return authStorageService.retrieveAuthData();
+  }
+
+  async deleteToken(): Promise<boolean> {
+    return authStorageService.deleteToken();
+  }
+
+  async isTokenStored(): Promise<boolean> {
+    return authStorageService.isTokenStored();
+  }
+
+  async validateStoredToken(): Promise<TokenValidationResult> {
+    return authStorageService.validateStoredToken();
   }
 
   // Authentication utilities

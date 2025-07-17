@@ -157,16 +157,27 @@ export const initializeAuth = createAsyncThunk<
     };
 
     if (authData && authData.token && authData.isValid && !authData.isExpired) {
-      // Create user data - simplified since we don't store full user data
+      // Get complete auth data including serverUrl
+      const completeAuthData = await localStorageService.retrieveAuthData();
+      
+      if (!completeAuthData || !completeAuthData.serverUrl) {
+        console.warn('[AuthSlice] No complete auth data or server URL found');
+        await localStorageService.deleteToken();
+        return null;
+      }
+
+      // Create user data from stored auth data
       const user: AuthenticatedUser = {
-        id: 'readeck-user',
-        username: 'Readeck User',
-        email: 'user@readeck.local',
-        serverUrl: '', // This will need to be set separately
-        lastLoginAt: new Date().toISOString(),
+        id: completeAuthData.user?.id || 'readeck-user',
+        username: completeAuthData.user?.username || 'Readeck User',
+        email: completeAuthData.user?.email || 'user@readeck.local',
+        serverUrl: completeAuthData.serverUrl,
+        lastLoginAt: completeAuthData.user?.lastLoginAt || new Date().toISOString(),
         tokenExpiresAt:
           validation.expiresAt || new Date(Date.now() + 86400000).toISOString(), // 24h default
       };
+
+      console.log('[AuthSlice] Restoring auth for user:', user.username, 'Server:', user.serverUrl);
 
       // Configure the ReadeckApiService with the restored server URL
       if (user.serverUrl) {
