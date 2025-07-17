@@ -37,7 +37,7 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
     if (isAuthenticated) {
       dispatch(fetchArticles({}));
 
-      // Trigger sync when main page loads after authentication
+      // Trigger sync when main page loads after authentication (only if online)
       if (isOnline) {
         dispatch(
           startSyncOperation({

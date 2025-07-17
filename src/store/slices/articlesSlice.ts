@@ -153,15 +153,82 @@ export const fetchArticles = createAsyncThunk<
 
     const currentPage = params.page || state.articles.pagination.page;
 
-    const response = await readeckApiService.fetchArticlesWithFilters({
-      ...params,
-      page: currentPage,
-      limit: params.limit || state.articles.pagination.limit,
-      filters: params.filters || state.articles.filters,
-      fetchFullContent: false, // Disable bulk full content fetching to avoid API spam
-    });
+    // First try to fetch from API if online
+    try {
+      const response = await readeckApiService.fetchArticlesWithFilters({
+        ...params,
+        page: currentPage,
+        limit: params.limit || state.articles.pagination.limit,
+        filters: params.filters || state.articles.filters,
+        fetchFullContent: false, // Disable bulk full content fetching to avoid API spam
+      });
 
-    return response;
+      return response;
+    } catch (apiError) {
+      // If API fails due to offline status, fallback to local database
+      const isOfflineError = apiError instanceof Error && (
+        apiError.message.includes('offline') ||
+        apiError.message.includes('CONNECTION_ERROR') ||
+        apiError.message.includes('Network') ||
+        apiError.message.includes('network')
+      );
+
+      if (isOfflineError) {
+        console.log('[articlesSlice] API unavailable, loading from local database');
+        
+        // Convert filters to database format
+        const dbFilters = {
+          limit: params.limit || state.articles.pagination.limit,
+          offset: ((currentPage - 1) * (params.limit || state.articles.pagination.limit)),
+          searchQuery: params.searchQuery || state.articles.filters.searchQuery,
+          isArchived: params.filters?.isArchived || state.articles.filters.isArchived,
+          isFavorite: params.filters?.isFavorite || state.articles.filters.isFavorite,
+          isRead: params.filters?.isRead || state.articles.filters.isRead,
+        };
+
+        const localResult = await localStorageService.getArticles(dbFilters);
+        
+        if (localResult.success && localResult.data) {
+          // Convert database articles to API format
+          const articles = localResult.data.items.map(dbArticle => ({
+            id: dbArticle.id,
+            title: dbArticle.title,
+            summary: dbArticle.summary,
+            content: dbArticle.content,
+            contentUrl: dbArticle.content_url,
+            url: dbArticle.url,
+            imageUrl: dbArticle.image_url,
+            readTime: dbArticle.read_time,
+            isArchived: Boolean(dbArticle.is_archived),
+            isFavorite: Boolean(dbArticle.is_favorite),
+            isRead: Boolean(dbArticle.is_read),
+            tags: [], // Tags would need to be loaded separately
+            sourceUrl: dbArticle.source_url,
+            createdAt: new Date(dbArticle.created_at * 1000).toISOString(),
+            updatedAt: new Date(dbArticle.updated_at * 1000).toISOString(),
+            syncedAt: dbArticle.synced_at ? new Date(dbArticle.synced_at * 1000).toISOString() : undefined,
+          }));
+
+          return {
+            items: articles,
+            page: currentPage,
+            totalPages: Math.ceil(localResult.data.totalCount / (params.limit || state.articles.pagination.limit)),
+            totalItems: localResult.data.totalCount,
+          };
+        } else {
+          // If both API and database fail, return empty result
+          return {
+            items: [],
+            page: currentPage,
+            totalPages: 0,
+            totalItems: 0,
+          };
+        }
+      } else {
+        // Re-throw non-offline errors
+        throw apiError;
+      }
+    }
   } catch (error) {
     console.error('[articlesSlice] fetchArticles error:', error);
 
