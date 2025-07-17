@@ -83,16 +83,32 @@ function isRetryable(type: ErrorType): boolean {
   return type === ErrorType.NETWORK || type === ErrorType.SYNC;
 }
 
-export function handleError(error: unknown): AppError {
+export interface ErrorContext {
+  category?: ErrorType;
+  context?: {
+    actionType?: string;
+    [key: string]: any;
+  };
+  details?: any;
+}
+
+export function handleError(error: unknown, context?: ErrorContext): AppError {
   const appError = createAppError(error);
 
   // Simple logging for development
   if (typeof globalThis !== 'undefined' && globalThis.__DEV__) {
     console.error('App Error:', appError);
+    if (context) {
+      console.error('Error Context:', context);
+    }
   }
 
   return appError;
 }
 
-export { handleError as errorHandler };
+export const errorHandler = {
+  handleError,
+  getNetworkErrorHandler: () => (error: unknown) => handleError(error, { category: ErrorType.NETWORK }),
+};
+
 export { ErrorType as ErrorCategory };

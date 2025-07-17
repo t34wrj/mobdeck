@@ -194,11 +194,17 @@ class DatabaseService implements DatabaseServiceInterface {
     try {
       console.log('[DatabaseService] Initializing database...');
 
-      this.db = SQLite.openDatabase({
+      // Enable debugging for SQLite
+      SQLite.DEBUG(true);
+      SQLite.enablePromise(true);
+
+      this.db = await SQLite.openDatabase({
         name: this.config.name,
         location: this.config.location,
         createFromLocation: undefined,
       });
+
+      console.log('[DatabaseService] Database connection established');
 
       // Enable foreign key constraints (optional - some SQLite versions might not support this)
       try {

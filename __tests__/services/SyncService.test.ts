@@ -114,7 +114,17 @@ jest.mock('../../src/store', () => ({
 
 jest.mock('../../src/utils/connectivityManager', () => ({
   connectivityManager: {
-    checkConnectivity: jest.fn().mockResolvedValue('ONLINE'),
+    checkNetworkStatus: jest.fn().mockResolvedValue({
+      isConnected: true,
+      isWifi: true,
+      isCellular: false,
+    }),
+    isOnline: jest.fn().mockReturnValue(true),
+    getCurrentNetworkStatus: jest.fn().mockReturnValue({
+      isConnected: true,
+      isWifi: true,
+      isCellular: false,
+    }),
   },
   ConnectivityStatus: {
     ONLINE: 'ONLINE',
@@ -124,14 +134,24 @@ jest.mock('../../src/utils/connectivityManager', () => ({
 
 jest.mock('../../src/utils/errorHandler', () => ({
   errorHandler: {
-    handleError: jest.fn().mockImplementation(error => ({
+    handleError: jest.fn().mockImplementation((error, context) => ({
       message: error.message || 'Unknown error',
       code: 'TEST_ERROR',
-      category: 'TEST',
+      category: context?.category || 'TEST',
+      userMessage: 'Test error occurred',
+      retryable: true,
+    })),
+    getNetworkErrorHandler: jest.fn().mockReturnValue((error) => ({
+      message: error.message || 'Network error',
+      userMessage: 'Network error occurred',
+      type: 'NETWORK',
+      retryable: true,
     })),
   },
   ErrorCategory: {
     SYNC_OPERATION: 'SYNC_OPERATION',
+    NETWORK: 'NETWORK',
+    STORAGE: 'STORAGE',
   },
 }));
 
@@ -224,9 +244,11 @@ describe('SyncService', () => {
       const mockConnectivity = require('../../src/utils/connectivityManager');
 
       // Mock connectivity to be offline to force sync failure
-      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValueOnce(
-        'OFFLINE'
-      );
+      mockConnectivity.connectivityManager.checkNetworkStatus.mockResolvedValueOnce({
+        isConnected: false,
+        isWifi: false,
+        isCellular: false,
+      });
 
       // This should throw an error when server is unreachable
       await expect(syncService.startFullSync()).rejects.toThrow(
@@ -237,9 +259,11 @@ describe('SyncService', () => {
     it('should prevent concurrent syncs', async () => {
       // Mock connectivity for the first sync
       const mockConnectivity = require('../../src/utils/connectivityManager');
-      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValue(
-        'ONLINE'
-      );
+      mockConnectivity.connectivityManager.checkNetworkStatus.mockResolvedValue({
+        isConnected: true,
+        isWifi: true,
+        isCellular: false,
+      });
 
       // Manually set the service to running state
       (syncService as any).isRunning = true;
@@ -256,9 +280,11 @@ describe('SyncService', () => {
     it('should allow forced sync even when running', async () => {
       // Mock connectivity
       const mockConnectivity = require('../../src/utils/connectivityManager');
-      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValue(
-        'ONLINE'
-      );
+      mockConnectivity.connectivityManager.checkNetworkStatus.mockResolvedValue({
+        isConnected: true,
+        isWifi: true,
+        isCellular: false,
+      });
 
       // Start first sync (don't await)
       const syncPromise1 = syncService.startFullSync();
@@ -307,9 +333,11 @@ describe('SyncService', () => {
   describe('Error Handling', () => {
     it('should handle network connectivity issues', async () => {
       const mockConnectivity = require('../../src/utils/connectivityManager');
-      mockConnectivity.connectivityManager.checkConnectivity.mockResolvedValueOnce(
-        'OFFLINE'
-      );
+      mockConnectivity.connectivityManager.checkNetworkStatus.mockResolvedValueOnce({
+        isConnected: false,
+        isWifi: false,
+        isCellular: false,
+      });
 
       await expect(syncService.startFullSync()).rejects.toThrow(
         'Server is unreachable. Please check your connection.'

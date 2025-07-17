@@ -38,10 +38,7 @@ import {
 } from '../types/sync';
 import { Article } from '../types';
 import { resolveConflict as resolveArticleConflict } from '../utils/conflictResolution';
-import {
-  connectivityManager,
-  ConnectivityStatus,
-} from '../utils/connectivityManager';
+import { connectivityManager } from '../utils/connectivityManager';
 import { DatabaseUtilityFunctions } from './DatabaseService';
 
 export interface SyncResult {
@@ -139,8 +136,8 @@ class SyncService implements SimpleSyncServiceInterface {
     }
 
     // Check connectivity before starting sync
-    const connectivityStatus = await connectivityManager.checkConnectivity();
-    if (connectivityStatus !== ConnectivityStatus.ONLINE) {
+    const networkStatus = await connectivityManager.checkNetworkStatus();
+    if (!networkStatus.isConnected) {
       console.log('[SyncService] Cannot sync - server unreachable');
       store.dispatch(
         syncError({

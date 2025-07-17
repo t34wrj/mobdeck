@@ -53,7 +53,10 @@ export const useAppInitialization = () => {
 
         // Initialize sync service
         console.log('[AppInit] Initializing sync service...');
-        await dispatch(initializeSyncService()).unwrap();
+        const syncResult = await dispatch(initializeSyncService());
+        if (syncResult.meta.requestStatus === 'rejected') {
+          throw new Error(syncResult.error?.message || 'Sync service initialization failed');
+        }
         console.log('[AppInit] Sync service initialized successfully');
 
         setState({

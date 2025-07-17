@@ -473,16 +473,9 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
               variant='outline'
               size='sm'
               onPress={() => {
-                // First try to sync with server, then load local articles
-                dispatch(startSync({ source: 'user' }))
-                  .unwrap()
-                  .then(() => {
-                    dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
-                  })
-                  .catch(() => {
-                    // If sync fails, still try to load local articles
-                    dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
-                  });
+                // Start sync and immediately load local articles
+                dispatch(startSync({ source: 'user' }));
+                dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
               }}
               style={styles.retryButton}
             >

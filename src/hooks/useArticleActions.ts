@@ -21,12 +21,15 @@ export const useArticleActions = (
     if (!article) return;
 
     try {
-      await dispatch(
+      const result = await dispatch(
         updateArticle({
           id: articleId,
           updates: { isFavorite: !article.isFavorite },
         })
-      ).unwrap();
+      );
+      if (result.meta.requestStatus === 'rejected') {
+        throw new Error(result.error?.message || 'Update failed');
+      }
     } catch {
       Alert.alert(
         'Error',
@@ -40,12 +43,15 @@ export const useArticleActions = (
     if (!article) return;
 
     try {
-      await dispatch(
+      const result = await dispatch(
         updateArticle({
           id: articleId,
           updates: { isArchived: !article.isArchived },
         })
-      ).unwrap();
+      );
+      if (result.meta.requestStatus === 'rejected') {
+        throw new Error(result.error?.message || 'Update failed');
+      }
     } catch {
       Alert.alert(
         'Error',
@@ -59,12 +65,15 @@ export const useArticleActions = (
     if (!article) return;
 
     try {
-      await dispatch(
+      const result = await dispatch(
         updateArticle({
           id: articleId,
           updates: { isRead: !article.isRead },
         })
-      ).unwrap();
+      );
+      if (result.meta.requestStatus === 'rejected') {
+        throw new Error(result.error?.message || 'Update failed');
+      }
     } catch {
       Alert.alert('Error', 'Failed to update read status. Please try again.', [
         { text: 'OK' },
@@ -101,7 +110,10 @@ export const useArticleActions = (
           style: 'destructive',
           onPress: async () => {
             try {
-              await dispatch(deleteArticle({ id: articleId })).unwrap();
+              const result = await dispatch(deleteArticle({ id: articleId }));
+              if (result.meta.requestStatus === 'rejected') {
+                throw new Error(result.error?.message || 'Delete failed');
+              }
               navigation.goBack();
             } catch {
               Alert.alert(

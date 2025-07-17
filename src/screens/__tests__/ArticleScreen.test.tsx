@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render, waitFor, UNSAFE_getByType } from '@testing-library/react-native';
 
 // Mock the ReadeckApiService
 jest.mock('../../services/ReadeckApiService', () => ({
@@ -44,7 +44,7 @@ describe('ArticleScreen', () => {
       new Promise(() => {})
     );
 
-    const { UNSAFE_getByType: _unsafeGetByType } = render(
+    const { UNSAFE_getByType } = render(
        
       <ArticleScreen
         navigation={mockNavigation as any}
@@ -152,7 +152,7 @@ describe('ArticleScreen', () => {
       data: mockArticle,
     });
 
-    const { UNSAFE_getByType: _unsafeGetByType } = render(
+    const { UNSAFE_getByType } = render(
        
       <ArticleScreen
         navigation={mockNavigation as any}
