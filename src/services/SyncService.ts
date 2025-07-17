@@ -66,6 +66,11 @@ export interface SimpleSyncServiceInterface {
   getConfiguration(): SyncConfiguration;
   getSyncStats(): Promise<any>;
   triggerManualSync(): Promise<void>;
+  backfillMissingContent(): Promise<{
+    processed: number;
+    updated: number;
+    errors: number;
+  }>;
 }
 
 /**
@@ -294,7 +299,28 @@ class SyncService implements SimpleSyncServiceInterface {
       // Phase 4: Process pending shared URLs
       await this.processPendingSharedUrls();
 
-      // Phase 5: Finalize sync
+      // Phase 5: Backfill missing content
+      store.dispatch(
+        syncProgress({
+          phase: SyncPhase.FINALIZING,
+          totalItems: syncResult.syncedCount,
+          processedItems: syncResult.syncedCount,
+          currentItem: 'Checking for missing content...',
+        })
+      );
+
+      // Attempt to backfill any missing content
+      try {
+        const backfillResult = await this.backfillMissingContent();
+        if (backfillResult.updated > 0) {
+          console.log(`[SyncService] Backfilled content for ${backfillResult.updated} articles`);
+        }
+      } catch (error) {
+        console.error('[SyncService] Content backfill failed:', error);
+        // Don't fail the sync if backfill fails
+      }
+
+      // Phase 6: Finalize sync
       store.dispatch(
         syncProgress({
           phase: SyncPhase.FINALIZING,
@@ -884,7 +910,31 @@ class SyncService implements SimpleSyncServiceInterface {
       try {
         console.log(`[SyncService] Fetching full content for article ${article.id}`);
         const fullArticle = await readeckApiService.getArticleWithContent(article.id);
-        articlesWithContent.push(fullArticle);
+        
+        // Verify that content was actually fetched
+        if (fullArticle.content && fullArticle.content.trim().length > 0) {
+          console.log(`[SyncService] Successfully fetched content for article ${article.id} (${fullArticle.content.length} chars)`);
+          articlesWithContent.push(fullArticle);
+        } else if (fullArticle.contentUrl) {
+          // If no content but contentUrl exists, try to fetch content directly
+          console.log(`[SyncService] No content found, trying to fetch from contentUrl for article ${article.id}`);
+          try {
+            const content = await readeckApiService.getArticleContent(fullArticle.contentUrl);
+            articlesWithContent.push({
+              ...fullArticle,
+              content: content
+            });
+            console.log(`[SyncService] Successfully fetched content from contentUrl for article ${article.id} (${content.length} chars)`);
+          } catch (contentError) {
+            console.error(`[SyncService] Failed to fetch content from contentUrl for article ${article.id}:`, contentError);
+            // Store article with contentUrl for later content fetching
+            articlesWithContent.push(fullArticle);
+          }
+        } else {
+          console.warn(`[SyncService] No content or contentUrl available for article ${article.id}`);
+          // Store the article without content - user can manually refresh later
+          articlesWithContent.push(fullArticle);
+        }
       } catch (error) {
         console.error(`[SyncService] Failed to fetch content for article ${article.id}:`, error);
         // Store the article without content - user can manually refresh later
@@ -1002,6 +1052,78 @@ class SyncService implements SimpleSyncServiceInterface {
   async triggerManualSync(): Promise<void> {
     console.log('[SyncService] Manual sync triggered');
     await this.startFullSync(true);
+  }
+
+  /**
+   * Fetch content for articles that are missing full content
+   * This can be called after sync to ensure all articles have content
+   */
+  async backfillMissingContent(): Promise<{
+    processed: number;
+    updated: number;
+    errors: number;
+  }> {
+    console.log('[SyncService] Starting content backfill for articles missing content...');
+    
+    const result = {
+      processed: 0,
+      updated: 0,
+      errors: 0
+    };
+
+    try {
+      await localStorageService.initialize();
+
+      // Get articles that have contentUrl but no content
+      const articlesResult = await localStorageService.getArticles({
+        limit: 1000,
+        sortBy: 'updated_at',
+        sortOrder: 'DESC'
+      });
+
+      if (!articlesResult.success || !articlesResult.data) {
+        console.error('[SyncService] Failed to get articles for content backfill');
+        return result;
+      }
+
+      const articles = articlesResult.data.items;
+      const articlesNeedingContent = articles.filter(dbArticle => {
+        const hasContentUrl = dbArticle.content_url && dbArticle.content_url.trim().length > 0;
+        const hasContent = dbArticle.content && dbArticle.content.trim().length > 0;
+        return hasContentUrl && !hasContent;
+      });
+
+      console.log(`[SyncService] Found ${articlesNeedingContent.length} articles needing content backfill`);
+
+      for (const dbArticle of articlesNeedingContent) {
+        result.processed++;
+        
+        try {
+          console.log(`[SyncService] Backfilling content for article ${dbArticle.id}`);
+          const content = await readeckApiService.getArticleContent(dbArticle.content_url);
+          
+          if (content && content.trim().length > 0) {
+            await localStorageService.updateArticle(dbArticle.id, {
+              content: content,
+              updated_at: Math.floor(Date.now() / 1000)
+            });
+            result.updated++;
+            console.log(`[SyncService] Successfully backfilled content for article ${dbArticle.id} (${content.length} chars)`);
+          } else {
+            console.warn(`[SyncService] No content returned for article ${dbArticle.id}`);
+          }
+        } catch (error) {
+          result.errors++;
+          console.error(`[SyncService] Failed to backfill content for article ${dbArticle.id}:`, error);
+        }
+      }
+
+      console.log(`[SyncService] Content backfill completed: ${result.updated} updated, ${result.errors} errors`);
+      return result;
+    } catch (error) {
+      console.error('[SyncService] Content backfill failed:', error);
+      return result;
+    }
   }
 }
 
