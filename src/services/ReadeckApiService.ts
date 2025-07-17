@@ -42,7 +42,7 @@ import {
   RetryConfig,
   ApiRequestOptions,
 } from '../types/readeck';
-import { RetryManager } from '../utils/retryManager';
+import { RetryManager, withRetry } from '../utils/retryManager';
 import { connectivityManager } from '../utils/connectivityManager';
 import { cacheService } from './CacheService';
 
@@ -1145,7 +1145,7 @@ class ReadeckApiService implements IReadeckApiService {
       };
     }
 
-    return RetryManager.withRetry(
+    return withRetry(
       async () => {
         const filters = this.convertFiltersToReadeckFilters(params);
         const response = await this.getArticles(filters);
@@ -1193,12 +1193,6 @@ class ReadeckApiService implements IReadeckApiService {
       },
       {
         maxRetries: 3,
-        onRetry: (error, attempt) => {
-          console.debug(
-            `[ReadeckApiService] Retrying fetch articles (attempt ${attempt}):`,
-            error instanceof Error ? error.message : String(error)
-          );
-        },
       }
     );
   }
