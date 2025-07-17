@@ -1240,14 +1240,37 @@ class ReadeckApiService implements IReadeckApiService {
   async getArticleWithContent(id: string): Promise<Article> {
     // Check cache first
     const cachedArticle = cacheService.getArticle(id);
-    if (cachedArticle) {
+    if (cachedArticle && cachedArticle.content) {
       return cachedArticle;
     }
 
     const response = await this.getArticle(id);
     const article = this.convertReadeckArticleToArticle(response.data);
 
-    // Note: Article content should be included in the API response
+    // If article has contentUrl but no content, fetch the content
+    if (article.contentUrl && !article.content) {
+      try {
+        logger.debug('Fetching content from contentUrl', {
+          articleId: id,
+          contentUrl: maskSensitiveData(article.contentUrl),
+        });
+        
+        const content = await this.getArticleContent(article.contentUrl);
+        article.content = content;
+        
+        logger.debug('Content fetched successfully', {
+          articleId: id,
+          contentLength: content.length,
+        });
+      } catch (error) {
+        logger.error('Failed to fetch article content', {
+          articleId: id,
+          error,
+        });
+        // Don't throw the error, just leave content empty
+        // This allows the UI to show what metadata is available
+      }
+    }
 
     // Cache the article
     cacheService.setArticle(id, article);

@@ -171,13 +171,14 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.neutral[100],
+    backgroundColor: theme.colors.neutral[50],
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: theme.spacing[6],
+    paddingBottom: theme.spacing[8],
+    paddingTop: theme.spacing[2],
   },
 });
 

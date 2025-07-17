@@ -106,6 +106,12 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
             !paragraph.endsWith('!') &&
             !paragraph.endsWith('?');
 
+          // Check if it's a quote or highlighted text
+          const isQuote = paragraph.startsWith('"') && paragraph.endsWith('"');
+          
+          // Check if it's a list item
+          const isListItem = paragraph.match(/^[•·\-*]\s+/) || paragraph.match(/^\d+\.\s+/);
+
           if (isHeading) {
             return (
               <Text
@@ -114,14 +120,40 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
                 style={[
                   styles.heading,
                   {
-                    fontSize: FontSizes[fontSize].body * 1.2,
-                    lineHeight: FontSizes[fontSize].lineHeight * 1.2,
+                    fontSize: FontSizes[fontSize].body * 1.3,
+                    lineHeight: FontSizes[fontSize].lineHeight * 1.3,
                     fontFamily,
                   },
                 ]}
               >
                 {paragraph}
               </Text>
+            );
+          }
+
+          if (isQuote) {
+            return (
+              <View key={index} style={styles.quoteContainer}>
+                <Text
+                  variant='body'
+                  style={[styles.quote, contentStyles]}
+                >
+                  {paragraph}
+                </Text>
+              </View>
+            );
+          }
+
+          if (isListItem) {
+            return (
+              <View key={index} style={styles.listItemContainer}>
+                <Text
+                  variant='body'
+                  style={[styles.listItem, contentStyles]}
+                >
+                  {paragraph}
+                </Text>
+              </View>
             );
           }
 
@@ -270,56 +302,103 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   imageContainer: {
-    backgroundColor: theme.colors.neutral[100],
-    marginBottom: theme.spacing[4],
+    backgroundColor: theme.colors.neutral[50],
+    marginBottom: theme.spacing[5],
+    marginHorizontal: theme.spacing[4],
+    borderRadius: theme.borderRadius.lg,
+    overflow: 'hidden',
+    ...theme.shadows.sm,
   },
   image: {
     width: '100%',
-    height: 200,
-    borderRadius: theme.borderRadius.base,
+    height: 240,
+    borderRadius: theme.borderRadius.lg,
   },
   summaryContainer: {
-    padding: theme.spacing[4],
-    backgroundColor: theme.colors.info[50],
+    padding: theme.spacing[5],
+    backgroundColor: theme.colors.accent[50],
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.info[500],
-    marginBottom: theme.spacing[4],
+    borderLeftColor: theme.colors.accent[500],
+    marginBottom: theme.spacing[5],
     marginHorizontal: theme.spacing[4],
-    borderRadius: theme.borderRadius.base,
+    borderRadius: theme.borderRadius.lg,
+    borderTopRightRadius: theme.borderRadius.lg,
+    borderBottomRightRadius: theme.borderRadius.lg,
+    ...theme.shadows.sm,
   },
   summaryTitle: {
-    marginBottom: theme.spacing[2],
-    color: theme.colors.info[700],
-    fontWeight: theme.typography.fontWeight.semibold,
+    marginBottom: theme.spacing[3],
+    color: theme.colors.dark[700],
+    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: theme.typography.fontSize.lg,
   },
   summary: {
-    color: theme.colors.info[800],
+    color: theme.colors.dark[600],
+    lineHeight: theme.typography.lineHeight.lg,
   },
   contentContainer: {
     paddingHorizontal: theme.spacing[4],
-    paddingBottom: theme.spacing[4],
+    paddingBottom: theme.spacing[6],
   },
   paragraph: {
-    marginBottom: theme.spacing[4],
+    marginBottom: theme.spacing[5],
     color: theme.colors.neutral[800],
     textAlign: 'left',
+    lineHeight: theme.typography.lineHeight.lg,
   },
   heading: {
     marginBottom: theme.spacing[3],
-    marginTop: theme.spacing[2],
-    color: theme.colors.neutral[900],
-    fontWeight: theme.typography.fontWeight.semibold,
+    marginTop: theme.spacing[6],
+    color: theme.colors.dark[700],
+    fontWeight: theme.typography.fontWeight.bold,
+    paddingLeft: theme.spacing[3],
+    borderLeftWidth: 3,
+    borderLeftColor: theme.colors.primary[500],
+  },
+  quoteContainer: {
+    marginBottom: theme.spacing[5],
+    marginHorizontal: theme.spacing[2],
+    paddingLeft: theme.spacing[4],
+    borderLeftWidth: 4,
+    borderLeftColor: theme.colors.secondary[400],
+    backgroundColor: theme.colors.secondary[50],
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing[3],
+    paddingRight: theme.spacing[4],
+  },
+  quote: {
+    fontStyle: 'italic',
+    color: theme.colors.dark[600],
+    fontSize: theme.typography.fontSize.md,
+    lineHeight: theme.typography.lineHeight.md,
+  },
+  listItemContainer: {
+    marginBottom: theme.spacing[3],
+    paddingLeft: theme.spacing[4],
+    flexDirection: 'row',
+  },
+  listItem: {
+    flex: 1,
+    color: theme.colors.neutral[700],
+    paddingLeft: theme.spacing[2],
   },
   noContent: {
     textAlign: 'center',
     color: theme.colors.neutral[500],
     fontStyle: 'italic',
-    marginTop: theme.spacing[6],
+    marginTop: theme.spacing[8],
+    marginBottom: theme.spacing[6],
+    padding: theme.spacing[6],
+    backgroundColor: theme.colors.neutral[50],
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.neutral[200],
+    borderStyle: 'dashed',
   },
-  // Modal styles
+  // Modal styles with enhanced design
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    backgroundColor: 'rgba(8, 61, 119, 0.95)', // Yale Blue with opacity
   },
   modalBackground: {
     flex: 1,
@@ -343,21 +422,23 @@ const styles = StyleSheet.create({
     height: undefined,
     aspectRatio: 1,
     maxHeight: '80%',
+    borderRadius: theme.borderRadius.lg,
   },
   closeButton: {
     position: 'absolute',
     top: 50,
     right: theme.spacing[4],
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: theme.colors.primary[500],
     borderRadius: theme.borderRadius.full,
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
+    ...theme.shadows.md,
   },
   closeButtonText: {
     color: theme.colors.neutral[50],
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: theme.typography.fontWeight.bold,
   },
 });

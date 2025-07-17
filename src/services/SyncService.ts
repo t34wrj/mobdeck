@@ -874,9 +874,25 @@ class SyncService implements SimpleSyncServiceInterface {
     });
 
     // Filter articles modified since the timestamp
-    return response.items.filter(
+    const filteredArticles = response.items.filter(
       article => new Date(article.updatedAt) > since
     );
+
+    // Fetch full content for each article during sync
+    const articlesWithContent: Article[] = [];
+    for (const article of filteredArticles) {
+      try {
+        console.log(`[SyncService] Fetching full content for article ${article.id}`);
+        const fullArticle = await readeckApiService.getArticleWithContent(article.id);
+        articlesWithContent.push(fullArticle);
+      } catch (error) {
+        console.error(`[SyncService] Failed to fetch content for article ${article.id}:`, error);
+        // Store the article without content - user can manually refresh later
+        articlesWithContent.push(article);
+      }
+    }
+
+    return articlesWithContent;
   }
 
   private async checkArticleExistsOnServer(

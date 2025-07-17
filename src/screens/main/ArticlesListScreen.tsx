@@ -89,27 +89,50 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
     dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
   }, [dispatch]);
 
-  // Initial load - wait for authentication to complete
+  // Initial load - load local articles immediately for offline-first experience
   useEffect(() => {
     console.log('[ArticlesListScreen] useEffect triggered:', {
       isAuthenticated,
       articlesLength: articles.length,
-      willFetch: isAuthenticated && articles.length === 0,
+      willLoadLocal: articles.length === 0,
     });
 
-    if (isAuthenticated && articles.length === 0) {
-      // Add a small delay to ensure API service is configured
-      console.log('[ArticlesListScreen] Scheduling article fetch after delay');
-      const timer = setTimeout(() => {
-        console.log('[ArticlesListScreen] Loading articles...', { isOnline });
-        // Always load local articles first to show offline-saved articles immediately
-        dispatch(loadLocalArticles({ page: 1 }));
-      }, 100);
-
-      return () => clearTimeout(timer);
+    // Always load local articles first if we don't have any articles loaded
+    // This ensures previously synced articles are displayed immediately on app restart
+    if (articles.length === 0) {
+      console.log('[ArticlesListScreen] Loading local articles immediately for offline-first experience');
+      dispatch(loadLocalArticles({ page: 1 }));
     }
-    return undefined;
-  }, [dispatch, articles.length, isAuthenticated, isOnline]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dispatch, articles.length]);
+
+  // Background sync when authenticated and online
+  useEffect(() => {
+    console.log('[ArticlesListScreen] Background sync effect triggered:', {
+      isAuthenticated,
+      isOnline,
+      articlesLength: articles.length,
+    });
+
+    // Only start background sync if we have articles loaded and we're authenticated and online
+    if (isAuthenticated && isOnline && articles.length > 0) {
+      console.log('[ArticlesListScreen] Starting background sync to refresh articles');
+      // Start background sync to refresh articles from server
+      dispatch(startSyncOperation({
+        syncOptions: {
+          fullTextSync: false, // Don't fetch full text in background
+          downloadImages: false, // Don't download images in background
+        },
+        forceFull: false,
+      })).then(() => {
+        // After sync, refresh local articles to show any updates
+        dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
+      }).catch((syncError) => {
+        console.warn('[ArticlesListScreen] Background sync failed:', syncError);
+        // Ignore sync errors in background - user can pull to refresh manually
+      });
+    }
+  }, [dispatch, isAuthenticated, isOnline, articles.length]);
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -330,7 +353,9 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       // Default state (All filter)
       return {
         title: 'No articles yet',
-        message: 'Pull down to sync your articles from Readeck',
+        message: isAuthenticated 
+          ? 'Pull down to sync your articles from Readeck'
+          : 'Sign in to sync your articles from Readeck',
         showClearButton: false,
       };
     };

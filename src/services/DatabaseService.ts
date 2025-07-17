@@ -1579,8 +1579,29 @@ class DatabaseService implements DatabaseServiceInterface {
   }
 
   private async runPendingMigrations(): Promise<void> {
-    // Version 2 migration: Add optimized indexes
+    // Define all migrations in order
     const migrations: Migration[] = [
+      // Version 1 migration: Add content_url column
+      {
+        version: 1,
+        description: 'Add content_url column to articles table',
+        up: async (tx: DatabaseTransaction) => {
+          // Use callback-based executeSql like the other migrations
+          tx.executeSql(
+            'ALTER TABLE articles ADD COLUMN content_url TEXT',
+            [],
+            () => {
+              console.log('[DatabaseService] Successfully added content_url column');
+            },
+            (_, error) => {
+              // Log error but don't fail migration if column already exists
+              console.log('[DatabaseService] content_url column may already exist:', error);
+              return false; // Continue migration
+            }
+          );
+        },
+      },
+      // Version 2 migration: Add optimized indexes
       {
         version: 2,
         description:
