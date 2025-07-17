@@ -42,7 +42,7 @@ import {
   RetryConfig,
   ApiRequestOptions,
 } from '../types/readeck';
-import { RetryManager, withRetry } from '../utils/retryManager';
+import { withRetry } from '../utils/retryManager';
 import { connectivityManager } from '../utils/connectivityManager';
 import { cacheService } from './CacheService';
 

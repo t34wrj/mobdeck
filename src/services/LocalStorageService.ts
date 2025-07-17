@@ -340,30 +340,6 @@ class LocalStorageService implements LocalStorageServiceInterface {
     return cacheService.getStats();
   }
 
-  // Authentication operations
-  async storeToken(token: string, user?: AuthenticatedUser): Promise<boolean> {
-    return authStorageService.storeToken(token, user);
-  }
-
-  async retrieveToken(): Promise<string | null> {
-    return authStorageService.retrieveToken();
-  }
-
-  async retrieveAuthData(): Promise<any> {
-    return authStorageService.retrieveAuthData();
-  }
-
-  async deleteToken(): Promise<boolean> {
-    return authStorageService.deleteToken();
-  }
-
-  async isTokenStored(): Promise<boolean> {
-    return authStorageService.isTokenStored();
-  }
-
-  async validateStoredToken(): Promise<TokenValidationResult> {
-    return authStorageService.validateStoredToken();
-  }
 
   // Authentication utilities
   async enableBiometricAuth(): Promise<boolean> {
