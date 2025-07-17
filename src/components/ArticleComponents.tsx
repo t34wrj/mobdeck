@@ -31,6 +31,8 @@ export const ArticleHeader: React.FC<ArticleHeaderProps> = ({
 
 interface ArticleActionsProps {
   article: Article;
+  showActions: boolean;
+  onToggleActions: () => void;
   onToggleFavorite: () => void;
   onToggleArchive: () => void;
   onToggleRead: () => void;
@@ -42,6 +44,8 @@ interface ArticleActionsProps {
 
 export const ArticleActions: React.FC<ArticleActionsProps> = ({
   article,
+  showActions,
+  onToggleActions,
   onToggleFavorite,
   onToggleArchive,
   onToggleRead,
@@ -49,59 +53,77 @@ export const ArticleActions: React.FC<ArticleActionsProps> = ({
   onShare,
   onDelete,
   loading = false,
-}) => (
-  <View style={styles.actions}>
-    <View style={styles.actionsGrid}>
-      <SimpleButton
-        title={article.isFavorite ? 'Unfavorite' : 'Favorite'}
-        variant='outline'
-        size='sm'
-        onPress={onToggleFavorite}
-        style={styles.actionButton}
-        loading={loading}
-      />
-      <SimpleButton
-        title={article.isArchived ? 'Unarchive' : 'Archive'}
-        variant='outline'
-        size='sm'
-        onPress={onToggleArchive}
-        style={styles.actionButton}
-        loading={loading}
-      />
-      <SimpleButton
-        title={article.isRead ? 'Mark Unread' : 'Mark Read'}
-        variant='outline'
-        size='sm'
-        onPress={onToggleRead}
-        style={styles.actionButton}
-        loading={loading}
-      />
-      <SimpleButton
-        title='Manage Labels'
-        variant='outline'
-        size='sm'
-        onPress={onManageLabels}
-        style={styles.actionButton}
-      />
-      <SimpleButton
-        title='Share'
-        variant='outline'
-        size='sm'
-        onPress={onShare}
-        style={styles.actionButton}
-      />
-      <SimpleButton
-        title='Delete'
-        variant='outline'
-        size='sm'
-        onPress={onDelete}
-        style={[styles.actionButton, styles.deleteButton]}
-        textStyle={styles.deleteButtonText}
-        loading={loading}
-      />
+}) => {
+  // Ensure loading is always a boolean
+  const isLoading = Boolean(loading);
+  
+  if (!showActions) {
+    return (
+      <View style={styles.actions}>
+        <TouchableOpacity onPress={onToggleActions} style={styles.actionsButton}>
+          <Text style={styles.actionsText}>Show Actions</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.actions}>
+      <TouchableOpacity onPress={onToggleActions} style={styles.actionsButton}>
+        <Text style={styles.actionsText}>Hide Actions</Text>
+      </TouchableOpacity>
+      <View style={styles.actionsGrid}>
+        <SimpleButton
+          title={article.isFavorite ? 'Unfavorite' : 'Favorite'}
+          variant='outline'
+          size='sm'
+          onPress={onToggleFavorite}
+          style={styles.actionButton}
+          loading={isLoading}
+        />
+        <SimpleButton
+          title={article.isArchived ? 'Unarchive' : 'Archive'}
+          variant='outline'
+          size='sm'
+          onPress={onToggleArchive}
+          style={styles.actionButton}
+          loading={isLoading}
+        />
+        <SimpleButton
+          title={article.isRead ? 'Mark Unread' : 'Mark Read'}
+          variant='outline'
+          size='sm'
+          onPress={onToggleRead}
+          style={styles.actionButton}
+          loading={isLoading}
+        />
+        <SimpleButton
+          title='Manage Labels'
+          variant='outline'
+          size='sm'
+          onPress={onManageLabels}
+          style={styles.actionButton}
+        />
+        <SimpleButton
+          title='Share'
+          variant='outline'
+          size='sm'
+          onPress={onShare}
+          style={styles.actionButton}
+        />
+        <SimpleButton
+          title='Delete'
+          variant='outline'
+          size='sm'
+          onPress={onDelete}
+          style={[styles.actionButton, styles.deleteButton]}
+          textStyle={styles.deleteButtonText}
+          loading={isLoading}
+        />
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 interface ArticleErrorStatesProps {
   error: string;
@@ -130,7 +152,7 @@ export const ArticleErrorStates: React.FC<ArticleErrorStatesProps> = ({
 interface ArticleLoadingStateProps {}
 
 export const ArticleLoadingState: React.FC<ArticleLoadingStateProps> = () => (
-  <View style={styles.loadingContainer}>
+  <View style={styles.loadingContainer} testID="loading-indicator">
     <Text style={styles.loadingText}>Loading article...</Text>
   </View>
 );

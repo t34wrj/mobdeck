@@ -29,7 +29,7 @@ const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={styles.loadingContainer} testID="loading-indicator">
         <ActivityIndicator size='large' color={colors.primary[500]} />
       </View>
     );
@@ -46,7 +46,7 @@ const ArticleScreen: React.FC<MainScreenProps<'ArticleDetail'>> = ({
   return (
     <View style={styles.container}>
       {article.image && (
-        <Image source={{ uri: article.image }} style={styles.image} />
+        <Image source={{ uri: article.image }} style={styles.image} testID="article-image" />
       )}
       <Text style={styles.title}>{article.title}</Text>
       {article.author && <Text style={styles.author}>By {article.author}</Text>}

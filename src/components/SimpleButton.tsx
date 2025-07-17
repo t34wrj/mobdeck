@@ -30,7 +30,7 @@ export const SimpleButton: React.FC<SimpleButtonProps> = ({
   children,
   ...props
 }) => {
-  const isDisabled = disabled || loading;
+  const isDisabled = Boolean(disabled) || Boolean(loading);
 
   const getButtonStyle = (): ViewStyle => {
     const baseStyle: ViewStyle = {
@@ -101,6 +101,7 @@ export const SimpleButton: React.FC<SimpleButtonProps> = ({
       style={[getButtonStyle(), style]}
       disabled={isDisabled}
       activeOpacity={0.7}
+      accessibilityState={{ disabled: isDisabled }}
       {...props}
     >
       {loading ? (

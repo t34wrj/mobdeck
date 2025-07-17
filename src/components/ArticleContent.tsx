@@ -164,6 +164,7 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
             style={style}
             resizeMode={resizeMode}
             onError={handleImageError}
+            testID="article-image"
           />
         );
       },

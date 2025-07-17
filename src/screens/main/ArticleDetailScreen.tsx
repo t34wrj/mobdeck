@@ -148,7 +148,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
             onManageLabels={handleManageLabels}
             onShare={handleShare}
             onDelete={handleDelete}
-            loading={loading}
+            loading={loading.update}
           />
         </ScrollView>
 
