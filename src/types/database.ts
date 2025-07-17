@@ -4,6 +4,7 @@ export interface DBArticle {
   title: string;
   summary: string | null;
   content: string | null;
+  content_url: string | null;
   url: string;
   image_url: string | null;
   read_time: number | null;

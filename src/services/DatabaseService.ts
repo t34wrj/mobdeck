@@ -254,6 +254,7 @@ class DatabaseService implements DatabaseServiceInterface {
                 title TEXT NOT NULL,
                 summary TEXT,
                 content TEXT,
+                content_url TEXT,
                 url TEXT NOT NULL,
                 image_url TEXT,
                 read_time INTEGER,
@@ -523,10 +524,10 @@ class DatabaseService implements DatabaseServiceInterface {
       const now = this.createTimestamp();
       const sql = `
                 INSERT INTO articles (
-                    id, title, summary, content, url, image_url, read_time,
+                    id, title, summary, content, content_url, url, image_url, read_time,
                     is_archived, is_favorite, is_read, source_url, created_at,
                     updated_at, synced_at, is_modified, deleted_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `;
 
       const params = [
@@ -534,6 +535,7 @@ class DatabaseService implements DatabaseServiceInterface {
         article.title,
         article.summary || null,
         article.content || null,
+        article.content_url || null,
         article.url,
         article.image_url || null,
         article.read_time || null,
@@ -1791,7 +1793,7 @@ export const DatabaseUtilityFunctions: DatabaseUtils = {
         ? new Date(dbArticle.deleted_at * 1000).toISOString()
         : undefined,
       tags: [], // Tags are loaded separately from article_labels table
-      contentUrl: undefined, // Not stored in database, comes from API
+      contentUrl: dbArticle.content_url || undefined
     } as Article;
   },
 
@@ -1801,6 +1803,7 @@ export const DatabaseUtilityFunctions: DatabaseUtils = {
       title: article.title,
       summary: article.summary || null,
       content: article.content || null,
+      content_url: article.contentUrl || null, // eslint-disable-line camelcase
       url: article.url,
       image_url: article.imageUrl || null,
       read_time: article.readTime || null,

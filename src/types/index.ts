@@ -26,6 +26,7 @@ export interface Article {
   title: string;
   summary?: string;
   content: string;
+  contentUrl?: string;
   url: string;
   imageUrl?: string;
   readTime?: number;

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS articles (
     title TEXT NOT NULL,
     summary TEXT,
     content TEXT,
+    content_url TEXT,
     url TEXT NOT NULL,
     image_url TEXT,
     read_time INTEGER,

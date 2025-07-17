@@ -1280,8 +1280,11 @@ class ReadeckApiService implements IReadeckApiService {
     };
 
     let content = '';
+    let contentUrl = '';
+    
     if (readeckArticle.resources?.article?.src) {
-      content = ''; // Will be fetched on demand
+      contentUrl = readeckArticle.resources.article.src;
+      content = ''; // Will be fetched on demand using contentUrl
     } else {
       content = ensureString(
         readeckArticle.content ||
@@ -1299,6 +1302,7 @@ class ReadeckApiService implements IReadeckApiService {
       title: ensureString(readeckArticle.title),
       summary: ensureString(readeckArticle.description),
       content,
+      contentUrl,
       url: ensureString(readeckArticle.url),
       imageUrl: ensureString(
         readeckArticle.resources?.image?.src ||
