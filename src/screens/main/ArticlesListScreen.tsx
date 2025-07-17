@@ -115,9 +115,6 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
   const handleRefresh = useCallback(async () => {
     console.log('[ArticlesListScreen] Pull to refresh triggered');
 
-    // Always reload local articles first for immediate feedback
-    dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
-
     // Try to sync with server if online and authenticated
     if (isOnline && isAuthenticated) {
       try {
@@ -146,11 +143,15 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
           '[ArticlesListScreen] Sync failed, showing local articles only:',
           syncError
         );
+        // Still reload local articles even if sync fails
+        dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
       }
     } else {
       console.log(
         '[ArticlesListScreen] Offline or not authenticated, showing local articles only'
       );
+      // Just reload local articles when offline
+      dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
     }
   }, [dispatch, isOnline, isAuthenticated]);
 

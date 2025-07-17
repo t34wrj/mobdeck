@@ -21,6 +21,7 @@ import {
 // AppDispatch imported via useAppDispatch above
 import NetInfo from '@react-native-community/netinfo';
 import { ConnectivityIndicator } from '../components/ConnectivityIndicator';
+import { useNetworkStatus } from '../hooks/useNetworkStatus';
 
 const AppNavigator: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -28,10 +29,36 @@ const AppNavigator: React.FC = () => {
   const authLoading = useSelector(selectAuthLoading);
   const { sharedData, clearSharedData } = useShareIntent();
   const [networkConnected, setNetworkConnected] = useState(true);
+  const { isOnline } = useNetworkStatus();
+  const [hasCachedArticles, setHasCachedArticles] = useState(false);
 
   useEffect(() => {
     dispatch(initializeAuth());
   }, [dispatch]);
+
+  // Check for cached articles when offline
+  useEffect(() => {
+    const checkCachedArticles = async () => {
+      try {
+        const db = DatabaseService;
+        await db.initialize();
+        const result = await db.getArticles({ limit: 1 });
+        if (result.success && result.data && result.data.items.length > 0) {
+          setHasCachedArticles(true);
+        } else {
+          setHasCachedArticles(false);
+        }
+      } catch (error) {
+        console.log('[AppNavigator] Error checking cached articles:', error);
+        setHasCachedArticles(false);
+      }
+    };
+
+    // Only check for cached articles if we're not online or not authenticated
+    if (!isOnline || !isAuthenticated) {
+      checkCachedArticles();
+    }
+  }, [isOnline, isAuthenticated]);
 
   // Monitor network status
   useEffect(() => {
@@ -281,11 +308,28 @@ const AppNavigator: React.FC = () => {
     );
   }
 
+  // Determine which navigator to show
+  const shouldShowMainNavigator = () => {
+    // Always show MainNavigator if authenticated
+    if (isAuthenticated) {
+      return true;
+    }
+    
+    // Show MainNavigator if offline and there are cached articles
+    // This allows users to access their saved articles even when offline
+    if (!isOnline && hasCachedArticles) {
+      return true;
+    }
+    
+    // Otherwise show AuthNavigator
+    return false;
+  };
+
   return (
     <>
       <ConnectivityIndicator />
       <NavigationContainer>
-        {isAuthenticated ? <MainNavigator /> : <AuthNavigator />}
+        {shouldShowMainNavigator() ? <MainNavigator /> : <AuthNavigator />}
       </NavigationContainer>
     </>
   );

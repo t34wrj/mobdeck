@@ -8,7 +8,6 @@ import {
   NetworkStatus,
 } from '../utils/connectivityManager';
 import { selectIsUserAuthenticated } from '../store/selectors/authSelectors';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 export const ConnectivityIndicator: React.FC = () => {
   const [status, setStatus] = useState<NetworkStatus>(
@@ -53,7 +52,7 @@ export const ConnectivityIndicator: React.FC = () => {
   const getStatusConfig = () => {
     if (!status.isConnected) {
       return {
-        icon: 'wifi-off',
+        icon: '📶',
         text: 'No Internet Connection',
         backgroundColor: theme.colors.error[500],
       };
@@ -83,12 +82,9 @@ export const ConnectivityIndicator: React.FC = () => {
         },
       ]}
     >
-      <Icon
-        name={config.icon}
-        size={20}
-        color={theme.colors.neutral[50]}
-        style={styles.icon}
-      />
+      <Text style={[styles.icon, { color: theme.colors.neutral[50] }]}>
+        {config.icon}
+      </Text>
       <Text style={[styles.text, { color: theme.colors.neutral[50] }]}>
         {config.text}
       </Text>
@@ -110,6 +106,7 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 8,
+    fontSize: 16,
   },
   text: {
     fontSize: 14,
