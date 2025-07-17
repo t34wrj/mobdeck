@@ -3,7 +3,7 @@
  */
 
 import React from 'react';
-import { render, waitFor, UNSAFE_getByType } from '@testing-library/react-native';
+import { render, waitFor } from '@testing-library/react-native';
 
 // Mock the ReadeckApiService
 jest.mock('../../services/ReadeckApiService', () => ({
@@ -44,7 +44,7 @@ describe('ArticleScreen', () => {
       new Promise(() => {})
     );
 
-    const { UNSAFE_getByType } = render(
+    const { getByTestId } = render(
        
       <ArticleScreen
         navigation={mockNavigation as any}
@@ -52,7 +52,7 @@ describe('ArticleScreen', () => {
       />
     );
 
-    expect(UNSAFE_getByType('ActivityIndicator')).toBeTruthy();
+    expect(getByTestId('loading-indicator')).toBeTruthy();
   });
 
   it('should render article content when loaded', async () => {
@@ -152,7 +152,7 @@ describe('ArticleScreen', () => {
       data: mockArticle,
     });
 
-    const { UNSAFE_getByType } = render(
+    const { getByTestId } = render(
        
       <ArticleScreen
         navigation={mockNavigation as any}
@@ -161,7 +161,7 @@ describe('ArticleScreen', () => {
     );
 
     await waitFor(() => {
-      const image = UNSAFE_getByType('Image');
+      const image = getByTestId('article-image');
       expect(image.props.source.uri).toBe(
         'https://example.com/article-image.jpg'
       );
