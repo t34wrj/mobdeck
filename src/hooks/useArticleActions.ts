@@ -30,7 +30,8 @@ export const useArticleActions = (
       if (result.meta.requestStatus === 'rejected') {
         throw new Error(result.error?.message || 'Update failed');
       }
-    } catch {
+    } catch (error) {
+      console.error('[useArticleActions] Failed to toggle favorite:', error);
       Alert.alert(
         'Error',
         'Failed to update favorite status. Please try again.',
@@ -52,7 +53,8 @@ export const useArticleActions = (
       if (result.meta.requestStatus === 'rejected') {
         throw new Error(result.error?.message || 'Update failed');
       }
-    } catch {
+    } catch (error) {
+      console.error('[useArticleActions] Failed to toggle archive:', error);
       Alert.alert(
         'Error',
         'Failed to update archive status. Please try again.',
@@ -74,7 +76,8 @@ export const useArticleActions = (
       if (result.meta.requestStatus === 'rejected') {
         throw new Error(result.error?.message || 'Update failed');
       }
-    } catch {
+    } catch (error) {
+      console.error('[useArticleActions] Failed to toggle read:', error);
       Alert.alert('Error', 'Failed to update read status. Please try again.', [
         { text: 'OK' },
       ]);
@@ -90,7 +93,8 @@ export const useArticleActions = (
         url: article.url,
         title: article.title,
       });
-    } catch {
+    } catch (error) {
+      console.error('[useArticleActions] Failed to share article:', error);
       Alert.alert('Error', 'Failed to share article. Please try again.', [
         { text: 'OK' },
       ]);
@@ -115,7 +119,8 @@ export const useArticleActions = (
                 throw new Error(result.error?.message || 'Delete failed');
               }
               navigation.goBack();
-            } catch {
+            } catch (error) {
+              console.error('[useArticleActions] Failed to delete article:', error);
               Alert.alert(
                 'Error',
                 'Failed to delete article. Please try again.',

@@ -10,6 +10,7 @@ import {
   ArticleLoadingState,
   ArticleErrorState,
 } from '../../components/ArticleComponents';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { theme } from '../../components/theme';
 import { MainScreenProps } from '../../navigation/types';
 import { RootState } from '../../store';
@@ -72,6 +73,17 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
     });
   };
 
+  // Validate articleId
+  if (!articleId || typeof articleId !== 'string') {
+    return (
+      <ArticleErrorState
+        title='Invalid Article'
+        message='The article ID is invalid. Please go back and try again.'
+        onGoBack={() => navigation.goBack()}
+      />
+    );
+  }
+
   // Show loading state
   if (loading.fetch && !article) {
     return <ArticleLoadingState />;
@@ -100,53 +112,59 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[theme.colors.primary[500]]}
-            tintColor={theme.colors.primary[500]}
+    <ErrorBoundary
+      onError={(err, errorInfo) => {
+        console.error('[ArticleDetailScreen] Error boundary caught:', err, errorInfo);
+      }}
+    >
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[theme.colors.primary[500]]}
+              tintColor={theme.colors.primary[500]}
+            />
+          }
+        >
+          <ArticleHeader article={article} formatDate={formatDate} />
+
+          <ArticleContent
+            content={article.content}
+            summary={article.summary}
+            imageUrl={article.imageUrl}
           />
-        }
-      >
-        <ArticleHeader article={article} formatDate={formatDate} />
 
-        <ArticleContent
-          content={article.content}
-          summary={article.summary}
-          imageUrl={article.imageUrl}
-        />
+          <ArticleActions
+            article={article}
+            showActions={showActions}
+            onToggleActions={() => setShowActions(!showActions)}
+            onToggleFavorite={handleToggleFavorite}
+            onToggleArchive={handleToggleArchive}
+            onToggleRead={handleToggleRead}
+            onManageLabels={handleManageLabels}
+            onShare={handleShare}
+            onDelete={handleDelete}
+            loading={loading}
+          />
+        </ScrollView>
 
-        <ArticleActions
-          article={article}
-          showActions={showActions}
-          onToggleActions={() => setShowActions(!showActions)}
-          onToggleFavorite={handleToggleFavorite}
-          onToggleArchive={handleToggleArchive}
-          onToggleRead={handleToggleRead}
-          onManageLabels={handleManageLabels}
-          onShare={handleShare}
-          onDelete={handleDelete}
-          loading={loading}
-        />
-      </ScrollView>
-
-      {/* Label Management Modal */}
-      {article && (
-        <LabelManagementModal
-          visible={showLabelModal}
-          onClose={() => setShowLabelModal(false)}
-          articleId={articleId}
-          articleTitle={article.title}
-          currentLabels={article.tags || []}
-          onLabelsChanged={handleLabelsChanged}
-        />
-      )}
-    </View>
+        {/* Label Management Modal */}
+        {article && (
+          <LabelManagementModal
+            visible={showLabelModal}
+            onClose={() => setShowLabelModal(false)}
+            articleId={articleId}
+            articleTitle={article.title}
+            currentLabels={article.tags || []}
+            onLabelsChanged={handleLabelsChanged}
+          />
+        )}
+      </View>
+    </ErrorBoundary>
   );
 };
 

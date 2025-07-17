@@ -235,6 +235,10 @@ class LocalStorageService implements LocalStorageServiceInterface {
     return authStorageService.retrieveToken();
   }
 
+  async retrieveAuthData(): Promise<any> {
+    return authStorageService.retrieveAuthData();
+  }
+
   async deleteToken(): Promise<boolean> {
     return authStorageService.deleteToken();
   }

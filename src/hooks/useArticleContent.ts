@@ -67,6 +67,8 @@ export const useArticleContent = (
               '[useArticleContent] Failed to sync local article to server:',
               syncErr
             );
+            // Don't show alert on automatic content fetch failure
+            // The user can manually refresh if needed
           }
         } else if (article.contentUrl) {
           try {
@@ -86,12 +88,17 @@ export const useArticleContent = (
               '[useArticleContent] Failed to auto-fetch content:',
               fetchErr
             );
+            // Don't show alert on automatic content fetch failure
+            // The user can manually refresh if needed
           }
         }
       }
     };
 
-    fetchContentIfNeeded();
+    // Wrap in try-catch to prevent crashes
+    fetchContentIfNeeded().catch(err => {
+      console.error('[useArticleContent] Unexpected error in fetchContentIfNeeded:', err);
+    });
   }, [article, articleId, dispatch, contentFetched]);
 
   const handleRefresh = useCallback(async () => {
