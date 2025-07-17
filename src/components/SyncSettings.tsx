@@ -53,7 +53,7 @@ export const SyncSettings: React.FC = () => {
 
       __DEV__ &&
         console.log('[SyncSettings] Dispatching startSyncOperation...');
-      await (dispatch as any)(
+      const result = await dispatch(
         startSyncOperation({
           syncOptions: {
             fullTextSync: true,
@@ -61,7 +61,12 @@ export const SyncSettings: React.FC = () => {
           },
           forceFull: false,
         })
-      ).unwrap();
+      );
+      
+      // Check if sync was successful
+      if (result.meta.requestStatus === 'rejected') {
+        throw new Error(result.error?.message || 'Sync failed');
+      }
       __DEV__ && console.log('[SyncSettings] Sync completed successfully');
     } catch (err) {
       console.error('[SyncSettings] Manual sync failed:', err);
@@ -77,8 +82,12 @@ export const SyncSettings: React.FC = () => {
 
   const handlePauseSync = useCallback(async () => {
     try {
-      await (dispatch as any)(pauseSyncOperation()).unwrap();
-      dispatch(pauseSync());
+      const result = await dispatch(pauseSyncOperation());
+      if (result.meta.requestStatus === 'fulfilled') {
+        dispatch(pauseSync());
+      } else {
+        throw new Error(result.error?.message || 'Failed to pause sync');
+      }
     } catch (err) {
       console.error('[SyncSettings] Failed to pause sync:', err);
       Alert.alert('Error', 'Failed to pause sync');
@@ -87,7 +96,10 @@ export const SyncSettings: React.FC = () => {
 
   const handleResumeSync = useCallback(async () => {
     try {
-      await (dispatch as any)(resumeSyncOperation()).unwrap();
+      const result = await dispatch(resumeSyncOperation());
+      if (result.meta.requestStatus === 'rejected') {
+        throw new Error(result.error?.message || 'Failed to resume sync');
+      }
     } catch (err) {
       console.error('[SyncSettings] Failed to resume sync:', err);
       Alert.alert(
@@ -104,8 +116,12 @@ export const SyncSettings: React.FC = () => {
 
   const handleCancelSync = useCallback(async () => {
     try {
-      await (dispatch as any)(cancelSyncOperation()).unwrap();
-      dispatch(cancelSync());
+      const result = await dispatch(cancelSyncOperation());
+      if (result.meta.requestStatus === 'fulfilled') {
+        dispatch(cancelSync());
+      } else {
+        throw new Error(result.error?.message || 'Failed to cancel sync');
+      }
     } catch (err) {
       console.error('[SyncSettings] Failed to cancel sync:', err);
       Alert.alert('Error', 'Failed to cancel sync');

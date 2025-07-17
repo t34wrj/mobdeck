@@ -1,6 +1,6 @@
 {
   "name": "mobdeck-mobile-app",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "private": true,
   "engines": {
     "node": ">=22.17.0",
