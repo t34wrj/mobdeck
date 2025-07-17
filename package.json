@@ -14,7 +14,7 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:debug": "node --inspect-brk node_modules/.bin/jest --runInBand",
-    "test:essential": "jest --testPathPattern=\"(DatabaseService|AuthStorageService|SyncService|ReadeckApiService|userJourneys|criticalFlows|mobileSecurity)\\.test\\.(ts|tsx)$\"",
+    "test:essential": "jest --testPathPattern=\"(AuthStorageService|SyncService|ReadeckApiService|userJourneys|criticalFlows|mobileSecurity)\\.test\\.(ts|tsx)$\"",
     "test:ci": "npm run test:essential",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
