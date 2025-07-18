@@ -135,7 +135,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
         // Ignore sync errors in background - user can pull to refresh manually
       });
     }
-  }, [dispatch, isAuthenticated, isOnline, articles.length]);
+  }, [dispatch, isAuthenticated, isOnline, articles.length, syncConfig.syncOnCellular, syncConfig.syncOnWifiOnly]);
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -181,7 +181,7 @@ export const ArticlesListScreen: React.FC<ArticlesListScreenProps> = ({
       // Just reload local articles when offline
       dispatch(loadLocalArticles({ page: 1, forceRefresh: true }));
     }
-  }, [dispatch, isOnline, isAuthenticated]);
+  }, [dispatch, isOnline, isAuthenticated, syncConfig.downloadImages, syncConfig.fullTextSync, syncConfig.syncOnCellular, syncConfig.syncOnWifiOnly]);
 
   // Load more articles (pagination)
   const handleLoadMore = useCallback(() => {

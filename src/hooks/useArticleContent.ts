@@ -22,6 +22,21 @@ export const useArticleContent = (
   const [retryCount, setRetryCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
   
+  // Debug state logging
+  useEffect(() => {
+    const hasContent = article?.content && article.content.trim().length > 0;
+    console.log(`[useArticleContent] State Debug for ${articleId}:`, {
+      hasContent,
+      contentLength: article?.content?.length || 0,
+      contentFetched,
+      isContentLoading,
+      contentError: !!contentError,
+      refreshing,
+      retryCount,
+      isRetrying
+    });
+  }, [article?.content, contentFetched, isContentLoading, contentError, refreshing, retryCount, isRetrying, articleId]);
+  
   // Use Redux for content loading state
   const isContentLoading = useAppSelector(state => selectContentLoading(state, articleId));
   const contentError = useAppSelector(state => selectContentError(state, articleId));
@@ -49,8 +64,9 @@ export const useArticleContent = (
     const currentContentLength = article?.content?.length || 0;
     const hasActualContent = currentContentLength > 0;
     
-    // Only reset if article ID changed or we lost content
-    if (articleId !== lastArticleId.current || currentContentLength < lastContentLength.current) {
+    // Only reset when article ID changes
+    if (articleId !== lastArticleId.current) {
+      console.log(`[useArticleContent] Article ID changed from ${lastArticleId.current} to ${articleId}`);
       lastArticleId.current = articleId;
       lastContentLength.current = currentContentLength;
       
@@ -60,9 +76,16 @@ export const useArticleContent = (
         // We have content, so mark as fetched
         setContentFetched(true);
       }
-    } else if (hasActualContent && !contentFetched) {
-      // Content appeared, mark as fetched
+    }
+    // If content appeared and we haven't marked it as fetched, mark it
+    else if (hasActualContent && !contentFetched) {
+      console.log(`[useArticleContent] Content appeared for article ${articleId}, marking as fetched`);
       setContentFetched(true);
+      lastContentLength.current = currentContentLength;
+    }
+    // Update content length reference when content changes
+    else if (currentContentLength !== lastContentLength.current) {
+      console.log(`[useArticleContent] Content length changed from ${lastContentLength.current} to ${currentContentLength}`);
       lastContentLength.current = currentContentLength;
     }
   }, [articleId, article?.content, contentFetched]);
@@ -74,7 +97,6 @@ export const useArticleContent = (
       // Only fetch if we don't have content and haven't successfully fetched before
       if (!article.content && !contentFetched && !isContentLoading) {
         dispatch(setContentLoading({ articleId, loading: true }));
-        setContentFetched(true);
         console.log(
           '[useArticleContent] Article has no content, attempting to fetch via coordinator...'
         );
@@ -112,6 +134,7 @@ export const useArticleContent = (
               })
             );
             dispatch(setContentLoading({ articleId, loading: false }));
+            setContentFetched(true); // Mark as fetched after successful sync
             setRetryCount(0); // Reset retry count on success
           } catch (syncErr) {
             console.error(
@@ -120,7 +143,7 @@ export const useArticleContent = (
             );
             const errorMessage = syncErr.message || 'Failed to sync article';
             dispatch(setContentError({ articleId, error: errorMessage }));
-            setContentFetched(false);
+            // Don't reset contentFetched on sync error - preserve existing state
             dispatch(setContentLoading({ articleId, loading: false }));
           }
         } else if (article.contentUrl) {
@@ -150,6 +173,7 @@ export const useArticleContent = (
               })
             );
             dispatch(setContentLoading({ articleId, loading: false }));
+            setContentFetched(true); // Mark as fetched after successful fetch
             setRetryCount(0); // Reset retry count on success
           } catch (fetchErr) {
             console.error(
@@ -158,7 +182,7 @@ export const useArticleContent = (
             );
             const errorMessage = fetchErr.message || 'Failed to fetch content';
             dispatch(setContentError({ articleId, error: errorMessage }));
-            setContentFetched(false);
+            // Don't reset contentFetched on fetch error - preserve existing state
             dispatch(setContentLoading({ articleId, loading: false }));
           }
         }
@@ -169,7 +193,7 @@ export const useArticleContent = (
     fetchContentIfNeeded().catch(err => {
       console.error('[useArticleContent] Unexpected error in fetchContentIfNeeded:', err);
       dispatch(setContentError({ articleId, error: err.message || 'Unexpected error' }));
-      setContentFetched(false);
+      // Don't reset contentFetched on unexpected error - preserve existing state
     });
   }, [article, articleId, dispatch, contentFetched, isContentLoading, CONTENT_TIMEOUT]);
 
@@ -178,7 +202,7 @@ export const useArticleContent = (
 
     setRefreshing(true);
     dispatch(setContentLoading({ articleId, loading: true }));
-    setContentFetched(false);
+    // Don't reset contentFetched here - let it be set after successful fetch
     try {
       console.log(
         '[useArticleContent] Manual refresh - fetching full content...'
@@ -252,7 +276,7 @@ export const useArticleContent = (
       );
       const errorMessage = refreshErr.message || 'Failed to refresh';
       dispatch(setContentError({ articleId, error: errorMessage }));
-      setContentFetched(false);
+      // Don't reset contentFetched on refresh error - preserve existing state
       
       // Don't show alert for manual refresh - let UI handle error display
       console.log('[useArticleContent] Refresh failed, error state set for UI handling');
@@ -333,14 +357,18 @@ export const useArticleContent = (
         : `${errorMessage} (Retry ${currentRetry}/${MAX_RETRY_ATTEMPTS})`;
         
       dispatch(setContentError({ articleId, error: enhancedMessage }));
-      setContentFetched(false);
+      // Only reset contentFetched if we've reached max retries
+      if (currentRetry >= MAX_RETRY_ATTEMPTS) {
+        setContentFetched(false);
+      }
     } finally {
       setIsRetrying(false);
       dispatch(setContentLoading({ articleId, loading: false }));
     }
   }, [article, articleId, dispatch, retryCount, isRetrying, MAX_RETRY_ATTEMPTS, RETRY_DELAYS, CONTENT_TIMEOUT]);
 
-  return {
+  // Final state debug logging
+  const finalState = useMemo(() => ({
     refreshing,
     isLoading: isContentLoading || isRetrying,
     hasError: !!contentError,
@@ -350,5 +378,15 @@ export const useArticleContent = (
     isRetrying,
     handleRefresh,
     retryFetch,
-  };
+  }), [refreshing, isContentLoading, isRetrying, contentError, retryCount, MAX_RETRY_ATTEMPTS, handleRefresh, retryFetch]);
+  
+  useEffect(() => {
+    console.log(`[useArticleContent] Final State for ${articleId}:`, {
+      ...finalState,
+      articleHasContent: !!(article?.content && article.content.trim().length > 0),
+      contentFetched
+    });
+  }, [finalState, article?.content, contentFetched, articleId]);
+  
+  return finalState;
 };

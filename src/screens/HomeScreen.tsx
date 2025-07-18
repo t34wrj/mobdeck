@@ -15,6 +15,7 @@ import { MainScreenProps } from '../navigation/types';
 // RootState and AppDispatch are imported above
 import { theme } from '../components/theme';
 import { Article } from '../types';
+import { useAppInitialization } from '../hooks/useAppInitialization';
 
 const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
   navigation: _navigation,
@@ -31,16 +32,25 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
   );
   const { isOnline } = useSelector((state: RootState) => state.sync);
   const [searchQuery, setSearchQuery] = useState('');
+  const { isInitialized, isInitializing } = useAppInitialization();
 
   useEffect(() => {
-    // Only fetch articles if authenticated and we don't already have articles
-    if (isAuthenticated) {
-      // Only fetch from API if we don't have any articles cached in store
+    console.log('[HomeScreen] State check:', {
+      isAuthenticated,
+      isInitialized,
+      isInitializing,
+      articlesCount: articles.length,
+      isOnline,
+    });
+
+    // Only fetch articles if authenticated and initialization is complete
+    if (isAuthenticated && isInitialized) {
+      // Only fetch from API if we don't have any articles cached in store after initialization
       if (articles.length === 0) {
-        console.log('[HomeScreen] No articles in store, fetching from API...');
+        console.log('[HomeScreen] No articles in store after initialization, fetching from API...');
         dispatch(fetchArticles({}));
       } else {
-        console.log(`[HomeScreen] Found ${articles.length} articles in store, skipping API fetch`);
+        console.log(`[HomeScreen] Found ${articles.length} articles in store after initialization, skipping API fetch`);
       }
 
       // Trigger sync when main page loads after authentication (only if online)
@@ -57,8 +67,10 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
           console.error('Auto-sync failed on home screen load:', syncError);
         });
       }
+    } else {
+      console.log('[HomeScreen] Waiting for authentication and initialization to complete...');
     }
-  }, [dispatch, isAuthenticated, isOnline, articles.length]);
+  }, [dispatch, isAuthenticated, isInitialized, isInitializing, isOnline, articles.length]);
 
   const renderItem = ({ item }: { item: Article }) => (
     <ArticleCard
@@ -80,10 +92,13 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
     );
   }
 
-  if (loading) {
+  if (loading || isInitializing) {
     return (
       <View style={styles.centerContainer}>
         <ActivityIndicator size='large' color={theme.colors.primary[500]} />
+        <Text style={styles.loadingText}>
+          {isInitializing ? 'Initializing app...' : 'Loading articles...'}
+        </Text>
       </View>
     );
   }
@@ -114,6 +129,13 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
         data={articles}
         renderItem={renderItem}
         keyExtractor={(item: Article) => item.id.toString()}
+        ListEmptyComponent={
+          <View style={styles.centerContainer}>
+            <Text style={styles.emptyText}>
+              {isInitialized ? 'No articles yet' : 'Loading articles...'}
+            </Text>
+          </View>
+        }
       />
     </View>
   );
@@ -135,6 +157,17 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 16,
     color: theme.colors.error[500],
+    textAlign: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: theme.colors.neutral[600],
+    textAlign: 'center',
+    marginTop: 12,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: theme.colors.neutral[600],
     textAlign: 'center',
   },
 });
