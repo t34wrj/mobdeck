@@ -829,27 +829,57 @@ class ReadeckApiService implements IReadeckApiService {
       baseUrlHash: maskSensitiveData(this.config.baseUrl),
     });
 
-    let requestUrl: string;
-
     try {
       // Validate input URL
       if (!contentUrl || typeof contentUrl !== 'string') {
         throw new Error('Invalid content URL provided');
       }
 
-      // Handle relative paths (already proper API paths)
-      if (!contentUrl.startsWith('http://') && !contentUrl.startsWith('https://')) {
+      let requestUrl: string;
+
+      // Check if this is already a proper API path
+      if (contentUrl.startsWith('/api/') || contentUrl.startsWith('api/')) {
+        // Already a proper API path, use as-is
         requestUrl = contentUrl.startsWith('/') ? contentUrl : `/${contentUrl}`;
+        logger.debug('Using API path as-is', {
+          pathHash: maskSensitiveData(requestUrl),
+        });
+      } else if (contentUrl.startsWith('/') && !contentUrl.startsWith('http')) {
+        // Relative path, use as-is
+        requestUrl = contentUrl;
         logger.debug('Using relative path as-is', {
           pathHash: maskSensitiveData(requestUrl),
         });
+      } else if (contentUrl.startsWith('http://') || contentUrl.startsWith('https://')) {
+        // Absolute URL - extract the path after /api/
+        try {
+          const urlObj = new URL(contentUrl);
+          const pathname = urlObj.pathname;
+          
+          // Look for /api/ in the path
+          const apiIndex = pathname.indexOf('/api/');
+          if (apiIndex !== -1) {
+            // Extract everything from /api/ onwards
+            requestUrl = pathname.substring(apiIndex);
+          } else {
+            // No /api/ found, assume the path is the API endpoint
+            requestUrl = pathname;
+          }
+          
+          logger.debug('Extracted path from absolute URL', {
+            originalUrl: maskSensitiveData(contentUrl),
+            extractedPath: maskSensitiveData(requestUrl),
+          });
+        } catch (urlError) {
+          logger.warn('Failed to parse absolute URL, using as-is', {
+            url: maskSensitiveData(contentUrl),
+            error: urlError.message,
+          });
+          requestUrl = contentUrl;
+        }
       } else {
-        // Handle absolute URLs - extract path using native URL API
-        requestUrl = this.extractPathFromAbsoluteUrl(contentUrl);
-        logger.debug('Extracted path from absolute URL', {
-          originalUrl: maskSensitiveData(contentUrl),
-          extractedPath: maskSensitiveData(requestUrl),
-        });
+        // Unknown format, use as-is
+        requestUrl = contentUrl;
       }
 
       logger.debug('Making content request to path', {
@@ -874,35 +904,70 @@ class ReadeckApiService implements IReadeckApiService {
       logger.error('Failed to fetch article content', {
         contentUrl: maskSensitiveData(contentUrl),
         error: error.message,
-        requestUrl: requestUrl ? maskSensitiveData(requestUrl) : 'undefined',
       });
 
-      // Try fallback URL processing if primary method failed
-      if (contentUrl.startsWith('http://') || contentUrl.startsWith('https://')) {
-        try {
-          const fallbackUrl = this.getFallbackUrl(contentUrl);
-          logger.debug('Attempting fallback URL processing', {
-            fallbackUrl: maskSensitiveData(fallbackUrl),
-          });
+      // If the original URL failed, try common fallback patterns
+      if (contentUrl.includes('/')) {
+        const fallbackStrategies = [
+          // Try extracting just the article ID if URL contains bookmarks
+          () => {
+            const match = contentUrl.match(/bookmarks\/(\w+)/i);
+            if (match) {
+              return `/bookmarks/${match[1]}/article`;
+            }
+            return null;
+          },
+          // Try using the path directly if it's an absolute URL
+          () => {
+            if (contentUrl.startsWith('http')) {
+              try {
+                const urlObj = new URL(contentUrl);
+                return urlObj.pathname;
+              } catch {
+                return null;
+              }
+            }
+            return null;
+          },
+          // Try removing any query parameters
+          () => {
+            const queryIndex = contentUrl.indexOf('?');
+            if (queryIndex !== -1) {
+              return contentUrl.substring(0, queryIndex);
+            }
+            return null;
+          }
+        ];
 
-          const fallbackResponse = await this.makeRequest<string>({
-            method: 'GET',
-            url: fallbackUrl,
-            headers: {
-              Accept: 'text/html',
-            },
-          });
+        for (const strategy of fallbackStrategies) {
+          try {
+            const fallbackUrl = strategy();
+            if (fallbackUrl) {
+              logger.debug('Attempting fallback URL strategy', {
+                fallbackUrl: maskSensitiveData(fallbackUrl),
+              });
 
-          logger.debug('Fallback request succeeded', {
-            contentLength: fallbackResponse.data?.length || 0,
-          });
+              const fallbackResponse = await this.makeRequest<string>({
+                method: 'GET',
+                url: fallbackUrl,
+                headers: {
+                  Accept: 'text/html',
+                },
+              });
 
-          return fallbackResponse.data;
-        } catch (fallbackError) {
-          logger.error('Fallback URL processing also failed', {
-            contentUrl: maskSensitiveData(contentUrl),
-            fallbackError: fallbackError.message,
-          });
+              logger.debug('Fallback request succeeded', {
+                contentLength: fallbackResponse.data?.length || 0,
+              });
+
+              return fallbackResponse.data;
+            }
+          } catch (fallbackError) {
+            logger.debug('Fallback strategy failed', {
+              fallbackUrl: maskSensitiveData(contentUrl),
+              error: fallbackError.message,
+            });
+            // Continue to next strategy
+          }
         }
       }
 
@@ -911,89 +976,6 @@ class ReadeckApiService implements IReadeckApiService {
     }
   }
 
-  /**
-   * Extract API path from absolute URL using native URL API
-   * @private
-   */
-  private extractPathFromAbsoluteUrl(absoluteUrl: string): string {
-    try {
-      const contentUrlObj = new URL(absoluteUrl);
-      const baseUrlObj = new URL(this.config.baseUrl);
-
-      // If the URL is from the same origin, extract the path relative to base URL
-      if (contentUrlObj.origin === baseUrlObj.origin) {
-        const basePath = baseUrlObj.pathname.replace(/\/$/, '');
-        let relativePath = contentUrlObj.pathname;
-
-        // Remove base path if it's a prefix
-        if (basePath && relativePath.startsWith(basePath)) {
-          relativePath = relativePath.substring(basePath.length);
-        }
-
-        // Ensure path starts with /
-        return relativePath.startsWith('/') ? relativePath : `/${relativePath}`;
-      }
-
-      // For cross-origin URLs, try to extract API path
-      const pathname = contentUrlObj.pathname;
-      const apiIndex = pathname.indexOf('/api/');
-      
-      if (apiIndex !== -1) {
-        // Return path after /api/
-        return pathname.substring(apiIndex + 4);
-      }
-
-      // Default to using the full pathname
-      return pathname;
-    } catch (urlError) {
-      logger.warn('Failed to parse URL with native URL API', {
-        url: maskSensitiveData(absoluteUrl),
-        error: urlError.message,
-      });
-      throw new Error(`Invalid URL format: ${urlError.message}`);
-    }
-  }
-
-  /**
-   * Get fallback URL for content fetching
-   * @private
-   */
-  private getFallbackUrl(originalUrl: string): string {
-    try {
-      const urlObj = new URL(originalUrl);
-      
-      // Try different fallback strategies
-      const strategies = [
-        () => urlObj.pathname, // Use full pathname
-        () => urlObj.pathname.replace(/^\/+/, '/'), // Normalize leading slashes
-        () => `/bookmarks${urlObj.pathname}`, // Prepend bookmarks path
-        () => urlObj.pathname.split('/').slice(-2).join('/'), // Last two path segments
-      ];
-
-      for (const strategy of strategies) {
-        try {
-          const fallbackPath = strategy();
-          if (fallbackPath && fallbackPath !== '/') {
-            return fallbackPath.startsWith('/') ? fallbackPath : `/${fallbackPath}`;
-          }
-        } catch (strategyError) {
-          logger.debug('Fallback strategy failed', {
-            strategy: strategy.name || 'anonymous',
-            error: strategyError.message,
-          });
-        }
-      }
-
-      // Last resort: use the pathname as-is
-      return urlObj.pathname || '/';
-    } catch (error) {
-      logger.warn('All fallback strategies failed', {
-        originalUrl: maskSensitiveData(originalUrl),
-        error: error.message,
-      });
-      return '/';
-    }
-  }
 
   // User methods
   async getUserProfile(): Promise<ReadeckApiResponse<ReadeckUserProfile>> {
@@ -1363,15 +1345,33 @@ class ReadeckApiService implements IReadeckApiService {
     const response = await this.getArticle(id);
     const article = this.convertReadeckArticleToArticle(response.data);
 
-    // If article has contentUrl but no content, fetch the content
-    if (article.contentUrl && !article.content) {
+    // Try to fetch content using the proper API endpoint pattern
+    if (!article.content) {
       try {
-        logger.debug('Fetching content from contentUrl', {
+        logger.debug('Fetching content using API endpoint', {
           articleId: id,
-          contentUrl: maskSensitiveData(article.contentUrl),
         });
         
-        const content = await this.getArticleContent(article.contentUrl);
+        // First try the standard API endpoint for article content
+        const standardEndpoint = `/bookmarks/${id}/article`;
+        let content: string;
+        
+        try {
+          content = await this.getArticleContent(standardEndpoint);
+        } catch (standardError) {
+          logger.debug('Standard endpoint failed, trying contentUrl', {
+            articleId: id,
+            error: standardError.message,
+          });
+          
+          // If standard endpoint fails and we have a contentUrl, try that
+          if (article.contentUrl) {
+            content = await this.getArticleContent(article.contentUrl);
+          } else {
+            throw standardError;
+          }
+        }
+        
         article.content = content;
         
         logger.debug('Content fetched successfully', {
@@ -1381,7 +1381,8 @@ class ReadeckApiService implements IReadeckApiService {
       } catch (error) {
         logger.error('Failed to fetch article content', {
           articleId: id,
-          error,
+          contentUrl: article.contentUrl ? maskSensitiveData(article.contentUrl) : 'none',
+          error: error.message,
         });
         // Don't throw the error, just leave content empty
         // This allows the UI to show what metadata is available

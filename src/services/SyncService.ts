@@ -286,19 +286,24 @@ class SyncService implements SimpleSyncServiceInterface {
         },
       });
 
+      // Use enhanced error logging with classification
+      const errorClassification = logger.errorWithClassification('Full sync failed', error, LogCategory.SYNC);
+      
       logger.error('Full sync failed', {
         syncId,
         duration,
         error: handledError.message,
-        retryable: this.isRetryableError(error)
+        retryable: this.isRetryableError(error),
+        userMessage: errorClassification.userMessage,
+        suggestedAction: errorClassification.suggestedAction
       }, LogCategory.SYNC);
 
       store.dispatch(
         syncError({
-          error: handledError.message,
-          errorCode: 'SYNC_FAILED',
+          error: errorClassification.userMessage || handledError.message,
+          errorCode: errorClassification.errorCode || 'SYNC_FAILED',
           phase: SyncPhase.FINALIZING,
-          retryable: this.isRetryableError(error),
+          isRetryable: errorClassification.isRetryable,
         })
       );
 
@@ -1537,25 +1542,66 @@ class SyncService implements SimpleSyncServiceInterface {
       if (typeof error === 'string') return error;
       
       // If error has a message property, use that
-      if (error?.message) return error.message;
+      if (error?.message) {
+        // Also include status code if available
+        if (error?.response?.status) {
+          return `${error.message} (Status: ${error.response.status})`;
+        }
+        return error.message;
+      }
       
-      // Try to extract meaningful error information
-      if (error?.response?.data?.message) return error.response.data.message;
-      if (error?.response?.statusText) return error.response.statusText;
+      // Try to extract meaningful error information from response
+      if (error?.response?.data?.message) {
+        return `${error.response.data.message} (Status: ${error.response.status || 'unknown'})`;
+      }
       
-      // If it's an object, try to stringify it properly
-      if (typeof error === 'object') {
+      if (error?.response?.statusText) {
+        return `${error.response.statusText} (Status: ${error.response.status || 'unknown'})`;
+      }
+      
+      // Handle axios-specific errors
+      if (error?.code) {
+        const statusText = error?.response?.status ? ` (Status: ${error.response.status})` : '';
+        return `${error.code}: ${error.message || 'Unknown error'}${statusText}`;
+      }
+      
+      // If it's an object, try to extract meaningful properties
+      if (typeof error === 'object' && error !== null) {
+        const errorInfo = [];
+        
+        if (error.name) errorInfo.push(`Name: ${error.name}`);
+        if (error.code) errorInfo.push(`Code: ${error.code}`);
+        if (error.status) errorInfo.push(`Status: ${error.status}`);
+        if (error.statusText) errorInfo.push(`Status Text: ${error.statusText}`);
+        
+        if (errorInfo.length > 0) {
+          return errorInfo.join(', ');
+        }
+        
+        // Last resort: try to stringify with key properties
         try {
-          return JSON.stringify(error, Object.getOwnPropertyNames(error));
-        } catch (stringifyError) {
-          return `[Error serialization failed: ${stringifyError.message}] Original error: ${error.toString()}`;
+          const keys = Object.keys(error).filter(key => 
+            typeof error[key] !== 'function' && 
+            typeof error[key] !== 'object' ||
+            key === 'message' || key === 'code' || key === 'status'
+          );
+          
+          if (keys.length > 0) {
+            const obj = {};
+            keys.forEach(key => {
+              obj[key] = error[key];
+            });
+            return JSON.stringify(obj);
+          }
+        } catch {
+          // If JSON.stringify fails, fall back to simpler approach
         }
       }
       
       // Fallback to toString
-      return error.toString();
+      return error?.toString?.() || 'Unknown error occurred';
     } catch (serializationError) {
-      return `[Error serialization failed: ${serializationError.message}]`;
+      return `[Error serialization failed: ${serializationError.message}] Original error type: ${typeof error}`;
     }
   }
 

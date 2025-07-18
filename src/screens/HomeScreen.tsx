@@ -33,9 +33,15 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // Only fetch articles if authenticated
+    // Only fetch articles if authenticated and we don't already have articles
     if (isAuthenticated) {
-      dispatch(fetchArticles({}));
+      // Only fetch from API if we don't have any articles cached in store
+      if (articles.length === 0) {
+        console.log('[HomeScreen] No articles in store, fetching from API...');
+        dispatch(fetchArticles({}));
+      } else {
+        console.log(`[HomeScreen] Found ${articles.length} articles in store, skipping API fetch`);
+      }
 
       // Trigger sync when main page loads after authentication (only if online)
       if (isOnline) {
@@ -52,7 +58,7 @@ const HomeScreen: React.FC<MainScreenProps<'ArticlesList'>> = ({
         });
       }
     }
-  }, [dispatch, isAuthenticated, isOnline]);
+  }, [dispatch, isAuthenticated, isOnline, articles.length]);
 
   const renderItem = ({ item }: { item: Article }) => (
     <ArticleCard

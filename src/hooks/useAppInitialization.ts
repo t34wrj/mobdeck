@@ -5,6 +5,7 @@ import {
   initializeSyncService,
   startSyncOperation,
 } from '../store/thunks/syncThunks';
+import { loadLocalArticles } from '../store/slices/articlesSlice';
 import { useNetworkStatus } from './useNetworkStatus';
 
 interface InitializationState {
@@ -49,6 +50,21 @@ export const useAppInitialization = () => {
           throw new Error(
             `Database initialization failed: ${dbError?.message || 'Unknown error'}`
           );
+        }
+
+        // Load cached articles from database into Redux store
+        console.log('[AppInit] Loading cached articles from database...');
+        try {
+          const loadResult = await dispatch(loadLocalArticles({}));
+          if (loadResult.meta.requestStatus === 'fulfilled') {
+            const articlesCount = loadResult.payload.items.length;
+            console.log(`[AppInit] Loaded ${articlesCount} cached articles from database`);
+          } else {
+            console.log('[AppInit] No cached articles found in database');
+          }
+        } catch (loadError) {
+          console.warn('[AppInit] Failed to load cached articles:', loadError);
+          // Don't throw error - this is not critical for app startup
         }
 
         // Initialize sync service
