@@ -19,7 +19,12 @@ export interface ArticleContentProps {
   fontFamily?: string;
   isLoading?: boolean;
   hasError?: boolean;
+  error?: string | null;
+  retryCount?: number;
+  canRetry?: boolean;
+  isRetrying?: boolean;
   onRetry?: () => void;
+  onManualRefresh?: () => void;
   contentLoading?: boolean;
   contentError?: boolean;
 }
@@ -50,7 +55,12 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
     fontFamily = theme.typography.fontFamily.regular,
     isLoading = false,
     hasError = false,
+    error = null,
+    retryCount = 0,
+    canRetry = false,
+    isRetrying = false,
     onRetry,
+    onManualRefresh,
     contentLoading = false,
     contentError = false,
   }) => {
@@ -222,9 +232,30 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
     }, [content, parseContent]);
 
     // Determine the overall loading state
-    const isContentLoading = isLoading || contentLoading;
+    const isContentLoading = isLoading || contentLoading || isRetrying;
     const hasContentError = hasError || contentError;
     const hasContent = content && content.trim().length > 0;
+    
+    // Get error message with retry information
+    const getErrorMessage = useCallback(() => {
+      if (!hasContentError) return '';
+      
+      const baseMessage = error || 'Failed to load content';
+      
+      if (retryCount > 0) {
+        return `${baseMessage} (Attempt ${retryCount}/3)`;
+      }
+      
+      return baseMessage;
+    }, [hasContentError, error, retryCount]);
+    
+    // Get loading message with retry information
+    const getLoadingMessage = useCallback(() => {
+      if (isRetrying) {
+        return `Retrying... (${retryCount}/3)`;
+      }
+      return 'Loading content...';
+    }, [isRetrying, retryCount]);
 
     return (
       <View style={styles.container}>
@@ -256,33 +287,83 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
           {isContentLoading ? (
             <View style={styles.loadingContainer}>
               <Text variant='body' style={[styles.loadingText, contentStyles]}>
-                Loading content...
+                {getLoadingMessage()}
               </Text>
+              {isRetrying && (
+                <View style={styles.retryProgress}>
+                  <Text variant='body' style={[styles.retryProgressText, contentStyles]}>
+                    Please wait...
+                  </Text>
+                </View>
+              )}
             </View>
           ) : hasContentError ? (
             <View style={styles.errorContainer}>
-              <Text variant='body' style={[styles.errorText, contentStyles]}>
-                Failed to load content.
+              <Text variant='body' style={[styles.errorTitle, contentStyles]}>
+                Content Loading Error
               </Text>
-              {onRetry && (
-                <TouchableOpacity
-                  style={styles.retryButton}
-                  onPress={onRetry}
-                  activeOpacity={0.7}
-                >
-                  <Text variant='body' style={styles.retryButtonText}>
-                    Retry
+              <Text variant='body' style={[styles.errorText, contentStyles]}>
+                {getErrorMessage()}
+              </Text>
+              
+              <View style={styles.errorActions}>
+                {onRetry && canRetry && (
+                  <TouchableOpacity
+                    style={[styles.retryButton, styles.primaryButton]}
+                    onPress={onRetry}
+                    activeOpacity={0.7}
+                    disabled={isRetrying}
+                  >
+                    <Text variant='body' style={styles.retryButtonText}>
+                      {isRetrying ? 'Retrying...' : `Retry (${retryCount}/3)`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                
+                {onManualRefresh && (
+                  <TouchableOpacity
+                    style={[styles.retryButton, styles.secondaryButton]}
+                    onPress={onManualRefresh}
+                    activeOpacity={0.7}
+                    disabled={isRetrying}
+                  >
+                    <Text variant='body' style={styles.secondaryButtonText}>
+                      Manual Refresh
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+              
+              {retryCount >= 3 && (
+                <View style={styles.maxRetriesContainer}>
+                  <Text variant='body' style={[styles.maxRetriesText, contentStyles]}>
+                    Maximum retry attempts reached. Try manual refresh or check your connection.
                   </Text>
-                </TouchableOpacity>
+                </View>
               )}
             </View>
           ) : hasContent && parsedContent ? (
             parsedContent
           ) : (
-            <Text variant='body' style={[styles.noContent, contentStyles]}>
-              No content available for this article.{'\n\n'}Pull down to refresh
-              to try loading the content from the server.
-            </Text>
+            <View style={styles.noContentContainer}>
+              <Text variant='body' style={[styles.noContent, contentStyles]}>
+                No content available for this article.
+              </Text>
+              {onManualRefresh && (
+                <TouchableOpacity
+                  style={[styles.retryButton, styles.secondaryButton, styles.noContentButton]}
+                  onPress={onManualRefresh}
+                  activeOpacity={0.7}
+                >
+                  <Text variant='body' style={styles.secondaryButtonText}>
+                    Try Loading Content
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <Text variant='body' style={[styles.noContentHint, contentStyles]}>
+                Pull down to refresh to try loading from the server.
+              </Text>
+            </View>
           )}
         </View>
 
@@ -333,7 +414,12 @@ export const ArticleContent: React.FC<ArticleContentProps> = memo(
       prevProps.fontFamily === nextProps.fontFamily &&
       prevProps.isLoading === nextProps.isLoading &&
       prevProps.hasError === nextProps.hasError &&
+      prevProps.error === nextProps.error &&
+      prevProps.retryCount === nextProps.retryCount &&
+      prevProps.canRetry === nextProps.canRetry &&
+      prevProps.isRetrying === nextProps.isRetrying &&
       prevProps.onRetry === nextProps.onRetry &&
+      prevProps.onManualRefresh === nextProps.onManualRefresh &&
       prevProps.contentLoading === nextProps.contentLoading &&
       prevProps.contentError === nextProps.contentError
     );
@@ -425,18 +511,31 @@ const styles = StyleSheet.create({
     color: theme.colors.neutral[700],
     paddingLeft: theme.spacing[2],
   },
+  noContentContainer: {
+    marginTop: theme.spacing[4],
+    marginBottom: theme.spacing[6],
+  },
   noContent: {
     textAlign: 'center',
-    color: theme.colors.neutral[500],
+    color: theme.colors.neutral[600],
     fontStyle: 'italic',
-    marginTop: theme.spacing[8],
-    marginBottom: theme.spacing[6],
+    marginBottom: theme.spacing[4],
     padding: theme.spacing[6],
     backgroundColor: theme.colors.neutral[50],
     borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
     borderColor: theme.colors.neutral[200],
     borderStyle: 'dashed',
+  },
+  noContentButton: {
+    alignSelf: 'center',
+    marginBottom: theme.spacing[3],
+  },
+  noContentHint: {
+    textAlign: 'center',
+    color: theme.colors.neutral[400],
+    fontSize: theme.typography.fontSize.sm,
+    fontStyle: 'italic',
   },
   loadingContainer: {
     textAlign: 'center',
@@ -450,9 +549,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: theme.colors.neutral[600],
     fontStyle: 'italic',
+    marginBottom: theme.spacing[2],
   },
   errorContainer: {
-    textAlign: 'center',
     padding: theme.spacing[6],
     backgroundColor: theme.colors.primary[50],
     borderRadius: theme.borderRadius.lg,
@@ -461,22 +560,70 @@ const styles = StyleSheet.create({
     marginTop: theme.spacing[4],
     marginBottom: theme.spacing[6],
   },
+  errorTitle: {
+    textAlign: 'center',
+    color: theme.colors.primary[800],
+    fontWeight: theme.typography.fontWeight.semibold,
+    fontSize: theme.typography.fontSize.lg,
+    marginBottom: theme.spacing[3],
+  },
   errorText: {
     textAlign: 'center',
     color: theme.colors.primary[700],
+    marginBottom: theme.spacing[5],
+    lineHeight: theme.typography.lineHeight.lg,
+  },
+  errorActions: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: theme.spacing[3],
     marginBottom: theme.spacing[4],
   },
   retryButton: {
-    backgroundColor: theme.colors.primary[500],
     paddingHorizontal: theme.spacing[5],
     paddingVertical: theme.spacing[3],
     borderRadius: theme.borderRadius.md,
-    alignSelf: 'center',
+    minWidth: 120,
+  },
+  primaryButton: {
+    backgroundColor: theme.colors.primary[500],
+  },
+  secondaryButton: {
+    backgroundColor: theme.colors.neutral[100],
+    borderWidth: 1,
+    borderColor: theme.colors.neutral[300],
   },
   retryButtonText: {
     color: theme.colors.neutral[50],
     fontWeight: theme.typography.fontWeight.medium,
     textAlign: 'center',
+  },
+  secondaryButtonText: {
+    color: theme.colors.neutral[700],
+    fontWeight: theme.typography.fontWeight.medium,
+    textAlign: 'center',
+  },
+  retryProgress: {
+    marginTop: theme.spacing[3],
+    alignItems: 'center',
+  },
+  retryProgressText: {
+    color: theme.colors.neutral[500],
+    fontSize: theme.typography.fontSize.sm,
+    fontStyle: 'italic',
+  },
+  maxRetriesContainer: {
+    backgroundColor: theme.colors.secondary[50],
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing[4],
+    borderWidth: 1,
+    borderColor: theme.colors.secondary[200],
+  },
+  maxRetriesText: {
+    textAlign: 'center',
+    color: theme.colors.secondary[700],
+    fontSize: theme.typography.fontSize.sm,
+    lineHeight: theme.typography.lineHeight.sm,
   },
   // Modal styles with enhanced design
   modalContainer: {

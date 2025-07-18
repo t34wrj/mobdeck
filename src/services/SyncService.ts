@@ -40,6 +40,7 @@ import { Article } from '../types';
 import { resolveConflict as resolveArticleConflict } from '../utils/conflictResolution';
 import { connectivityManager } from '../utils/connectivityManager';
 import { DatabaseUtilityFunctions } from './DatabaseService';
+import { contentOperationCoordinator } from '../utils/ContentOperationCoordinator';
 
 export interface SyncResult {
   success: boolean;
@@ -947,36 +948,51 @@ class SyncService implements SimpleSyncServiceInterface {
     console.log(`[SyncService] Found ${filteredArticles.length} articles to sync (fullTextSync: ${this.config.fullTextSync})`);
 
     // Fetch full content for each article during sync (if enabled)
+    // Use ContentOperationCoordinator to prevent conflicts with individual content fetching
     const articlesWithContent: Article[] = [];
     for (const article of filteredArticles) {
       try {
         if (this.config.fullTextSync) {
-          console.log(`[SyncService] Fetching full content for article ${article.id}`);
-          const fullArticle = await readeckApiService.getArticleWithContent(article.id);
+          console.log(`[SyncService] Fetching full content for article ${article.id} via coordinator`);
           
-          // Verify that content was actually fetched
-          if (fullArticle.content && fullArticle.content.trim().length > 0) {
-            console.log(`[SyncService] Successfully fetched content for article ${article.id} (${fullArticle.content.length} chars)`);
-            articlesWithContent.push(fullArticle);
-          } else if (fullArticle.contentUrl) {
-            // If no content but contentUrl exists, try to fetch content directly
-            console.log(`[SyncService] No content found, trying to fetch from contentUrl for article ${article.id}`);
-            try {
-              const content = await readeckApiService.getArticleContent(fullArticle.contentUrl);
+          // Check if content is already being fetched by individual operation
+          if (contentOperationCoordinator.isArticleBeingFetched(article.id)) {
+            const activeOperation = contentOperationCoordinator.getActiveOperation(article.id);
+            if (activeOperation?.type === 'individual') {
+              console.log(`[SyncService] Skipping article ${article.id} - individual fetch in progress`);
+              // Just get basic article data without content
+              const basicArticle = await readeckApiService.getArticleWithContent(article.id);
               articlesWithContent.push({
-                ...fullArticle,
-                content
+                ...basicArticle,
+                content: basicArticle.content || '' // Keep any existing content
               });
-              console.log(`[SyncService] Successfully fetched content from contentUrl for article ${article.id} (${content.length} chars)`);
-            } catch (contentError) {
-              console.error(`[SyncService] Failed to fetch content from contentUrl for article ${article.id}:`, contentError);
-              // Store article with contentUrl for later content fetching
-              articlesWithContent.push(fullArticle);
+              continue;
             }
-          } else {
-            console.warn(`[SyncService] No content or contentUrl available for article ${article.id}`);
-            // Store the article without content - user can manually refresh later
-            articlesWithContent.push(fullArticle);
+          }
+          
+          try {
+            // Use coordinator to fetch content with sync priority
+            const content = await contentOperationCoordinator.requestContentFetch({
+              articleId: article.id,
+              type: 'sync',
+              priority: 'normal',
+              timeout: 20000, // Shorter timeout for sync operations
+              debounceMs: 0 // No debouncing for sync operations
+            });
+            
+            // Get basic article metadata
+            const fullArticle = await readeckApiService.getArticleWithContent(article.id);
+            
+            articlesWithContent.push({
+              ...fullArticle,
+              content
+            });
+            console.log(`[SyncService] Successfully fetched content for article ${article.id} (${content.length} chars)`);
+          } catch {
+            console.log(`[SyncService] Coordinator fetch failed for article ${article.id}, falling back to basic article data`);
+            // Fallback to basic article without content
+            const basicArticle = await readeckApiService.getArticleWithContent(article.id);
+            articlesWithContent.push(basicArticle);
           }
         } else {
           console.log(`[SyncService] Skipping content fetch for article ${article.id} (fullTextSync disabled)`);

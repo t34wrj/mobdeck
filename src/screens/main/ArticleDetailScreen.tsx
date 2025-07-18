@@ -31,9 +31,19 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
     selectArticleById(state, articleId)
   );
 
-  const { loading, error } = useSelector((state: RootState) => state.articles);
+  const { loading, error: articlesError } = useSelector((state: RootState) => state.articles);
 
-  const { refreshing, isLoading, hasError, handleRefresh } = useArticleContent(article, articleId);
+  const { 
+    refreshing, 
+    isLoading, 
+    hasError, 
+    error, 
+    retryCount, 
+    canRetry, 
+    isRetrying,
+    handleRefresh, 
+    retryFetch 
+  } = useArticleContent(article, articleId);
 
   const {
     showActions,
@@ -90,7 +100,7 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
   }
 
   // Show error state
-  if (error.fetch && !article) {
+  if (articlesError.fetch && !article) {
     return (
       <ArticleErrorState
         title='Article Not Found'
@@ -138,7 +148,12 @@ export const ArticleDetailScreen: React.FC<ArticleDetailScreenProps> = ({
             imageUrl={article.imageUrl}
             isLoading={isLoading}
             hasError={hasError}
-            onRetry={handleRefresh}
+            error={error}
+            retryCount={retryCount}
+            canRetry={canRetry}
+            isRetrying={isRetrying}
+            onRetry={retryFetch}
+            onManualRefresh={handleRefresh}
           />
 
           <ArticleActions
