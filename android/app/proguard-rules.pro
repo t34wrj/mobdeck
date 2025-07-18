@@ -242,9 +242,32 @@
 # React Navigation
 # ===========================
 
+# React Native Screens - CRITICAL for fragment handling
 -keep class com.swmansion.rnscreens.** { *; }
+-keepclassmembers class com.swmansion.rnscreens.** { *; }
+-keep class com.swmansion.rnscreens.RNScreensPackage { *; }
+-keep class com.swmansion.rnscreens.ScreenFragment { *; }
+-keep class com.swmansion.rnscreens.ScreenFragmentWrapper { *; }
+-keep class com.swmansion.rnscreens.ScreenContainer { *; }
+-keep class com.swmansion.rnscreens.ScreenStackFragment { *; }
+-keep class com.swmansion.rnscreens.ScreenStackFragmentWrapper { *; }
+-dontwarn com.swmansion.rnscreens.**
+
+# React Native Reanimated
 -keep class com.swmansion.reanimated.** { *; }
 -keep class com.th3rdwave.safeareacontext.** { *; }
+
+# AndroidX Fragment support for React Native Screens
+-keep class androidx.fragment.app.Fragment { *; }
+-keep class androidx.fragment.app.FragmentActivity { *; }
+-keep class androidx.fragment.app.FragmentManager { *; }
+-keep class androidx.fragment.app.FragmentTransaction { *; }
+-keepclassmembers class androidx.fragment.app.Fragment {
+    public <init>(...);
+}
+-keepclassmembers class * extends androidx.fragment.app.Fragment {
+    public <init>(...);
+}
 
 # ===========================
 # Crash Reporting and Analytics

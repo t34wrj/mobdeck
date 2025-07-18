@@ -19,6 +19,8 @@ import { localStorageService } from './LocalStorageService';
 import { ShareService } from './ShareService';
 import { store } from '../store';
 import { errorHandler, ErrorCategory } from '../utils/errorHandler';
+import { logger, LogCategory } from '../utils/logger';
+import { syncMonitoringService } from './SyncMonitoringService';
 import {
   startSync,
   syncProgress,
@@ -32,6 +34,7 @@ import {
 import {
   SyncConfiguration,
   SyncPhase,
+  SyncStatus,
   ConflictType,
   ConflictResolutionStrategy,
   NetworkType,
@@ -106,7 +109,7 @@ class SyncService implements SimpleSyncServiceInterface {
 
   async initialize(): Promise<void> {
     try {
-      console.log('[SyncService] Initializing simplified sync service...');
+      logger.info('Initializing simplified sync service', undefined, LogCategory.SYNC);
 
       // Get current sync configuration from Redux store
       const state = store.getState();
@@ -118,18 +121,23 @@ class SyncService implements SimpleSyncServiceInterface {
       // Process any pending sync operations
       await this.processPendingSyncOperations();
 
-      console.log(
-        '[SyncService] Simplified sync service initialized successfully'
-      );
+      logger.info('Simplified sync service initialized successfully', {
+        config: this.config
+      }, LogCategory.SYNC);
     } catch (error) {
-      console.error('[SyncService] Failed to initialize:', error);
+      logger.error('Failed to initialize SyncService', error, LogCategory.SYNC);
       throw error;
     }
   }
 
   updateConfiguration(newConfig: Partial<SyncConfiguration>): void {
+    const oldConfig = { ...this.config };
     this.config = { ...this.config, ...newConfig };
-    console.log('[SyncService] Configuration updated:', newConfig);
+    logger.info('Configuration updated', {
+      oldConfig,
+      newConfig,
+      finalConfig: this.config
+    }, LogCategory.SYNC);
   }
 
   getConfiguration(): SyncConfiguration {
@@ -144,7 +152,10 @@ class SyncService implements SimpleSyncServiceInterface {
     // Check connectivity before starting sync
     const networkStatus = await connectivityManager.checkNetworkStatus();
     if (!networkStatus.isConnected) {
-      console.log('[SyncService] Cannot sync - server unreachable');
+      logger.warn('Cannot sync - server unreachable', {
+        networkStatus,
+        forceSync
+      }, LogCategory.SYNC);
       store.dispatch(
         syncError({
           error: 'Server is unreachable. Please check your connection.',
@@ -157,7 +168,10 @@ class SyncService implements SimpleSyncServiceInterface {
 
     // Check network constraints based on user settings
     if (this.config.syncOnWifiOnly && !networkStatus.isWifi) {
-      console.log('[SyncService] Sync blocked - WiFi-only mode enabled and not connected to WiFi');
+      logger.warn('Sync blocked - WiFi-only mode enabled and not connected to WiFi', {
+        networkStatus,
+        config: this.config
+      }, LogCategory.SYNC);
       store.dispatch(
         syncError({
           error: 'Sync is set to WiFi-only mode. Please connect to WiFi or change sync settings.',
@@ -170,7 +184,10 @@ class SyncService implements SimpleSyncServiceInterface {
 
     // Check if cellular sync is disabled but we're on cellular
     if (!this.config.syncOnCellular && networkStatus.isCellular) {
-      console.log('[SyncService] Sync blocked - cellular sync disabled and connected to cellular');
+      logger.warn('Sync blocked - cellular sync disabled and connected to cellular', {
+        networkStatus,
+        config: this.config
+      }, LogCategory.SYNC);
       store.dispatch(
         syncError({
           error: 'Sync on cellular is disabled. Please connect to WiFi or change sync settings.',
@@ -181,12 +198,28 @@ class SyncService implements SimpleSyncServiceInterface {
       throw new Error('Sync on cellular is disabled. Please connect to WiFi or change sync settings.');
     }
 
-    console.log('[SyncService] Starting full sync...');
+    // Generate unique sync ID for tracking
+    const syncId = `sync_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    logger.info('Starting full sync', {
+      syncId,
+      forceSync,
+      networkStatus,
+      config: this.config
+    }, LogCategory.SYNC);
+
+    // Start sync monitoring
+    syncMonitoringService.startSyncOperation(
+      syncId,
+      SyncPhase.INITIALIZING,
+      networkStatus.isWifi ? NetworkType.WIFI : NetworkType.CELLULAR,
+      this.config.batchSize
+    );
 
     this.isRunning = true;
     this.abortController = new AbortController();
 
-    const startTime = Date.now();
+    logger.startPerformanceTimer(`full_sync_${syncId}`);
 
     store.dispatch(
       startSync({
@@ -197,8 +230,15 @@ class SyncService implements SimpleSyncServiceInterface {
     );
 
     try {
-      const result = await this.executeFullSync();
-      const duration = Date.now() - startTime;
+      const result = await this.executeFullSync(syncId);
+      const duration = logger.endPerformanceTimer(`full_sync_${syncId}`, LogCategory.SYNC);
+
+      // Complete sync monitoring
+      syncMonitoringService.completeSyncOperation(
+        syncId,
+        SyncStatus.SUCCESS,
+        result.conflictCount
+      );
 
       store.dispatch(
         syncSuccess({
@@ -217,7 +257,13 @@ class SyncService implements SimpleSyncServiceInterface {
         })
       );
 
-      console.log(`[SyncService] Full sync completed in ${duration}ms`);
+      logger.info('Full sync completed successfully', {
+        syncId,
+        duration,
+        syncedCount: result.syncedCount,
+        conflictCount: result.conflictCount,
+        errorCount: result.errorCount
+      }, LogCategory.SYNC);
 
       return {
         ...result,
@@ -225,15 +271,27 @@ class SyncService implements SimpleSyncServiceInterface {
         success: true,
       };
     } catch (error) {
-      const duration = Date.now() - startTime;
+      const duration = logger.endPerformanceTimer(`full_sync_${syncId}`, LogCategory.SYNC);
+
+      // Record error in monitoring
+      syncMonitoringService.recordSyncError(syncId, SyncPhase.FINALIZING, error.message);
+      syncMonitoringService.completeSyncOperation(syncId, SyncStatus.ERROR);
 
       const handledError = errorHandler.handleError(error, {
         category: ErrorCategory.SYNC_OPERATION,
         context: {
           actionType: 'full_sync',
           syncPhase: SyncPhase.FINALIZING,
+          syncId,
         },
       });
+
+      logger.error('Full sync failed', {
+        syncId,
+        duration,
+        error: handledError.message,
+        retryable: this.isRetryableError(error)
+      }, LogCategory.SYNC);
 
       store.dispatch(
         syncError({
@@ -265,7 +323,7 @@ class SyncService implements SimpleSyncServiceInterface {
     }
   }
 
-  private async executeFullSync(): Promise<SyncResult> {
+  private async executeFullSync(syncId: string): Promise<SyncResult> {
     const syncResult: SyncResult = {
       success: true,
       syncedCount: 0,
@@ -278,6 +336,13 @@ class SyncService implements SimpleSyncServiceInterface {
 
     try {
       // Phase 1: Upload local changes
+      logger.syncLog(
+        syncId,
+        SyncPhase.UPLOADING_CHANGES,
+        'phase_start',
+        'Starting upload phase - detecting local changes'
+      );
+
       store.dispatch(
         syncProgress({
           phase: SyncPhase.UPLOADING_CHANGES,
@@ -287,13 +352,44 @@ class SyncService implements SimpleSyncServiceInterface {
         })
       );
 
-      const uploadResult = await this.syncUp();
+      logger.startPerformanceTimer(`upload_phase_${syncId}`);
+      const uploadResult = await this.syncUp(syncId);
+      const uploadDuration = logger.endPerformanceTimer(`upload_phase_${syncId}`, LogCategory.SYNC);
+      
+      syncMonitoringService.addPerformanceMarker(syncId, 'upload_phase', uploadDuration);
+      syncMonitoringService.updateSyncProgress(
+        syncId,
+        SyncPhase.UPLOADING_CHANGES,
+        uploadResult.syncedCount,
+        uploadResult.syncedCount - uploadResult.errorCount,
+        uploadResult.errorCount
+      );
+
       syncResult.syncedCount += uploadResult.syncedCount;
       syncResult.conflictCount += uploadResult.conflictCount;
       syncResult.errorCount += uploadResult.errorCount;
       syncResult.errors.push(...uploadResult.errors);
 
+      logger.syncLog(
+        syncId,
+        SyncPhase.UPLOADING_CHANGES,
+        'phase_complete',
+        'Upload phase completed',
+        {
+          duration: uploadDuration,
+          itemCount: uploadResult.syncedCount,
+          errorCount: uploadResult.errorCount
+        }
+      );
+
       // Phase 2: Download remote changes
+      logger.syncLog(
+        syncId,
+        SyncPhase.DOWNLOADING_UPDATES,
+        'phase_start',
+        'Starting download phase - fetching remote updates'
+      );
+
       store.dispatch(
         syncProgress({
           phase: SyncPhase.DOWNLOADING_UPDATES,
@@ -303,14 +399,48 @@ class SyncService implements SimpleSyncServiceInterface {
         })
       );
 
-      const downloadResult = await this.syncDown();
+      logger.startPerformanceTimer(`download_phase_${syncId}`);
+      const downloadResult = await this.syncDown(syncId);
+      const downloadDuration = logger.endPerformanceTimer(`download_phase_${syncId}`, LogCategory.SYNC);
+      
+      syncMonitoringService.addPerformanceMarker(syncId, 'download_phase', downloadDuration);
+      syncMonitoringService.updateSyncProgress(
+        syncId,
+        SyncPhase.DOWNLOADING_UPDATES,
+        downloadResult.syncedCount,
+        downloadResult.syncedCount - downloadResult.errorCount,
+        downloadResult.errorCount
+      );
+
       syncResult.syncedCount += downloadResult.syncedCount;
       syncResult.conflictCount += downloadResult.conflictCount;
       syncResult.errorCount += downloadResult.errorCount;
       syncResult.errors.push(...downloadResult.errors);
 
+      logger.syncLog(
+        syncId,
+        SyncPhase.DOWNLOADING_UPDATES,
+        'phase_complete',
+        'Download phase completed',
+        {
+          duration: downloadDuration,
+          itemCount: downloadResult.syncedCount,
+          errorCount: downloadResult.errorCount
+        }
+      );
+
       // Phase 3: Resolve conflicts if any
       if (syncResult.conflictCount > 0) {
+        logger.syncLog(
+          syncId,
+          SyncPhase.RESOLVING_CONFLICTS,
+          'phase_start',
+          'Starting conflict resolution phase',
+          {
+            itemCount: syncResult.conflictCount
+          }
+        );
+
         store.dispatch(
           syncProgress({
             phase: SyncPhase.RESOLVING_CONFLICTS,
@@ -320,13 +450,56 @@ class SyncService implements SimpleSyncServiceInterface {
           })
         );
 
-        await this.resolveAllConflicts();
+        logger.startPerformanceTimer(`conflicts_phase_${syncId}`);
+        await this.resolveAllConflicts(syncId);
+        const conflictsDuration = logger.endPerformanceTimer(`conflicts_phase_${syncId}`, LogCategory.SYNC);
+        
+        syncMonitoringService.addPerformanceMarker(syncId, 'conflicts_phase', conflictsDuration);
+        
+        logger.syncLog(
+          syncId,
+          SyncPhase.RESOLVING_CONFLICTS,
+          'phase_complete',
+          'Conflict resolution phase completed',
+          {
+            duration: conflictsDuration,
+            itemCount: syncResult.conflictCount
+          }
+        );
       }
 
       // Phase 4: Process pending shared URLs
-      await this.processPendingSharedUrls();
+      logger.syncLog(
+        syncId,
+        SyncPhase.FINALIZING,
+        'shared_urls_start',
+        'Processing pending shared URLs'
+      );
+
+      logger.startPerformanceTimer(`shared_urls_${syncId}`);
+      await this.processPendingSharedUrls(syncId);
+      const sharedUrlsDuration = logger.endPerformanceTimer(`shared_urls_${syncId}`, LogCategory.SYNC);
+      
+      syncMonitoringService.addPerformanceMarker(syncId, 'shared_urls_phase', sharedUrlsDuration);
+      
+      logger.syncLog(
+        syncId,
+        SyncPhase.FINALIZING,
+        'shared_urls_complete',
+        'Shared URLs processing completed',
+        {
+          duration: sharedUrlsDuration
+        }
+      );
 
       // Phase 5: Backfill missing content
+      logger.syncLog(
+        syncId,
+        SyncPhase.FINALIZING,
+        'backfill_start',
+        'Starting content backfill phase'
+      );
+
       store.dispatch(
         syncProgress({
           phase: SyncPhase.FINALIZING,
@@ -338,16 +511,44 @@ class SyncService implements SimpleSyncServiceInterface {
 
       // Attempt to backfill any missing content
       try {
-        const backfillResult = await this.backfillMissingContent();
+        logger.startPerformanceTimer(`backfill_${syncId}`);
+        const backfillResult = await this.backfillMissingContent(syncId);
+        const backfillDuration = logger.endPerformanceTimer(`backfill_${syncId}`, LogCategory.SYNC);
+        
+        syncMonitoringService.addPerformanceMarker(syncId, 'backfill_phase', backfillDuration);
+        
         if (backfillResult.updated > 0) {
-          console.log(`[SyncService] Backfilled content for ${backfillResult.updated} articles`);
+          logger.syncLog(
+            syncId,
+            SyncPhase.FINALIZING,
+            'backfill_complete',
+            'Content backfill completed successfully',
+            {
+              duration: backfillDuration,
+              itemCount: backfillResult.updated,
+              errorCount: backfillResult.errors
+            }
+          );
         }
       } catch (error) {
-        console.error('[SyncService] Content backfill failed:', error);
+        logger.syncError(
+          syncId,
+          SyncPhase.FINALIZING,
+          'backfill_error',
+          'Content backfill failed',
+          error
+        );
         // Don't fail the sync if backfill fails
       }
 
       // Phase 6: Finalize sync
+      logger.syncLog(
+        syncId,
+        SyncPhase.FINALIZING,
+        'finalize_start',
+        'Finalizing sync operation'
+      );
+
       store.dispatch(
         syncProgress({
           phase: SyncPhase.FINALIZING,
@@ -362,10 +563,42 @@ class SyncService implements SimpleSyncServiceInterface {
       // Set success to false if there were any errors
       if (syncResult.errorCount > 0) {
         syncResult.success = false;
+        logger.syncLog(
+          syncId,
+          SyncPhase.FINALIZING,
+          'finalize_complete',
+          'Sync completed with errors',
+          {
+            itemCount: syncResult.syncedCount,
+            errorCount: syncResult.errorCount,
+            conflictCount: syncResult.conflictCount
+          }
+        );
+      } else {
+        logger.syncLog(
+          syncId,
+          SyncPhase.FINALIZING,
+          'finalize_complete',
+          'Sync completed successfully',
+          {
+            itemCount: syncResult.syncedCount,
+            conflictCount: syncResult.conflictCount
+          }
+        );
       }
 
       return syncResult;
     } catch (error) {
+      logger.syncError(
+        syncId,
+        syncResult.phase,
+        'execute_full_sync',
+        'Full sync execution failed',
+        error
+      );
+      
+      syncMonitoringService.recordSyncError(syncId, syncResult.phase, error.message);
+      
       syncResult.success = false;
       syncResult.errorCount++;
       syncResult.errors.push({
@@ -377,8 +610,14 @@ class SyncService implements SimpleSyncServiceInterface {
     }
   }
 
-  async syncUp(): Promise<SyncResult> {
-    console.log('[SyncService] Starting sync up (local -> remote)...');
+  async syncUp(syncId?: string): Promise<SyncResult> {
+    const currentSyncId = syncId || `syncup_${Date.now()}`;
+    logger.syncLog(
+      currentSyncId,
+      SyncPhase.UPLOADING_CHANGES,
+      'sync_up_start',
+      'Starting sync up (local -> remote)'
+    );
 
     const result: SyncResult = {
       success: true,
@@ -407,8 +646,14 @@ class SyncService implements SimpleSyncServiceInterface {
       }
 
       const modifiedArticles = modifiedArticlesResult.data?.items || [];
-      console.log(
-        `[SyncService] Found ${modifiedArticles.length} locally modified articles`
+      logger.syncLog(
+        currentSyncId,
+        SyncPhase.UPLOADING_CHANGES,
+        'modified_articles_found',
+        'Found locally modified articles',
+        {
+          itemCount: modifiedArticles.length
+        }
       );
 
       // Process articles in batches
@@ -441,12 +686,27 @@ class SyncService implements SimpleSyncServiceInterface {
         }
       }
 
-      console.log(
-        `[SyncService] Sync up completed: ${result.syncedCount} synced, ${result.conflictCount} conflicts`
+      logger.syncLog(
+        currentSyncId,
+        SyncPhase.UPLOADING_CHANGES,
+        'sync_up_complete',
+        'Sync up completed',
+        {
+          itemCount: result.syncedCount,
+          errorCount: result.errorCount,
+          conflictCount: result.conflictCount
+        }
       );
       return result;
     } catch (error) {
-      console.error('[SyncService] Sync up failed:', error);
+      logger.syncError(
+        currentSyncId,
+        SyncPhase.UPLOADING_CHANGES,
+        'sync_up_failed',
+        'Sync up failed',
+        error
+      );
+      
       result.success = false;
       result.errorCount++;
       result.errors.push({
@@ -458,8 +718,14 @@ class SyncService implements SimpleSyncServiceInterface {
     }
   }
 
-  async syncDown(): Promise<SyncResult> {
-    console.log('[SyncService] Starting sync down (remote -> local)...');
+  async syncDown(syncId?: string): Promise<SyncResult> {
+    const currentSyncId = syncId || `syncdown_${Date.now()}`;
+    logger.syncLog(
+      currentSyncId,
+      SyncPhase.DOWNLOADING_UPDATES,
+      'sync_down_start',
+      'Starting sync down (remote -> local)'
+    );
 
     const result: SyncResult = {
       success: true,
@@ -481,15 +747,31 @@ class SyncService implements SimpleSyncServiceInterface {
           ? new Date(lastSyncResult.data.lastSyncAt * 1000)
           : new Date(0);
 
-      console.log(
-        `[SyncService] Last sync: ${lastSyncTimestamp.toISOString()}`
+      logger.syncLog(
+        currentSyncId,
+        SyncPhase.DOWNLOADING_UPDATES,
+        'last_sync_timestamp',
+        'Retrieved last sync timestamp',
+        {
+          lastSyncTimestamp: lastSyncTimestamp.toISOString()
+        }
       );
 
       // Fetch articles from remote
+      logger.startPerformanceTimer(`fetch_remote_${currentSyncId}`);
       const remoteArticles =
-        await this.fetchRemoteArticlesSince(lastSyncTimestamp);
-      console.log(
-        `[SyncService] Found ${remoteArticles.length} remote articles to sync`
+        await this.fetchRemoteArticlesSince(lastSyncTimestamp, currentSyncId);
+      const fetchDuration = logger.endPerformanceTimer(`fetch_remote_${currentSyncId}`, LogCategory.SYNC);
+      
+      logger.syncLog(
+        currentSyncId,
+        SyncPhase.DOWNLOADING_UPDATES,
+        'remote_articles_found',
+        'Found remote articles to sync',
+        {
+          itemCount: remoteArticles.length,
+          duration: fetchDuration
+        }
       );
 
       // Process remote articles
@@ -535,8 +817,16 @@ class SyncService implements SimpleSyncServiceInterface {
         }
       }
 
-      console.log(
-        `[SyncService] Sync down completed: ${result.syncedCount} synced, ${result.conflictCount} conflicts`
+      logger.syncLog(
+        currentSyncId,
+        SyncPhase.DOWNLOADING_UPDATES,
+        'sync_down_complete',
+        'Sync down completed',
+        {
+          itemCount: result.syncedCount,
+          errorCount: result.errorCount,
+          conflictCount: result.conflictCount
+        }
       );
       return result;
     } catch (error) {
@@ -546,11 +836,21 @@ class SyncService implements SimpleSyncServiceInterface {
         context: {
           actionType: 'sync_down',
           syncPhase: SyncPhase.FETCHING_REMOTE_DATA,
+          syncId: currentSyncId,
         },
       });
 
-      console.error('[SyncService] Sync down failed:', errorMessage);
-      console.error('[SyncService] Full error object:', error);
+      logger.syncError(
+        currentSyncId,
+        SyncPhase.DOWNLOADING_UPDATES,
+        'sync_down_failed',
+        'Sync down failed',
+        error,
+        {
+          errorMessage,
+          retryable: this.isRetryableError(error)
+        }
+      );
       
       result.success = false;
       result.errorCount++;
@@ -891,11 +1191,20 @@ class SyncService implements SimpleSyncServiceInterface {
     }
   }
 
-  private async resolveAllConflicts(): Promise<void> {
+  private async resolveAllConflicts(syncId?: string): Promise<void> {
     const state = store.getState();
     const conflicts = state.sync.conflicts;
 
-    console.log(`[SyncService] Resolving ${conflicts.length} conflicts...`);
+    const currentSyncId = syncId || `resolve_conflicts_${Date.now()}`;
+    logger.syncLog(
+      currentSyncId,
+      SyncPhase.RESOLVING_CONFLICTS,
+      'resolve_conflicts_start',
+      'Starting conflict resolution',
+      {
+        itemCount: conflicts.length
+      }
+    );
 
     for (let i = 0; i < conflicts.length; i++) {
       const conflict = conflicts[i];
@@ -923,20 +1232,48 @@ class SyncService implements SimpleSyncServiceInterface {
     }
   }
 
-  private async fetchRemoteArticlesSince(since: Date): Promise<Article[]> {
+  private async fetchRemoteArticlesSince(since: Date, syncId?: string): Promise<Article[]> {
+    const currentSyncId = syncId || `fetch_remote_${Date.now()}`;
     let response;
     try {
-      console.log(`[SyncService] Fetching remote articles since: ${since.toISOString()}`);
+      logger.syncLog(
+        currentSyncId,
+        SyncPhase.FETCHING_REMOTE_DATA,
+        'fetch_start',
+        'Fetching remote articles since timestamp',
+        {
+          since: since.toISOString()
+        }
+      );
+      
       response = await readeckApiService.fetchArticlesWithFilters({
         page: 1,
         limit: 1000,
         forceRefresh: true,
       });
-      console.log(`[SyncService] Successfully fetched ${response.items.length} articles from remote`);
+      
+      logger.syncLog(
+        currentSyncId,
+        SyncPhase.FETCHING_REMOTE_DATA,
+        'fetch_complete',
+        'Successfully fetched articles from remote',
+        {
+          itemCount: response.items.length
+        }
+      );
     } catch (error) {
       const errorMessage = this.serializeError(error);
-      console.error('[SyncService] Failed to fetch remote articles:', errorMessage);
-      console.error('[SyncService] Full error object:', error);
+      logger.syncError(
+        currentSyncId,
+        SyncPhase.FETCHING_REMOTE_DATA,
+        'fetch_failed',
+        'Failed to fetch remote articles',
+        error,
+        {
+          errorMessage,
+          since: since.toISOString()
+        }
+      );
       throw error;
     }
 
@@ -945,7 +1282,16 @@ class SyncService implements SimpleSyncServiceInterface {
       article => new Date(article.updatedAt) > since
     );
 
-    console.log(`[SyncService] Found ${filteredArticles.length} articles to sync (fullTextSync: ${this.config.fullTextSync})`);
+    logger.syncLog(
+      currentSyncId,
+      SyncPhase.FETCHING_REMOTE_DATA,
+      'articles_filtered',
+      'Filtered articles to sync',
+      {
+        itemCount: filteredArticles.length,
+        fullTextSync: this.config.fullTextSync
+      }
+    );
 
     // Fetch full content for each article during sync (if enabled)
     // Use ContentOperationCoordinator to prevent conflicts with individual content fetching
@@ -953,13 +1299,29 @@ class SyncService implements SimpleSyncServiceInterface {
     for (const article of filteredArticles) {
       try {
         if (this.config.fullTextSync) {
-          console.log(`[SyncService] Fetching full content for article ${article.id} via coordinator`);
+          logger.syncDebug(
+            currentSyncId,
+            SyncPhase.FETCHING_REMOTE_DATA,
+            'content_fetch_start',
+            'Fetching full content for article via coordinator',
+            {
+              articleId: article.id
+            }
+          );
           
           // Check if content is already being fetched by individual operation
           if (contentOperationCoordinator.isArticleBeingFetched(article.id)) {
             const activeOperation = contentOperationCoordinator.getActiveOperation(article.id);
             if (activeOperation?.type === 'individual') {
-              console.log(`[SyncService] Skipping article ${article.id} - individual fetch in progress`);
+              logger.syncDebug(
+                currentSyncId,
+                SyncPhase.FETCHING_REMOTE_DATA,
+                'content_fetch_skip',
+                'Skipping article - individual fetch in progress',
+                {
+                  articleId: article.id
+                }
+              );
               // Just get basic article data without content
               const basicArticle = await readeckApiService.getArticleWithContent(article.id);
               articlesWithContent.push({
@@ -987,21 +1349,56 @@ class SyncService implements SimpleSyncServiceInterface {
               ...fullArticle,
               content
             });
-            console.log(`[SyncService] Successfully fetched content for article ${article.id} (${content.length} chars)`);
+            
+            logger.syncDebug(
+              currentSyncId,
+              SyncPhase.FETCHING_REMOTE_DATA,
+              'content_fetch_success',
+              'Successfully fetched content for article',
+              {
+                articleId: article.id,
+                contentLength: content.length
+              }
+            );
           } catch {
-            console.log(`[SyncService] Coordinator fetch failed for article ${article.id}, falling back to basic article data`);
+            logger.syncDebug(
+              currentSyncId,
+              SyncPhase.FETCHING_REMOTE_DATA,
+              'content_fetch_fallback',
+              'Coordinator fetch failed, falling back to basic article data',
+              {
+                articleId: article.id
+              }
+            );
             // Fallback to basic article without content
             const basicArticle = await readeckApiService.getArticleWithContent(article.id);
             articlesWithContent.push(basicArticle);
           }
         } else {
-          console.log(`[SyncService] Skipping content fetch for article ${article.id} (fullTextSync disabled)`);
+          logger.syncDebug(
+            currentSyncId,
+            SyncPhase.FETCHING_REMOTE_DATA,
+            'content_fetch_skip',
+            'Skipping content fetch (fullTextSync disabled)',
+            {
+              articleId: article.id
+            }
+          );
           // Just fetch basic article metadata without content
           const basicArticle = await readeckApiService.getArticleWithContent(article.id);
           articlesWithContent.push(basicArticle);
         }
       } catch (error) {
-        console.error(`[SyncService] Failed to fetch article ${article.id}:`, error);
+        logger.syncError(
+          currentSyncId,
+          SyncPhase.FETCHING_REMOTE_DATA,
+          'article_fetch_failed',
+          'Failed to fetch article',
+          error,
+          {
+            articleId: article.id
+          }
+        );
         // Store the article without content - user can manually refresh later
         articlesWithContent.push(article);
       }
@@ -1026,23 +1423,43 @@ class SyncService implements SimpleSyncServiceInterface {
     await this.processPendingSharedUrls();
   }
 
-  private async processPendingSharedUrls(): Promise<void> {
+  private async processPendingSharedUrls(syncId?: string): Promise<void> {
     try {
       const pendingUrls = await ShareService.getPendingSharedUrls();
 
+      const currentSyncId = syncId || `shared_urls_${Date.now()}`;
+      
       if (pendingUrls.length === 0) {
-        console.log('[SyncService] No pending shared URLs to process');
+        logger.syncLog(
+          currentSyncId,
+          SyncPhase.FINALIZING,
+          'shared_urls_none',
+          'No pending shared URLs to process'
+        );
         return;
       }
 
-      console.log(
-        `[SyncService] Processing ${pendingUrls.length} pending shared URLs`
+      logger.syncLog(
+        currentSyncId,
+        SyncPhase.FINALIZING,
+        'shared_urls_start',
+        'Processing pending shared URLs',
+        {
+          itemCount: pendingUrls.length
+        }
       );
 
       for (const sharedUrl of pendingUrls) {
         try {
-          console.log(
-            `[SyncService] Creating article from shared URL: ${sharedUrl.url}`
+          logger.syncLog(
+            currentSyncId,
+            SyncPhase.FINALIZING,
+            'shared_url_process',
+            'Creating article from shared URL',
+            {
+              url: sharedUrl.url,
+              urlId: sharedUrl.id
+            }
           );
 
           await readeckApiService.createArticleWithMetadata({
@@ -1050,22 +1467,39 @@ class SyncService implements SimpleSyncServiceInterface {
             title: sharedUrl.title,
           });
 
-          console.log(
-            `[SyncService] Successfully created article for shared URL: ${sharedUrl.id}`
+          logger.syncLog(
+            currentSyncId,
+            SyncPhase.FINALIZING,
+            'shared_url_success',
+            'Successfully created article for shared URL',
+            {
+              urlId: sharedUrl.id
+            }
           );
 
           // Remove from queue
           await ShareService.removeFromQueue(sharedUrl.id);
         } catch (error) {
-          console.error(
-            `[SyncService] Error processing shared URL ${sharedUrl.id}:`,
-            error
+          logger.syncError(
+            currentSyncId,
+            SyncPhase.FINALIZING,
+            'shared_url_error',
+            'Error processing shared URL',
+            error,
+            {
+              urlId: sharedUrl.id,
+              url: sharedUrl.url
+            }
           );
         }
       }
     } catch (error) {
-      console.error(
-        '[SyncService] Error processing pending shared URLs:',
+      const currentSyncId = syncId || `shared_urls_${Date.now()}`;
+      logger.syncError(
+        currentSyncId,
+        SyncPhase.FINALIZING,
+        'shared_urls_error',
+        'Error processing pending shared URLs',
         error
       );
     }
@@ -1127,7 +1561,7 @@ class SyncService implements SimpleSyncServiceInterface {
 
   async stopSync(): Promise<void> {
     if (this.isRunning && this.abortController) {
-      console.log('[SyncService] Stopping sync...');
+      logger.info('Stopping sync operation', undefined, LogCategory.SYNC);
       this.abortController.abort();
       this.isRunning = false;
     }
@@ -1143,7 +1577,7 @@ class SyncService implements SimpleSyncServiceInterface {
   }
 
   async triggerManualSync(): Promise<void> {
-    console.log('[SyncService] Manual sync triggered');
+    logger.info('Manual sync triggered by user', undefined, LogCategory.SYNC);
     await this.startFullSync(true);
   }
 
@@ -1151,12 +1585,18 @@ class SyncService implements SimpleSyncServiceInterface {
    * Fetch content for articles that are missing full content
    * This can be called after sync to ensure all articles have content
    */
-  async backfillMissingContent(): Promise<{
+  async backfillMissingContent(syncId?: string): Promise<{
     processed: number;
     updated: number;
     errors: number;
   }> {
-    console.log('[SyncService] Starting content backfill for articles missing content...');
+    const currentSyncId = syncId || `backfill_${Date.now()}`;
+    logger.syncLog(
+      currentSyncId,
+      SyncPhase.FINALIZING,
+      'backfill_start',
+      'Starting content backfill for articles missing content'
+    );
     
     const result = {
       processed: 0,
@@ -1186,13 +1626,30 @@ class SyncService implements SimpleSyncServiceInterface {
         return hasContentUrl && !hasContent;
       });
 
-      console.log(`[SyncService] Found ${articlesNeedingContent.length} articles needing content backfill`);
+      logger.syncLog(
+        currentSyncId,
+        SyncPhase.FINALIZING,
+        'backfill_articles_found',
+        'Found articles needing content backfill',
+        {
+          itemCount: articlesNeedingContent.length
+        }
+      );
 
       for (const dbArticle of articlesNeedingContent) {
         result.processed++;
         
         try {
-          console.log(`[SyncService] Backfilling content for article ${dbArticle.id}`);
+          logger.syncDebug(
+            currentSyncId,
+            SyncPhase.FINALIZING,
+            'backfill_article_start',
+            'Backfilling content for article',
+            {
+              articleId: dbArticle.id
+            }
+          );
+          
           const content = await readeckApiService.getArticleContent(dbArticle.content_url);
           
           if (content && content.trim().length > 0) {
@@ -1201,20 +1658,63 @@ class SyncService implements SimpleSyncServiceInterface {
               updated_at: Math.floor(Date.now() / 1000)
             });
             result.updated++;
-            console.log(`[SyncService] Successfully backfilled content for article ${dbArticle.id} (${content.length} chars)`);
+            
+            logger.syncLog(
+              currentSyncId,
+              SyncPhase.FINALIZING,
+              'backfill_article_success',
+              'Successfully backfilled content for article',
+              {
+                articleId: dbArticle.id,
+                contentLength: content.length
+              }
+            );
           } else {
-            console.warn(`[SyncService] No content returned for article ${dbArticle.id}`);
+            logger.syncLog(
+              currentSyncId,
+              SyncPhase.FINALIZING,
+              'backfill_article_no_content',
+              'No content returned for article',
+              {
+                articleId: dbArticle.id
+              }
+            );
           }
         } catch (error) {
           result.errors++;
-          console.error(`[SyncService] Failed to backfill content for article ${dbArticle.id}:`, error);
+          logger.syncError(
+            currentSyncId,
+            SyncPhase.FINALIZING,
+            'backfill_article_error',
+            'Failed to backfill content for article',
+            error,
+            {
+              articleId: dbArticle.id
+            }
+          );
         }
       }
 
-      console.log(`[SyncService] Content backfill completed: ${result.updated} updated, ${result.errors} errors`);
+      logger.syncLog(
+        currentSyncId,
+        SyncPhase.FINALIZING,
+        'backfill_complete',
+        'Content backfill completed',
+        {
+          processed: result.processed,
+          updated: result.updated,
+          errors: result.errors
+        }
+      );
       return result;
     } catch (error) {
-      console.error('[SyncService] Content backfill failed:', error);
+      logger.syncError(
+        currentSyncId,
+        SyncPhase.FINALIZING,
+        'backfill_failed',
+        'Content backfill failed',
+        error
+      );
       return result;
     }
   }

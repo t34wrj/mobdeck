@@ -14,6 +14,9 @@ import { store } from './store';
 import AppNavigator from './navigation/AppNavigator';
 import { useAppInitialization } from './hooks/useAppInitialization';
 import { theme } from './components/theme';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import { initializeCrashReporting } from './utils/crashReporting';
+import { initializeErrorTracking } from './services/errorTracking';
 
 // Debug functions for testing through React Native debugger
 if (__DEV__) {
@@ -71,10 +74,28 @@ const AppContent: React.FC = () => {
     return null;
   }
 
-  return <AppNavigator />;
+  return (
+    <ErrorBoundary componentName="AppContent">
+      <AppNavigator />
+    </ErrorBoundary>
+  );
 };
 
 const App: React.FC = () => {
+  // Initialize crash reporting and error tracking
+  React.useEffect(() => {
+    const initializeReporting = async () => {
+      try {
+        await initializeCrashReporting();
+        await initializeErrorTracking();
+      } catch (error) {
+        console.error('Failed to initialize crash reporting:', error);
+      }
+    };
+
+    initializeReporting();
+  }, []);
+
   // Set status bar imperatively for Android following best practices
   React.useEffect(() => {
     if (Platform.OS === 'android') {
@@ -93,18 +114,22 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <Provider store={store}>
-        <StatusBar
-          backgroundColor={theme.colors.neutral[100]}
-          barStyle='dark-content'
-          translucent={false}
-          animated={false}
-          hidden={false}
-        />
-        <AppContent />
-      </Provider>
-    </SafeAreaProvider>
+    <ErrorBoundary componentName="App">
+      <SafeAreaProvider>
+        <Provider store={store}>
+          <ErrorBoundary componentName="AppProvider">
+            <StatusBar
+              backgroundColor={theme.colors.neutral[100]}
+              barStyle='dark-content'
+              translucent={false}
+              animated={false}
+              hidden={false}
+            />
+            <AppContent />
+          </ErrorBoundary>
+        </Provider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 };
 

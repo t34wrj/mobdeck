@@ -144,11 +144,12 @@ The project uses automated version synchronization to ensure consistent versioni
 - **Architecture:** React Native application with Redux + Clean Architecture approach for separation of concerns.
 - **State Management:** Redux Toolkit for global state management (articles, authentication, sync status). Local component state with `useState` for UI-specific state.
 - **Offline-First Design:** Articles stored locally in SQLite, sync with server in background, graceful handling of network failures.
-- **Design Principles:**
+- **Design Principles (Simple Mobile App):**
   - **Modularity:** Code separated into reusable modules and components
   - **Offline Capability:** App functions without internet connection
-  - **Performance:** Efficient article loading and background sync
-  - **Security:** Secure token storage and API communication
+  - **Performance:** Efficient article loading and reasonable sync intervals
+  - **Security:** Secure token storage and basic API communication
+  - **Simplicity:** Focus on core functionality over complex features
 
 ---
 
@@ -182,29 +183,26 @@ The project uses automated version synchronization to ensure consistent versioni
   - **fix/\***: Bug fixes (e.g., `fix/article-display-issue`)
   - **chore/\***: Maintenance tasks (e.g., `chore/dependency-updates`)
 
-### **Pre-Commit Validation Checklist**
+### **Pre-Commit Validation Checklist (Simplified)**
 
 1. **Stage Changes:** `git add .`
-2. **TypeScript Check:** `npm run type-check` (when TypeScript is implemented)
-3. **Lint Check:** `npm run lint` (fix with `npm run lint:fix`)
-4. **Format Check:** `npx prettier --check .` (fix with `npx prettier --write .`)
-5. **Test Validation:** `npm test`
-6. **Pre-commit Hook Test:** Test commit to validate hooks
-7. **Task Completion Summary:** Create summary in `docs/task_completion_summaries/`
+2. **Basic Lint Check:** `npm run lint` (fix with `npm run lint:fix`)
+3. **Essential Tests:** `npm run test:essential` (core functionality only)
+4. **Build Check:** `npm run android` (ensure app builds)
+5. **Format Check:** `npx prettier --check .` (fix with `npx prettier --write .`)
 
 ---
 
 ## 8.1. Commit Failure Prevention & Debugging
 
-### **Pre-Commit Validation Checklist**
+### **Pre-Commit Validation Checklist (Simple Mobile App)**
 
 1. **Stage Changes:** `git add .`
-2. **TypeScript Check:** `npm run type-check`
+2. **Essential Tests:** `npm run test:essential`
 3. **Lint Check:** `npm run lint` (fix with `npm run lint:fix`)
 4. **Format Check:** `npx prettier --check .` (fix with `npx prettier --write .`)
-5. **Test Validation:** `npm test`
-6. **Pre-commit Hook Test:** Test commit to validate hooks
-7. **Task Completion Summary:** Create summary in `docs/task_completion_summaries/`
+5. **Build Validation:** Ensure app runs on emulator
+6. **Manual Testing:** Test core functionality affected by changes
 
 ### **Common Mobile-Specific Issues**
 
@@ -212,6 +210,7 @@ The project uses automated version synchronization to ensure consistent versioni
 - **Platform-Specific Code:** Missing Platform.OS checks where needed
 - **AsyncStorage:** Proper error handling for storage operations
 - **Navigation:** Correct typing for navigation props and routes
+- **API Integration:** Bearer token authentication with Readeck API
 
 ---
 
@@ -244,35 +243,50 @@ The project uses automated version synchronization to ensure consistent versioni
 
 ## 11. Project Documentation References
 
-This project maintains comprehensive documentation in the `/docs/` directory:
+This project maintains focused documentation in the `/internal_docs/` directory:
 
-- **Project Overview (`/docs/project_overview.md`):** High-level vision and target audience
-- **User Stories (`/docs/user_stories.md`):** Detailed user interactions and requirements
-- **Site Structure & Pages (`/docs/site_structure_pages.md`):** App navigation and screen organization
-- **Data Model (`/docs/data_model.md`):** Detailed description of entities and relationships
-- **Design & UI Guidelines (`/docs/design_ui.md`):** Visual style and UI component guidelines
-- **Task Completion Summaries (`/docs/task_completion_summaries/`):** Historical development documentation
+- **Readeck API Documentation (`/internal_docs/READECK_API_DOCUMENTATION.md`):** Complete API reference and integration patterns
+- **Task Completion Summaries (`/internal_docs/task_completion_summaries/`):** Development progress documentation
+- **Project Configuration (`/.rulesync/`):** AI assistant configuration files
 
 ---
 
 ## 12. General Guidance for Copilot
 
+### Code Generation Priorities
 - Generate React Native components with proper TypeScript interfaces
-- Include error handling for network requests and async operations
+- Include basic error handling for network requests and async operations
 - Consider offline scenarios in all implementations
 - Use Redux Toolkit patterns for state management
 - Include proper loading states for async operations
-- **Mobile-Specific Considerations:**
-  - Handle device permissions appropriately
-  - Implement proper keyboard avoidance
-  - Consider different screen sizes and orientations
-  - Use platform-appropriate UI patterns
-- **Readeck API Integration:**
-  - Always include Bearer token in Authorization headers
-  - Handle API rate limiting and network failures gracefully
-  - Implement proper sync conflict resolution
-  - Cache data locally for offline access
-  - Refer to `@internal_docs/READECK_API_DOCUMENTATION.md` for complete API specifications
+
+### Mobile-Specific Considerations
+- Handle device permissions appropriately
+- Implement proper keyboard avoidance
+- Consider different screen sizes and orientations
+- Use platform-appropriate UI patterns
+- Focus on battery efficiency and performance
+
+### Readeck API Integration
+- Always include Bearer token in Authorization headers
+- Handle basic API errors gracefully with user-friendly messages
+- Implement simple sync conflict resolution
+- Cache data locally for offline access
+- Refer to `@internal_docs/READECK_API_DOCUMENTATION.md` for complete API specifications
+
+### Testing Approach (Simple App)
+- Focus on essential functionality testing
+- Test core user flows (authentication, article reading, sync)
+- Mock external dependencies (API calls, native modules)
+- Aim for 60% test coverage on critical components
+- Prioritize user-facing behavior over implementation details
+
+### Quality Standards (Proportionate)
+- **Code Style:** Follow ESLint and Prettier configurations
+- **Performance:** Target mid-range Android devices (3-second startup)
+- **Security:** Secure token storage, basic input validation
+- **Documentation:** Focus on practical usage and setup instructions
+- **Testing:** Essential tests for core functionality
 
 ---
 
@@ -283,9 +297,36 @@ This project maintains comprehensive documentation in the `/docs/` directory:
 **Mobdeck MCP Use Cases:**
 
 - **Testing Enhancement**: React Native component testing, API integration testing, offline functionality validation
-- **Documentation Automation**: App screenshots, user guide images, API integration documentation
-- **Quality Assurance**: Accessibility compliance for mobile apps, performance monitoring, battery usage optimization
-- **Development Validation**: Code quality checks, dependency analysis, React Native best practices validation
+- **Documentation Automation**: Basic setup guides, API integration examples
+- **Quality Assurance**: Mobile accessibility basics, performance monitoring, battery usage optimization
+- **Development Validation**: Code quality checks, React Native best practices validation
+
+---
+
+## Development Philosophy for Simple Mobile App
+
+When working with Mobdeck, remember this is a straightforward mobile article reader, not an enterprise application. Focus on:
+
+### Practical Priorities
+1. **Core Functionality**: Article reading, sync, authentication
+2. **User Experience**: Smooth offline reading, reliable sync
+3. **Mobile Performance**: Fast startup, efficient battery usage
+4. **Basic Security**: Secure token storage, input validation
+5. **Maintainability**: Clean, readable code with essential tests
+
+### Avoid Over-Engineering
+- Don't implement complex enterprise patterns for simple features
+- Focus on mobile-specific optimizations over general scalability
+- Prioritize user-critical functionality over comprehensive edge cases
+- Keep documentation practical and focused on actual usage
+- Test behavior that matters to users, not implementation details
+
+### Code Generation Guidelines
+- Generate simple, focused components that do one thing well
+- Include basic error handling without complex retry logic
+- Implement offline-first patterns for article management
+- Use React Native best practices for mobile performance
+- Focus on essential TypeScript types for API contracts
 
 ---
 

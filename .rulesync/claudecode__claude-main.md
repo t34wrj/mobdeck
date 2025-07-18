@@ -166,28 +166,35 @@ The Mobdeck app uses a vibrant, modern color palette that creates visual interes
 - **No Hardcoded Colors**: All color values should reference the theme system
 
 ## Testing Strategy
-### Streamlined Testing Philosophy
+### Streamlined Testing Philosophy (Simple Mobile App)
 - **Essential Tests Only**: Focus on core business logic and critical user flows
-- **CI Efficiency**: GitHub workflows run only essential tests (162 tests in ~0.6s)
-- **Local Development**: Full test suite available for comprehensive testing
-- **Quality over Quantity**: Test behavior, not implementation details
+- **CI Efficiency**: GitHub workflows run only essential tests for faster feedback
+- **Practical Coverage**: 60% minimum coverage (appropriate for simple mobile app)
+- **Quality over Quantity**: Test behavior that matters to users
 
 ### Test Categories
 - **Essential Tests** (`npm run test:essential`): Core functionality only
   - DatabaseService, AuthStorageService, SyncService, ReadeckApiService
-  - UserJourneys, CriticalFlows, MobileSecurity
+  - UserJourneys (authentication, article reading, sync)
+  - MobileSecurity (token storage, basic validation)
 - **Full Suite** (`npm test`): All tests including utilities and components
+
+### Test Priorities (Simple App)
+1. **Authentication Flow**: Login, token storage, logout
+2. **Article Management**: Fetch, display, sync, offline access
+3. **Core Components**: Article list, article reader, basic settings
+4. **Error Handling**: Network failures, API errors, offline scenarios
 
 ### Frameworks & Tools
 - **Unit Tests**: Jest with React Native Testing Library
-- **Integration Tests**: Jest with mocked React Native modules
-- **Component Tests**: React Native Testing Library for UI components
+- **Integration Tests**: Basic API and database integration
+- **Component Tests**: Core UI components and user interactions
 
 ### Test Conventions
 - **Test Files**: `*.test.ts` or `*.test.tsx`
-- **Test Structure**: Arrange-Act-Assert pattern
+- **Test Structure**: Simple Arrange-Act-Assert pattern
 - **Mock Strategy**: Mock external dependencies (API calls, native modules)
-- **Focus**: Test user-facing behavior, not internal implementation
+- **Focus**: Test user-facing behavior, not implementation details
 
 ## Git Workflow
 ### Branch Strategy
@@ -208,12 +215,11 @@ type(scope): description
 **Scopes**: auth, api, ui, sync, db, nav, settings
 
 ### PR Requirements
-- [ ] All tests pass (`npm test`)
-- [ ] Linting passes (`npm run lint`)
-- [ ] Code builds successfully (`npm run android`)
-- [ ] Code review approval from team member
-- [ ] Documentation updated for API changes
-- [ ] Test coverage maintained at 80% minimum
+- [ ] Essential tests pass (`npm run test:essential`)
+- [ ] Basic linting passes (`npm run lint`)
+- [ ] App builds successfully (`npm run android`)
+- [ ] Manual testing of core functionality
+- [ ] Brief documentation update for significant changes
 
 ## Important Files & Utilities
 ### Configuration Files
@@ -235,101 +241,72 @@ type(scope): description
 - `src/components/BookmarkCard.tsx` - Individual bookmark display
 
 ## Security & Compliance
+### Practical Mobile Security
 - Store API tokens securely using react-native-keychain
-- Validate all user inputs and API responses
-- Support both HTTP and HTTPS for API communications with Readeck servers (HTTPS recommended for security)
-- Implement proper authentication flows with API tokens
-- Follow React Native security best practices for data storage
-- Regular dependency updates for security patches
+- Basic input validation for user forms and API data
+- Support HTTPS for API communications (HTTP fallback for local development)
+- Simple authentication flows with manual token entry
+- Follow standard React Native security practices
+- Basic error handling without exposing sensitive information
 
-## Error Handling
-- Structured error handling with try-catch blocks for async operations
-- User-friendly error messages for network failures and API errors
-- Graceful degradation when offline (use local data)
-- Error boundaries for React component error containment
-- Comprehensive logging for debugging (development only)
+### Security Checklist (Simple App)
+- [ ] API tokens stored in secure keychain (not AsyncStorage)
+- [ ] Form inputs validated before submission
+- [ ] API calls use HTTPS when possible
+- [ ] No sensitive data logged in production
+- [ ] Error messages don't expose system internals
 
 ## Performance Guidelines
-- Optimize SQLite queries with proper indexing
-- Implement efficient bookmark caching for offline access
-- Use React.memo() for expensive component re-renders
-- Lazy loading for large bookmark lists
-- Background sync with user-configurable intervals (WiFi/mobile data options)
-- Bundle size optimization through code splitting
+### Mobile-Focused Performance
+- Optimize SQLite queries for article storage and retrieval
+- Implement basic article caching for offline access
+- Use simple list virtualization for article collections (50+ items)
+- Background sync with reasonable intervals (preserve battery)
+- Basic image optimization for article thumbnails
 
-## Deployment
-### Environments
-- **Development**: Local development with Metro bundler hot reload
-- **Testing**: Android emulator and physical device testing
-- **Production**: Android APK builds for distribution (future: Google Play Store)
+### Performance Targets (Simple Mobile App)
+- **App startup**: < 3 seconds on mid-range Android devices
+- **Article loading**: < 1 second from local SQLite storage
+- **Sync performance**: Handle 100+ articles without UI blocking
+- **Battery usage**: Minimal impact from background operations
+- **Memory usage**: Efficient article content management
 
-### Automated Release Process
-The project uses automated version synchronization to ensure consistent versioning across all platforms:
+## Quality Standards (Proportionate to Simple App)
+### Code Quality Approach
+- **Linting**: ESLint with React Native recommended rules
+- **Formatting**: Prettier with project-standard configuration
+- **TypeScript**: Basic type safety for core interfaces
+- **Testing**: Focus on user-critical functionality
 
-1. **Version Management**: `package.json` serves as the single source of truth for version numbers
-2. **Android Integration**: `build.gradle` dynamically reads version from `package.json` and auto-increments `versionCode` based on git commit count
-3. **Automated Releases**: Use GitHub Actions workflow "Create Release" to:
-   - Bump version automatically (patch/minor/major)
-   - Run tests and quality checks
-   - Commit version changes
-   - Create git tag
-   - Trigger release workflow
-   - Build and publish APK with correct version
-
-### Manual Release Process
-1. **Bump Version**: `npm run version:patch` (or minor/major)
-2. **Run Tests**: `npm test`
-3. **Lint Code**: `npm run lint`
-4. **Commit Changes**: Include version bump in commit
-5. **Create Tag**: `git tag v$(npm run version:check)`
-6. **Push**: `git push origin main --tags`
-7. **GitHub Actions**: Will automatically build and release APK
-
-### Version Synchronization
-- **APK Version**: Automatically synced from `package.json`
-- **Version Code**: Auto-incremented based on git commit count
-- **Obtainium Compatibility**: Ensures correct version detection for app stores
-- **No Manual Updates**: Never manually edit version in `android/app/build.gradle`
-
-## Troubleshooting
-### Common Issues
-1. **Metro bundler cache**: `npx react-native start --reset-cache`
-2. **Android build failures**: `cd android && ./gradlew clean`
-3. **Node modules issues**: `rm -rf node_modules && npm install`
-4. **Android emulator connection**: Check adb devices and restart emulator
-
-### Debug Commands
-- `npx react-native log-android` - View Android app logs
-- `adb devices` - List connected Android devices
-- `adb logcat` - Full Android system logs
-- `npm run android -- --verbose` - Verbose build output
-
-## Restrictions and Boundaries
-- **DO NOT** store API tokens in plain text or AsyncStorage
-- **DO NOT** commit directly to main branch without PR review
-- **NEVER** commit API keys, passwords, or sensitive configuration
-- **NEVER** use deprecated React Native APIs or components
-- **ALWAYS** test on physical devices before release
-- **AVOID** large component files (extract when > 300 lines)
-- **AVOID** synchronous operations that block the main thread
-- **AVOID** direct native module manipulation without proper bridges
-
-## Team Conventions
-- All PRs require code review before merging
-- Use conventional commit messages for clear change tracking
-- Update documentation for any API or major feature changes
-- Test offline functionality for all new features
-- Follow React Native performance best practices
-- Maintain backwards compatibility with older Readeck API versions
+### Quality Checklist
+- [ ] Code follows consistent style guidelines
+- [ ] Core user flows are tested and working
+- [ ] App functions properly offline
+- [ ] API integration handles common error scenarios
+- [ ] UI adapts to different Android screen sizes
+- [ ] No obvious performance issues on mid-range devices
 
 ## Documentation Standards
-- Update README.md for user-facing installation changes
-- Document all API integration patterns with examples
-- Comment complex business logic, especially sync algorithms
-- Maintain task completion summaries in `/internal_docs/task_completion_summaries/`
-- Use JSDoc comments for exported functions and components
-- Keep CLAUDE.md updated as architecture evolves
-- Refer to `internal_docs/READECK_API_DOCUMENTATION.md` for all Readeck API specifications and implementation details
+### Proportionate Documentation
+- Update README.md for user installation and basic usage
+- Document API integration with straightforward examples
+- Comment complex business logic (especially sync algorithms)
+- Maintain basic summaries for significant feature additions
+- Use simple JSDoc comments for key exported functions
+- Keep CLAUDE.md updated for major architectural changes
+
+### Documentation Priorities (Simple App)
+1. **User Guide**: How to install and configure the app
+2. **Developer Setup**: Getting the development environment running
+3. **API Integration**: Working with the Readeck API
+4. **Core Features**: Main screens and functionality overview
+5. **Troubleshooting**: Common issues and basic solutions
+
+### Documentation Maintenance
+- Update docs when adding major features (not minor changes)
+- Focus on practical information developers and users need
+- Avoid over-documenting internal implementation details
+- Keep examples simple and relevant to actual usage
 
 ---
 *This CLAUDE.md was last updated on 30 June 2025. Keep it current as the Mobdeck project evolves.*
