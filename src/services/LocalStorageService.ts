@@ -120,16 +120,24 @@ class LocalStorageService implements LocalStorageServiceInterface {
   async createArticle(
     article: Omit<DBArticle, 'created_at' | 'updated_at'>
   ): Promise<DatabaseOperationResult<string>> {
+    console.log(`[LocalStorageService] Creating article in database: ${article.id} - ${article.title}`);
     const result = await DatabaseService.createArticle(article);
+    console.log(`[LocalStorageService] Database service result:`, result);
 
     if (result.success && result.data) {
+      console.log(`[LocalStorageService] Article created successfully, adding to cache`);
       // Convert to Article format and cache
       const dbArticle = await DatabaseService.getArticle(result.data);
       if (dbArticle.success && dbArticle.data) {
         const articleForCache =
           DatabaseUtilityFunctions.convertDBArticleToArticle(dbArticle.data);
         this.setCachedArticle(result.data, articleForCache);
+        console.log(`[LocalStorageService] Article cached successfully`);
+      } else {
+        console.warn(`[LocalStorageService] Failed to retrieve created article for caching:`, dbArticle);
       }
+    } else {
+      console.error(`[LocalStorageService] Failed to create article in database:`, result);
     }
 
     return result;
@@ -322,9 +330,18 @@ class LocalStorageService implements LocalStorageServiceInterface {
   }
 
   async createArticleFromAppFormat(article: Article): Promise<string | null> {
+    console.log(`[LocalStorageService] Creating article from app format: ${article.id} - ${article.title}`);
     const dbArticle =
       DatabaseUtilityFunctions.convertArticleToDBArticle(article);
+    console.log(`[LocalStorageService] Converted to DB article format:`, {
+      id: dbArticle.id,
+      title: dbArticle.title,
+      url: dbArticle.url,
+      created_at: dbArticle.created_at,
+      updated_at: dbArticle.updated_at
+    });
     const result = await this.createArticle(dbArticle);
+    console.log(`[LocalStorageService] Database create result:`, result);
     return result.success ? result.data || null : null;
   }
 

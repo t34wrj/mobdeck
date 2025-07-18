@@ -780,6 +780,7 @@ class SyncService implements SimpleSyncServiceInterface {
       );
 
       // Process remote articles
+      console.log(`[SyncService] Processing ${remoteArticles.length} remote articles`);
       for (let i = 0; i < remoteArticles.length; i++) {
         const remoteArticle = remoteArticles[i];
 
@@ -793,14 +794,19 @@ class SyncService implements SimpleSyncServiceInterface {
         );
 
         try {
+          console.log(`[SyncService] Syncing remote article ${i + 1}/${remoteArticles.length}: ${remoteArticle.id} - ${remoteArticle.title}`);
           const syncResult = await this.syncRemoteArticle(remoteArticle);
+          console.log(`[SyncService] Sync result for ${remoteArticle.id}:`, syncResult);
 
           if (syncResult.success) {
             result.syncedCount++;
+            console.log(`[SyncService] Successfully synced article ${remoteArticle.id}`);
           } else if (syncResult.conflict) {
             result.conflictCount++;
+            console.log(`[SyncService] Conflict detected for article ${remoteArticle.id}`);
           } else {
             result.errorCount++;
+            console.error(`[SyncService] Failed to sync article ${remoteArticle.id}:`, syncResult.error);
             result.errors.push({
               operation: `sync_article_${remoteArticle.id}`,
               error: syncResult.error || 'Unknown error',
@@ -809,6 +815,7 @@ class SyncService implements SimpleSyncServiceInterface {
           }
         } catch (error) {
           result.errorCount++;
+          console.error(`[SyncService] Exception while syncing article ${remoteArticle.id}:`, error);
           result.errors.push({
             operation: `sync_article_${remoteArticle.id}`,
             error: error.message,
@@ -833,6 +840,7 @@ class SyncService implements SimpleSyncServiceInterface {
           conflictCount: result.conflictCount
         }
       );
+      console.log(`[SyncService] Sync down completed: ${result.syncedCount} synced, ${result.errorCount} errors, ${result.conflictCount} conflicts`);
       return result;
     } catch (error) {
       const errorMessage = this.serializeError(error);
@@ -971,11 +979,18 @@ class SyncService implements SimpleSyncServiceInterface {
 
       if (!localArticle) {
         // Article doesn't exist locally, create it
+        console.log(`[SyncService] Creating local article: ${remoteArticle.id} - ${remoteArticle.title}`);
         const created = await localStorageService.createArticleFromAppFormat({
           ...remoteArticle,
           syncedAt: new Date().toISOString(),
           isModified: false,
         });
+
+        if (created) {
+          console.log(`[SyncService] Successfully created local article: ${remoteArticle.id}`);
+        } else {
+          console.error(`[SyncService] Failed to create local article: ${remoteArticle.id}`);
+        }
 
         return {
           success: !!created,

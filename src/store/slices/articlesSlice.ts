@@ -416,8 +416,9 @@ export const loadLocalArticles = createAsyncThunk<
 
     if (result.success && result.data) {
       console.log(
-        `[articlesSlice] Loaded ${result.data.items.length} articles from local database`
+        `[articlesSlice] Loaded ${result.data.items.length} articles from local database (totalCount: ${result.data.totalCount})`
       );
+      console.log('[articlesSlice] Sample articles:', result.data.items.slice(0, 3).map(a => ({ id: a.id, title: a.title })));
 
       // Convert database articles to Article format
       const articles = result.data.items.map((dbArticle: any) => ({

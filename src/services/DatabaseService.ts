@@ -220,6 +220,9 @@ class DatabaseService implements DatabaseServiceInterface {
         );
       }
 
+      // Check for schema conflicts with old database format
+      await this.checkAndFixSchemaConflicts();
+
       // Initialize schema
       await this.initializeSchema();
 
@@ -236,6 +239,53 @@ class DatabaseService implements DatabaseServiceInterface {
       );
       console.error('[DatabaseService] Initialization failed:', dbError);
       throw dbError;
+    }
+  }
+
+  /**
+   * Check for schema conflicts with old database format and fix them
+   */
+  private async checkAndFixSchemaConflicts(): Promise<void> {
+    if (!this.db) {
+      throw new Error('Database not connected');
+    }
+
+    try {
+      console.log('[DatabaseService] Checking for schema conflicts...');
+      
+      // Check if articles table exists and what its schema looks like
+      const tableInfoSql = "PRAGMA table_info(articles)";
+      const tableInfo = await this.db.executeSql(tableInfoSql);
+      
+      if (tableInfo && tableInfo.length > 0 && tableInfo[0].rows.length > 0) {
+        console.log('[DatabaseService] Articles table exists, checking schema...');
+        
+        // Check if the id column is INTEGER (old format) or TEXT (new format)
+        const idColumnInfo = tableInfo[0].rows.item(0);
+        console.log('[DatabaseService] ID column info:', idColumnInfo);
+        
+        if (idColumnInfo && idColumnInfo.type === 'INTEGER') {
+          console.log('[DatabaseService] Found old database schema with INTEGER id, migrating to new schema...');
+          
+          // Back up existing data
+          const backupData = await this.db.executeSql('SELECT * FROM articles');
+          console.log(`[DatabaseService] Backed up ${backupData[0].rows.length} articles`);
+          
+          // Drop the old table
+          await this.db.executeSql('DROP TABLE IF EXISTS articles');
+          console.log('[DatabaseService] Dropped old articles table');
+          
+          // The new schema will be created in initializeSchema()
+          console.log('[DatabaseService] Schema migration completed');
+        } else {
+          console.log('[DatabaseService] Schema is already up to date');
+        }
+      } else {
+        console.log('[DatabaseService] No existing articles table found');
+      }
+    } catch (error) {
+      console.warn('[DatabaseService] Schema conflict check failed:', error);
+      // Don't throw - continue with initialization
     }
   }
 
@@ -521,6 +571,7 @@ class DatabaseService implements DatabaseServiceInterface {
     article: Omit<DBArticle, 'created_at' | 'updated_at'>
   ): Promise<DatabaseOperationResult<string>> {
     try {
+      console.log(`[DatabaseService] Creating article in SQLite: ${article.id} - ${article.title}`);
       const now = this.createTimestamp();
       const sql = `
                 INSERT INTO articles (
@@ -550,14 +601,22 @@ class DatabaseService implements DatabaseServiceInterface {
         article.deleted_at || null,
       ];
 
-      const result = await this.executeSql(sql, params);
+      console.log(`[DatabaseService] Executing SQL with params:`, {
+        sql: sql.replace(/\s+/g, ' ').trim(),
+        params: params.map((p, i) => `${i}: ${p}`).join(', ')
+      });
 
+      const result = await this.executeSql(sql, params);
+      console.log(`[DatabaseService] SQL execution result:`, result);
+
+      console.log(`[DatabaseService] Article created successfully in SQLite: ${article.id}`);
       return {
         success: true,
         data: article.id,
         rowsAffected: result.rowsAffected,
       };
     } catch (error) {
+      console.error(`[DatabaseService] Failed to create article in SQLite:`, error);
       // Use centralized error handling for storage operations
       const handledError = errorHandler.handleError(error, {
         category: ErrorCategory.STORAGE,
@@ -679,6 +738,7 @@ class DatabaseService implements DatabaseServiceInterface {
 
       // Get total count with optimized query
       const countSql = `SELECT COUNT(*) as count FROM articles ${whereClause}`;
+      console.log(`[DatabaseService] Getting article count with SQL: ${countSql}`);
       const countResult = await this.executeSql(countSql, countParams);
 
       if (!countResult || !countResult.rows || countResult.rows.length === 0) {
@@ -696,6 +756,7 @@ class DatabaseService implements DatabaseServiceInterface {
       }
 
       const totalCount = countResult.rows.item(0).count;
+      console.log(`[DatabaseService] Found ${totalCount} articles in database`);
 
       // Get paginated results with optimized query that uses covering indexes
       const limit = filters?.limit || 50;
@@ -1684,6 +1745,7 @@ class DatabaseService implements DatabaseServiceInterface {
     params: any[] = []
   ): Promise<SQLiteResultSet> {
     if (!this.db) {
+      console.error('[DatabaseService] Database not connected when trying to execute SQL');
       throw this.createDatabaseError(
         DatabaseErrorCode.CONNECTION_FAILED,
         'Database not connected'
@@ -1691,14 +1753,23 @@ class DatabaseService implements DatabaseServiceInterface {
     }
 
     try {
+      console.log(`[DatabaseService] Executing SQL: ${sql.replace(/\s+/g, ' ').trim()}`);
+      console.log(`[DatabaseService] With params: [${params.join(', ')}]`);
+      
       // When promises are enabled, executeSql returns an array where the first element is the result
       const results = await this.db.executeSql(sql, params);
+      console.log(`[DatabaseService] SQL execution completed, results type: ${Array.isArray(results) ? 'array' : typeof results}`);
+      
       if (Array.isArray(results) && results.length > 0) {
-        return results[0] as SQLiteResultSet;
+        const result = results[0] as SQLiteResultSet;
+        console.log(`[DatabaseService] Returning result: rowsAffected=${result.rowsAffected}, insertId=${result.insertId}`);
+        return result;
       }
       // Fallback for non-array results
+      console.log(`[DatabaseService] Returning non-array result`);
       return results as SQLiteResultSet;
     } catch (error) {
+      console.error(`[DatabaseService] SQL execution failed:`, error);
       throw this.createDatabaseError(
         DatabaseErrorCode.QUERY_FAILED,
         `SQL query failed: ${sql}`,
